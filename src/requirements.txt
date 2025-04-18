@@ -2,7 +2,9 @@
 django
 django-cors-headers
 django-phonenumber-field
+mkdocs
 phonenumbers
 psycopg2-binary
 python-decouple
 ruff
+
