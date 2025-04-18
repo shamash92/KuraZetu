@@ -1,36 +1,37 @@
 name: Deploy Sphinx docs to GitHub Pages
 
-on:
-  push:
-    branches:
-      - main  # or 'master' if that's your default branch
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: write
+
 
 jobs:
-  build:
+  docs:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
-          pip install -r docs/requirements.txt
+          cd docs
+          pip install -r requirements.txt
 
-      - name: Build HTML
+      - name: Sphinx build
         run: |
           cd docs
           make html
+    
+      - name: ghp-import
+        run: |
+           ghp-import -n -p -f docs/_build/html
+    
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
+          publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build
-          publish_branch: docs_setup # Make sure this is the branch you're using for GitHub Pages
-          force_orphan: true  # Optional: clean deploy by resetting the branch
+          publish_dir: docs/_build/
+          force_orphan: true
