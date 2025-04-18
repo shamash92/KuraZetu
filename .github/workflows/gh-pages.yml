@@ -1,0 +1,34 @@
+name: Deploy Sphinx docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # or master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r docs/requirements.txt
+
+      - name: Build HTML
+        run: |
+          cd docs
+          make html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
