@@ -3,7 +3,7 @@ name: Deploy Sphinx docs to GitHub Pages
 on:
   push:
     branches:
-      - main  # or master
+      - main  # or 'master' if that's your default branch
 
 jobs:
   build:
@@ -31,4 +31,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/html
+          publish_dir: docs/_build
+          publish_branch: docs_setup # Make sure this is the branch you're using for GitHub Pages
+          force_orphan: true  # Optional: clean deploy by resetting the branch
