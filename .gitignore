@@ -18,4 +18,7 @@ venv/
 .DS_Store
 Thumbs.db
 
+.coverage
+
+
 static/

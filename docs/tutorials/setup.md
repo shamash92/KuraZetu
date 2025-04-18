@@ -130,6 +130,24 @@ Edit the `.env` file to configure your environment-specific settings.
 
     ```
 
+6. Setup the test database
+
+    ```bash
+        sudo -i -u postgres;
+        CREATE DATABASE community_test_db;
+        CREATE USER test_admin WITH PASSWORD 'community_password';
+        CREATE DATABASE community_tally_test WITH TEMPLATE community_tally;
+        ALTER USER test_admin CREATEDB;
+        ALTER USER test_admin WITH SUPERUSER;
+
+        \c community_test_db
+        CREATE EXTENSION postgis;
+
+
+        \q
+        exit
+    ```
+
 ### 5. Apply Migrations
 
 Run the following commands to apply database migrations:
