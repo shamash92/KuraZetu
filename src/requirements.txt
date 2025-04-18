@@ -1,10 +1,17 @@
 
+
+
+black
 django
 django-cors-headers
 django-phonenumber-field
-mkdocs
+isort
 phonenumbers
 psycopg2-binary
+pytest
+pytest-black
+pytest-cov
+pytest-django
+pytest-sugar
 python-decouple
 ruff
-

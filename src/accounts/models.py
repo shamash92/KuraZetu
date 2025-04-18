@@ -8,8 +8,11 @@ class UserManager(BaseUserManager):
 		"""
 		Creates and saves a User with the given phone_number and password.
 		"""
-		if not phone_number:
-			raise ValueError("Users must have an phone_number ")
+		# Validate phone number format
+		try:
+			PhoneNumberField().clean(phone_number, None)
+		except Exception as e:
+			raise ValueError(f"Invalid phone number format: {e}")
 
 		user = self.model(phone_number=phone_number)
 

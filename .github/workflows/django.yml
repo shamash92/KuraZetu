@@ -1,0 +1,49 @@
+name: Community Tally Django CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.12]
+
+    steps:
+      - uses: huaxk/postgis-action@v1
+        with:
+          postgresql version: "11" # See https://https://hub.docker.com/r/mdillon/postgis for available versions, if it is not specified, use the default value 'latest'
+          postgresql password: "community_password" # This environment variable sets the superuser password for PostgreSQL, maybe string or secrets, the default superuser is defined by the input environment variable: postgresql user.
+          postgresql user: "test_admin" # This optional environment variable is used in conjunction with postgresql password to set a user and its password. This variable will create the specified user with superuser power and a database with the same name. If it is not specified, then the default user of 'postgres' will be used.
+          postgresql db: "community_test_db" # This optional environment variable can be used to define a different name for the default database that is created when the image is first started. If it is not specified, then the value of postgresql user will be used.
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Renaming .env.local to .env
+        run: |
+          cd src
+          cp .env.local .env
+      - name: Installing Geodjango
+        run: |
+          sudo apt-get install binutils libproj-dev gdal-bin
+      - name: Install Dependencies
+        run: |
+          cd src
+          python -m pip install --upgrade pip
+          pip install \
+            --find-links https://girder.github.io/large_image_wheels \
+            django-large-image \
+            'large-image[gdal,pil]>=1.16.2' 
+          pip install git+https://github.com/dmpayton/django-admin-honeypot.git@develop
+          pip install -r requirements.txt
+      - name: Run Tests
+        run: |
+          cd src
+          py.test --ds=CommunityTally.settings.local_testing --nomigrations
