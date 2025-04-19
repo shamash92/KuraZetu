@@ -1,9 +1,7 @@
-
-
-
 black
 django
 django-cors-headers
+django-leaflet
 django-phonenumber-field
 isort
 phonenumbers
@@ -14,4 +12,3 @@ pytest-cov
 pytest-django
 pytest-sugar
 python-decouple
-ruff
