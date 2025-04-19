@@ -33,9 +33,7 @@ DEFAULT_APPS = [
     "django.contrib.humanize",
 ]
 
-THIRD_PARTY_APPS = [
-    "corsheaders",
-]
+THIRD_PARTY_APPS = ["corsheaders", "leaflet"]
 
 MY_APPS = ["accounts", "stations"]
 
@@ -148,3 +146,35 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 21474836480  # 20 * 1024 * 1024 * 1024
 MAX_UPLOAD_SIZE = 21474836480
 FILE_UPLOAD_MAX_MEMORY_SIZE = 21474836480
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+
+
+LEAFLET_CONFIG = {
+    "DEFAULT_CENTER": (-0.966408, 37.048688),
+    "DEFAULT_ZOOM": 20,
+    "MIN_ZOOM": 8,
+    "MAX_ZOOM": 23,
+    "PLUGINS": {"forms": {"auto-include": True}},
+    # "TILES": [
+    #     (
+    #         "Google Maps Satellite",
+    #         "http://mt{s}.google.com/vt/lyrs=s@207000000&hl=en&x={x}&y={y}&z={z}",
+    #         {
+    #             "type": "xyz",
+    #             "ext": "png",
+    #             "attribution": f"Data CC-By-SA by <a href='http://openstreetmap.org/' target='_blank'>OpenStreetMap</a>, Tiles Courtesy of <a href='http://www.mapquest.com/'>MapQuest</a>",
+    #             "subdomains": ["1", "2", "3", "4"],
+    #         },
+    #     ),
+    #     (
+    #         'Google Maps',
+    #         'http://mt{s}.google.com/vt/lyrs=m@207000000&hl=en&x={x}&y={y}&z={z}',
+    #         {
+    #             'type': 'xyz',
+    #             'ext': 'png',
+    #             'attribution': 'Data CC-By-SA by <a href="http://openstreetmap.org/" target="_blank">OpenStreetMap</a>, Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a>',
+    #             'subdomains': ['1', '2', '3', '4'],
+    #         },
+    #     ),
+    # ],
+    "ATTRIBUTION_PREFIX": "&copy; <a href='https://community-tally.readthedocs.io/'>Community Tally</a>",
+}
