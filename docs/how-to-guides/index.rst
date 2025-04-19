@@ -7,3 +7,4 @@ How-to guides
    :caption: Contents:
 
    Anonymous contributions <anonymous_github>
+   Load boundaries data <load_boundaries_data>
