@@ -14,30 +14,30 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
 INTERNAL_IPS = [
-	# ...
-	"127.0.0.1",
-	# ...
+    # ...
+    "127.0.0.1",
+    # ...
 ]
 
 # Application definition
 
 DEFAULT_APPS = [
-	"django.contrib.admin",
-	"django.contrib.auth",
-	"django.contrib.contenttypes",
-	"django.contrib.sessions",
-	"django.contrib.messages",
-	"django.contrib.staticfiles",  # required for serving swagger ui's css/js files
-	"django.contrib.sites",
-	"django.contrib.gis",
-	"django.contrib.humanize",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",  # required for serving swagger ui's css/js files
+    "django.contrib.sites",
+    "django.contrib.gis",
+    "django.contrib.humanize",
 ]
 
 THIRD_PARTY_APPS = [
-	"corsheaders",
+    "corsheaders",
 ]
 
-MY_APPS = ["accounts"]
+MY_APPS = ["accounts", "stations"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 
@@ -47,35 +47,35 @@ AUTH_USER_MODEL = "accounts.User"
 
 
 MIDDLEWARE = [
-	"django.middleware.security.SecurityMiddleware",
-	"django.contrib.sessions.middleware.SessionMiddleware",
-	"corsheaders.middleware.CorsMiddleware",
-	"django.middleware.common.CommonMiddleware",
-	"django.middleware.csrf.CsrfViewMiddleware",
-	"django.contrib.auth.middleware.AuthenticationMiddleware",
-	"django.contrib.messages.middleware.MessageMiddleware",
-	"django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 ROOT_URLCONF = "CommunityTally.urls"
 
 TEMPLATES = [
-	{
-		"BACKEND": "django.template.backends.django.DjangoTemplates",
-		"DIRS": [
-			os.path.join(BASE_DIR, "templates"),
-		],
-		"APP_DIRS": True,
-		"OPTIONS": {
-			"context_processors": [
-				"django.template.context_processors.debug",
-				# `allauth` needs this from django
-				"django.template.context_processors.request",
-				"django.contrib.auth.context_processors.auth",
-				"django.contrib.messages.context_processors.messages",
-			]
-		},
-	}
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
+            os.path.join(BASE_DIR, "templates"),
+        ],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                # `allauth` needs this from django
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ]
+        },
+    }
 ]
 
 
@@ -84,14 +84,14 @@ WSGI_APPLICATION = "CommunityTally.wsgi.application"
 
 # POSTGRESQL DATABASE
 DATABASES = {
-	"default": {
-		"ENGINE": "django.contrib.gis.db.backends.postgis",
-		"NAME": config("DATABASE_NAME"),
-		"USER": config("DATABASE_USER"),
-		"PASSWORD": config("DATABASE_PASSWORD"),
-		"HOST": "localhost",
-		"PORT": "5432",
-	}
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": config("DATABASE_NAME"),
+        "USER": config("DATABASE_USER"),
+        "PASSWORD": config("DATABASE_PASSWORD"),
+        "HOST": "localhost",
+        "PORT": "5432",
+    }
 }
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -100,18 +100,20 @@ LOGIN_REDIRECT_URL = "/"
 
 
 AUTHENTICATION_BACKENDS = [
-	# Needed to login by username in Django admin, regardless of `allauth`
-	"django.contrib.auth.backends.ModelBackend",
+    # Needed to login by username in Django admin, regardless of `allauth`
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-	{"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-	{"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-	{"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-	{"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 
@@ -136,8 +138,8 @@ CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", cast=Csv())
 
 
 FILE_UPLOAD_HANDLERS = [
-	"django.core.files.uploadhandler.MemoryFileUploadHandler",
-	"django.core.files.uploadhandler.TemporaryFileUploadHandler",
+    "django.core.files.uploadhandler.MemoryFileUploadHandler",
+    "django.core.files.uploadhandler.TemporaryFileUploadHandler",
 ]
 
 
