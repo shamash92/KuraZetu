@@ -178,4 +178,4 @@ Follow the prompts to set up the superuser account.
 
 This step is optional but recommended for testing purposes. You can load administrative boundaries data (Counties, Constituencies, and Wards) into your system using the Django `manage.py shell`. The necessary geojson data and the scripts to save them are already provided in the `stations/scripts` directory.
 
-> See the [Load Administrative Boundaries Data](how-to-guides/load_boundaries_data.md) guide for detailed instructions.
+> See the [Load Administrative Boundaries Data](../how-to-guides/load_boundaries_data.md) guide for detailed instructions.
