@@ -120,10 +120,8 @@ Edit the `.env` file to configure your environment-specific settings.
         sudo -i -u postgres;
         psql -d community_tally;
         CREATE EXTENSION postgis;
-
         \q
         exit
-
 
         export CPLUS_INCLUDE_PATH=/usr/include/gdal
         export C_INCLUDE_PATH=/usr/include/gdal
@@ -142,7 +140,6 @@ Edit the `.env` file to configure your environment-specific settings.
 
         \c community_test_db
         CREATE EXTENSION postgis;
-
 
         \q
         exit
@@ -166,3 +163,19 @@ python manage.py runserver
 ```
 
 You can now access the application at `http://127.0.0.1:8000`.
+
+### 7. Create a Superuser
+
+Create a superuser to access the Django admin interface:
+
+```bash
+python manage.py createsuperuser
+```
+
+Follow the prompts to set up the superuser account.
+
+### 8. Load Administrative Boundaries Data
+
+This step is optional but recommended for testing purposes. You can load administrative boundaries data (Counties, Constituencies, and Wards) into your system using the Django `manage.py shell`. The necessary geojson data and the scripts to save them are already provided in the `stations/scripts` directory.
+
+> See the [Load Administrative Boundaries Data](how-to-guides/load_boundaries_data.md) guide for detailed instructions.

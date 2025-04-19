@@ -19,7 +19,7 @@ REQPDFPACKS     = latexmk fonts-freefont-otf texlive-latex-recommended texlive-l
 CONFIRM_SUDO    ?= N
 VALE_CONFIG     = $(SPHINXDIR)/vale.ini
 SPHINX_HOST     ?= 127.0.0.1
-SPHINX_PORT     ?= 8000
+SPHINX_PORT     ?= 8001
 
 # Put it first so that "make" without argument is like "make help".
 help:
