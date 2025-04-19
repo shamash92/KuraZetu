@@ -42,6 +42,16 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     GENDER_CHOICES = (("M", "Male"), ("F", "Female"))
+    ROLE = (
+        ("voter", "Voter"),
+        ("candidate", "Candidate"),
+        ("election_officer", "Election Officer"),
+        ("media", "Media"),
+        ("observer", "Observer"),
+        ("party_agent", "Party Agent"),
+        ("party_rep", "Party Representative"),
+        ("other", "Other"),
+    )
 
     phone_number = PhoneNumberField(unique=True)
     id_number = models.CharField(unique=True, max_length=20, blank=True, null=True)
@@ -51,6 +61,7 @@ class User(AbstractBaseUser):
     gender = models.CharField(
         choices=GENDER_CHOICES, max_length=6, blank=True, null=True
     )
+    role = models.CharField(choices=ROLE, max_length=40, default="voter")
 
     first_name = models.CharField(max_length=20, blank=True, null=True)
     last_name = models.CharField(max_length=20, blank=True, null=True)
