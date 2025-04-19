@@ -20,6 +20,9 @@ class County(gis_models.Model):
     number = models.PositiveIntegerField(unique=True, editable=False)
 
     boundary = gis_models.PolygonField(blank=True, null=True)
+    multi_boundary = gis_models.MultiPolygonField(
+        srid=4326, blank=True, null=True
+    )  # For Mombasa only
 
     def __str__(self):
         return self.name
