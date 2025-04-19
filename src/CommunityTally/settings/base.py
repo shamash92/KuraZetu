@@ -151,7 +151,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 LEAFLET_CONFIG = {
     "DEFAULT_CENTER": (-0.966408, 37.048688),
     "DEFAULT_ZOOM": 20,
-    "MIN_ZOOM": 8,
+    "MIN_ZOOM": 4,
     "MAX_ZOOM": 23,
     "PLUGINS": {"forms": {"auto-include": True}},
     # "TILES": [
