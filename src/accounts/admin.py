@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .forms import MyAdminPasswordChangeForm, UserAdminChangeForm, UserAdminCreationForm
@@ -21,7 +20,15 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ("admin", "is_verified")
     fieldsets = (
         (None, {"fields": ("phone_number", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name", "email")}),
+        (
+            "Personal info",
+            {
+                "fields": (
+                    "first_name",
+                    "last_name",
+                )
+            },
+        ),
         ("Permissions", {"fields": ("staff", "active", "is_verified")}),
     )
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
