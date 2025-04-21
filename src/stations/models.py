@@ -24,6 +24,8 @@ class County(gis_models.Model):
         srid=4326, blank=True, null=True
     )  # For Mombasa only
 
+    is_diaspora = models.BooleanField(default=False)
+
     def __str__(self):
         return self.name
 
@@ -46,6 +48,7 @@ class Constituency(gis_models.Model):
     )
     boundary = gis_models.PolygonField(blank=True, null=True)
     number = models.PositiveIntegerField(unique=True, editable=False)
+    is_diaspora = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -63,6 +66,54 @@ class Ward(gis_models.Model):
         null=True,
     )
     number = models.PositiveIntegerField(unique=True, editable=False)
+    is_diaspora = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
+
+
+# class PollingStation(gis_models.Model):
+#     code = models.CharField(max_length=8, editable=False, unique=True)
+#     name = models.CharField(max_length=255)
+
+#     ward = models.ForeignKey(Ward, on_delete=models.CASCADE)
+
+#     number_of_streams = models.PositiveIntegerField()
+
+#     pin_location = gis_models.PointField(blank=True, null=True)
+#     is_verified = models.BooleanField(default=False)
+#     verified_by = models.ForeignKey(
+#         User,
+#         on_delete=models.SET_NULL,
+#         null=True,
+#         blank=True,
+#     )
+
+#     def __str__(self):
+#         return str(self.name)
+
+
+# class PollingStationStream(models.Model):
+#     polling_station = models.ForeignKey(
+#         PollingStation, on_delete=models.CASCADE, related_name="streams"
+#     )
+#     name = models.CharField(
+#         max_length=255,
+#     )
+#     stream_number = models.PositiveIntegerField()
+
+#     code = models.CharField(max_length=30, editable=False, unique=True)
+#     registered_voters = models.PositiveIntegerField()
+
+#     date_created = models.DateTimeField(auto_now_add=True)
+#     date_modified = models.DateTimeField(auto_now=True)
+#     is_verified = models.BooleanField(default=False)
+#     verified_by = models.ForeignKey(
+#         User,
+#         on_delete=models.SET_NULL,
+#         null=True,
+#         blank=True,
+#     )
+
+#     def __str__(self):
+#         return f"{self.polling_station} - Stream {self.stream_number}"

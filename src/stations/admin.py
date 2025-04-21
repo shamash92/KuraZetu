@@ -1,7 +1,8 @@
 from django.contrib import admin
-from stations.models import County, Constituency, Ward
 
 from leaflet.admin import LeafletGeoAdmin
+
+from stations.models import Constituency, County, Ward
 
 
 @admin.register(County)
@@ -28,7 +29,8 @@ class WardAdmin(LeafletGeoAdmin):
         "name",
         "number",
         "constituency",
+        "constituency__county",
     )
-    search_fields = ("name",)
+    search_fields = ("name", "number")
     list_filter = ("constituency",)
     ordering = ("number",)
