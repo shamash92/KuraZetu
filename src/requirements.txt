@@ -1,14 +1,16 @@
 black
 django
-django-cors-headers
-django-leaflet
-django-phonenumber-field
+django - cors - headers
+django - leaflet
+django - phonenumber - field
 isort
 phonenumbers
-psycopg2-binary
+pre - commit
+psycopg2 - binary
 pytest
-pytest-black
-pytest-cov
-pytest-django
-pytest-sugar
-python-decouple
+pytest - black
+pytest - cov
+pytest - django
+pytest - sugar
+python - decouple
+tqdm
