@@ -1,7 +1,8 @@
 from django.contrib import admin
-from stations.models import County, Constituency, Ward
 
 from leaflet.admin import LeafletGeoAdmin
+
+from stations.models import Constituency, County, PollingCenter, PollingStation, Ward
 
 
 @admin.register(County)
@@ -28,7 +29,50 @@ class WardAdmin(LeafletGeoAdmin):
         "name",
         "number",
         "constituency",
+        "constituency__county",
     )
-    search_fields = ("name",)
+    search_fields = ("name", "number")
     list_filter = ("constituency",)
-    ordering = ("number",)
+    ordering = ("constituency__county",)
+
+
+@admin.register(PollingCenter)
+class PollingCenterAdmin(LeafletGeoAdmin):
+    list_display = (
+        "name",
+        "code",
+        "number_of_streams",
+        "ward",
+        "ward__constituency",
+        "ward__constituency__county",
+    )
+    search_fields = (
+        "name",
+        "code",
+        "ward__constituency__county__name",
+        "ward__constituency__name",
+    )
+    list_filter = ("ward__constituency",)
+    ordering = ("ward__constituency__county",)
+
+
+@admin.register(PollingStation)
+class PollingStationAdmin(LeafletGeoAdmin):
+    list_display = (
+        "polling_center",
+        "code",
+        "stream_number",
+        "polling_center__ward",
+        "polling_center__ward__constituency",
+        "polling_center__ward__constituency__county",
+    )
+    # customise fieldsets
+
+    search_fields = (
+        "polling_center__name",
+        "code",
+        "polling_center__ward__constituency__county__name",
+        "polling_center__ward__constituency__name",
+    )
+    list_filter = ("polling_center",)
+    ordering = ("polling_center__ward__constituency__county",)

@@ -1,11 +1,27 @@
 import json
 
-from django.contrib.gis.geos import Polygon, MultiPolygon
+from django.contrib.gis.geos import MultiPolygon, Polygon
 
 from stations.models import Constituency, County, Ward
 
 
 def save_counties_from_geojson_file(geojson_file_path):
+    # check if diaspora county exists , else create it
+    try:
+        diaspora_county = County.objects.get(name="Diaspora")
+    except County.DoesNotExist:
+        diaspora_county = County.objects.create(
+            name="Diaspora", number=48, is_diaspora=True
+        )
+
+    # check if prisons county exists , else create it
+    try:
+        prisons_county = County.objects.get(name="Prisons")
+    except County.DoesNotExist:
+        prisons_county = County.objects.create(
+            name="Prisons", number=49, is_prisons=True
+        )
+
     # read geojson file
     with open(geojson_file_path, "r") as f:
         # assign data to a variable
@@ -52,7 +68,6 @@ def save_counties_from_geojson_file(geojson_file_path):
                 mombasa_county_obj.save()
                 print("successfully saved mombasa county")
             else:
-
                 polygon_array = feature["geometry"]["coordinates"][0]
 
                 try:
@@ -72,6 +87,31 @@ def save_counties_from_geojson_file(geojson_file_path):
 
 
 def save_constituencies_from_geojson_file(geojson_file_path):
+    # check if diaspora county exists , else create it
+    try:
+        diaspora_constituency_obj = Constituency.objects.get(name="Diaspora")
+        county = County.objects.get(name="Diaspora")
+    except Constituency.DoesNotExist:
+        diaspora_constituency_obj = Constituency.objects.create(
+            name="Diaspora",
+            number=291,
+            is_diaspora=True,
+            county=County.objects.get(name="Diaspora"),
+        )
+
+    # check if prisons constituency exists , else create it
+    try:
+        prisons_constituency_obj = Constituency.objects.get(name="Prisons")
+        county = County.objects.get(name="Prisons")
+    except Constituency.DoesNotExist:
+        prisons_constituency_obj = Constituency.objects.create(
+            name="Prisons",
+            number=292,
+            is_prisons=True,
+            county=County.objects.get(name="Prisons"),
+            is_diaspora=True,
+        )
+
     # read geojson file
     with open(geojson_file_path, "r") as f:
         # assign data to a variable
@@ -123,6 +163,41 @@ def save_constituencies_from_geojson_file(geojson_file_path):
 
 
 def save_wards_from_geojson_file(geojson_file_path):
+    diaspora_data = [
+        {"name": "Tanzania", "code": "5000"},
+        {"name": "Uganda", "code": "5001"},
+        {"name": "Rwanda", "code": "5002"},
+        {"name": "Burundi", "code": "5003"},
+        {"name": "South Africa", "code": "5004"},
+        {"name": "South Sudan", "code": "5005"},
+        {"name": "Germany", "code": "5006"},
+        {"name": "United Kingdom", "code": "5007"},
+        {"name": "Qatar", "code": "5008"},
+        {"name": "United Arab Emirates", "code": "5009"},
+        {"name": "Canada", "code": "5010"},
+        {"name": "United States of America", "code": "5011"},
+        {"name": "Prisons", "code": "1451"},
+    ]
+
+    for data in diaspora_data:
+        try:
+            ward_obj = Ward.objects.get(number=int(data["code"]))
+            constituency = Constituency.objects.get(name="Diaspora")
+            constituency_prisons = Constituency.objects.get(name="Prisons")
+        except Ward.DoesNotExist:
+            if data["name"] == "Prisons":
+                ward_obj = Ward.objects.create(
+                    name=data["name"],
+                    number=int(data["code"]),
+                    constituency=Constituency.objects.get(name="Prisons"),
+                )
+            else:
+                ward_obj = Ward.objects.create(
+                    name=data["name"],
+                    number=int(data["code"]),
+                    constituency=Constituency.objects.get(name="Diaspora"),
+                    is_diaspora=True,
+                )
     with open(geojson_file_path, "r") as f:
         data = f.read()
         data = json.loads(data)
@@ -149,6 +224,7 @@ def save_wards_from_geojson_file(geojson_file_path):
                 continue
 
             # get ward if exists
+
             try:
                 ward = Ward.objects.get(number=ward_code, constituency=constituency_obj)
             except Exception as e:
@@ -184,7 +260,6 @@ import os
 from stations.scripts.save_counties_from_geojson  import save_constituencies_from_geojson_file
 src_dir = os.getcwd()
 geojson_file = os.path.join(src_dir,"stations/scripts", "constituencies.geojson")
-
 save_constituencies_from_geojson_file(geojson_file)
 
 # Wards

@@ -5,6 +5,7 @@ django-leaflet
 django-phonenumber-field
 isort
 phonenumbers
+pre-commit
 psycopg2-binary
 pytest
 pytest-black
@@ -12,3 +13,4 @@ pytest-cov
 pytest-django
 pytest-sugar
 python-decouple
+tqdm
