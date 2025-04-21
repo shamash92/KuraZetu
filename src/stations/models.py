@@ -25,6 +25,7 @@ class County(gis_models.Model):
     )  # For Mombasa only
 
     is_diaspora = models.BooleanField(default=False)
+    is_prisons = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -49,6 +50,7 @@ class Constituency(gis_models.Model):
     boundary = gis_models.PolygonField(blank=True, null=True)
     number = models.PositiveIntegerField(unique=True, editable=False)
     is_diaspora = models.BooleanField(default=False)
+    is_prisons = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -67,6 +69,7 @@ class Ward(gis_models.Model):
     )
     number = models.PositiveIntegerField(unique=True, editable=False)
     is_diaspora = models.BooleanField(default=False)
+    is_prisons = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

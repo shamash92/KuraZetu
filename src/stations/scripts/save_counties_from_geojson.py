@@ -14,6 +14,14 @@ def save_counties_from_geojson_file(geojson_file_path):
             name="Diaspora", number=48, is_diaspora=True
         )
 
+    # check if prisons county exists , else create it
+    try:
+        prisons_county = County.objects.get(name="Prisons")
+    except County.DoesNotExist:
+        prisons_county = County.objects.create(
+            name="Prisons", number=49, is_prisons=True
+        )
+
     # read geojson file
     with open(geojson_file_path, "r") as f:
         # assign data to a variable
@@ -91,6 +99,19 @@ def save_constituencies_from_geojson_file(geojson_file_path):
             county=County.objects.get(name="Diaspora"),
         )
 
+    # check if prisons constituency exists , else create it
+    try:
+        prisons_constituency_obj = Constituency.objects.get(name="Prisons")
+        county = County.objects.get(name="Prisons")
+    except Constituency.DoesNotExist:
+        prisons_constituency_obj = Constituency.objects.create(
+            name="Prisons",
+            number=292,
+            is_prisons=True,
+            county=County.objects.get(name="Prisons"),
+            is_diaspora=True,
+        )
+
     # read geojson file
     with open(geojson_file_path, "r") as f:
         # assign data to a variable
@@ -155,18 +176,28 @@ def save_wards_from_geojson_file(geojson_file_path):
         {"name": "United Arab Emirates", "code": "5009"},
         {"name": "Canada", "code": "5010"},
         {"name": "United States of America", "code": "5011"},
+        {"name": "Prisons", "code": "1541"},
     ]
 
     for data in diaspora_data:
         try:
             ward_obj = Ward.objects.get(number=int(data["code"]))
             constituency = Constituency.objects.get(name="Diaspora")
+            constituency_prisons = Constituency.objects.get(name="Prisons")
         except Ward.DoesNotExist:
-            ward_obj = Ward.objects.create(
-                name=data["name"],
-                number=int(data["code"]),
-                constituency=Constituency.objects.get(name="Diaspora"),
-            )
+            if data["name"] == "Prisons":
+                ward_obj = Ward.objects.create(
+                    name=data["name"],
+                    number=int(data["code"]),
+                    constituency=Constituency.objects.get(name="Prisons"),
+                )
+            else:
+                ward_obj = Ward.objects.create(
+                    name=data["name"],
+                    number=int(data["code"]),
+                    constituency=Constituency.objects.get(name="Diaspora"),
+                    is_diaspora=True,
+                )
     with open(geojson_file_path, "r") as f:
         data = f.read()
         data = json.loads(data)
