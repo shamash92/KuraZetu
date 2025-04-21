@@ -51,7 +51,7 @@ This guide assumes you have already set up your django project and run migration
     save_wards_from_geojson_file(geojson_file)
     ```
 
-5. **Convert and load polling station data**
+5. **Convert polling station data**
 
    We first convert the cleaned CSV files to GeoJSON format.
 
@@ -63,6 +63,12 @@ This guide assumes you have already set up your django project and run migration
 
     ```bash
     python stations/scripts/parse_polling_station_data.py
+    ```
+
+6. **Save Polling Center and Polling Station Data
+
+    ```shell
+    python stations/scripts/save_polling_stations.py
     ```
 
 ## Notes

@@ -176,7 +176,7 @@ def save_wards_from_geojson_file(geojson_file_path):
         {"name": "United Arab Emirates", "code": "5009"},
         {"name": "Canada", "code": "5010"},
         {"name": "United States of America", "code": "5011"},
-        {"name": "Prisons", "code": "1541"},
+        {"name": "Prisons", "code": "1451"},
     ]
 
     for data in diaspora_data:
