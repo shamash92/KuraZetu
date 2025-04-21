@@ -75,48 +75,61 @@ class Ward(gis_models.Model):
         return self.name
 
 
-# class PollingStation(gis_models.Model):
-#     code = models.CharField(max_length=8, editable=False, unique=True)
-#     name = models.CharField(max_length=255)
+class PollingCenter(gis_models.Model):
+    class Meta:
+        """Meta definition for PollingCenter."""
 
-#     ward = models.ForeignKey(Ward, on_delete=models.CASCADE)
+        verbose_name = "Polling Center"
+        verbose_name_plural = "Polling Centers"
 
-#     number_of_streams = models.PositiveIntegerField()
+        unique_together = ("code", "ward", "name")
 
-#     pin_location = gis_models.PointField(blank=True, null=True)
-#     is_verified = models.BooleanField(default=False)
-#     verified_by = models.ForeignKey(
-#         User,
-#         on_delete=models.SET_NULL,
-#         null=True,
-#         blank=True,
-#     )
+    code = models.CharField(max_length=8, editable=False)
+    name = models.CharField(max_length=255)
 
-#     def __str__(self):
-#         return str(self.name)
+    ward = models.ForeignKey(Ward, on_delete=models.CASCADE)
+
+    number_of_streams = models.PositiveIntegerField(default=1)
+
+    pin_location = gis_models.PointField(blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
+    verified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return str(self.name)
 
 
-# class PollingStationStream(models.Model):
-#     polling_station = models.ForeignKey(
-#         PollingStation, on_delete=models.CASCADE, related_name="streams"
-#     )
-#     name = models.CharField(
-#         max_length=255,
-#     )
-#     stream_number = models.PositiveIntegerField()
+class PollingStation(models.Model):
+    class Meta:
+        """Meta definition for PollingStation."""
 
-#     code = models.CharField(max_length=30, editable=False, unique=True)
-#     registered_voters = models.PositiveIntegerField()
+        verbose_name = "Polling Station"
+        verbose_name_plural = "Polling Stations"
+        unique_together = ("polling_center", "code")
 
-#     date_created = models.DateTimeField(auto_now_add=True)
-#     date_modified = models.DateTimeField(auto_now=True)
-#     is_verified = models.BooleanField(default=False)
-#     verified_by = models.ForeignKey(
-#         User,
-#         on_delete=models.SET_NULL,
-#         null=True,
-#         blank=True,
-#     )
+    polling_center = models.ForeignKey(
+        PollingCenter, on_delete=models.CASCADE, related_name="streams"
+    )
 
-#     def __str__(self):
-#         return f"{self.polling_station} - Stream {self.stream_number}"
+    stream_number = models.PositiveIntegerField(blank=True, null=True)
+
+    code = models.CharField(max_length=30, editable=False, unique=True)
+    registered_voters = models.PositiveIntegerField()
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
+    is_verified = models.BooleanField(default=False)
+    verified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"{self.polling_center} - Stream {self.stream_number}"
