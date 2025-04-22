@@ -42,6 +42,7 @@ class PollingCenterAdmin(LeafletGeoAdmin):
         "name",
         "code",
         "number_of_streams",
+        "is_verified",
         "ward",
         "ward__constituency",
         "ward__constituency__county",
@@ -52,7 +53,7 @@ class PollingCenterAdmin(LeafletGeoAdmin):
         "ward__constituency__county__name",
         "ward__constituency__name",
     )
-    list_filter = ("ward__constituency",)
+    list_filter = ("is_verified", "ward__constituency__county", "ward__constituency")
     ordering = ("ward__constituency__county",)
 
 
