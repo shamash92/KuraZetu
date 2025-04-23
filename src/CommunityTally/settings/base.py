@@ -35,7 +35,7 @@ DEFAULT_APPS = [
 
 THIRD_PARTY_APPS = ["corsheaders", "leaflet"]
 
-MY_APPS = ["accounts", "stations"]
+MY_APPS = ["accounts", "stations", "ui"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 
