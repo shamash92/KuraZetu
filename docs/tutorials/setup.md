@@ -16,13 +16,14 @@ Ensure you have the following installed:
 - PostgreSQL (>= 14) with PostGIS extension
 - Git
 
-## Setup Instructions
+## Setup Instructions (Django Backend)
 
 ### 1. Clone the Repository
 
 ```{warning}
 Ensure you are using an anonymous GitHub account to clone the repository. **This is crucial for your safety and privacy !**
-> Start here:  [how to create an anonymous GitHub account](../how-to-guides/anonymous_github.md).
+
+Start here:  [how to create an anonymous GitHub account](../how-to-guides/anonymous_github.md).
 ```
 
 ```bash
@@ -37,7 +38,7 @@ Create a virtual environment and install the required Python packages:
 ```bash
 cd src/
 python -m venv venv
-source venv/bin/activate 
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -49,7 +50,7 @@ NB: This project is built and tested with Postgres 16. Previous versions of the
 ```bash
 sudo apt update
 sudo apt-get update
-sudo apt-get install libpq-dev postgresql postgresql-contrib 
+sudo apt-get install libpq-dev postgresql postgresql-contrib
 sudo apt install postgis postgresql-16-postgis-3 postgresql-16-postgis-3-scripts postgresql-client-16 #replace '16' with your postgres version
 ```
 
@@ -179,3 +180,37 @@ Follow the prompts to set up the superuser account.
 This step is optional but recommended for testing purposes. You can load administrative boundaries data (Counties, Constituencies, and Wards) into your system using the Django `manage.py shell`. The necessary geojson data and the scripts to save them are already provided in the `stations/scripts` directory.
 
 > See the [Load Administrative Boundaries Data](../how-to-guides/load_boundaries_data.md) guide for detailed instructions.
+
+---
+
+### Run the backend server
+
+```bash
+python manage.py runserver 0.0.0.0:8000
+```
+
+## Frontend (React + Webpack)
+
+```{important}
+Running the frontend does not open any ports e.g 3000. It only enables webpack to build a bundle on code change and hot reload to help with development. The bundle is injected inside a django template and django serves all the consecutive react-router links under the /ui/ paths.
+```
+
+Open a new terminal to run the following commands parallel to the backend commands
+
+1. Navigate to the frontend directory:
+
+   ```bash
+   cd src/ui
+   ```
+
+2. Install frontend dependencies:
+
+   ```bash
+   yarn install
+   ```
+
+3. Run the frontend development server:
+
+   ```bash
+   yarn run dev
+   ```
