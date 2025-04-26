@@ -33,13 +33,22 @@ DEFAULT_APPS = [
     "django.contrib.humanize",
 ]
 
-THIRD_PARTY_APPS = ["corsheaders", "leaflet"]
+THIRD_PARTY_APPS = [
+    "corsheaders",
+    "leaflet",
+    "tailwind",
+    "theme",
+    "django_browser_reload",
+]
 
 MY_APPS = ["accounts", "stations", "ui"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 
 SITE_ID = 1
+
+TAILWIND_APP_NAME = "theme"
+
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -53,6 +62,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_browser_reload.middleware.BrowserReloadMiddleware",
 ]
 
 ROOT_URLCONF = "CommunityTally.urls"

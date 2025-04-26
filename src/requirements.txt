@@ -1,8 +1,12 @@
+
 black
 django
+django-browser-reload
 django-cors-headers
 django-leaflet
 django-phonenumber-field
+django-tailwind
+django_browser_reload
 isort
 phonenumbers
 pre-commit

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-
+{% load static %}
+{% load tailwind_tags %}
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -8,9 +9,12 @@
     {% block title %}
       <title>Community Tally</title>
     {% endblock %}
+
     {% block head %}
 
     {% endblock %}
+
+    {% tailwind_css %}
   </head>
   <body class="">
     <div class="">
