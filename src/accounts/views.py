@@ -1,8 +1,6 @@
 import json
 import os
 
-import requests
-from decouple import config
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,7 +11,9 @@ from django.views import generic
 from django.views.generic import TemplateView
 from django.views.generic.base import TemplateView
 from django.views.generic.edit import CreateView, UpdateView
-from rest_framework.response import Response
+
+import requests
+from decouple import config
 
 from accounts.forms import (
     LoginForm,
@@ -24,6 +24,10 @@ from accounts.forms import (
 from accounts.models import User
 
 BASE_DIR = os.path.dirname((os.path.dirname(os.path.abspath(__file__))))
+
+
+def home_view(request):
+    return redirect("/ui/")
 
 
 def get_js_bundle():
