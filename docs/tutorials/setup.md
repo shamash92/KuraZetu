@@ -189,6 +189,24 @@ This step is optional but recommended for testing purposes. You can load adminis
 python manage.py runserver 0.0.0.0:8000
 ```
 
+## Setup Tailwind CSS
+
+In a new terminal, run the following commands to set up Tailwind CSS for styling.
+
+```{important}
+This is only needed for the first time you run the project. After that, you can skip this step.
+```
+
+```bash
+python manage.py tailwind install
+```
+
+The following command will start the tailwind server and watch for changes in the CSS files. This is needed for development purposes. Note that this command will not open any ports. It will only watch for changes in the CSS files and rebuild the CSS bundle.
+
+```bash
+python manage.py tailwind start
+```
+
 ## Frontend (React + Webpack)
 
 ```{important}
