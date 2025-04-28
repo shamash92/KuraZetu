@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /docs
+
+# Install dependencies
+RUN apt-get update && apt-get install -y make && rm -rf /var/lib/apt/lists/*
+
+# Install Sphinx
+# RUN pip install sphinx sphinx_rtd_themesssss
+
+# Copy docs folder (optional, docker-compose already mounts it)
+COPY docs/ .
+
+# Default command
+CMD ["make", "clean-doc", "&&", "make", "run"]

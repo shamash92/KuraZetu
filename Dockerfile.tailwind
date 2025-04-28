@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY src/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ .
+RUN python manage.py tailwind install
+
+ENTRYPOINT ["python", "manage.py", "tailwind", "start"]
