@@ -21,7 +21,12 @@ Community Tally aims to solve this by:
 - Providing a **live, transparent tally dashboard**
 - Creating a **"Community Notes"** system where users can flag suspected fraud, misinformation, or conflicting results
 
+
+
 ## 💡 What This Project Is
+![timeline](https://github.com/user-attachments/assets/e2bf626c-1624-4d9d-991e-2eaee51259b4)
+
+
 
 - ✅ A **citizen-driven platform** to increase transparency and accountability  
 - ✅ An **open-source system** built for collaboration  
