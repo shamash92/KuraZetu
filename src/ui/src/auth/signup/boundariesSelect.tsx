@@ -1,22 +1,32 @@
 import { GeoJSON, Popup } from 'react-leaflet';
+import {
+  IConstituencyBoundary,
+  ICountyBoundary,
+  IPollingCenterLocation,
+  IWardBoundary
+} from '../../types/boundaries';
+import L, { LatLng, LatLngBounds } from 'leaflet';
 import React, { useEffect, useState } from 'react';
 
-import L from 'leaflet';
-import { MapContainer } from 'react-leaflet/MapContainer';
-import { TileLayer } from 'react-leaflet/TileLayer';
-import { useMap } from 'react-leaflet/hooks';
+import { MapContainer } from 'react-leaflet';
+import { TileLayer } from 'react-leaflet';
+import { useMap } from 'react-leaflet';
 
 function CountySelect() {
   const [activePolygon, setActivePolygon] = useState<number | string | null>(
     null
   );
-  const [counties, setCounties] = useState([]);
-  const [constituencies, setConstituencies] = useState([]);
-  const [wards, setWards] = useState([]);
-  const [pollingCenters, setPollingCenters] = useState([]);
+  const [counties, setCounties] = useState<ICountyBoundary[]>([]);
+  const [constituencies, setConstituencies] = useState<IConstituencyBoundary[]>(
+    []
+  );
+  const [wards, setWards] = useState<IWardBoundary[]>([]);
+  const [pollingCenters, setPollingCenters] = useState<
+    IPollingCenterLocation[]
+  >([]);
 
-  const [bounds, setBounds] = useState(null);
-  const [mapInstance, setMapInstance] = useState(null);
+  const [bounds, setBounds] = useState<LatLngBounds | null>(null);
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
   const [selectedCounty, setSelectedCounty] = useState(null);
   const [selectedConstituency, setSelectedConstituency] = useState(null);
@@ -232,7 +242,6 @@ function CountySelect() {
                 height='908.438'
                 viewBox='0 0 945.001 908.438'
                 role='img'
-                source='https://undraw.co/'
                 className='w-full'
               >
                 <g
@@ -660,7 +669,7 @@ function CountySelect() {
                 style={{ height: '100%', width: '100%' }}
                 bounds={bounds}
                 maxBounds={bounds}
-                whenReady={handleMapReady}
+                whenReady={() => handleMapReady(mapInstance)}
               >
                 <FitBoundsMap />
                 <TileLayer url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
