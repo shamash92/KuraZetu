@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
+
+{% block head %}
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+{% endblock %}
+
 {% block content %}
+  <script>
+    const user = '{{ user|safe }}'
+    const csrfToken = '{{ csrf_token }}'
+    const apiUrl = '{{ api_url }}'
+    const isAuthenticated = '{{ user.is_authenticated|lower }}'
+  </script>
   <div id="root"></div>
 
   <script src="{% static 'ui' %}{{ js_bundle }}"></script>
