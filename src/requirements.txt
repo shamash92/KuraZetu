@@ -1,9 +1,17 @@
+
 black
+crispy-tailwind
 django
+django_browser_reload
+django-browser-reload
 django-cors-headers
 django-leaflet
 django-phonenumber-field
+django-tailwind
+djangorestframework
+djangorestframework_gis
 isort
+markdown
 phonenumbers
 pre-commit
 psycopg2-binary
