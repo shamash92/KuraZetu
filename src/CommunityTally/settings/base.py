@@ -38,6 +38,11 @@ THIRD_PARTY_APPS = [
     "leaflet",
     "tailwind",
     "theme",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "rest_framework_gis",
+    "crispy_forms",
+    "crispy_tailwind",
     "django_browser_reload",
 ]
 
@@ -48,6 +53,9 @@ INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 SITE_ID = 1
 
 TAILWIND_APP_NAME = "theme"
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
 
 
 AUTH_USER_MODEL = "accounts.User"
@@ -149,6 +157,11 @@ FILE_UPLOAD_HANDLERS = [
     "django.core.files.uploadhandler.MemoryFileUploadHandler",
     "django.core.files.uploadhandler.TemporaryFileUploadHandler",
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # 'PAGE_SIZE': 50,
+}
 
 
 # max upload size 20gb

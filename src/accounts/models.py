@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
+
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -65,6 +66,14 @@ class User(AbstractBaseUser):
 
     first_name = models.CharField(max_length=20, blank=True, null=True)
     last_name = models.CharField(max_length=20, blank=True, null=True)
+
+    polling_center = models.ForeignKey(
+        "stations.PollingCenter",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="polling_center",
+    )
 
     is_verified = models.BooleanField(default=False)
 

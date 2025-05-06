@@ -23,7 +23,7 @@ const contributors = [
 
 export function ContributorSection() {
   return (
-    <div className=' bg-gray-50 sm:py-8'>
+    <div id='contribute' className=' bg-gray-50 sm:py-8'>
       <div className='px-6 mx-auto max-w-7xl lg:px-8'>
         <div className='max-w-2xl mx-auto text-center'>
           <h2 className='text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl'>

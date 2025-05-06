@@ -4,7 +4,7 @@ import { Shield } from 'lucide-react';
 
 export function Disclaimer() {
   return (
-    <div className='px-6 mx-auto max-w-7xl lg:px-8'>
+    <div className='px-6 mx-auto mt-2 max-w-7xl lg:px-8'>
       <Alert className='border-red-200 bg-red-50'>
         <Shield className='w-5 h-5 text-red-600' />
         <AlertTitle className='font-semibold text-red-600 text-md'>
