@@ -20,15 +20,20 @@ export function Hero() {
         </div>
 
         <div className='flex items-center justify-center pb-2 mt-8 gap-x-6'>
-          <Button
-            asChild
-            className='bg-[#008751] hover:bg-[#006B40] z-[9999999] text-white'
-          >
+          <Button variant='outline'>
             <a href='https://community-tally.readthedocs.io/' className=''>
-              Get started (Docs) <ArrowRight className='w-4 h-4 ml-2' />
+              Get started (Docs)
             </a>
           </Button>
-          <Button variant='outline'>Login/Signup</Button>
+          <Button
+            className='bg-[#008751] hover:bg-[#006B40] z-[9999999] text-white'
+            onClick={() => {
+              window.location.href = '/ui/signup/';
+            }}
+          >
+            Login/Signup
+            <ArrowRight className='w-4 h-4 mr-2' />
+          </Button>
         </div>
       </div>
       {/* <div className='absolute inset-0 flex bg-gradient-to-br from-green-50 to-red-50 opacity-30' /> */}

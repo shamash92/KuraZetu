@@ -2,14 +2,30 @@ import { ContributorSection } from './contributors';
 import { Disclaimer } from './Disclaimer';
 import { Features } from './features';
 import { Hero } from './hero';
+import NavComponent from './nav';
 import React from 'react';
+import WhyComponent from './why';
+import { useAuth } from '../App';
+import UserDashBoard from '../dashboards/user';
 
 function LandingPage() {
+  const isAuthenticated = useAuth();
+
+  if (isAuthenticated) {
+    return (
+      <div>
+        <UserDashBoard />
+      </div>
+    );
+  }
+
   return (
     <div className='flex flex-col w-full pt-2'>
+      <NavComponent />
       <Disclaimer />
       <Hero />
       <Features />
+      <WhyComponent />
       <ContributorSection />
     </div>
   );
