@@ -22,5 +22,5 @@
   "paths": {
     "@/*": ["./*"]
   },
-  "include": ["src/index.jsx"]
+  "include": ["src/**/*"]
 }
