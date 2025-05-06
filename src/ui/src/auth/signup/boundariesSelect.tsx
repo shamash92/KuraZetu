@@ -194,7 +194,7 @@ function CountySelect() {
       {activePolygon == null ? (
         <div className='flex flex-col items-center justify-center w-full h-screen'>
           <button className='px-12 py-4 mb-12 text-2xl font-medium text-white bg-gray-800 rounded shadow'>
-            <a href='/ui/login/'>Login</a>
+            <a href='/accounts/login/'>Login</a>
           </button>
           <button
             onClick={() => {
