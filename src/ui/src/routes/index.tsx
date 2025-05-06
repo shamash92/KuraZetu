@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import LandingPage from '../landing-pages';
@@ -6,6 +6,7 @@ import RegistrationSuccessPage from '../auth/signup/RegistrationSuccess';
 import SignupComponent from '../auth/signup/index';
 import SignupForm from '../auth/signup/signupForm';
 import UserDashBoard from '../dashboards/user';
+import { useAuth } from '../App';
 
 export function NotFound() {
   return (
@@ -25,34 +26,13 @@ export function NotFound() {
 }
 
 function RoutesApp() {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-
-  useEffect(() => {
-    let djangoAuth = { isAuthenticated }; // this comes from the django html template inside the script tag
-
-    console.log(djangoAuth, 'djangoAuth');
-    console.log(
-      djangoAuth['isAuthenticated'] === 'true',
-      'isAuthenticated true string'
-    );
-
-    console.log(
-      djangoAuth['isAuthenticated'] === 'false',
-      'isAuthenticated false string'
-    );
-
-    if (djangoAuth['isAuthenticated'] === 'true') {
-      setIsLoggedIn(true);
-    } else {
-      setIsLoggedIn(false);
-    }
-  }, []);
+  const isAuthenticated = useAuth();
 
   return (
     <Routes>
       <Route path='/ui/' element={<LandingPage />} />
 
-      {isLoggedIn ? (
+      {isAuthenticated ? (
         <>
           <Route path='/ui/dashboards/user/' element={<UserDashBoard />} />
         </>

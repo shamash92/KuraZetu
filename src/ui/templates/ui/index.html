@@ -8,10 +8,8 @@
 
 {% block content %}
   <script>
-    const user = '{{ user|safe }}'
-    const csrfToken = '{{ csrf_token }}'
-    const apiUrl = '{{ api_url }}'
-    const isAuthenticated = '{{ user.is_authenticated|lower }}'
+    window.djangoAuthenticated = '{{ user.is_authenticated|lower }}'
+    window.user = '{{ user|safe }}'
   </script>
   <div id="root"></div>
 
