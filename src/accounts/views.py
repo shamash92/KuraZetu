@@ -16,10 +16,14 @@ def home_view(request):
 
 
 class LoginView(generic.FormView):
-    # form_class = AuthenticationForm
     form_class = LoginForm
     success_url = "/"
     template_name = "accounts/login.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("/accounts/already-logged-in/")
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         print("form validation in views")
@@ -54,12 +58,9 @@ class PasswordResetView(generic.FormView):
     template_name = "accounts/password_reset.html"
 
     def form_valid(self, form):
-        # This method is called when valid form data has been POSTed.
-        # It should return an HttpResponse.
+        # TODO: How do we confirm the phone number first via OTP?
 
-        # get  data from form
-        # print(dir(form))
-        # print((form.cleaned_data))
+        # This method is called when valid form data has been POSTed.
 
         phone_number = form.cleaned_data.get("phone_number")
         password = form.cleaned_data.get("password")
@@ -76,3 +77,7 @@ class PasswordResetView(generic.FormView):
         except Exception as e:
             print(e)
         return super().form_valid(form)
+
+
+class AlreadyLoggedInView(generic.TemplateView):
+    template_name = "accounts/already-loggedin.html"
