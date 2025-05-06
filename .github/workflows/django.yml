@@ -1,4 +1,4 @@
-name: Community Tally Django CI
+name: Backend tests
 
 on:
   push:
@@ -55,7 +55,7 @@ jobs:
           pip install \
             --find-links https://girder.github.io/large_image_wheels \
             django-large-image \
-            'large-image[gdal,pil]>=1.16.2' 
+            'large-image[gdal,pil]>=1.16.2'
           pip install git+https://github.com/dmpayton/django-admin-honeypot.git@develop
           pip install -r requirements.txt
       - name: Run Tests

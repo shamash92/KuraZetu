@@ -1,5 +1,5 @@
 #
-name: Automatic doc checks
+name: Docs checks
 
 on:
   push:
