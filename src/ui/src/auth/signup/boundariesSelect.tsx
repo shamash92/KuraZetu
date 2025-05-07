@@ -16,7 +16,7 @@ function CountySelect() {
   const [activePolygon, setActivePolygon] = useState<number | string | null>(
     null
   );
-  const [counties, setCounties] = useState<ICountyBoundary[]>([]);
+  const [counties, setCounties] = useState<ICountyBoundary[] | null>(null);
   const [constituencies, setConstituencies] = useState<IConstituencyBoundary[]>(
     []
   );
@@ -99,7 +99,7 @@ function CountySelect() {
     console.log('useEffect to call counties');
 
     //  this re-renders if counties is zero
-    if (counties.length <= 0) {
+    if (counties === null || counties.length <= 0) {
       fetch('/api/stations/counties/boundaries/', {
         method: 'GET'
       })
@@ -107,7 +107,9 @@ function CountySelect() {
         .then((data) => {
           console.log(data, 'data');
 
-          setCounties(data.features);
+          if (data.features.length > 0) {
+            setCounties(data.features);
+          }
           try {
             if (data.features.length > 0) {
               const mapBounds = L.geoJSON(data.features).getBounds();
@@ -267,7 +269,12 @@ function CountySelect() {
   if (counties === null || counties.length === 0) {
     return (
       <div className='flex flex-col items-center justify-center w-full h-screen'>
-        <p>Loading Counties</p>
+        <p>Loading Counties ... </p>
+
+        <p className='mt-12 text-sm text-center text-red-500'>
+          (For Developers): If this issue persists, kindly ensure you have run
+          scripts to load counties
+        </p>
       </div>
     );
   }
