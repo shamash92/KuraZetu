@@ -45,13 +45,26 @@ pip install -r requirements.txt
 ### Install System Dependencies
 
 Before proceeding, install the required system dependencies for PostgreSQL, PostGIS, and GeoDjango:
-NB: This project is built and tested with Postgres 16. Previous versions of the
+NB: This project is built and tested with Postgres 14.
 
 ```bash
+
 sudo apt update
-sudo apt-get update
-sudo apt-get install libpq-dev postgresql postgresql-contrib
-sudo apt install postgis postgresql-16-postgis-3 postgresql-16-postgis-3-scripts postgresql-client-16 #replace '16' with your postgres version
+
+sudo apt install -y wget gnupg lsb-release
+
+# Import PostgreSQL signing key
+wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+# Add PostgreSQL 14 repo
+echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | \
+  sudo tee /etc/apt/sources.list.d/pgdg.list
+
+
+
+sudo apt-get install libpq-dev postgresql-14
+
+sudo apt install postgis postgresql-14-postgis-3 postgresql-14-postgis-3-scripts postgresql-client-14
 ```
 
 ### Enable and start Postgres
@@ -135,7 +148,6 @@ Edit the `.env` file to configure your environment-specific settings.
         sudo -i -u postgres;
         CREATE DATABASE community_test_db;
         CREATE USER test_admin WITH PASSWORD 'community_password';
-        CREATE DATABASE community_tally_test WITH TEMPLATE community_tally;
         ALTER USER test_admin CREATEDB;
         ALTER USER test_admin WITH SUPERUSER;
 
@@ -151,7 +163,6 @@ Edit the `.env` file to configure your environment-specific settings.
 Run the following commands to apply database migrations:
 
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 ```
 

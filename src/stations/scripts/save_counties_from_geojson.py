@@ -45,7 +45,7 @@ def save_counties_from_geojson_file(geojson_file_path):
             try:
                 county = County.objects.get(name__icontains=county_name)
             except County.DoesNotExist:
-                print("county does not exist")
+                print(f"{county_name} county does not exist, creating it .... ")
                 county = County.objects.create(name=county_name, number=county_number)
 
             if county.name.lower() == "mombasa":
