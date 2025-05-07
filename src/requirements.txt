@@ -1,24 +1,26 @@
 
+
 black
 crispy-tailwind
-django
+django == 5.2.1
 django_browser_reload
 django-browser-reload
 django-cors-headers
 django-leaflet
 django-phonenumber-field
 django-tailwind
-djangorestframework
+djangorestframework == 3.15.2
 djangorestframework_gis
 isort
 markdown
 phonenumbers
 pre-commit
 psycopg2-binary
-pytest
+pytest == 8.3.5
 pytest-black
 pytest-cov
 pytest-django
 pytest-sugar
 python-decouple
+requests
 tqdm
