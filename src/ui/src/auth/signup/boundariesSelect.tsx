@@ -550,10 +550,10 @@ function CountySelect() {
         <div className='flex flex-col-reverse justify-start w-full md:flex-row md:justify-between'>
           {/* List */}
           <div className='flex flex-col items-center justify-center w-full bg-[#f3efe9] md:h-full h-[50vh] md:w-4/12 '>
-            <div className='flex-col justify-center w-full px-8 py-4 text-center border-2'>
-              <span className='font-sans text-xl font-bold leading-none tracking-wider text-center text-gray-900 md:tracking-wide md:text-2xl'>
-                <span>Select your home</span>
-                <span className='relative inline-block pl-2 mx-1 text-green-500 stroke-current'>
+            <div className='flex-col justify-center w-full px-8 py-4 text-center '>
+              <h2 className='text-xl font-bold text-center text-gray-900 md:text-2xl'>
+                Select your home{' '}
+                <span className='text-green-500'>
                   {selectedWard
                     ? 'Polling Center'
                     : selectedConstituency
@@ -562,9 +562,9 @@ function CountySelect() {
                     ? 'Constituency'
                     : 'County'}
                 </span>
-              </span>
+              </h2>
             </div>
-            <div className='flex w-full p-4 pb-4 overflow-y-scroll bg-white md:w-10/12 rounded-2xl md:h-[80vh] h-[50vh] ring-2'>
+            <div className='flex w-full p-4 pb-4 overflow-y-scroll bg-gray-100 md:w-10/12 rounded-lg md:h-[80vh] h-[50vh] ring-2 ring-gray-300 shadow-md'>
               <div className='w-full h-auto pb-6 '>
                 {counties !== null &&
                 counties.length > 0 &&
@@ -572,22 +572,22 @@ function CountySelect() {
                   ? counties.map((county) => (
                       <a
                         key={county.id}
-                        className={` flex flex-row items-center justify-between my-2 bg-gray-50 py-2 pl-2 rounded-md text-blue-600 ${
+                        className={`flex flex-row items-center justify-between my-2 bg-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-50 transition duration-200 ${
                           activePolygon === county.properties.number
-                            ? 'active'
-                            : ''
+                            ? 'border-2 border-blue-500'
+                            : 'border border-gray-300'
                         }`}
                         onClick={() =>
                           handlePolygonClick(county.properties.number)
                         }
                       >
-                        <p className='font-semibold tracking-wider'>
+                        <p className='font-semibold tracking-wide text-gray-800'>
                           {county.properties.name}
                         </p>
 
                         {activePolygon === county.properties.number ? (
                           <button
-                            className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
+                            className='flex flex-row items-center px-3 py-1 text-white transition duration-200 bg-blue-500 rounded-full shadow hover:bg-blue-600'
                             onClick={() =>
                               handleCountySelect(activePolygon, 'county')
                             }
@@ -599,7 +599,7 @@ function CountySelect() {
                               viewBox='0 0 24 24'
                               strokeWidth='1.5'
                               stroke='currentColor'
-                              className='w-6 h-6'
+                              className='w-5 h-5'
                             >
                               <path
                                 strokeLinecap='round'
@@ -763,7 +763,7 @@ function CountySelect() {
             {bounds ? (
               <MapContainer
                 center={[0, 37]}
-                zoom={6}
+                zoom={7}
                 style={{ height: '100%', width: '100%' }}
                 bounds={bounds}
                 maxBounds={bounds}
