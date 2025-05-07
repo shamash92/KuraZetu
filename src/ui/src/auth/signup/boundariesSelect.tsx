@@ -1,5 +1,5 @@
-import { GeoJSON, Popup } from 'react-leaflet';
-import {
+import { GeoJSON, Marker, Popup } from 'react-leaflet';
+import type {
   IConstituencyBoundary,
   ICountyBoundary,
   IPollingCenterLocation,
@@ -26,14 +26,27 @@ function CountySelect() {
   >([]);
 
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
+  const [wardBounds, setWardBounds] = useState<LatLngBounds | null>(null);
+
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
-  const [selectedCounty, setSelectedCounty] = useState(null);
-  const [selectedConstituency, setSelectedConstituency] = useState(null);
-  const [selectedWard, setSelectedWard] = useState(null);
+  const [selectedCounty, setSelectedCounty] = useState<number | null>(null);
+  const [selectedConstituency, setSelectedConstituency] = useState<
+    number | null
+  >(null);
+  const [selectedWard, setSelectedWard] = useState<number | null>(null);
 
-  const [selectedPollingCenter, setSelectedPollingCenter] =
-    React.useState(null);
+  const [selectedPollingCenter, setSelectedPollingCenter] = useState<
+    string | null
+  >(null);
+
+  const [pollingCenterErrorMessage, setPollingCenterErrorMessage] = useState<
+    string | null
+  >(null);
+
+  const [tileLayerProvider, setTileLayerProvider] = useState<
+    'Google' | 'OpenStreetMap'
+  >('OpenStreetMap');
 
   const fetchConstituencies = async () => {
     console.log('getting constituencies data');
@@ -71,8 +84,8 @@ function CountySelect() {
       });
   };
 
-  const fetchPollingCenters = async () => {
-    fetch(`/api/stations/wards/${activePolygon}/polling-centers/pins/`, {
+  const fetchPollingCenters = async (wardNumber: number) => {
+    fetch(`/api/stations/wards/${wardNumber}/polling-centers/pins/`, {
       method: 'GET'
     })
       .then((res) => res.json())
@@ -129,7 +142,10 @@ function CountySelect() {
     return null;
   };
 
-  const handleCountySelect = async (name) => {
+  const handleCountySelect = async (
+    name: number,
+    level: 'county' | 'constituency'
+  ) => {
     console.log(name, 'name');
 
     console.log(selectedCounty, 'selectedCounty');
@@ -160,21 +176,88 @@ function CountySelect() {
       setSelectedWard(null);
       setSelectedPollingCenter(null);
       const data = await fetchWards();
-    } else if (
-      selectedCounty &&
-      selectedConstituency &&
-      selectedWard === null
-    ) {
-      console.log(`third`);
-
-      setSelectedWard(name);
-      setSelectedPollingCenter(null);
-      const data = await fetchPollingCenters();
     } else {
-      console.log(`fourth`);
-
-      setSelectedPollingCenter(name);
+      console.log(`we shouldn't get here`);
     }
+  };
+
+  const handleWardSelect = async (ward: IWardBoundary) => {
+    console.log(`third`);
+
+    setSelectedWard(ward.properties.number);
+
+    setSelectedPollingCenter(null);
+    const data = await fetchPollingCenters(ward.properties.number);
+
+    let geometry = ward.geometry;
+
+    console.log(geometry, 'pin location geometry');
+
+    // TODO: Technically we shouldn't have a null geometry or undefined
+    if (geometry !== null && geometry !== undefined) {
+      console.log('ward is here');
+
+      // get map bounds form the polygon geometry
+      const mapBounds = L.geoJSON(geometry).getBounds();
+
+      console.log(mapBounds, 'ward mapBounds');
+
+      if (mapBounds.isValid()) {
+        console.log('mapBounds is valid');
+        setBounds(mapBounds);
+        setWardBounds(mapBounds);
+      } else {
+        setBounds(null);
+        setWardBounds(null);
+      }
+    }
+  };
+
+  const handlePollingCenterZoom = async (
+    polling_center: IPollingCenterLocation
+  ) => {
+    let geometry = polling_center.geometry;
+
+    console.log(geometry, 'pin location geometry');
+    if (geometry !== null && geometry.coordinates[0] !== 0) {
+      setPollingCenterErrorMessage(null);
+      setTileLayerProvider('Google');
+      console.log('geometry is here');
+      console.log(geometry.coordinates, 'geometry coordinates');
+      console.log(geometry.coordinates[0], 'geometry coordinates 0');
+      const latLng = new LatLng(
+        geometry.coordinates[1],
+        geometry.coordinates[0]
+      );
+
+      console.log(latLng, 'latLng');
+
+      const mapBounds = L.latLngBounds(latLng, latLng);
+
+      console.log(mapBounds, 'mapBounds');
+      setBounds(mapBounds.isValid() ? mapBounds : null);
+
+      // console.log(mapInstance, 'mapInstance');
+
+      // mapInstance?.flyTo(latLng, 6);
+    } else {
+      // This is to reset the zoom and bounds back to the ward if the pin location is not present
+      console.log('geometry is null');
+      setPollingCenterErrorMessage('Polling center location not found');
+      setTileLayerProvider('OpenStreetMap');
+      setBounds(wardBounds);
+    }
+  };
+
+  const handlePollingCenterSelect = async (
+    code: string,
+    level: 'polling_center'
+  ) => {
+    console.log(code, 'polling station code');
+
+    console.log(`fourth`);
+
+    setSelectedPollingCenter(code);
   };
 
   const handleMapReady = (map) => {
@@ -505,7 +588,9 @@ function CountySelect() {
                         {activePolygon === county.properties.number ? (
                           <button
                             className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            onClick={() =>
+                              handleCountySelect(activePolygon, 'county')
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -548,7 +633,9 @@ function CountySelect() {
                         {activePolygon === constituency.properties.number ? (
                           <button
                             className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            onClick={() =>
+                              handleCountySelect(activePolygon, 'constituency')
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -591,7 +678,11 @@ function CountySelect() {
                         {activePolygon === ward.properties.number ? (
                           <button
                             className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            onClick={() =>
+                              // handleCountySelect(activePolygon, 'ward')
+
+                              handleWardSelect(ward)
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -623,9 +714,10 @@ function CountySelect() {
                             ? 'active'
                             : ''
                         }`}
-                        onClick={() =>
-                          handlePolygonClick(pollingCenter.properties.code)
-                        }
+                        onClick={() => {
+                          handlePolygonClick(pollingCenter.properties.code);
+                          handlePollingCenterZoom(pollingCenter);
+                        }}
                       >
                         <p className='font-semibold tracking-wider'>
                           {pollingCenter.properties.name}
@@ -634,7 +726,13 @@ function CountySelect() {
                         {activePolygon === pollingCenter.properties.code ? (
                           <button
                             className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            onClick={() =>
+                              // handleCountySelect(activePolygon, 'pollingCenter')
+                              handlePollingCenterSelect(
+                                activePolygon,
+                                'polling_center'
+                              )
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -672,7 +770,19 @@ function CountySelect() {
                 whenReady={() => handleMapReady(mapInstance)}
               >
                 <FitBoundsMap />
-                <TileLayer url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
+
+                {tileLayerProvider === 'Google' ? (
+                  <TileLayer
+                    url='http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+                    attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+                  />
+                ) : (
+                  <TileLayer
+                    url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                )}
+
                 {counties.length > 0 &&
                 selectedCounty === null &&
                 selectedConstituency === null &&
@@ -693,6 +803,7 @@ function CountySelect() {
                       />
                     ))
                   : null}
+
                 {constituencies &&
                   selectedCounty !== null &&
                   selectedConstituency === null &&
@@ -718,7 +829,6 @@ function CountySelect() {
                       }}
                     />
                   ))}
-
                 {wards &&
                   selectedConstituency !== null &&
                   selectedCounty !== null &&
@@ -738,14 +848,44 @@ function CountySelect() {
                       })}
                     />
                   ))}
-
                 {pollingCenters &&
                   selectedWard !== null &&
                   selectedConstituency !== null &&
                   selectedCounty !== null &&
-                  pollingCenters.map((pollingCenter) => (
-                    <GeoJSON key={pollingCenter.id} data={pollingCenter} />
-                  ))}
+                  pollingCenters.map((pollingCenter) => {
+                    return pollingCenter.geometry !== null ? (
+                      <Marker
+                        key={pollingCenter.id}
+                        position={[
+                          pollingCenter.geometry.coordinates[1],
+                          pollingCenter.geometry.coordinates[0]
+                        ]}
+                        icon={L.icon({
+                          iconUrl:
+                            'https://cdn-icons-png.flaticon.com/512/684/684908.png', // URL to a pin icon
+                          iconSize: [25, 25], // Size of the icon
+                          iconAnchor: [12, 41], // Anchor point of the icon
+                          popupAnchor: [0, -41] // Position of the popup relative to the icon
+                        })}
+                        eventHandlers={{
+                          click: () => {
+                            handlePolygonClick(pollingCenter.properties.code);
+                          }
+                        }}
+                      >
+                        <Popup>
+                          <p>{pollingCenter.properties.name}</p>
+                          <p>{pollingCenter.properties.code}</p>
+                        </Popup>
+                      </Marker>
+                    ) : null;
+                  })}
+
+                {pollingCenterErrorMessage && (
+                  <div className=' absolute z-[99999] p-4 w-1/2 text-white bg-red-500 rounded shadow-lg top-4 left-12'>
+                    <p>{pollingCenterErrorMessage}</p>
+                  </div>
+                )}
               </MapContainer>
             ) : (
               <div className='flex flex-col items-center justify-center h-full'>
