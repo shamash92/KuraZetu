@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tailwind_filters %}
+{% block content %}
+  <div class="flex flex-col items-center justify-start min-h-screen bg-gray-100 md:flex-row md:justify-center">
+    <div class="flex flex-col justify-start w-full max-w-4xl overflow-hidden bg-white rounded-lg shadow-lg md:flex-row">
+      <!-- Left Section: Image (not included for now) and Info -->
+      <div class="flex-col items-center justify-center hidden w-1/2 p-8 text-white bg-blue-500 md:flex">
+        <h1 class="text-2xl font-bold text-center">Community Tally Portal</h1>
+        <p class="mt-4 text-sm text-center">Gain access to your personalized dashboard, track your vote counts across the various levels.</p>
+      </div>
+      <!-- Right Section: Login Form -->
+      <div class="flex flex-col items-center justify-center w-full p-8 md:w-1/2">
+        <h1 class="text-2xl font-bold text-gray-800">Welcome Back!</h1>
+        <p class="mt-2 text-sm text-gray-600">Please login to access your account</p>
+        <form method="post" class="w-full mt-6">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <button type="submit" class="w-full py-3 mt-4 text-white transition bg-blue-500 rounded-lg hover:bg-blue-600">Log in</button>
+        </form>
+        <a href="/" class="w-full py-3 mt-4 text-center text-gray-800 transition bg-gray-200 rounded-lg hover:bg-gray-300">Back to homepage</a>
+        <p class="mt-6 text-sm text-gray-600">
+          Forgot Password? <a href="{% url 'password_reset' %}" class="text-blue-500 hover:underline">Reset Password</a>
+        </p>
+        <p class="mt-2 text-sm text-gray-600">
+          Don't have an account? <a href="/ui/signup/" class="text-blue-500 hover:underline">Register</a>
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
