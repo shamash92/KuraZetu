@@ -52,5 +52,6 @@ class PollingCenterSerializer(GeoFeatureModelSerializer):
             "code",
             "ward",
             "pin_location",
+            "pin_location_error",
             "is_verified",
         )
