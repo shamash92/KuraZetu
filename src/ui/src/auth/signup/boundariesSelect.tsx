@@ -1,4 +1,4 @@
-import { GeoJSON, Marker, Popup } from 'react-leaflet';
+import { GeoJSON, Marker, Popup, Tooltip } from 'react-leaflet';
 import type {
   IConstituencyBoundary,
   ICountyBoundary,
@@ -6,10 +6,11 @@ import type {
   IWardBoundary
 } from '../../types/boundaries';
 import L, { LatLng, LatLngBounds } from 'leaflet';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { MapContainer } from 'react-leaflet';
 import { TileLayer } from 'react-leaflet';
+import { set } from 'react-hook-form';
 import { useMap } from 'react-leaflet';
 
 function CountySelect() {
@@ -47,6 +48,10 @@ function CountySelect() {
   const [tileLayerProvider, setTileLayerProvider] = useState<
     'Google' | 'OpenStreetMap'
   >('OpenStreetMap');
+
+  const handleMapReady = (map) => {
+    setMapInstance(map);
+  };
 
   const fetchConstituencies = async () => {
     console.log('getting constituencies data');
@@ -219,10 +224,11 @@ function CountySelect() {
     polling_center: IPollingCenterLocation
   ) => {
     let geometry = polling_center.geometry;
+    let errorMessage = polling_center.properties.pin_location_error;
+    setPollingCenterErrorMessage(errorMessage);
 
     console.log(geometry, 'pin location geometry');
     if (geometry !== null && geometry.coordinates[0] !== 0) {
-      setPollingCenterErrorMessage(null);
       setTileLayerProvider('Google');
       console.log('geometry is here');
       console.log(geometry.coordinates, 'geometry coordinates');
@@ -231,8 +237,6 @@ function CountySelect() {
         geometry.coordinates[1],
         geometry.coordinates[0]
       );
-
-      console.log(latLng, 'latLng');
 
       const mapBounds = L.latLngBounds(latLng, latLng);
 
@@ -244,8 +248,6 @@ function CountySelect() {
       // mapInstance?.flyTo(latLng, 6);
     } else {
       // This is to reset the zoom and bounds back to the ward if the pin location is not present
-      console.log('geometry is null');
-      setPollingCenterErrorMessage('Polling center location not found');
       setTileLayerProvider('OpenStreetMap');
       setBounds(wardBounds);
     }
@@ -260,10 +262,6 @@ function CountySelect() {
     console.log(`fourth`);
 
     setSelectedPollingCenter(code);
-  };
-
-  const handleMapReady = (map) => {
-    setMapInstance(map);
   };
 
   if (counties === null || counties.length === 0) {
@@ -868,8 +866,11 @@ function CountySelect() {
                           pollingCenter.geometry.coordinates[0]
                         ]}
                         icon={L.icon({
-                          iconUrl:
-                            'https://cdn-icons-png.flaticon.com/512/684/684908.png', // URL to a pin icon
+                          iconUrl: pollingCenter.properties.is_verified
+                            ? '/static/pins/verified.png' // Green icon for verified TODO: This may fail in prod if we are hosting on AWS
+                            : pollingCenter.properties.pin_location_error
+                            ? 'https://cdn-icons-png.flaticon.com/512/684/684908.png' // Red icon for errors
+                            : '/static/pins/unverified.png', // Black icon for unverified without errors
                           iconSize: [25, 25], // Size of the icon
                           iconAnchor: [12, 41], // Anchor point of the icon
                           popupAnchor: [0, -41] // Position of the popup relative to the icon
@@ -884,6 +885,14 @@ function CountySelect() {
                           <p>{pollingCenter.properties.name}</p>
                           <p>{pollingCenter.properties.code}</p>
                         </Popup>
+
+                        {tileLayerProvider === 'Google' && (
+                          <Tooltip permanent>
+                            <p className='text-xs text-gray-700 '>
+                              {pollingCenter.properties.name}
+                            </p>
+                          </Tooltip>
+                        )}
                       </Marker>
                     ) : null;
                   })}

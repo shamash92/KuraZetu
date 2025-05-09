@@ -50,6 +50,7 @@ export interface IPollingCenterLocation {
     name: string;
     code: string;
     ward: number;
+    pin_location_error: string | null;
     is_verified: boolean;
   };
 }

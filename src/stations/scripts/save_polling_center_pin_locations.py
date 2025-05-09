@@ -225,7 +225,7 @@ def save_polling_stations_pin_locations(geojson_file_path):
                 point = Point(point_coordinates)
                 try:
                     polling_station_obj.pin_location = point
-                    polling_station_obj.is_verified = True  # this is a temporary fix just to filter the saved centers, it wil be removed later once a better solution is found.
+                    polling_station_obj.is_verified = True  # TODO:this is a temporary fix just to filter the saved centers, it wil be removed later once a better solution is found.
                     # Also, the function of the is_verified is to actually have the community verify the location and name etc of teh station and verify the streams. So this will def be removed later
                     polling_station_obj.save()
                 except Exception as e:

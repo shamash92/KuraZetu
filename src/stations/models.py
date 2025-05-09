@@ -90,6 +90,8 @@ class PollingCenter(gis_models.Model):
     number_of_streams = models.PositiveIntegerField(default=1)
 
     pin_location = gis_models.PointField(blank=True, null=True)
+    pin_location_error = models.CharField(max_length=255, blank=True, null=True)
+
     is_verified = models.BooleanField(default=False)
     verified_by = models.ForeignKey(
         User,
