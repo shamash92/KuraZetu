@@ -79,6 +79,13 @@ This guide assumes you have already set up your django project and run migration
     python stations/scripts/save_polling_center_pin_locations.py
     ```
 
+8. **Initial Check for pin location errors**
+    This script checks for any errors e.g missing lat/lng data, pin outside ward boundaries, missing parent ward boundary etc. and save the errors to the `PollingCenter` model
+
+    ```bash
+    python stations/scripts/polling_center_pin_errors_parse.py
+    ```
+
 ## Notes
 
 - Ensure the GeoJSON files are correctly formatted and contain the necessary data.
