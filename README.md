@@ -70,7 +70,7 @@ This project requires **all hands on deck** — not just developers. We need:
 Everything you need to get started — from how to set up the project to contributing and building locally — is in our official documentation:
 
 👉 **[Read the Docs](https://community-tally.readthedocs.io)**
-👉 **[How to Contribute](<https://github.com/shamash92/Community-Tally/issues/new?title=docs%3A+TYPE+YOUR+QUESTION+HERE&body=*Please%20describe%20the%20question%20or%20issue%20you%27re%20facing%20with%20%22Community%20Tally%20documentation%22.*%0A%0A%0A%0A%0A---%0A*Reported+from%3A+https://community-tally.readthedocs.io/>)**
+👉 **[Raise an issue](<https://github.com/shamash92/Community-Tally/issues/new?title=docs%3A+TYPE+YOUR+QUESTION+HERE&body=*Please%20describe%20the%20question%20or%20issue%20you%27re%20facing%20with%20%22Community%20Tally%20documentation%22.*%0A%0A%0A%0A%0A---%0A*Reported+from%3A+https://community-tally.readthedocs.io/>)**
 
 ## ✅ Getting Started (Developers)
 
