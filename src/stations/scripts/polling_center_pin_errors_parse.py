@@ -38,6 +38,9 @@ for polling_center in tqdm(
     #  Delete this once the mobile app is up and running
 
     # Check if pin_location is at (0, 0) and clean it up to null
+
+    polling_center.is_verified = False  # this is to fix the issue of is_verified being set to True when the pin_locations are processed in the previous script
+    polling_center.save()
     if (
         polling_center.pin_location
         and polling_center.pin_location.x == 0

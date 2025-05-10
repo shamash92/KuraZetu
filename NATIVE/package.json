@@ -45,6 +45,7 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-gifted-charts": "^1.4.61",
     "react-native-linear-gradient": "^2.8.3",
+    "react-native-maps": "1.20.1",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-paper": "^5.14.1",
     "react-native-reanimated": "~3.17.4",
