@@ -8,7 +8,7 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/shamash92/Community-Tally)
 ![GitHub contributors](https://img.shields.io/github/contributors/shamash92/Community-Tally)
 
-**Community Tally** is an open source platform built **by and for Kenyans** to empower communities to **track, verify, and tally election results** at the polling station level.
+**Community Tally** is an open source platform (plus mobile app) built **by and for Kenyans** to empower communities to **track, verify, and tally election results** at the polling station level.
 
 It enables everyday citizens, developers, journalists, civil society, and oversight bodies to actively participate in protecting the integrity of elections — **from the ground up**.
 
