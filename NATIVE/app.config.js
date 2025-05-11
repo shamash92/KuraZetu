@@ -15,6 +15,10 @@ export default {
         },
         ios: {
             supportsTablet: true,
+            bundleIdentifier: "com.communitytally.app",
+            infoPlist: {
+                ITSAppUsesNonExemptEncryption: false,
+            },
         },
         android: {
             adaptiveIcon: {
@@ -22,7 +26,7 @@ export default {
                 backgroundColor: "#ffffff",
             },
             edgeToEdgeEnabled: true,
-            versionCode: 1,
+            package: "com.communitytally.app",
         },
         web: {
             bundler: "metro",

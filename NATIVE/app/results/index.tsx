@@ -9,6 +9,7 @@ const screenWidth = Dimensions.get("window").width;
 
 const initialLayout = {width: screenWidth};
 
+//TODO: Pull the data from the API
 const presidentialData = [
     {name: "Candidate 1", party: "Party A", votes: 5400000, color: "#2a9d8f"},
     {name: "Candidate 2", party: "Party B", votes: 4800000, color: "#e76f51"},
