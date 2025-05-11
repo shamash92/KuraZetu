@@ -1,22 +1,23 @@
-import { GeoJSON, Popup } from 'react-leaflet';
-import {
+import { GeoJSON, Marker, Popup, Tooltip } from 'react-leaflet';
+import type {
   IConstituencyBoundary,
   ICountyBoundary,
   IPollingCenterLocation,
   IWardBoundary
 } from '../../types/boundaries';
 import L, { LatLng, LatLngBounds } from 'leaflet';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { MapContainer } from 'react-leaflet';
 import { TileLayer } from 'react-leaflet';
+import { set } from 'react-hook-form';
 import { useMap } from 'react-leaflet';
 
 function CountySelect() {
   const [activePolygon, setActivePolygon] = useState<number | string | null>(
     null
   );
-  const [counties, setCounties] = useState<ICountyBoundary[]>([]);
+  const [counties, setCounties] = useState<ICountyBoundary[] | null>(null);
   const [constituencies, setConstituencies] = useState<IConstituencyBoundary[]>(
     []
   );
@@ -26,14 +27,31 @@ function CountySelect() {
   >([]);
 
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
+  const [wardBounds, setWardBounds] = useState<LatLngBounds | null>(null);
+
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
-  const [selectedCounty, setSelectedCounty] = useState(null);
-  const [selectedConstituency, setSelectedConstituency] = useState(null);
-  const [selectedWard, setSelectedWard] = useState(null);
+  const [selectedCounty, setSelectedCounty] = useState<number | null>(null);
+  const [selectedConstituency, setSelectedConstituency] = useState<
+    number | null
+  >(null);
+  const [selectedWard, setSelectedWard] = useState<number | null>(null);
 
-  const [selectedPollingCenter, setSelectedPollingCenter] =
-    React.useState(null);
+  const [selectedPollingCenter, setSelectedPollingCenter] = useState<
+    string | null
+  >(null);
+
+  const [pollingCenterErrorMessage, setPollingCenterErrorMessage] = useState<
+    string | null
+  >(null);
+
+  const [tileLayerProvider, setTileLayerProvider] = useState<
+    'Google' | 'OpenStreetMap'
+  >('OpenStreetMap');
+
+  const handleMapReady = (map) => {
+    setMapInstance(map);
+  };
 
   const fetchConstituencies = async () => {
     console.log('getting constituencies data');
@@ -71,8 +89,8 @@ function CountySelect() {
       });
   };
 
-  const fetchPollingCenters = async () => {
-    fetch(`/api/stations/wards/${activePolygon}/polling-centers/pins/`, {
+  const fetchPollingCenters = async (wardNumber: number) => {
+    fetch(`/api/stations/wards/${wardNumber}/polling-centers/pins/`, {
       method: 'GET'
     })
       .then((res) => res.json())
@@ -86,7 +104,7 @@ function CountySelect() {
     console.log('useEffect to call counties');
 
     //  this re-renders if counties is zero
-    if (counties.length <= 0) {
+    if (counties === null || counties.length <= 0) {
       fetch('/api/stations/counties/boundaries/', {
         method: 'GET'
       })
@@ -94,7 +112,9 @@ function CountySelect() {
         .then((data) => {
           console.log(data, 'data');
 
-          setCounties(data.features);
+          if (data.features.length > 0) {
+            setCounties(data.features);
+          }
           try {
             if (data.features.length > 0) {
               const mapBounds = L.geoJSON(data.features).getBounds();
@@ -129,7 +149,10 @@ function CountySelect() {
     return null;
   };
 
-  const handleCountySelect = async (name) => {
+  const handleCountySelect = async (
+    name: number,
+    level: 'county' | 'constituency'
+  ) => {
     console.log(name, 'name');
 
     console.log(selectedCounty, 'selectedCounty');
@@ -160,31 +183,96 @@ function CountySelect() {
       setSelectedWard(null);
       setSelectedPollingCenter(null);
       const data = await fetchWards();
-    } else if (
-      selectedCounty &&
-      selectedConstituency &&
-      selectedWard === null
-    ) {
-      console.log(`third`);
-
-      setSelectedWard(name);
-      setSelectedPollingCenter(null);
-      const data = await fetchPollingCenters();
     } else {
-      console.log(`fourth`);
-
-      setSelectedPollingCenter(name);
+      console.log(`we shouldn't get here`);
     }
   };
 
-  const handleMapReady = (map) => {
-    setMapInstance(map);
+  const handleWardSelect = async (ward: IWardBoundary) => {
+    console.log(`third`);
+
+    setSelectedWard(ward.properties.number);
+
+    setSelectedPollingCenter(null);
+    const data = await fetchPollingCenters(ward.properties.number);
+
+    let geometry = ward.geometry;
+
+    console.log(geometry, 'pin location geometry');
+
+    // TODO: Technically we shouldn't have a null geometry or undefined
+    if (geometry !== null && geometry !== undefined) {
+      console.log('ward is here');
+
+      // get map bounds form the polygon geometry
+      const mapBounds = L.geoJSON(geometry).getBounds();
+
+      console.log(mapBounds, 'ward mapBounds');
+
+      if (mapBounds.isValid()) {
+        console.log('mapBounds is valid');
+        setBounds(mapBounds);
+        setWardBounds(mapBounds);
+      } else {
+        setBounds(null);
+        setWardBounds(null);
+      }
+    }
+  };
+
+  const handlePollingCenterZoom = async (
+    polling_center: IPollingCenterLocation
+  ) => {
+    let geometry = polling_center.geometry;
+    let errorMessage = polling_center.properties.pin_location_error;
+    setPollingCenterErrorMessage(errorMessage);
+
+    console.log(geometry, 'pin location geometry');
+    if (geometry !== null && geometry.coordinates[0] !== 0) {
+      setTileLayerProvider('Google');
+      console.log('geometry is here');
+      console.log(geometry.coordinates, 'geometry coordinates');
+      console.log(geometry.coordinates[0], 'geometry coordinates 0');
+      const latLng = new LatLng(
+        geometry.coordinates[1],
+        geometry.coordinates[0]
+      );
+
+      const mapBounds = L.latLngBounds(latLng, latLng);
+
+      console.log(mapBounds, 'mapBounds');
+      setBounds(mapBounds.isValid() ? mapBounds : null);
+
+      // console.log(mapInstance, 'mapInstance');
+
+      // mapInstance?.flyTo(latLng, 6);
+    } else {
+      // This is to reset the zoom and bounds back to the ward if the pin location is not present
+      setTileLayerProvider('OpenStreetMap');
+      setBounds(wardBounds);
+    }
+  };
+
+  const handlePollingCenterSelect = async (
+    code: string,
+    level: 'polling_center'
+  ) => {
+    console.log(code, 'polling station code');
+
+    console.log(`fourth`);
+
+    setSelectedPollingCenter(code);
   };
 
   if (counties === null || counties.length === 0) {
     return (
       <div className='flex flex-col items-center justify-center w-full h-screen'>
-        <p>Loading Counties</p>
+        <p>Loading Counties ... </p>
+
+        <p className='mt-12 text-sm text-center text-red-500'>
+          (For Developers): If this issue persists, kindly ensure you have run
+          scripts to load counties
+        </p>
       </div>
     );
   }
@@ -467,10 +555,10 @@ function CountySelect() {
         <div className='flex flex-col-reverse justify-start w-full md:flex-row md:justify-between'>
           {/* List */}
           <div className='flex flex-col items-center justify-center w-full bg-[#f3efe9] md:h-full h-[50vh] md:w-4/12 '>
-            <div className='flex-col justify-center w-full px-8 py-4 text-center border-2'>
-              <span className='font-sans text-xl font-bold leading-none tracking-wider text-center text-gray-900 md:tracking-wide md:text-2xl'>
-                <span>Select your home</span>
-                <span className='relative inline-block pl-2 mx-1 text-green-500 stroke-current'>
+            <div className='flex-col justify-center w-full px-8 py-4 text-center '>
+              <h2 className='text-xl font-bold text-center text-gray-900 md:text-2xl'>
+                Select your home{' '}
+                <span className='text-green-500'>
                   {selectedWard
                     ? 'Polling Center'
                     : selectedConstituency
@@ -479,9 +567,9 @@ function CountySelect() {
                     ? 'Constituency'
                     : 'County'}
                 </span>
-              </span>
+              </h2>
             </div>
-            <div className='flex w-full p-4 pb-4 overflow-y-scroll bg-white md:w-10/12 rounded-2xl md:h-[80vh] h-[50vh] ring-2'>
+            <div className='flex w-full p-4 pb-4 overflow-y-scroll bg-gray-100 md:w-10/12 rounded-lg md:h-[80vh] h-[50vh] ring-2 ring-gray-300 shadow-md'>
               <div className='w-full h-auto pb-6 '>
                 {counties !== null &&
                 counties.length > 0 &&
@@ -489,23 +577,25 @@ function CountySelect() {
                   ? counties.map((county) => (
                       <a
                         key={county.id}
-                        className={` flex flex-row items-center justify-between my-2 bg-gray-50 py-2 pl-2 rounded-md text-blue-600 ${
+                        className={`flex flex-row items-center justify-between my-2 bg-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-50 transition duration-200 ${
                           activePolygon === county.properties.number
-                            ? 'active'
-                            : ''
+                            ? 'border-2 border-blue-500'
+                            : 'border border-gray-300'
                         }`}
                         onClick={() =>
                           handlePolygonClick(county.properties.number)
                         }
                       >
-                        <p className='font-semibold tracking-wider'>
+                        <p className='font-semibold tracking-wide text-gray-800'>
                           {county.properties.name}
                         </p>
 
                         {activePolygon === county.properties.number ? (
                           <button
-                            className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            className='flex flex-row items-center px-3 py-1 text-white transition duration-200 bg-blue-500 rounded-full shadow hover:bg-blue-600'
+                            onClick={() =>
+                              handleCountySelect(activePolygon, 'county')
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -514,7 +604,7 @@ function CountySelect() {
                               viewBox='0 0 24 24'
                               strokeWidth='1.5'
                               stroke='currentColor'
-                              className='w-6 h-6'
+                              className='w-5 h-5'
                             >
                               <path
                                 strokeLinecap='round'
@@ -548,7 +638,9 @@ function CountySelect() {
                         {activePolygon === constituency.properties.number ? (
                           <button
                             className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            onClick={() =>
+                              handleCountySelect(activePolygon, 'constituency')
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -591,7 +683,11 @@ function CountySelect() {
                         {activePolygon === ward.properties.number ? (
                           <button
                             className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            onClick={() =>
+                              // handleCountySelect(activePolygon, 'ward')
+
+                              handleWardSelect(ward)
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -623,9 +719,10 @@ function CountySelect() {
                             ? 'active'
                             : ''
                         }`}
-                        onClick={() =>
-                          handlePolygonClick(pollingCenter.properties.code)
-                        }
+                        onClick={() => {
+                          handlePolygonClick(pollingCenter.properties.code);
+                          handlePollingCenterZoom(pollingCenter);
+                        }}
                       >
                         <p className='font-semibold tracking-wider'>
                           {pollingCenter.properties.name}
@@ -634,7 +731,13 @@ function CountySelect() {
                         {activePolygon === pollingCenter.properties.code ? (
                           <button
                             className='flex flex-row px-2 bg-blue-200 rounded-full ring-2'
-                            onClick={() => handleCountySelect(activePolygon)}
+                            onClick={() =>
+                              // handleCountySelect(activePolygon, 'pollingCenter')
+                              handlePollingCenterSelect(
+                                activePolygon,
+                                'polling_center'
+                              )
+                            }
                           >
                             <p className='pr-2'>Select</p>
                             <svg
@@ -665,14 +768,26 @@ function CountySelect() {
             {bounds ? (
               <MapContainer
                 center={[0, 37]}
-                zoom={6}
+                zoom={7}
                 style={{ height: '100%', width: '100%' }}
                 bounds={bounds}
                 maxBounds={bounds}
                 whenReady={() => handleMapReady(mapInstance)}
               >
                 <FitBoundsMap />
-                <TileLayer url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
+
+                {tileLayerProvider === 'Google' ? (
+                  <TileLayer
+                    url='http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+                    attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+                  />
+                ) : (
+                  <TileLayer
+                    url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                )}
+
                 {counties.length > 0 &&
                 selectedCounty === null &&
                 selectedConstituency === null &&
@@ -693,6 +808,7 @@ function CountySelect() {
                       />
                     ))
                   : null}
+
                 {constituencies &&
                   selectedCounty !== null &&
                   selectedConstituency === null &&
@@ -718,7 +834,6 @@ function CountySelect() {
                       }}
                     />
                   ))}
-
                 {wards &&
                   selectedConstituency !== null &&
                   selectedCounty !== null &&
@@ -738,14 +853,55 @@ function CountySelect() {
                       })}
                     />
                   ))}
-
                 {pollingCenters &&
                   selectedWard !== null &&
                   selectedConstituency !== null &&
                   selectedCounty !== null &&
-                  pollingCenters.map((pollingCenter) => (
-                    <GeoJSON key={pollingCenter.id} data={pollingCenter} />
-                  ))}
+                  pollingCenters.map((pollingCenter) => {
+                    return pollingCenter.geometry !== null ? (
+                      <Marker
+                        key={pollingCenter.id}
+                        position={[
+                          pollingCenter.geometry.coordinates[1],
+                          pollingCenter.geometry.coordinates[0]
+                        ]}
+                        icon={L.icon({
+                          iconUrl: pollingCenter.properties.is_verified
+                            ? '/static/pins/verified.png' // Green icon for verified TODO: This may fail in prod if we are hosting on AWS
+                            : pollingCenter.properties.pin_location_error
+                            ? 'https://cdn-icons-png.flaticon.com/512/684/684908.png' // Red icon for errors
+                            : '/static/pins/unverified.png', // Black icon for unverified without errors
+                          iconSize: [25, 25], // Size of the icon
+                          iconAnchor: [12, 41], // Anchor point of the icon
+                          popupAnchor: [0, -41] // Position of the popup relative to the icon
+                        })}
+                        eventHandlers={{
+                          click: () => {
+                            handlePolygonClick(pollingCenter.properties.code);
+                          }
+                        }}
+                      >
+                        <Popup>
+                          <p>{pollingCenter.properties.name}</p>
+                          <p>{pollingCenter.properties.code}</p>
+                        </Popup>
+
+                        {tileLayerProvider === 'Google' && (
+                          <Tooltip permanent>
+                            <p className='text-xs text-gray-700 '>
+                              {pollingCenter.properties.name}
+                            </p>
+                          </Tooltip>
+                        )}
+                      </Marker>
+                    ) : null;
+                  })}
+
+                {pollingCenterErrorMessage && (
+                  <div className=' absolute z-[99999] p-4 w-1/2 text-white bg-red-500 rounded shadow-lg top-4 left-12'>
+                    <p>{pollingCenterErrorMessage}</p>
+                  </div>
+                )}
               </MapContainer>
             ) : (
               <div className='flex flex-col items-center justify-center h-full'>

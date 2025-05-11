@@ -1,5 +1,9 @@
-import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+
+import pytest
+
+from stations.models import Constituency, County, PollingStation, Ward
 
 User = get_user_model()
 
