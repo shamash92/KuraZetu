@@ -6,15 +6,15 @@ import NavComponent from './nav';
 import React from 'react';
 import WhyComponent from './why';
 import { useAuth } from '../App';
-import UserDashBoard from '../dashboards/user';
+import ElectionDashboard from '../dashboards/elections';
 
 function LandingPage() {
   const isAuthenticated = useAuth();
 
   if (isAuthenticated) {
     return (
-      <div>
-        <UserDashBoard />
+      <div className='flex flex-col w-full'>
+        <ElectionDashboard />
       </div>
     );
   }
