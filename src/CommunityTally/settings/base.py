@@ -46,7 +46,7 @@ THIRD_PARTY_APPS = [
     "django_browser_reload",
 ]
 
-MY_APPS = ["accounts", "stations", "ui"]
+MY_APPS = ["accounts", "stations", "ui", "results"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 

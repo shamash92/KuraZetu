@@ -132,4 +132,12 @@ class PollingStation(models.Model):
     )
 
     def __str__(self):
-        return f"{self.polling_center} - Stream {self.stream_number}"
+        return f"{self.polling_center} - Stream {self.code}"
+
+    def save(self, *args, **kwargs):
+        if not self.stream_number:
+            num = self.code[-2:]
+            print(num, "num")
+            self.stream_number = int(num)
+
+        super().save(*args, **kwargs)
