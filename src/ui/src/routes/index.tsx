@@ -1,11 +1,11 @@
-import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import LandingPage from '../landing-pages';
+import React from 'react';
 import RegistrationSuccessPage from '../auth/signup/RegistrationSuccess';
 import SignupComponent from '../auth/signup/index';
 import SignupForm from '../auth/signup/signupForm';
-import UserDashBoard from '../dashboards/user';
+import UserDashBoard from '../dashboards/elections';
 import { useAuth } from '../App';
 
 export function NotFound() {
