@@ -238,7 +238,13 @@ Open a new terminal to run the following commands parallel to the backend comman
    yarn install
    ```
 
-3. Run the frontend development server:
+3. Copy the example `.env.sample` file to `.env`:
+
+   ```bash
+   cp .env.sample .env
+   ```
+
+4. Run the frontend development server:
 
    ```bash
    yarn run dev
