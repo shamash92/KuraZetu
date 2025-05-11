@@ -25,6 +25,7 @@ class ConstituencyAdmin(LeafletGeoAdmin):
 
 @admin.register(Ward)
 class WardAdmin(LeafletGeoAdmin):
+    readonly_fields = ("number",)
     list_display = (
         "name",
         "number",
@@ -38,6 +39,7 @@ class WardAdmin(LeafletGeoAdmin):
 
 @admin.register(PollingCenter)
 class PollingCenterAdmin(LeafletGeoAdmin):
+    readonly_fields = ("code",)
     list_display = (
         "name",
         "code",
@@ -47,6 +49,7 @@ class PollingCenterAdmin(LeafletGeoAdmin):
         "ward__constituency",
         "ward__constituency__county",
     )
+
     search_fields = (
         "name",
         "code",

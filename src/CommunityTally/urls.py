@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/stations/", include("stations.api.urls")),
     path("accounts/", include("accounts.urls")),
     path("api/accounts/", include("accounts.api.urls")),
+    path("api/results/", include("results.api.urls")),
     path("", home_view, name="home"),
     re_path(r"ui/.*", react_view, name="react"),
     path("__reload__/", include("django_browser_reload.urls")),

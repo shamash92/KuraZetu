@@ -1,6 +1,7 @@
+from rest_framework.serializers import ModelSerializer
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
-from stations.models import Constituency, County, PollingCenter, Ward
+from stations.models import Constituency, County, PollingCenter, PollingStation, Ward
 
 
 class CountySerializer(GeoFeatureModelSerializer):
@@ -53,5 +54,18 @@ class PollingCenterSerializer(GeoFeatureModelSerializer):
             "ward",
             "pin_location",
             "pin_location_error",
+            "is_verified",
+        )
+
+
+class PollingStationSerializer(ModelSerializer):
+    class Meta:
+        model = PollingStation
+        fields = (
+            "code",
+            "stream_number",
+            "registered_voters",
+            "date_created",
+            "date_modified",
             "is_verified",
         )
