@@ -19,8 +19,6 @@ export default function LottieComponent({
 
     let pathName = LOTTIE_DATA.find((item) => item.title === name);
 
-    // console.log(pathName, "pathName");
-
     return (
         <View
             style={{

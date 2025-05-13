@@ -1,57 +1,87 @@
-import React from "react";
-import {StyleSheet} from "react-native";
-import {TabBarIcon} from "@/components/navigation/TabBarIcon";
+import {BarChart, Flame, ListFilter, Map, User} from "lucide-react-native";
+import {Platform, StyleSheet, View} from "react-native";
+
+import {BlurView} from "expo-blur";
 import {Tabs} from "expo-router";
-import {orangeColor} from "../(utils)/colors";
+
+const TabBarIcon = ({
+    IconComponent,
+    focused,
+    color,
+    size,
+}: {
+    IconComponent: React.ComponentType<{color: string; size: number}>;
+    focused: boolean;
+    color: string;
+    size: number;
+}) => {
+    return (
+        <View style={[styles.iconContainer, focused && styles.activeIcon]}>
+            <IconComponent color={color} size={size} />
+        </View>
+    );
+};
 
 export default function TabLayout() {
     return (
         <Tabs
             screenOptions={{
-                tabBarActiveTintColor: orangeColor,
-                tabBarInactiveTintColor: "white",
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: "rgba(0,0,0,0.8)",
-                    // opacity: 0.6,
-                    // backgroundColor: "#581b98",
-                    // backgroundColor: "black",
-
-                    // backgroundColor: "transparent",
-                    elevation: 0,
-                    position: "absolute",
-                    borderTopWidth: StyleSheet.hairlineWidth,
-                    // height: 60,
-                    paddingTop: 12,
-                    paddingBottom: 0,
-                    marginBottom: 0,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    ...styles.tabBar,
+                    ...(Platform.OS === "web" ? {} : {backgroundColor: "transparent"}),
                 },
+                tabBarBackground: () =>
+                    Platform.OS !== "web" ? (
+                        <BlurView
+                            tint="light"
+                            intensity={80}
+                            style={StyleSheet.absoluteFill}
+                        />
+                    ) : null,
+                tabBarActiveTintColor: "#1A2C4E",
+                tabBarInactiveTintColor: "#8E8E93",
+                tabBarLabelStyle: styles.tabLabel,
             }}
         >
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: "Home",
-                    tabBarIcon: ({color, focused}) => (
+                    title: "Dashboard",
+                    tabBarIcon: ({focused, color, size}) => (
                         <TabBarIcon
-                            name={focused ? "home" : "home-outline"}
+                            IconComponent={BarChart}
+                            focused={focused}
                             color={color}
+                            size={size}
                         />
                     ),
-                    headerShown: false,
                 }}
             />
-
             <Tabs.Screen
                 name="tabTwo"
                 options={{
-                    title: "Update Map",
-                    tabBarIcon: ({color, focused}) => (
+                    title: "Map",
+                    tabBarIcon: ({focused, color, size}) => (
                         <TabBarIcon
-                            name={focused ? "person" : "person-outline"}
+                            IconComponent={Map}
+                            focused={focused}
                             color={color}
+                            size={size}
+                        />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="communityNotes"
+                options={{
+                    title: "Notes",
+                    tabBarIcon: ({focused, color, size}) => (
+                        <TabBarIcon
+                            IconComponent={User}
+                            focused={focused}
+                            color={color}
+                            size={size}
                         />
                     ),
                 }}
@@ -61,10 +91,12 @@ export default function TabLayout() {
                 name="tabThree"
                 options={{
                     title: "Profile",
-                    tabBarIcon: ({color, focused}) => (
+                    tabBarIcon: ({focused, color, size}) => (
                         <TabBarIcon
-                            name={focused ? "person" : "person-outline"}
+                            IconComponent={ListFilter}
+                            focused={focused}
                             color={color}
+                            size={size}
                         />
                     ),
                 }}
@@ -72,3 +104,27 @@ export default function TabLayout() {
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    tabBar: {
+        borderTopWidth: 0,
+        elevation: 0,
+        height: 90,
+        paddingBottom: 25,
+        paddingTop: 10,
+    },
+    tabLabel: {
+        fontFamily: "Inter-Medium",
+        fontSize: 11,
+    },
+    iconContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        width: 42,
+        height: 28,
+        borderRadius: 14,
+    },
+    activeIcon: {
+        backgroundColor: "#E9F0FF",
+    },
+});
