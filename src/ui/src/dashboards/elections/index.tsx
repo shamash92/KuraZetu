@@ -1,23 +1,34 @@
-import React from 'react';
-
-import { useState } from 'react';
 import {
-  BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
+  Cell,
   Legend,
-  ResponsiveContainer
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
 } from 'recharts';
+
+import PollingCenterResults from './pollingCenterResults';
+import React from 'react';
+import { useState } from 'react';
+import { useUser } from '../../App';
 
 //TODO: split into smaller components for each administrative level
 export default function ElectionDashboard() {
   const [activeTab, setActiveTab] = useState('governor');
+
+  const {
+    djangoUserPollingCenterCode,
+    djangoUserPollingCenterName,
+    djangoUserWardNumber,
+    djangoUserConstName,
+    djangoUserCountyName,
+    djangoUserWardName
+  } = useUser();
 
   // TODO: Update the data to be fetched from an API
   // Mock data for presidential candidates
@@ -226,11 +237,10 @@ export default function ElectionDashboard() {
       </div>
 
       {/* County Results Section */}
-      {/* TODO: Add/Prepend the actual names of various administrative levels e.g
-        Nairobi County Results */}
+
       <div className='p-4 mb-6 bg-white rounded-lg shadow-md'>
         <h2 className='mb-4 text-xl font-bold text-center'>
-          County Election Results
+          {djangoUserCountyName} County Election Results
         </h2>
         {/* Tabs */}
         <div className='flex mb-4 border-b'>
@@ -319,6 +329,10 @@ export default function ElectionDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Results at Polling Center*/}
+
+      <PollingCenterResults />
 
       {/* Footer */}
       <footer className='mt-4 text-sm text-center text-gray-500'>

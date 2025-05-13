@@ -25,6 +25,9 @@ class UserAdmin(BaseUserAdmin):
         "polling_center",
     )
     list_filter = ("admin", "is_verified")
+
+    autocomplete_fields = ["polling_center"]
+
     fieldsets = (
         (None, {"fields": ("phone_number", "password")}),
         (

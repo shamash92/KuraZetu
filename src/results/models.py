@@ -234,8 +234,8 @@ class PollingStationSenatorResults(models.Model):
 class PollingStationWomenRepResults(models.Model):
     class Meta:
         unique_together = ("polling_station", "woman_rep_candidate")
-        verbose_name = "Polling Station  Senator Results"
-        verbose_name_plural = "Polling Station  Senator Results"
+        verbose_name = "Polling Station  Women Rep Results"
+        verbose_name_plural = "Polling Station Women Rep Results"
 
     polling_station = models.ForeignKey(
         PollingStation,
@@ -288,8 +288,8 @@ class PollingStationMpResults(models.Model):
 class PollingStationMCAResults(models.Model):
     class Meta:
         unique_together = ("polling_station", "mca_candidate")
-        verbose_name = "Polling Station MP Results"
-        verbose_name_plural = "Polling Station MP Results"
+        verbose_name = "Polling Station MCA Results"
+        verbose_name_plural = "Polling Station MCA Results"
 
     polling_station = models.ForeignKey(
         PollingStation, on_delete=models.CASCADE, related_name="mca_polling_station"
