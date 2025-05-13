@@ -23,10 +23,12 @@ function Login() {
         setIsSending(true);
         console.log("sign in submit");
 
-        // TODO: Replace this with backend login to return the auth token.
-        await saveToSecureStore("userToken", "userToken");
+        // TODO: Replace this with backend login to return the auth token. The delay for now is to simulate API call
+        setTimeout(async () => {
+            await saveToSecureStore("userToken", "userToken");
 
-        router.replace("/(tabs)");
+            router.replace("/(tabs)");
+        }, 2000);
     }
     function handlePhoneNumberInput(text: string) {
         console.log(text, "phone input");

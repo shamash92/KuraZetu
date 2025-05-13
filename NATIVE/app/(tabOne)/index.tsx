@@ -1,8 +1,9 @@
+import {Text, View} from "react-native";
+
 import Constants from "expo-constants";
 import React from "react";
 import ResultsLandingPage from "../results";
 import {StatusBar} from "expo-status-bar";
-import {View} from "react-native";
 import {windowWidth} from "../(utils)/screenDimensions";
 
 const LandingComponent = () => {
@@ -30,6 +31,34 @@ const LandingComponent = () => {
                     borderWidth: 4,
                 }}
             >
+                <View
+                    style={{
+                        flex: 1,
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        // borderWidth: 4,
+                        width: 1 * windowWidth,
+                        paddingLeft: 12,
+                    }}
+                >
+                    <Text
+                        style={{
+                            fontSize: 32,
+                            marginBottom: 4,
+                            fontWeight: "bold",
+                            fontFamily: "Inter",
+                        }}
+                    >
+                        Community Tally
+                    </Text>
+                    <Text
+                        style={{
+                            fontSize: 16,
+                        }}
+                    >
+                        2027 Election Coverage
+                    </Text>
+                </View>
                 <View
                     style={{
                         flex: 8,
