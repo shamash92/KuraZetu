@@ -58,10 +58,10 @@ const GovernorRoute = () => {
                 backgroundColor: "#fefe",
             }}
         >
-            <View style={{paddingVertical: 10}}>
+            <View style={{paddingVertical: 2}}>
                 <Text
                     style={{
-                        fontSize: 28,
+                        fontSize: 20,
                         marginVertical: 10,
                         // fontWeight: "600",
                     }}
@@ -77,7 +77,7 @@ const GovernorRoute = () => {
                 animationDuration={500}
                 yAxisLabelWidth={0.15 * windowWidth}
                 width={0.7 * windowWidth}
-                height={0.35 * windowHeight}
+                height={0.3 * windowHeight}
                 // adjustToWidth
                 xAxisLabelTextStyle={{
                     fontSize: 8,

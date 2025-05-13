@@ -41,6 +41,10 @@ We strongly recommend setting up an anonymous GitHub account to protect your ide
 - **Documentation**:
   - Any code requiring updates, additions, or deletions in documentation must include the necessary documentation changes.
 
+  ```{important}
+  The documentation for this project follows the [Diátaxis framework](https://diataxis.fr/), a widely adopted structure in the Python and Django communities. Please organize your documentation contributions as tutorials, how-to guides, reference, or explanation, according to Diátaxis principles.
+  ```
+
 - **Local Checks**:
   - Before submitting a PR, run the following local checks to ensure documentation quality:
     - `make spelling`: Checks for spelling errors in the documentation using the [vale](https://vale.sh/) tool.
