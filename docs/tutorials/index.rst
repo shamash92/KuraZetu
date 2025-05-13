@@ -8,6 +8,7 @@ Tutorials
    :maxdepth: 1
 
    Getting Started <setup.md>
+   Getting Started (android) <setup-android.md>
 
 
 * :doc:`Getting Started <./setup>`
