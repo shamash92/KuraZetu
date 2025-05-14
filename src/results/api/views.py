@@ -38,13 +38,13 @@ class PollingCenterPresidentialResultsAPIView(APIView):
             polling_center=polling_center
         )
 
-        print(polling_stations_qs, "polling_stations_qs")
+        # print(polling_stations_qs, "polling_stations_qs")
 
         # Fetch the polling center results
         results = PollingStationPresidentialResults.objects.filter(
             polling_station__polling_center=polling_center
         )
 
-        print(results, "presidential results results")
+        # print(results, "presidential results")
         serializer = PollingStationPresidentialResultsSerializer(results, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -23,15 +23,15 @@ yarn install
 
 ```{group-tab} Android Studio Emulator
 
-1. Install Android Studio 
+1. Install Android Studio
     Download and install [Android Studio](https://developer.android.com/studio).
 
-2. Set Up an Emulator 
+2. Set Up an Emulator
     - Open Android Studio.
     - Go to Device Manager.
     - Create and start a new virtual device.
 
-3. Start the Expo Project  
+3. Start the Expo Project
 
     ```bash
     npx expo start -c
@@ -42,10 +42,10 @@ yarn install
 
 ```{group-tab} Expo Go
 
-1. **Install Expo Go**  
+1. **Install Expo Go**
     Download Expo Go from [Google Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent).
 
-2. **Start the Expo Project**  
+2. **Start the Expo Project**
 
     ```bash
     npx expo start -c
@@ -58,11 +58,11 @@ yarn install
 
 1. Before you  start:
     ``` {important}
-    **Why use a Development Build?**  
+    **Why use a Development Build?**
     The only way to test features like push notifications, live location, proper splash screen behavior, and near end-product performance is through a development build. Expo Go does not support these native features, so using a development build is essential for full-feature testing and realistic app behavior.
-    ``` 
+    ```
 
-2.  **Note:**  
+2.  **Note:**
 You do **not** need to manually install the development build APK on an emulator or simulator. If you are using an Android emulator (via Android Studio), simply run:
 
     ```bash
@@ -73,7 +73,7 @@ This command will automatically build and install the development build onto you
 
 Otherwise, if you are using a physical device, you can download the APK from the  link below or scan the QR code to install the development build:
 
-- [Download the APK](https://expo.dev/accounts/shamash92/projects/community-tally/builds/0954b701-1e1e-42fc-b0af-575e29fa8515)
+- [Download the APK](https://expo.dev/accounts/shamash92/projects/community-tally/builds/35fa584b-1943-42ea-8aff-c24c0fc523be)
 
 - Scan the QR code below to install the development build on your device:
 
@@ -81,7 +81,7 @@ Otherwise, if you are using a physical device, you can download the APK from the
 
 The prebuilt development build APK and QR code are intended for installing the app directly on **physical Android devices**. Use this option if you want to test on your phone or tablet without building locally.
 
-3. **Start the Expo Project**  
+3. **Start the Expo Project**
 
     ```bash
     npx expo run:android
