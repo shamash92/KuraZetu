@@ -66,6 +66,7 @@ yarn install
 You do **not** need to manually install the development build APK on an emulator or simulator. If you are using an Android emulator (via Android Studio), simply run:
 
     ```bash
+    npx expo prebuild --clean --platform=android
     npx expo run:android
     ```
 
@@ -108,5 +109,5 @@ A problem occurred evaluating root project 'community-tally'.
 Then create a `local.properties` file in the `android` folder with the following command:
 
 ```bash
-echo "sdk.dir=$HOME/Library/Android/sdk" > "$(pwd)/NATIVE/local.properties"
+echo "sdk.dir=$HOME/Library/Android/sdk" > "$(pwd)/android/local.properties"
 ```
