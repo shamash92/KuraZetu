@@ -45,6 +45,10 @@ class PollingCenterPresidentialResultsAPIView(APIView):
             polling_station__polling_center=polling_center
         )
 
-        print(results, "presidential results results")
+        # print(results, "presidential results results")
         serializer = PollingStationPresidentialResultsSerializer(results, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # TODO: get the stream number from polling center model once the model is updated
+        return Response(
+            {"data": serializer.data, "streams": polling_stations_qs.count()},
+            status=status.HTTP_200_OK,
+        )
