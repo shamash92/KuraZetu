@@ -176,6 +176,15 @@ class PollingStationPresidentialResults(models.Model):
     votes = models.PositiveIntegerField(default=0)
     is_verified = models.BooleanField(default=False)
 
+    def clean(self):
+        if self.presidential_candidate.level != "president":
+            raise ValidationError(_("Candidate is not running for president."))
+
+    def save(self, *args, **kwargs):
+        # Call clean to validate before saving
+        self.clean()
+        super().save(*args, **kwargs)
+
 
 class PollingStationGovernorResults(models.Model):
     class Meta:
