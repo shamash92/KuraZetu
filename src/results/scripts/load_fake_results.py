@@ -79,20 +79,20 @@ def create_aspirants():
             "level": "president",
         },
         {
-            "first_name": "Pres 2",
-            "last_name": "1",
+            "first_name": "Pres",
+            "last_name": "2",
             "party": 2,
             "level": "president",
         },
         {
-            "first_name": "Pres 3",
-            "last_name": "1",
+            "first_name": "Pres",
+            "last_name": "3",
             "party": 3,
             "level": "president",
         },
         {
-            "first_name": "Pres 4",
-            "last_name": "1",
+            "first_name": "Pres",
+            "last_name": "4",
             "party": 4,
             "level": "president",
         },
@@ -256,6 +256,21 @@ def create_polling_station_results():
                     print(pres_results, "pres_results")
                     pres_results.votes = random.randint(0, 10000)
                     pres_results.save()
+
+            if aspirant.level == "governor":
+                try:
+                    governor_results = PollingStationGovernorResults.objects.get(
+                        polling_station=polling_station,
+                        governor_candidate=aspirant,
+                    )
+                except PollingStationGovernorResults.DoesNotExist:
+                    governor_results = PollingStationGovernorResults.objects.create(
+                        polling_station=polling_station,
+                        governor_candidate=aspirant,
+                        votes=0,
+                    )
+                    governor_results.votes = random.randint(0, 10000)
+                    governor_results.save()
 
             # elif aspirant.level == "governor":
             #     PollingStationGovernorResults.objects.get_or_create(

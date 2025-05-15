@@ -47,7 +47,12 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
 ]
 
-MY_APPS = ["accounts", "stations", "ui", "results", "tallies"]
+MY_APPS = [
+    "accounts",
+    "stations",
+    "ui",
+    "results",
+]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 

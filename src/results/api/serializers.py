@@ -84,13 +84,15 @@ class PollingStationGovernorResultsSerializer(ModelSerializer):
     Serializer for PollingStationGovernorResults model.
     """
 
+    polling_station = PollingStationSerializer()
+    governor_candidate = AspirantSerializer()
+
     class Meta:
         model = PollingStationGovernorResults
         fields = (
             "polling_station",
             "governor_candidate",
             "votes",
-            "is_verified",
         )
 
 
