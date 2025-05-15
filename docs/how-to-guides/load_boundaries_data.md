@@ -86,6 +86,17 @@ This guide assumes you have already set up your django project and run migration
     python stations/scripts/polling_center_pin_errors_parse.py
     ```
 
+9. **Update your Django admin user (superuser) with a polling station**
+    Since you already created a superuser, you need to manually assign a polling center to the user since you did not register the user using the sign up form. This step is necessary so that you can later see election results like an ordinary user in the app.
+
+    Run the following command to start the server:
+
+    ```bash
+    python manage.py runserver
+    ```
+
+    Then go to the [admin page](http://localhost:8000/admin/) and assign a polling center to your superuser.
+
 ## Notes
 
 - Ensure the GeoJSON files are correctly formatted and contain the necessary data.

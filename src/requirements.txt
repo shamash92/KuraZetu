@@ -11,6 +11,7 @@ django-phonenumber-field
 django-tailwind
 djangorestframework == 3.15.2
 djangorestframework_gis
+drf-spectacular
 isort
 markdown
 phonenumbers
