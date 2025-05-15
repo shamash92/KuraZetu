@@ -153,7 +153,7 @@ class Aspirant(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.level} - {self.party.name}"
+        return f"{self.level} - {self.first_name + ' '} {self.last_name} - {self.party.name}"
 
 
 # Results
@@ -208,6 +208,20 @@ class PollingStationGovernorResults(models.Model):
     def clean(self):
         if self.governor_candidate.level != "governor":
             raise ValidationError(_("Candidate is not running for governor."))
+
+        # validation that governors can not run in multiple counties
+        if self.governor_candidate and self.polling_station:
+            station_county = (
+                self.polling_station.polling_center.ward.constituency.county
+            )
+            governor_county = self.governor_candidate.county
+
+            if station_county != governor_county:
+                raise ValidationError(
+                    _(
+                        "Governor candidate must be from the same county as the polling station."
+                    )
+                )
 
     def save(self, *args, **kwargs):
         self.clean()
