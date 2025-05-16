@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y \
+    libgdal-dev \
+    binutils \
+    libproj-dev \
+    gdal-bin \
+    nodejs \
+    npm
+    
+WORKDIR /app
+
+COPY /requirements.txt .
+RUN pip install  -r requirements.txt
+
+COPY / .
+
+RUN python manage.py tailwind install
+
+CMD ["python", "manage.py", "tailwind", "start"]
+

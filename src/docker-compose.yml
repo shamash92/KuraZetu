@@ -34,24 +34,26 @@ services:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - POSTGRES_HOST=${DATABASE_HOST}
 
-  # tailwind:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.tailwind
-  #   volumes:
-  #     - ./src:/app
-  #   working_dir: /app
-  #   command: python manage.py tailwind start
+  tailwind:
+    build:
+      context: .
+      dockerfile: Dockerfile.tailwind
+    depends_on:
+      - db
+      - web
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: sh -c "python manage.py tailwind install && python manage.py tailwind start"
 
-
-  # webpack:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.webpack
-  #   volumes:
-  #     - ./src/ui:/app
-  #   working_dir: /app
-  #   command: yarn run dev
+  webpack:
+    build:
+      context: .
+      dockerfile: Dockerfile.webpack
+    volumes:
+      - ./ui:/app
+    working_dir: /app
+    command: yarn run dev
 
 
 volumes:

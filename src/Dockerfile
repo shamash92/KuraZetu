@@ -8,9 +8,6 @@ RUN apt-get update && apt-get install -y \
     libproj-dev \
     gdal-bin
 
-
-
-
 # Set work directory
 WORKDIR /app
 
