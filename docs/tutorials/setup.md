@@ -93,7 +93,17 @@ Copy the example `.env.local` file to `.env`:
 cp .env.local .env
 ```
 
-Edit the `.env` file to configure your environment-specific settings.
+Edit the `.env` file to configure your environment-specific settings. e.g.
+
+```bash
+# Database settings
+DATABASE_NAME=community_tally
+DATABASE_USER=community_user
+DATABASE_PASSWORD=your_password
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+# Other environment variables
+```
 
 ### 4. Set Up PostgreSQL and PostGIS
 
