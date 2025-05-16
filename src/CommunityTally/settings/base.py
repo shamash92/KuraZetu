@@ -38,16 +38,30 @@ THIRD_PARTY_APPS = [
     "leaflet",
     "tailwind",
     "theme",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "rest_framework_gis",
+    "crispy_forms",
+    "crispy_tailwind",
     "django_browser_reload",
+    "drf_spectacular",
 ]
 
-MY_APPS = ["accounts", "stations", "ui"]
+MY_APPS = [
+    "accounts",
+    "stations",
+    "ui",
+    "results",
+]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 
 SITE_ID = 1
 
 TAILWIND_APP_NAME = "theme"
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
 
 
 AUTH_USER_MODEL = "accounts.User"
@@ -150,6 +164,19 @@ FILE_UPLOAD_HANDLERS = [
     "django.core.files.uploadhandler.TemporaryFileUploadHandler",
 ]
 
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # 'PAGE_SIZE': 50,
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Community Tally API",
+    "DESCRIPTION": "An API for Community Tally",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # OTHER SETTINGS
+}
 
 # max upload size 20gb
 DATA_UPLOAD_MAX_MEMORY_SIZE = 21474836480  # 20 * 1024 * 1024 * 1024

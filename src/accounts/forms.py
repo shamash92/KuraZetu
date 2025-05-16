@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AdminPasswordChangeForm, ReadOnlyPasswordHashField
+
 from phonenumber_field.formfields import PhoneNumberField
 
 from accounts.models import User
@@ -89,10 +90,10 @@ class UserAdminCreationForm(forms.ModelForm):
 
     phone_number = forms.CharField(max_length=13, initial="+254")
     first_name = forms.CharField(
-        max_length=40,
+        max_length=20,
     )
     last_name = forms.CharField(
-        max_length=40,
+        max_length=20,
     )
 
     password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
@@ -102,7 +103,15 @@ class UserAdminCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("phone_number", "first_name", "last_name")
+        fields = (
+            "phone_number",
+            "first_name",
+            "last_name",
+            "age",
+            "gender",
+            "password1",
+            "password2",
+        )
 
     def clean_password2(self):
         # Check that the two password entries match

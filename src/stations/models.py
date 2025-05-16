@@ -1,5 +1,3 @@
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models as gis_models
 from django.db import models
@@ -92,6 +90,8 @@ class PollingCenter(gis_models.Model):
     number_of_streams = models.PositiveIntegerField(default=1)
 
     pin_location = gis_models.PointField(blank=True, null=True)
+    pin_location_error = models.CharField(max_length=255, blank=True, null=True)
+
     is_verified = models.BooleanField(default=False)
     verified_by = models.ForeignKey(
         User,
@@ -132,4 +132,12 @@ class PollingStation(models.Model):
     )
 
     def __str__(self):
-        return f"{self.polling_center} - Stream {self.stream_number}"
+        return f"{self.polling_center} - Stream {self.code}"
+
+    def save(self, *args, **kwargs):
+        if not self.stream_number:
+            num = self.code[-2:]
+            print(num, "num")
+            self.stream_number = int(num)
+
+        super().save(*args, **kwargs)

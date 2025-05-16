@@ -53,11 +53,11 @@ This guide assumes you have already set up your django project and run migration
 
 5. **Convert polling station data**
 
-   We first convert the cleaned CSV files to GeoJSON format.
-
-   ```{caution}
+    ```{caution}
     The json file is in the repo already and this step may be skipped. The only reason to run this script is to regenerate the json file is to update the json dat as the csv files will be regularly updated by the community and they will not necessarily run the scripts to update the json file.
     ```
+
+    We first convert the cleaned CSV files to GeoJSON format.
 
     The script `parse_polling_station_data.py` is used for this purpose. It reads the CSV files and generates the corresponding GeoJSON file `cleaned_polling_station_data.json`.
 
@@ -65,11 +65,37 @@ This guide assumes you have already set up your django project and run migration
     python stations/scripts/parse_polling_station_data.py
     ```
 
-6. **Save Polling Center and Polling Station Data
+6. **Save Polling Center and Polling Station Data**
+    If already inside the Django shell, exit and run the following command:
 
-    ```shell
+    ```bash
     python stations/scripts/save_polling_stations.py
     ```
+
+7. **Save Polling Center Pin Locations**
+    This script saves the polling center pin locations to the database. It reads the `cleaned_polling_station_data.json` file and saves the lat/lng data to the database.
+
+    ```bash
+    python stations/scripts/save_polling_center_pin_locations.py
+    ```
+
+8. **Initial Check for pin location errors**
+    This script checks for any errors e.g missing lat/lng data, pin outside ward boundaries, missing parent ward boundary etc. and save the errors to the `PollingCenter` model
+
+    ```bash
+    python stations/scripts/polling_center_pin_errors_parse.py
+    ```
+
+9. **Update your Django admin user (superuser) with a polling station**
+    Since you already created a superuser, you need to manually assign a polling center to the user since you did not register the user using the sign up form. This step is necessary so that you can later see election results like an ordinary user in the app.
+
+    Run the following command to start the server:
+
+    ```bash
+    python manage.py runserver
+    ```
+
+    Then go to the [admin page](http://localhost:8000/admin/) and assign a polling center to your superuser.
 
 ## Notes
 

@@ -28,7 +28,7 @@ const features = [
 
 export function Features() {
   return (
-    <div className='flex flex-col justify-start bg-white sm:py-8'>
+    <div id='about' className='flex flex-col justify-start bg-white sm:py-8'>
       <div className='flex flex-col justify-start px-6 mx-auto max-w-7xl lg:px-8'>
         <div className='flex flex-col items-center justify-center max-w-2xl mx-auto lg:text-center'>
           <h2 className='text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl'>
