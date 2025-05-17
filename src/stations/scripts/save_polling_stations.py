@@ -84,7 +84,7 @@ def save_polling_stations_and_streams(geojson_file_path):
                                 name=reg_center_name,
                                 ward=ward_obj,
                             )
-                            continue
+                            # continue
 
                         for polling_station in reg_center["polling_station_streams"]:
                             stream_code = polling_station["stream_code"]

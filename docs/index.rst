@@ -23,7 +23,6 @@ Community Tally documentation
 Open, transparent, and community-driven vote tallying for Kenya
 ---------------------------------------------------------------
 
-
 **Community Tally** is an open source civic-tech platform created by and for Kenyans to enable **transparent, community-driven monitoring of election results** at the polling station level. 
 It empowers everyday citizens, civil society actors, and developers with tools to **track, tally, and verify votes** in real time; directly from the ground, where the voting happens.
 
@@ -35,16 +34,6 @@ It empowers everyday citizens, civil society actors, and developers with tools t
 At its core, the platform leverages **community participation** to document and validate results as announced at polling stations, giving ordinary people a chance to be watchdogs of democracy. Through crowd-sourced data entry and review, Community Tally aims to build a trusted, parallel tallying system that complements official processes and promotes **public vigilance**.
 
 In addition to the core results tallying functionality, Community Tally includes a special “**Community Notes**” feature that allows citizens to flag suspicious patterns, discrepancies, or signs of fraud. This mechanism is key in ensuring transparency and accountability during the electoral period.
-
-
-.. note::
-   
-   Community Tally is not affiliated with any political party, candidate, or organization. It is a **non-partisan initiative** that aims to promote free and fair elections in Kenya.
-   Whether you’re a software developer, activist, journalist, lawyer, or concerned citizen — **you have a role to play**. 
-
-   From frontend and backend contributions, DevOps and infrastructure, legal audits, digital security, community outreach, to social media awareness — this platform thrives on the diverse strength of Kenya’s people and global allies who believe in **free, fair, and verifiable elections**.
-
-
 
 
 In this documentation
@@ -66,6 +55,14 @@ In this documentation
      - `Reference <reference>`__
        
        Technical specs – API docs, data models, contributor guidelines, and architecture.
+
+.. note::
+   
+   Community Tally is not affiliated with any political party, candidate, or organization. It is a **non-partisan initiative** that aims to promote free and fair elections in Kenya.
+   Whether you’re a software developer, activist, journalist, lawyer, or concerned citizen — **you have a role to play**. 
+
+   From frontend and backend contributions, DevOps and infrastructure, legal audits, digital security, community outreach, to social media awareness — this platform thrives on the diverse strength of Kenya’s people and global allies who believe in **free, fair, and verifiable elections**.
+
 
 Project and Community
 =====================

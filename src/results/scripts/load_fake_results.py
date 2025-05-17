@@ -25,6 +25,7 @@ from results.models import (
     Aspirant,
     Party,
     PollingStationGovernorResults,
+    PollingStationMCAResults,
     PollingStationMpResults,
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
@@ -272,36 +273,65 @@ def create_polling_station_results():
                     governor_results.votes = random.randint(0, 10000)
                     governor_results.save()
 
-            # elif aspirant.level == "governor":
-            #     PollingStationGovernorResults.objects.get_or_create(
-            #         polling_station=polling_station,
-            #         aspirant=aspirant,
-            #         votes=random.randint(0, 10000),
-            #     )
-            # elif aspirant.level == "senator":
-            #     PollingStationSenatorResults.objects.get_or_create(
-            #         polling_station=polling_station,
-            #         aspirant=aspirant,
-            #         votes=random.randint(0, 10000),
-            #     )
-            # elif aspirant.level == "women_rep":
-            #     PollingStationWomenRepResults.objects.get_or_create(
-            #         polling_station=polling_station,
-            #         aspirant=aspirant,
-            #         votes=random.randint(0, 10000),
-            #     )
-            # elif aspirant.level == "mp":
-            #     PollingStationMpResults.objects.get_or_create(
-            #         polling_station=polling_station,
-            #         aspirant=aspirant,
-            #         votes=random.randint(0, 10000),
-            #     )
-            # elif aspirant.level == "mca":
-            #     PollingStationMpResults.objects.get_or_create(
-            #         polling_station=polling_station,
-            #         aspirant=aspirant,
-            #         votes=random.randint(0, 10000),
-            #     )
+            if aspirant.level == "senator":
+                try:
+                    senator_results = PollingStationSenatorResults.objects.get(
+                        polling_station=polling_station,
+                        senator_candidate=aspirant,
+                    )
+                except PollingStationSenatorResults.DoesNotExist:
+                    senator_results = PollingStationSenatorResults.objects.create(
+                        polling_station=polling_station,
+                        senator_candidate=aspirant,
+                        votes=0,
+                    )
+                    senator_results.votes = random.randint(0, 10000)
+                    senator_results.save()
+
+            if aspirant.level == "women_rep":
+                try:
+                    women_rep_results = PollingStationWomenRepResults.objects.get(
+                        polling_station=polling_station,
+                        woman_rep_candidate=aspirant,
+                    )
+                except PollingStationWomenRepResults.DoesNotExist:
+                    women_rep_results = PollingStationWomenRepResults.objects.create(
+                        polling_station=polling_station,
+                        woman_rep_candidate=aspirant,
+                        votes=0,
+                    )
+                    women_rep_results.votes = random.randint(0, 10000)
+                    women_rep_results.save()
+
+            elif aspirant.level == "mp":
+                try:
+                    mp_results = PollingStationMpResults.objects.get(
+                        polling_station=polling_station,
+                        mp_candidate=aspirant,
+                    )
+                except PollingStationMpResults.DoesNotExist:
+                    mp_results = PollingStationMpResults.objects.create(
+                        polling_station=polling_station,
+                        mp_candidate=aspirant,
+                        votes=0,
+                    )
+                    mp_results.votes = random.randint(0, 10000)
+                    mp_results.save()
+
+            elif aspirant.level == "mca":
+                try:
+                    mca_results = PollingStationMCAResults.objects.get(
+                        polling_station=polling_station,
+                        mca_candidate=aspirant,
+                    )
+                except PollingStationMCAResults.DoesNotExist:
+                    mca_results = PollingStationMCAResults.objects.create(
+                        polling_station=polling_station,
+                        mca_candidate=aspirant,
+                        votes=0,
+                    )
+                    mca_results.votes = random.randint(0, 10000)
+                    mca_results.save()
 
 
 if __name__ == "__main__":

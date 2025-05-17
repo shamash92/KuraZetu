@@ -5,32 +5,59 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='User',
+            name="User",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('phone_number', phonenumber_field.modelfields.PhoneNumberField(max_length=128, region=None, unique=True)),
-                ('id_number', models.CharField(blank=True, max_length=20, null=True, unique=True)),
-                ('age', models.IntegerField(blank=True, null=True)),
-                ('gender', models.CharField(blank=True, choices=[('M', 'Male'), ('F', 'Female')], max_length=6, null=True)),
-                ('first_name', models.CharField(blank=True, max_length=20, null=True)),
-                ('last_name', models.CharField(blank=True, max_length=20, null=True)),
-                ('is_verified', models.BooleanField(default=False)),
-                ('active', models.BooleanField(default=True)),
-                ('staff', models.BooleanField(default=False)),
-                ('admin', models.BooleanField(default=False)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("password", models.CharField(max_length=128, verbose_name="password")),
+                (
+                    "last_login",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
+                ),
+                (
+                    "phone_number",
+                    phonenumber_field.modelfields.PhoneNumberField(
+                        max_length=128, region=None, unique=True
+                    ),
+                ),
+                (
+                    "id_number",
+                    models.CharField(blank=True, max_length=20, null=True, unique=True),
+                ),
+                ("age", models.IntegerField(blank=True, null=True)),
+                (
+                    "gender",
+                    models.CharField(
+                        blank=True,
+                        choices=[("M", "Male"), ("F", "Female")],
+                        max_length=6,
+                        null=True,
+                    ),
+                ),
+                ("first_name", models.CharField(blank=True, max_length=20, null=True)),
+                ("last_name", models.CharField(blank=True, max_length=20, null=True)),
+                ("is_verified", models.BooleanField(default=False)),
+                ("active", models.BooleanField(default=True)),
+                ("staff", models.BooleanField(default=False)),
+                ("admin", models.BooleanField(default=False)),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

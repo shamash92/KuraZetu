@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+
+RUN apk update && apk add --no-cache \
+    yarn
+
+WORKDIR /app
+
+COPY /ui/package.json .
+
+RUN yarn install
+
+COPY /ui/ .
+
+CMD ["yarn", "run", "dev"]
