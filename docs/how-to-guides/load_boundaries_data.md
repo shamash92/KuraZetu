@@ -140,7 +140,7 @@ This guide assumes you have already set up your django project and run migration
 
 ````
 
-1. **Initial Check for pin location errors**
+8. **Initial Check for pin location errors**
 
     This script checks for any errors e.g missing lat/lng data, pin outside ward boundaries, missing parent ward boundary etc. and save the errors to the `PollingCenter` model
 
@@ -161,7 +161,7 @@ This guide assumes you have already set up your django project and run migration
 
 ````
 
-1. **Create Fake polling station results**
+9. **Create Fake polling station and national results**
 
     Since you already created a superuser, you need to first assign a polling center to the user since you did not register the user using the sign up form. This step is necessary so that you can later see election results like an ordinary user in the app instead of manually creating this in the admin panel.
 
@@ -176,12 +176,14 @@ This guide assumes you have already set up your django project and run migration
 
     ```bash
     python results/scripts/load_fake_results.py
+    python results/scripts/create_100k_pres_results.py
     ```
 ```
 ```{group-tab} Docker
 - Run the following command in your terminal to create fake polling station results:
     ```bash
     docker compose exec web python results/scripts/load_fake_results.py
+    docker compose exec web python results/scripts/create_100k_pres_results.py
     ```
 ```
 ````
