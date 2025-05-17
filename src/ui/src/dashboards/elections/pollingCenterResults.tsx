@@ -1,601 +1,491 @@
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from 'recharts';
-import React, { useEffect, useState } from 'react';
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Legend,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
+import {
+    IAggregatedResults,
+    ICandidateDetails,
+    IPollingCenterCandidateResults,
+    IPollingCenterResultsProcessed,
+    TLevelDjango,
+    TLevelTabs,
+} from "./types";
+import React, {useEffect, useState} from "react";
+import {aggregateCandidateResults, formatNumber} from "./utils";
 
-import { Item } from '@radix-ui/react-select';
-import { Presentation } from 'lucide-react';
-import { TLevelTabs } from './types';
-import { useUser } from '../../App';
-
-export type TLevelDjango =
-  | 'president'
-  | 'governor'
-  | 'senator'
-  | 'mp'
-  | 'women_rep'
-  | 'mca';
+import {Item} from "@radix-ui/react-select";
+import NoResultsComponent from "./components/noResults";
+import PollingCandidateResults from "./components/pollingCandidateResults";
+import PollingStationCandidatePieChart from "./components/pollingStationCandidatePieChart";
+import {useUser} from "../../App";
 
 const levelsArray: TLevelDjango[] = [
-  'president',
-  'governor',
-  'senator',
-  'mp',
-  'women_rep',
-  'mca'
+    "president",
+    "governor",
+    "senator",
+    "women_rep",
+    "mp",
+    "mca",
 ];
 
-export interface IPollingCenterResultsProcessed {
-  fullName: string;
-  party: string;
-  party_color: string;
-  totalVotes: number;
-  countedStreams: number;
-  percentage: number;
-}
-
-export interface IAggregatedResults {
-  totalStreams: number;
-  candidates: IPollingCenterResultsProcessed[];
-  totalVotes: number;
-}
-
-export interface ICandidateDetails {
-  id: number;
-  first_name: string;
-  last_name: string;
-  surname: null | string;
-  party: string;
-  party_color: string;
-  level: TLevelDjango;
-  passport_photo: null | string;
-  county: null;
-  constituency: null;
-  ward: null;
-  is_verified: boolean;
-  verified_by_party: boolean;
-}
-
-export interface IPollingCenterCandidateResults {
-  polling_station: {
-    code: string;
-    stream_number: number;
-    registered_voters: number;
-    date_created: string;
-    date_modified: string;
-    is_verified: boolean;
-  };
-  presidential_candidate: ICandidateDetails | null;
-  governor_candidate: ICandidateDetails | null;
-  votes: number;
-  is_verified: boolean;
-}
-
-export interface IPollingCenterResultsProcessed {
-  fullName: string;
-  party: string;
-  party_color: string;
-  totalVotes: number;
-  countedStreams: number;
-  percentage: number;
-}
-
-// Parse and aggregate candidate results across all streams
-function aggregateCandidateResults(
-  data: IPollingCenterCandidateResults[],
-  level: TLevelDjango
-): IAggregatedResults {
-  // Map to hold aggregation per candidate id
-  const candidateMap: Record<
-    number,
-    {
-      fullName: string;
-      party: string;
-      party_color: string;
-      totalVotes: number;
-      countedStreams: number;
-    }
-  > = {};
-
-  // Find total streams (unique polling_station.code + stream_number)
-  const uniqueStreams = new Set(
-    data.map(
-      (item: IPollingCenterCandidateResults) =>
-        `${item.polling_station.code}-${item.polling_station.stream_number}`
-    )
-  );
-  const totalStreams = uniqueStreams.size;
-
-  data.forEach((item: IPollingCenterCandidateResults) => {
-    let candidate: ICandidateDetails | null = null;
-    if (level === 'president' && item.presidential_candidate) {
-      candidate = item['presidential_candidate'];
-    } else if (level === 'governor' && item.governor_candidate) {
-      candidate = item['governor_candidate'];
-    }
-
-    if (!candidate) {
-      return; // Skip if candidate is not found for this item
-    }
-
-    const candidateId = candidate.id;
-    const fullName = [
-      candidate.first_name,
-      candidate.last_name,
-      candidate.surname
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-
-    if (!candidateMap[candidateId]) {
-      candidateMap[candidateId] = {
-        fullName,
-        party: candidate.party,
-        party_color: candidate.party_color,
-        totalVotes: 0,
-        countedStreams: 0
-      };
-    }
-
-    candidateMap[candidateId].totalVotes += item.votes;
-    candidateMap[candidateId].countedStreams += 1;
-  });
-
-  // Calculate total votes for percentage
-  const totalVotes = Object.values(candidateMap).reduce(
-    (sum, c) => sum + c.totalVotes,
-    0
-  );
-
-  // Sort candidates by totalVotes descending
-  const sortedCandidates: IPollingCenterResultsProcessed[] = Object.values(
-    candidateMap
-  )
-    .map((c) => ({
-      ...c,
-      percentage: totalVotes > 0 ? (c.totalVotes / totalVotes) * 100 : 0
-    }))
-    .sort((a, b) => b.totalVotes - a.totalVotes);
-
-  // Return as array, including totalStreams for reference and percentage for each candidate
-
-  return {
-    totalStreams,
-    candidates: sortedCandidates,
-    totalVotes
-  };
-}
-
 function PollingCenterResults() {
-  const [activeTab, setActiveTab] = useState<TLevelDjango>('president');
+    const [activeTab, setActiveTab] = useState<TLevelDjango>("president");
 
-  const [presResults, setPresResults] = useState<
-    IPollingCenterCandidateResults[] | null
-  >(null);
+    const [presResults, setPresResults] = useState<
+        IPollingCenterCandidateResults[] | null
+    >(null);
 
-  const [presResultsProcessed, setPresResultsProcessed] = useState<
-    IPollingCenterResultsProcessed[] | null
-  >(null);
+    const [presResultsProcessed, setPresResultsProcessed] = useState<
+        IPollingCenterResultsProcessed[] | null
+    >(null);
 
-  const [streamsNumber, setStreamsNumber] = useState<number>(0);
-  const [totalPresVotes, setTotalPresVotes] = useState<number>(0);
+    const [streamsNumber, setStreamsNumber] = useState<number>(0);
+    const [totalPresVotes, setTotalPresVotes] = useState<number>(0);
 
-  const [governorResults, setGovernorResults] = useState<
-    IPollingCenterCandidateResults[] | null
-  >(null);
-  const [totalGovernorVotes, setTotalGovernorVotes] = useState<number>(0);
-  const [govResultsProcessed, setGovResultsProcessed] = useState<
-    IPollingCenterResultsProcessed[] | null
-  >(null);
+    // governor results
+    const [governorResults, setGovernorResults] = useState<
+        IPollingCenterCandidateResults[] | null
+    >(null);
+    const [totalGovernorVotes, setTotalGovernorVotes] = useState<number>(0);
+    const [govResultsProcessed, setGovResultsProcessed] = useState<
+        IPollingCenterResultsProcessed[] | null
+    >(null);
 
-  const {
-    djangoUserPollingCenterCode,
-    djangoUserPollingCenterName,
-    djangoUserWardNumber,
-    djangoUserConstName,
-    djangoUserCountyName,
-    djangoUserWardName
-  } = useUser();
+    // senator results
+    const [senatorResults, setSenatorResults] = useState<
+        IPollingCenterCandidateResults[] | null
+    >(null);
+    const [totalSenatorVotes, setTotalSenatorVotes] = useState<number>(0);
+    const [senatorResultsProcessed, setSenatorResultsProcessed] = useState<
+        IPollingCenterResultsProcessed[] | null
+    >(null);
 
-  useEffect(() => {
-    console.log('useEffect to call data');
+    // women rep results
+    const [womenRepResults, setWomenRepResults] = useState<
+        IPollingCenterCandidateResults[] | null
+    >(null);
+    const [totalWomenRepVotes, setTotalWomenRepVotes] = useState<number>(0);
+    const [womenRepResultsProcessed, setWomenRepResultsProcessed] = useState<
+        IPollingCenterResultsProcessed[] | null
+    >(null);
 
-    if (presResults === null && activeTab === 'president') {
-      fetch(
-        `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/presidential/`,
-        {
-          method: 'GET'
+    const {
+        djangoUserPollingCenterCode,
+        djangoUserPollingCenterName,
+        djangoUserWardNumber,
+        djangoUserConstName,
+        djangoUserCountyName,
+        djangoUserWardName,
+    } = useUser();
+
+    useEffect(() => {
+        console.log("useEffect to call data");
+
+        if (presResults === null && activeTab === "president") {
+            fetch(
+                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/presidential/`,
+                {
+                    method: "GET",
+                },
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    // console.log(data, "data");
+
+                    if (data.length > 0) {
+                        setPresResults(data["data"]);
+                        setStreamsNumber(data["totalStreams"]);
+                    }
+
+                    let y = aggregateCandidateResults(data["data"], "president");
+                    // console.log(y, 'y');
+
+                    setTotalPresVotes(y.totalVotes);
+                    setStreamsNumber(y.totalStreams);
+
+                    setPresResultsProcessed(y.candidates);
+                });
         }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          // console.log(data, "data");
 
-          if (data.length > 0) {
-            setPresResults(data['data']);
-            setStreamsNumber(data['totalStreams']);
-          }
+        if (activeTab === "governor" && governorResults === null) {
+            fetch(
+                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/governor/`,
+                {
+                    method: "GET",
+                },
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    // console.log(data, "gov data");
 
-          let y = aggregateCandidateResults(data['data'], 'president');
-          // console.log(y, 'y');
+                    if (data.length > 0) {
+                        setGovernorResults(data["data"]);
+                        // setStreamsNumber(data['totalStreams']);
+                    }
 
-          setTotalPresVotes(y.totalVotes);
-          setStreamsNumber(y.totalStreams);
+                    let y = aggregateCandidateResults(data["data"], "governor");
+                    // console.log(y, "y governor");
 
-          setPresResultsProcessed(y.candidates);
-        });
-    }
+                    setTotalGovernorVotes(y.totalVotes);
+                    // setStreamsNumber(y.totalStreams);
 
-    console.log(activeTab, 'activeTab');
-    console.log(governorResults, 'governor results');
-    console.log(governorResults === null, 'governor results === null');
-    console.log(activeTab === 'governor', "'activeTab === 'governor'");
-
-    if (activeTab === 'governor' && governorResults === null) {
-      fetch(
-        `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/governor/`,
-        {
-          method: 'GET'
+                    setGovResultsProcessed(y.candidates);
+                });
         }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          console.log(data, 'gov data');
 
-          if (data.length > 0) {
-            setGovernorResults(data['data']);
-            // setStreamsNumber(data['totalStreams']);
-          }
+        if (activeTab === "senator" && senatorResults === null) {
+            fetch(
+                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/senator/`,
+                {
+                    method: "GET",
+                },
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    // console.log(data, "senator data");
 
-          let y = aggregateCandidateResults(data['data'], 'governor');
-          console.log(y, 'y governor');
+                    if (data.length > 0) {
+                        setSenatorResults(data["data"]);
+                        // setStreamsNumber(data['totalStreams']);
+                    }
 
-          setTotalGovernorVotes(y.totalVotes);
-          // setStreamsNumber(y.totalStreams);
+                    let y = aggregateCandidateResults(data["data"], "senator");
+                    // console.log(y, "y senator");
 
-          setGovResultsProcessed(y.candidates);
-        });
-    }
-  }, [activeTab]);
+                    setTotalSenatorVotes(y.totalVotes);
+                    // setStreamsNumber(y.totalStreams);
 
-  // Mock data for county tabs
-  const countyData = {
-    president: [
-      {
-        name: 'Candidate 1',
-        party: 'Party A',
-        votes: 230450,
-        percentage: 17.2,
-        color: '#0015BC'
-      },
-      {
-        name: 'Candidate 2',
-        party: 'Party B',
-        votes: 172340,
-        percentage: 82.8,
-        color: '#E9141D'
-      }
-    ],
-    governor: [
-      {
-        name: 'Candidate 1',
-        party: 'Party A',
-        votes: 230450,
-        percentage: 57.2,
-        color: '#0015BC'
-      },
-      {
-        name: 'Candidate 2',
-        party: 'Party B',
-        votes: 172340,
-        percentage: 42.8,
-        color: '#E9141D'
-      }
-    ],
-    senator: [
-      {
-        name: 'Candidate 1',
-        party: 'Party A',
-        votes: 215670,
-        percentage: 53.6,
-        color: '#0015BC'
-      },
-      {
-        name: 'Candidate 2',
-        party: 'Party B',
-        votes: 186590,
-        percentage: 46.4,
-        color: '#E9141D'
-      }
-    ],
-    women_rep: [
-      {
-        name: 'Candidate 1',
-        party: 'Party B',
-        votes: 195230,
-        percentage: 48.5,
-        color: '#E9141D'
-      },
-      {
-        name: 'Candidate 2',
-        party: 'Party A',
-        votes: 207340,
-        percentage: 51.5,
-        color: '#0015BC'
-      }
-    ],
+                    setSenatorResultsProcessed(y.candidates);
+                });
+        }
 
-    mp: [
-      {
-        name: 'Candidate 1',
-        party: 'Party B',
-        votes: 195230,
-        percentage: 48.5,
-        color: '#E9141D'
-      },
-      {
-        name: 'Candidate 2',
-        party: 'Party A',
-        votes: 207340,
-        percentage: 51.5,
-        color: '#0015BC'
-      }
-    ],
-    mca: [
-      {
-        name: 'Candidate 1',
-        party: 'Party B',
-        votes: 45230,
-        percentage: 31.2,
-        color: '#E9141D'
-      },
-      {
-        name: 'Candidate 2',
-        party: 'Party A',
-        votes: 52170,
-        percentage: 36.0,
-        color: '#0015BC'
-      },
-      {
-        name: 'Candidate 3',
-        party: 'Independent',
-        votes: 47620,
-        percentage: 32.8,
-        color: '#FFB90F'
-      }
-    ]
-  };
+        if (activeTab === "women_rep" && womenRepResults === null) {
+            fetch(
+                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/women-rep/`,
+                {
+                    method: "GET",
+                },
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    // console.log(data, "women rep data");
 
-  // Format large numbers with commas
-  const formatNumber = (num: number) => {
-    return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
-  };
+                    if (data.length > 0) {
+                        setWomenRepResults(data["data"]);
+                        // setStreamsNumber(data['totalStreams']);
+                    }
 
-  return (
-    <div className='p-4 mb-6 bg-white rounded-lg shadow-md'>
-      <h2 className='mb-4 text-xl font-bold text-center'>
-        {djangoUserPollingCenterName ? djangoUserPollingCenterName : ''} Polling
-        Center Election Results
-      </h2>
-      {/* Tabs */}
-      <div className='flex mb-4 border-b'>
-        {levelsArray.map((tab) => (
-          <button
-            key={tab}
-            className={`px-4 py-2 font-medium ${
-              activeTab === tab
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab === 'women_rep'
-              ? 'Women Rep'
-              : tab === 'mp'
-              ? 'MP'
-              : tab === 'mca'
-              ? 'MCA'
-              : tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
-      {/* Tab Content */}
-      <div className='mb-6'>
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-          {/* Left side: List of candidates */}
-          <div>
-            <h3 className='mb-3 font-semibold'>Candidates</h3>
+                    let y = aggregateCandidateResults(data["data"], "women_rep");
+                    // console.log(y, "y women rep");
 
-            <div className='space-y-3'>
-              {activeTab === 'president' &&
-              totalPresVotes > 0 &&
-              presResultsProcessed !== null ? (
-                presResultsProcessed.map((candidate) => (
-                  <div
-                    key={candidate.fullName}
-                    className='flex items-center justify-between p-3 border-l-4 rounded-lg shadow-sm'
-                    style={{ borderColor: candidate.party_color }}
-                  >
-                    <div>
-                      <div className='font-medium'>{candidate.fullName}</div>
-                      <div className='text-sm text-gray-600'>
-                        {candidate.party}
-                      </div>
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.8rem' }}>
-                        {candidate.countedStreams}/{streamsNumber} streams
-                      </p>
-                    </div>
+                    setTotalWomenRepVotes(y.totalVotes);
+                    // setStreamsNumber(y.totalStreams);
 
-                    <div className='text-right'>
-                      <div className='font-bold'>
-                        {formatNumber(candidate.totalVotes)} votes
-                      </div>
-                      <div className='text-sm text-gray-600'>
-                        {candidate.percentage.toFixed(2)}%
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : activeTab === 'president' ? (
-                <div className='flex items-center justify-center h-full'>
-                  <p className='text-center text-gray-500'>
-                    No results available for this level yet.
-                  </p>
-                </div>
-              ) : null}
+                    setWomenRepResultsProcessed(y.candidates);
+                });
+        }
+    }, [activeTab]);
 
-              {activeTab === 'governor' &&
-              totalGovernorVotes > 0 &&
-              govResultsProcessed !== null ? (
-                govResultsProcessed.map((candidate) => (
-                  <div
-                    key={candidate.fullName}
-                    className='flex items-center justify-between p-3 border-l-4 rounded-lg shadow-sm'
-                    style={{ borderColor: candidate.party_color }}
-                  >
-                    <div>
-                      <div className='font-medium'>{candidate.fullName}</div>
-                      <div className='text-sm text-gray-600'>
-                        {candidate.party}
-                      </div>
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.8rem' }}>
-                        {candidate.countedStreams}/{streamsNumber} streams
-                      </p>
-                    </div>
+    // Mock data for county tabs
+    const countyData = {
+        president: [
+            {
+                name: "Candidate 1",
+                party: "Party A",
+                votes: 230450,
+                percentage: 17.2,
+                color: "#0015BC",
+            },
+            {
+                name: "Candidate 2",
+                party: "Party B",
+                votes: 172340,
+                percentage: 82.8,
+                color: "#E9141D",
+            },
+        ],
+        governor: [
+            {
+                name: "Candidate 1",
+                party: "Party A",
+                votes: 230450,
+                percentage: 57.2,
+                color: "#0015BC",
+            },
+            {
+                name: "Candidate 2",
+                party: "Party B",
+                votes: 172340,
+                percentage: 42.8,
+                color: "#E9141D",
+            },
+        ],
+        senator: [
+            {
+                name: "Candidate 1",
+                party: "Party A",
+                votes: 215670,
+                percentage: 53.6,
+                color: "#0015BC",
+            },
+            {
+                name: "Candidate 2",
+                party: "Party B",
+                votes: 186590,
+                percentage: 46.4,
+                color: "#E9141D",
+            },
+        ],
+        women_rep: [
+            {
+                name: "Candidate 1",
+                party: "Party B",
+                votes: 195230,
+                percentage: 48.5,
+                color: "#E9141D",
+            },
+            {
+                name: "Candidate 2",
+                party: "Party A",
+                votes: 207340,
+                percentage: 51.5,
+                color: "#0015BC",
+            },
+        ],
 
-                    <div className='text-right'>
-                      <div className='font-bold'>
-                        {formatNumber(candidate.totalVotes)} votes
-                      </div>
-                      <div className='text-sm text-gray-600'>
-                        {candidate.percentage.toFixed(2)}%
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : activeTab === 'governor' ? (
-                <div className='flex items-center justify-center h-full'>
-                  <p className='text-center text-gray-500'>
-                    No results available for this level yet.
-                  </p>
-                </div>
-              ) : null}
+        mp: [
+            {
+                name: "Candidate 1",
+                party: "Party B",
+                votes: 195230,
+                percentage: 48.5,
+                color: "#E9141D",
+            },
+            {
+                name: "Candidate 2",
+                party: "Party A",
+                votes: 207340,
+                percentage: 51.5,
+                color: "#0015BC",
+            },
+        ],
+        mca: [
+            {
+                name: "Candidate 1",
+                party: "Party B",
+                votes: 45230,
+                percentage: 31.2,
+                color: "#E9141D",
+            },
+            {
+                name: "Candidate 2",
+                party: "Party A",
+                votes: 52170,
+                percentage: 36.0,
+                color: "#0015BC",
+            },
+            {
+                name: "Candidate 3",
+                party: "Independent",
+                votes: 47620,
+                percentage: 32.8,
+                color: "#FFB90F",
+            },
+        ],
+    };
 
-              {activeTab !== 'president' &&
-                activeTab !== 'governor' &&
-                countyData[activeTab].map((candidate) => (
-                  <div
-                    key={candidate.name}
-                    className='flex items-center justify-between p-3 border-l-4 rounded-lg shadow-sm'
-                    style={{ borderColor: candidate.color }}
-                  >
-                    <div>
-                      <div className='font-medium'>{candidate.name}</div>
-                      <div className='text-sm text-gray-600'>
-                        {candidate.party}
-                      </div>
-                    </div>
-                    <div className='text-right'>
-                      <div className='font-bold'>{candidate.percentage}%</div>
-                      <div className='text-sm text-gray-600'>
-                        {formatNumber(candidate.votes)} votes
-                      </div>
-                    </div>
-                  </div>
+    return (
+        <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
+            <h2 className="mb-4 text-xl font-bold text-center">
+                {djangoUserPollingCenterName ? djangoUserPollingCenterName : ""} Polling
+                Center Election Results
+            </h2>
+            {/* Tabs */}
+            <div className="flex mb-4 border-b">
+                {levelsArray.map((tab) => (
+                    <button
+                        key={tab}
+                        className={`px-4 py-2 font-medium ${
+                            activeTab === tab
+                                ? "border-b-2 border-blue-500 text-blue-600"
+                                : "text-gray-500"
+                        }`}
+                        onClick={() => setActiveTab(tab)}
+                    >
+                        {tab === "women_rep"
+                            ? "Women Rep"
+                            : tab === "mp"
+                            ? "MP"
+                            : tab === "mca"
+                            ? "MCA"
+                            : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
                 ))}
             </div>
-          </div>
+            {/* Tab Content */}
+            <div className="mb-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {/* Left side: List of candidates */}
+                    <div>
+                        <h3 className="mb-3 font-semibold">Candidates</h3>
 
-          {/* Right side: Pie chart */}
-          <div>
-            <h3 className='mb-3 font-semibold'>Vote Distribution</h3>
-            <div className='h-64'>
-              {presResultsProcessed !== null || governorResults !== null ? (
-                <ResponsiveContainer width='100%' height={300}>
-                  <PieChart>
-                    <Pie
-                      data={
-                        activeTab === 'president'
-                          ? presResultsProcessed
-                          : activeTab === 'governor' && govResultsProcessed
-                          ? govResultsProcessed
-                          : countyData[activeTab]
-                      }
-                      cx='50%'
-                      cy='50%'
-                      labelLine={false}
-                      outerRadius={80}
-                      fill='#8884d8'
-                      dataKey='totalVotes'
-                      nameKey='fullName'
-                      label={({ name, percentage }) =>
-                        `${name}: ${percentage.toFixed(2)}%`
-                      }
-                    >
-                      {presResultsProcessed.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.party_color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => [
-                        `${formatNumber(parseInt(value.toString()))} votes`,
-                        'Votes'
-                      ]}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <ResponsiveContainer width='100%' height='100%'>
-                  <PieChart>
-                    <Pie
-                      data={countyData[activeTab]}
-                      cx='50%'
-                      cy='50%'
-                      labelLine={false}
-                      outerRadius={80}
-                      fill='#8884d8'
-                      dataKey='votes'
-                      nameKey='name'
-                      label={({ name, percentage }) =>
-                        `${name}: ${percentage}%`
-                      }
-                    >
-                      {countyData[activeTab].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => [
-                        `${formatNumber(parseInt(value.toString()))} votes`,
-                        'Votes'
-                      ]}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
+                        <div className="space-y-3">
+                            {activeTab === "president" &&
+                            totalPresVotes > 0 &&
+                            presResultsProcessed !== null ? (
+                                presResultsProcessed.map((candidate) => (
+                                    <PollingCandidateResults
+                                        key={candidate.fullName}
+                                        candidate={candidate}
+                                        streamsNumber={streamsNumber}
+                                    />
+                                ))
+                            ) : activeTab === "president" ? (
+                                <NoResultsComponent />
+                            ) : null}
+
+                            {activeTab === "governor" &&
+                            totalGovernorVotes > 0 &&
+                            govResultsProcessed !== null ? (
+                                govResultsProcessed.map((candidate, index) => (
+                                    <PollingCandidateResults
+                                        key={index}
+                                        candidate={candidate}
+                                        streamsNumber={streamsNumber}
+                                    />
+                                ))
+                            ) : activeTab === "governor" ? (
+                                <NoResultsComponent />
+                            ) : null}
+
+                            {activeTab === "senator" &&
+                            totalSenatorVotes > 0 &&
+                            senatorResultsProcessed !== null ? (
+                                senatorResultsProcessed.map((candidate) => (
+                                    <PollingCandidateResults
+                                        key={candidate.fullName}
+                                        candidate={candidate}
+                                        streamsNumber={streamsNumber}
+                                    />
+                                ))
+                            ) : activeTab === "senator" ? (
+                                <NoResultsComponent />
+                            ) : null}
+
+                            {activeTab === "women_rep" &&
+                            totalWomenRepVotes > 0 &&
+                            womenRepResultsProcessed !== null ? (
+                                womenRepResultsProcessed.map((candidate) => (
+                                    <PollingCandidateResults
+                                        key={candidate.fullName}
+                                        candidate={candidate}
+                                        streamsNumber={streamsNumber}
+                                    />
+                                ))
+                            ) : activeTab === "women_rep" ? (
+                                <NoResultsComponent />
+                            ) : null}
+
+                            {activeTab !== "president" &&
+                                activeTab !== "governor" &&
+                                activeTab !== "senator" &&
+                                activeTab !== "women_rep" &&
+                                countyData[activeTab].map((candidate) => (
+                                    <div
+                                        key={candidate.name}
+                                        className="flex items-center justify-between p-3 border-l-4 rounded-lg shadow-sm"
+                                        style={{borderColor: candidate.color}}
+                                    >
+                                        <div>
+                                            <div className="font-medium">
+                                                {candidate.name}
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                                {candidate.party}
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold">
+                                                {candidate.percentage}%
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                                {formatNumber(candidate.votes)} votes
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+
+                    {/* Right side: Pie chart */}
+                    <div>
+                        <h3 className="mb-3 font-semibold text-center">
+                            Vote Distribution
+                        </h3>
+                        <div className="h-64">
+                            {presResultsProcessed !== null ||
+                            governorResults !== null ||
+                            senatorResults !== null ||
+                            womenRepResults !== null ? (
+                                <PollingStationCandidatePieChart
+                                    activeTab={activeTab}
+                                    presResultsProcessed={presResultsProcessed}
+                                    govResultsProcessed={govResultsProcessed}
+                                    senatorResultsProcessed={senatorResultsProcessed}
+                                    womenRepResultsProcessed={womenRepResultsProcessed}
+                                />
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={countyData[activeTab]}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            outerRadius={80}
+                                            fill="#8884d8"
+                                            dataKey="votes"
+                                            nameKey="name"
+                                            label={({name, percentage}) =>
+                                                `${name}: ${percentage}%`
+                                            }
+                                        >
+                                            {countyData[activeTab].map(
+                                                (entry, index) => (
+                                                    <Cell
+                                                        key={`cell-${index}`}
+                                                        fill={entry.color}
+                                                    />
+                                                ),
+                                            )}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value) => [
+                                                `${formatNumber(
+                                                    parseInt(value.toString()),
+                                                )} votes`,
+                                                "Votes",
+                                            ]}
+                                        />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 export default PollingCenterResults;

@@ -6,6 +6,8 @@ This guide will walk you through setting up the Community-Tally project, from cl
 Before  you start, please note that this project is in its early stages and is not yet ready for production use. It is intended for development and testing purposes only.
 ```
 
+There are two ways to run the project: using Docker or setting it up locally. This guide will focus on the local setup. For Docker setup, refer to the [Docker Setup Guide](docker-setup.md).
+
 ## Prerequisites
 
 Ensure you have the following installed:

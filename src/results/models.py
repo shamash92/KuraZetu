@@ -274,8 +274,8 @@ class PollingStationWomenRepResults(models.Model):
         return f"{self.polling_station} - {self.woman_rep_candidate} - {self.votes}"
 
     def clean(self):
-        if self.woman_rep_candidate.level != "senator":
-            raise ValidationError(_("Candidate is not running for senator."))
+        if self.woman_rep_candidate.level != "women_rep":
+            raise ValidationError(_("Candidate is not running for Women Rep."))
 
     def save(self, *args, **kwargs):
         self.clean()

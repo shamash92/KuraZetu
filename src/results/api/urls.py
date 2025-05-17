@@ -1,8 +1,10 @@
 from django.urls import path
 
 from results.api.views import (
-    PollingCenterGovernorResultsDetailAPIView,
     PollingCenterPresidentialResultsAPIView,
+    PollingCenterGovernorResultsAPIView,
+    PollingCenterSenatorResultsAPIView,
+    PollingCenterWomenRepResultsAPIView,
 )
 
 urlpatterns = [
@@ -13,7 +15,17 @@ urlpatterns = [
     ),
     path(
         "polling-center/<int:ward_number>/<str:polling_center_code>/governor/",
-        PollingCenterGovernorResultsDetailAPIView.as_view(),
+        PollingCenterGovernorResultsAPIView.as_view(),
         name="governor-results",
+    ),
+    path(
+        "polling-center/<int:ward_number>/<str:polling_center_code>/senator/",
+        PollingCenterSenatorResultsAPIView.as_view(),
+        name="senator-results",
+    ),
+    path(
+        "polling-center/<int:ward_number>/<str:polling_center_code>/women-rep/",
+        PollingCenterWomenRepResultsAPIView.as_view(),
+        name="women-rep-results",
     ),
 ]
