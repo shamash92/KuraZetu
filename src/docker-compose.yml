@@ -1,0 +1,60 @@
+
+
+services:
+
+  db:
+    image: postgis/postgis:14-3.3
+    container_name: postgis
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_HOST: db
+
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+  web:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DEBUG=${DEBUG}
+      # - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_HOST=${DATABASE_HOST}
+
+  tailwind:
+    build:
+      context: .
+      dockerfile: Dockerfile.tailwind
+    depends_on:
+      - db
+      - web
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: sh -c "python manage.py tailwind install && python manage.py tailwind start"
+
+  webpack:
+    build:
+      context: .
+      dockerfile: Dockerfile.webpack
+    volumes:
+      - ./ui:/app
+    working_dir: /app
+    command: yarn run dev
+
+
+volumes:
+  postgres_data:

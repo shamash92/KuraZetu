@@ -6,12 +6,14 @@ This guide will walk you through setting up the Community-Tally project, from cl
 Before  you start, please note that this project is in its early stages and is not yet ready for production use. It is intended for development and testing purposes only.
 ```
 
+There are two ways to run the project: using Docker or setting it up locally. This guide will focus on the local setup. For Docker setup, refer to the [Docker Setup Guide](docker-setup.md).
+
 ## Prerequisites
 
 Ensure you have the following installed:
 
 - Python (>= 3.10)
-- Ubuntu 24.04 (NB: You can use Macos with a few tweaks around postgres setup)
+- Ubuntu 24.04 (NB: You can use MacOS with a few tweaks around Postgres setup)
 - pip
 - PostgreSQL (>= 14) with PostGIS extension
 - Git
@@ -40,6 +42,7 @@ cd src/
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+pre-commit install
 ```
 
 ### Install System Dependencies
@@ -93,7 +96,17 @@ Copy the example `.env.local` file to `.env`:
 cp .env.local .env
 ```
 
-Edit the `.env` file to configure your environment-specific settings.
+Edit the `.env` file to configure your environment-specific settings. e.g.
+
+```bash
+# Database settings
+DATABASE_NAME=community_tally
+DATABASE_USER=community_user
+DATABASE_PASSWORD=your_password
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+# Other environment variables
+```
 
 ### 4. Set Up PostgreSQL and PostGIS
 

@@ -98,7 +98,7 @@ admin.site.register(
 
 
 class PollingStationSenatorResultsAdmin(admin.ModelAdmin):
-    autocomplete_fields = ["polling_station"]
+    autocomplete_fields = ["polling_station", "senator_candidate"]
 
     list_display = (
         "polling_station",
@@ -119,7 +119,7 @@ admin.site.register(
 
 
 class PollingStationWomenRepResultsAdmin(admin.ModelAdmin):
-    autocomplete_fields = ["polling_station"]
+    autocomplete_fields = ["polling_station", "woman_rep_candidate"]
 
     list_display = (
         "polling_station",

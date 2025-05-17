@@ -14,11 +14,12 @@ import {
 
 import PollingCenterResults from "./pollingCenterResults";
 import React from "react";
+import {formatNumber} from "./utils";
 import {useState} from "react";
 import {useUser} from "../../App";
 
 //TODO: split into smaller components for each administrative level
-export default function ElectionDashboard() {
+export default function ResultsDashboard() {
     const [activeTab, setActiveTab] = useState("governor");
 
     const {
@@ -168,13 +169,6 @@ export default function ElectionDashboard() {
                 color: "#FFB90F",
             },
         ],
-    };
-
-    const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
-
-    // Format large numbers with commas
-    const formatNumber = (num) => {
-        return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
     };
 
     return (
