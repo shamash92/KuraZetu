@@ -135,6 +135,9 @@ class PollingStationMpResultsSerializer(ModelSerializer):
     Serializer for PollingStationMpResults model.
     """
 
+    polling_station = PollingStationSerializer()
+    mp_candidate = AspirantSerializer()
+
     class Meta:
         model = PollingStationMpResults
         fields = (
@@ -148,6 +151,9 @@ class PollingStationMCAResultsSerializer(ModelSerializer):
     """
     Serializer for PollingStationMCAResults model.
     """
+
+    polling_station = PollingStationSerializer()
+    mca_candidate = AspirantSerializer()
 
     class Meta:
         model = PollingStationMCAResults

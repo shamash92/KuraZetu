@@ -58,6 +58,8 @@ export interface IPollingCenterCandidateResults {
     governor_candidate: ICandidateDetails | null;
     senator_candidate: ICandidateDetails | null;
     woman_rep_candidate: ICandidateDetails | null;
+    mp_candidate: ICandidateDetails | null;
+    mca_candidate: ICandidateDetails | null;
 
     votes: number;
     is_verified: boolean;

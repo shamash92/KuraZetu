@@ -48,6 +48,10 @@ export function aggregateCandidateResults(
             candidate = item["senator_candidate"];
         } else if (level === "women_rep" && item.woman_rep_candidate) {
             candidate = item["woman_rep_candidate"];
+        } else if (level === "mp" && item.mp_candidate) {
+            candidate = item["mp_candidate"];
+        } else if (level === "mca" && item.mca_candidate) {
+            candidate = item["mca_candidate"];
         }
 
         if (!candidate) {

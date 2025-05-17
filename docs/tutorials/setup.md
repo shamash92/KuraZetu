@@ -13,7 +13,7 @@ There are two ways to run the project: using Docker or setting it up locally. Th
 Ensure you have the following installed:
 
 - Python (>= 3.10)
-- Ubuntu 24.04 (NB: You can use Macos with a few tweaks around postgres setup)
+- Ubuntu 24.04 (NB: You can use MacOS with a few tweaks around Postgres setup)
 - pip
 - PostgreSQL (>= 14) with PostGIS extension
 - Git
@@ -42,6 +42,7 @@ cd src/
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+pre-commit install
 ```
 
 ### Install System Dependencies

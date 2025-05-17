@@ -23,12 +23,16 @@ function PollingStationCandidatePieChart({
     govResultsProcessed,
     senatorResultsProcessed,
     womenRepResultsProcessed,
+    mpResultsProcessed,
+    mcaResultsProcessed,
 }: {
     activeTab: TLevelDjango;
     presResultsProcessed: IPollingCenterResultsProcessed[] | null;
     govResultsProcessed: IPollingCenterResultsProcessed[] | null;
     senatorResultsProcessed: IPollingCenterResultsProcessed[] | null;
     womenRepResultsProcessed: IPollingCenterResultsProcessed[] | null;
+    mpResultsProcessed: IPollingCenterResultsProcessed[] | null;
+    mcaResultsProcessed: IPollingCenterResultsProcessed[] | null;
 }) {
     // Determine which data to use based on the active tab
     let activeData: IPollingCenterResultsProcessed[] = [];
@@ -40,6 +44,10 @@ function PollingStationCandidatePieChart({
         activeData = senatorResultsProcessed;
     } else if (activeTab === "women_rep" && womenRepResultsProcessed) {
         activeData = womenRepResultsProcessed;
+    } else if (activeTab === "mp" && mpResultsProcessed) {
+        activeData = mpResultsProcessed;
+    } else if (activeTab === "mca" && mcaResultsProcessed) {
+        activeData = mcaResultsProcessed;
     }
 
     return (

@@ -8,7 +8,7 @@ The documentation process has not been integrated in docker yet. You will need t
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) installed
+- [Docker](https://docs.docker.com/get-started/get-docker/) installed
 - [Docker Compose](https://docs.docker.com/compose/install/) installed
 
 ## 1. Clone the Repository

@@ -1,28 +1,12 @@
+import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    Legend,
-    Pie,
-    PieChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from "recharts";
-import {
-    IAggregatedResults,
-    ICandidateDetails,
     IPollingCenterCandidateResults,
     IPollingCenterResultsProcessed,
     TLevelDjango,
-    TLevelTabs,
 } from "./types";
-import React, {useEffect, useState} from "react";
 import {aggregateCandidateResults, formatNumber} from "./utils";
+import {useEffect, useState} from "react";
 
-import {Item} from "@radix-ui/react-select";
 import NoResultsComponent from "./components/noResults";
 import PollingCandidateResults from "./components/pollingCandidateResults";
 import PollingStationCandidatePieChart from "./components/pollingStationCandidatePieChart";
@@ -75,6 +59,24 @@ function PollingCenterResults() {
     >(null);
     const [totalWomenRepVotes, setTotalWomenRepVotes] = useState<number>(0);
     const [womenRepResultsProcessed, setWomenRepResultsProcessed] = useState<
+        IPollingCenterResultsProcessed[] | null
+    >(null);
+
+    // mp results
+    const [mpResults, setMpResults] = useState<IPollingCenterCandidateResults[] | null>(
+        null,
+    );
+    const [totalMpVotes, setTotalMpVotes] = useState<number>(0);
+    const [mpResultsProcessed, setMpResultsProcessed] = useState<
+        IPollingCenterResultsProcessed[] | null
+    >(null);
+
+    // mca results
+    const [mcaResults, setMcaResults] = useState<
+        IPollingCenterCandidateResults[] | null
+    >(null);
+    const [totalMcaVotes, setTotalMcaVotes] = useState<number>(0);
+    const [mcaResultsProcessed, setMcaResultsProcessed] = useState<
         IPollingCenterResultsProcessed[] | null
     >(null);
 
@@ -191,6 +193,54 @@ function PollingCenterResults() {
                     // setStreamsNumber(y.totalStreams);
 
                     setWomenRepResultsProcessed(y.candidates);
+                });
+        }
+
+        if (activeTab === "mp" && mpResults === null) {
+            fetch(
+                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/mp/`,
+                {
+                    method: "GET",
+                },
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    // console.log(data, "mp data");
+
+                    if (data.length > 0) {
+                        setMpResults(data["data"]);
+                    }
+
+                    let y = aggregateCandidateResults(data["data"], "mp");
+                    // console.log(y, "y mp");
+
+                    setTotalMpVotes(y.totalVotes);
+
+                    setMpResultsProcessed(y.candidates);
+                });
+        }
+
+        if (activeTab === "mca" && mcaResults === null) {
+            fetch(
+                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/mca/`,
+                {
+                    method: "GET",
+                },
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    // console.log(data, "mca data");
+
+                    if (data.length > 0) {
+                        setMcaResults(data["data"]);
+                    }
+
+                    let y = aggregateCandidateResults(data["data"], "mca");
+                    // console.log(y, "y mca");
+
+                    setTotalMcaVotes(y.totalVotes);
+
+                    setMcaResultsProcessed(y.candidates);
                 });
         }
     }, [activeTab]);
@@ -395,34 +445,33 @@ function PollingCenterResults() {
                                 <NoResultsComponent />
                             ) : null}
 
-                            {activeTab !== "president" &&
-                                activeTab !== "governor" &&
-                                activeTab !== "senator" &&
-                                activeTab !== "women_rep" &&
-                                countyData[activeTab].map((candidate) => (
-                                    <div
-                                        key={candidate.name}
-                                        className="flex items-center justify-between p-3 border-l-4 rounded-lg shadow-sm"
-                                        style={{borderColor: candidate.color}}
-                                    >
-                                        <div>
-                                            <div className="font-medium">
-                                                {candidate.name}
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                {candidate.party}
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="font-bold">
-                                                {candidate.percentage}%
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                {formatNumber(candidate.votes)} votes
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                            {activeTab === "mp" &&
+                            totalMpVotes > 0 &&
+                            mpResultsProcessed !== null ? (
+                                mpResultsProcessed.map((candidate) => (
+                                    <PollingCandidateResults
+                                        key={candidate.fullName}
+                                        candidate={candidate}
+                                        streamsNumber={streamsNumber}
+                                    />
+                                ))
+                            ) : activeTab === "mp" ? (
+                                <NoResultsComponent />
+                            ) : null}
+
+                            {activeTab === "mca" &&
+                            totalMcaVotes > 0 &&
+                            mcaResultsProcessed !== null ? (
+                                mcaResultsProcessed.map((candidate) => (
+                                    <PollingCandidateResults
+                                        key={candidate.fullName}
+                                        candidate={candidate}
+                                        streamsNumber={streamsNumber}
+                                    />
+                                ))
+                            ) : activeTab === "mca" ? (
+                                <NoResultsComponent />
+                            ) : null}
                         </div>
                     </div>
 
@@ -435,13 +484,17 @@ function PollingCenterResults() {
                             {presResultsProcessed !== null ||
                             governorResults !== null ||
                             senatorResults !== null ||
-                            womenRepResults !== null ? (
+                            womenRepResults !== null ||
+                            mpResultsProcessed !== null ||
+                            mcaResultsProcessed !== null ? (
                                 <PollingStationCandidatePieChart
                                     activeTab={activeTab}
                                     presResultsProcessed={presResultsProcessed}
                                     govResultsProcessed={govResultsProcessed}
                                     senatorResultsProcessed={senatorResultsProcessed}
                                     womenRepResultsProcessed={womenRepResultsProcessed}
+                                    mpResultsProcessed={mpResultsProcessed}
+                                    mcaResultsProcessed={mcaResultsProcessed}
                                 />
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
