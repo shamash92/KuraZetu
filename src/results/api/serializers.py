@@ -84,13 +84,15 @@ class PollingStationGovernorResultsSerializer(ModelSerializer):
     Serializer for PollingStationGovernorResults model.
     """
 
+    polling_station = PollingStationSerializer()
+    governor_candidate = AspirantSerializer()
+
     class Meta:
         model = PollingStationGovernorResults
         fields = (
             "polling_station",
             "governor_candidate",
             "votes",
-            "is_verified",
         )
 
 
@@ -99,13 +101,15 @@ class PollingStationSenatorResultsSerializer(ModelSerializer):
     Serializer for PollingStationSenatorResults model.
     """
 
+    polling_station = PollingStationSerializer()
+    senator_candidate = AspirantSerializer()
+
     class Meta:
         model = PollingStationSenatorResults
         fields = (
             "polling_station",
             "senator_candidate",
             "votes",
-            "is_verified",
         )
 
 
@@ -113,6 +117,9 @@ class PollingStationWomenRepResultsSerializer(ModelSerializer):
     """
     Serializer for PollingStationWomenRepResults model.
     """
+
+    polling_station = PollingStationSerializer()
+    woman_rep_candidate = AspirantSerializer()
 
     class Meta:
         model = PollingStationWomenRepResults
@@ -128,6 +135,9 @@ class PollingStationMpResultsSerializer(ModelSerializer):
     Serializer for PollingStationMpResults model.
     """
 
+    polling_station = PollingStationSerializer()
+    mp_candidate = AspirantSerializer()
+
     class Meta:
         model = PollingStationMpResults
         fields = (
@@ -141,6 +151,9 @@ class PollingStationMCAResultsSerializer(ModelSerializer):
     """
     Serializer for PollingStationMCAResults model.
     """
+
+    polling_station = PollingStationSerializer()
+    mca_candidate = AspirantSerializer()
 
     class Meta:
         model = PollingStationMCAResults

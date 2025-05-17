@@ -79,15 +79,15 @@ admin.site.register(
 
 
 class PollingStationGovernorResultsAdmin(admin.ModelAdmin):
+    # raw_id_fields = [
+    #     "polling_station",
+    # ]
+    autocomplete_fields = ["polling_station", "governor_candidate"]
+
     list_display = (
         "polling_station",
         "governor_candidate",
         "votes",
-    )
-    search_fields = (
-        "polling_station__polling_center__name",
-        "governor_candidate__first_name",
-        "governor_candidate__last_name",
     )
 
 
@@ -98,6 +98,8 @@ admin.site.register(
 
 
 class PollingStationSenatorResultsAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["polling_station", "senator_candidate"]
+
     list_display = (
         "polling_station",
         "senator_candidate",
@@ -117,6 +119,8 @@ admin.site.register(
 
 
 class PollingStationWomenRepResultsAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["polling_station", "woman_rep_candidate"]
+
     list_display = (
         "polling_station",
         "woman_rep_candidate",
@@ -135,6 +139,8 @@ admin.site.register(
 
 
 class PollingStationMpResultsAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["polling_station"]
+
     list_display = (
         "polling_station",
         "mp_candidate",
@@ -154,6 +160,8 @@ admin.site.register(
 
 
 class PollingStationMCAResultsAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["polling_station"]
+
     list_display = (
         "polling_station",
         "mca_candidate",

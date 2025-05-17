@@ -19,7 +19,7 @@ let djangoUserDetails = {
     djangoUserCountyName: window.djangoUserCountyName || null,
     djangoUserCountyNumber: window.djangoUserCountyNumber || null,
 };
-console.log(djangoAuth, "djangoAuth in App.tsx");
+// console.log(djangoAuth, "djangoAuth in App.tsx");
 // console.log(djangoUserDetails, "djangoUserdetails");
 
 let isAuthenticated: boolean =

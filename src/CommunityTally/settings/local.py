@@ -10,36 +10,36 @@ SECRET_KEY = config("SECRET_KEY")
 
 
 INTERNAL_IPS = [
-	# ...
-	"127.0.0.1",
-	# ...
+    # ...
+    "127.0.0.1",
+    # ...
 ]
 
 
 # Database
 
 DATABASES = {
-	"default": {
-		"ENGINE": "django.contrib.gis.db.backends.postgis",
-		"NAME": config("DATABASE_NAME"),
-		"USER": config("DATABASE_USER"),
-		"PASSWORD": config("DATABASE_PASSWORD"),
-		"HOST": "localhost",
-		"PORT": "5432",
-	}
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": config("DATABASE_NAME"),
+        "USER": config("DATABASE_USER"),
+        "PASSWORD": config("DATABASE_PASSWORD"),
+        "HOST": config("DATABASE_HOST"),
+        "PORT": "5432",
+    }
 }
 
 
 STATICFILES_DIRS = [
-	os.path.join(BASE_DIR, "staticfiles"),
-	os.path.join(BASE_DIR, "theme/static"),
-	os.path.join(BASE_DIR, "ui/static"),
+    os.path.join(BASE_DIR, "staticfiles"),
+    os.path.join(BASE_DIR, "theme/static"),
+    os.path.join(BASE_DIR, "ui/static"),
 ]  # This is the directory that you should serve static files from in development.
 # STATIC_ROOT and STATICFILES_DIRS cannot point to the same directory.
 
 
 STATIC_ROOT = os.path.join(
-	BASE_DIR, "static"
+    BASE_DIR, "static"
 )  # This is the directory that you should serve static files from in production.
 
 MEDIA_URL = "/media/"
