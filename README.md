@@ -10,7 +10,11 @@
 
 **Community Tally** is an open source platform (plus mobile app) built **by and for Kenyans** to empower communities to **track, verify, and tally election results** at the polling station level.
 
-It enables everyday citizens, developers, journalists, civil society, and oversight bodies to actively participate in protecting the integrity of elections — **from the ground up**.
+In Kenya, every voter has access to a smart phone, and since results announced at the polling station are final, we believe the public can play a powerful role in protecting the vote. We can all be agents.
+
+With features like crowdsourced uploads, real-time tallies, and a community notes system for public verification, the platform enables everyday citizens, developers, journalists, civil society, and oversight bodies to participate in safeguarding the integrity of elections — from the ground up.
+
+The platform is designed to be **open source** and **community-driven**, allowing anyone to contribute, verify, and improve the system.
 
 > ⚠️ **Disclaimer**
 >
