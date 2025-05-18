@@ -7,6 +7,7 @@ from results.api.views import (
     PollingCenterPresidentialResultsAPIView,
     PollingCenterSenatorResultsAPIView,
     PollingCenterWomenRepResultsAPIView,
+    TotalPresResultsAPIView,
 )
 
 urlpatterns = [
@@ -39,5 +40,10 @@ urlpatterns = [
         "polling-center/<int:ward_number>/<str:polling_center_code>/mca/",
         PollingCenterMCAResultsAPIView.as_view(),
         name="mca-results",
+    ),
+    path(
+        "total-votes/presidential/",
+        TotalPresResultsAPIView.as_view(),
+        name="total-votes",
     ),
 ]
