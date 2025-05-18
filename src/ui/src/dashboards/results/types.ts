@@ -73,3 +73,12 @@ export interface IPollingCenterResultsProcessed {
     countedStreams: number;
     percentage: number;
 }
+
+export interface IPresidentialNationalResults {
+    name: string;
+    party: string;
+    party_color: string;
+    votes: number;
+    percentage: number;
+    image: string;
+}

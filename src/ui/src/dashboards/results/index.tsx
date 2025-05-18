@@ -11,9 +11,10 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
+import React, {useEffect} from "react";
 
+import {IPresidentialNationalResults} from "./types";
 import PollingCenterResults from "./pollingCenterResults";
-import React from "react";
 import {formatNumber} from "./utils";
 import {useState} from "react";
 import {useUser} from "../../App";
@@ -21,6 +22,9 @@ import {useUser} from "../../App";
 //TODO: split into smaller components for each administrative level
 export default function ResultsDashboard() {
     const [activeTab, setActiveTab] = useState("governor");
+    const [presidentialData, setPresidentialData] = useState<
+        IPresidentialNationalResults[]
+    >([]);
 
     const {
         djangoUserPollingCenterCode,
@@ -30,27 +34,6 @@ export default function ResultsDashboard() {
         djangoUserCountyName,
         djangoUserWardName,
     } = useUser();
-
-    // TODO: Update the data to be fetched from an API
-    // Mock data for presidential candidates
-    const presidentialData = [
-        {
-            name: "Candidate 1",
-            party: "Party A",
-            votes: 74216154,
-            percentage: 51.3,
-            color: "#E9141D",
-            image: null,
-        },
-        {
-            name: "Candidate 2",
-            party: "Party B",
-            votes: 70503457,
-            percentage: 48.7,
-            color: "#0015BC",
-            image: null,
-        },
-    ];
 
     // Mock data for county tabs
     const countyData = {
@@ -171,6 +154,16 @@ export default function ResultsDashboard() {
         ],
     };
 
+    useEffect(() => {
+        // Fetch data from the API
+        Example: fetch("/api/results/total-votes/presidential/")
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data, "data");
+                setPresidentialData(data["results"]);
+            });
+    }, []);
+
     return (
         <div className="flex flex-col w-full min-h-screen p-4 bg-gray-100">
             {/* Header */}
@@ -195,7 +188,7 @@ export default function ResultsDashboard() {
                         <div
                             key={candidate.name}
                             className="flex flex-col items-center w-64 overflow-hidden border-t-4 rounded-lg shadow-md"
-                            style={{borderColor: candidate.color}}
+                            style={{borderColor: candidate.party_color}}
                         >
                             <div className="flex items-center justify-center w-full p-3 bg-gray-100">
                                 <div className="flex items-center gap-3">
@@ -215,7 +208,7 @@ export default function ResultsDashboard() {
                                         </h3>
                                         <p
                                             className="text-sm"
-                                            style={{color: candidate.color}}
+                                            style={{color: candidate.party_color}}
                                         >
                                             {candidate.party}
                                         </p>
@@ -262,7 +255,9 @@ export default function ResultsDashboard() {
                                 <YAxis type="category" dataKey="name" />
                                 <Tooltip
                                     formatter={(value) => [
-                                        `${formatNumber(value)} votes`,
+                                        `${formatNumber(
+                                            parseInt(value.toString()),
+                                        )} votes`,
                                         "Votes",
                                     ]}
                                     labelFormatter={(name) => `Candidate: ${name}`}
@@ -272,7 +267,7 @@ export default function ResultsDashboard() {
                                     {presidentialData.map((entry, index) => (
                                         <Cell
                                             key={`cell-${index}`}
-                                            fill={entry.color}
+                                            fill={entry.party_color}
                                         />
                                     ))}
                                 </Bar>

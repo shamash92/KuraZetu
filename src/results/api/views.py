@@ -1,3 +1,6 @@
+from django.core.cache import cache
+from django.db.models import Sum
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,6 +14,7 @@ from results.api.serializers import (
     PollingStationWomenRepResultsSerializer,
 )
 from results.models import (
+    Aspirant,
     PollingStationGovernorResults,
     PollingStationMCAResults,
     PollingStationMpResults,
@@ -346,5 +350,62 @@ class PollingCenterMCAResultsAPIView(APIView):
 
         return Response(
             {"data": serializer.data, "streams": polling_stations_qs.count()},
+            status=status.HTTP_200_OK,
+        )
+
+
+class TotalPresResultsAPIView(APIView):
+    """
+    API view to retrieve Presidential Results results for a specific polling station.
+    """
+
+    def get(self, request):
+        # Try to get cached results
+
+        candidate_results = cache.get("presidential_candidate_results")
+        if candidate_results is None:
+            # Get all aspirants
+            aspirants = Aspirant.objects.filter(level="president")
+
+            candidate_results = []
+            for aspirant in aspirants:
+                # Get the total votes for each aspirant
+                total_votes = (
+                    PollingStationPresidentialResults.objects.filter(
+                        presidential_candidate=aspirant,
+                        polling_station__polling_center__ward__constituency__name__icontains="Laikipia East",
+                    )
+                    .aggregate(Sum("votes"))
+                    .get("votes__sum", 0)
+                )
+                full_name = aspirant.first_name + " " + aspirant.last_name
+                candidate_results.append(
+                    {
+                        "name": full_name,
+                        "party": aspirant.party.name,
+                        "party_color": aspirant.party.party_colour_hex,
+                        "votes": total_votes,
+                    }
+                )
+
+            # print(candidate_results, "candidate results")
+            # calculate percentages and append to the list
+            for candidate in candidate_results:
+                total_votes = sum(candidate["votes"] for candidate in candidate_results)
+                if total_votes > 0:
+                    candidate["percentage"] = round(
+                        ((candidate["votes"] / total_votes) * 100), 2
+                    )
+
+                else:
+                    candidate["percentage"] = 0
+            # Sort the results by votes in descending order
+            candidate_results = sorted(
+                candidate_results, key=lambda x: x["votes"], reverse=True
+            )
+            cache.set("presidential_candidate_results", candidate_results, timeout=3)
+
+        return Response(
+            {"results": candidate_results},
             status=status.HTTP_200_OK,
         )
