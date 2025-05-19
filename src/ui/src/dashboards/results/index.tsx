@@ -183,6 +183,44 @@ export default function ResultsDashboard() {
                     Presidential Election Results
                 </h2>
 
+                {presidentialData.length > 0 &&
+                    presidentialData[0].total_polling_stations_with_results && (
+                        <div className="flex flex-col items-center justify-center w-full p-4 mb-4 rounded-lg shadow-sm bg-blue-50">
+                            {(() => {
+                                const reported =
+                                    presidentialData[0]
+                                        .total_polling_stations_with_results;
+                                const total =
+                                    presidentialData[0]
+                                        .nationwide_polling_stations_count;
+                                const percent = total ? (reported / total) * 100 : 0;
+                                return (
+                                    <>
+                                        <div className="flex items-center justify-between w-full mb-2">
+                                            <span className="text-sm font-medium text-blue-900">
+                                                Polling Stations Reported
+                                            </span>
+                                            <span className="text-sm font-medium text-blue-900">
+                                                {reported} / {total}
+                                            </span>
+                                        </div>
+                                        <div className="relative w-full h-6 overflow-hidden bg-blue-100 rounded-full">
+                                            <div
+                                                className="absolute top-0 left-0 h-full transition-all duration-700 bg-gradient-to-r from-blue-500 to-blue-700"
+                                                style={{width: `${percent}%`}}
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-sm font-semibold text-white drop-shadow">
+                                                    {percent.toFixed(1)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    )}
+
                 <div className="flex flex-wrap justify-center gap-6 mb-6">
                     {presidentialData.map((candidate) => (
                         <div
@@ -280,7 +318,7 @@ export default function ResultsDashboard() {
             {/* County Results Section */}
 
             <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
-                <h2 className="mb-4 text-xl font-bold text-center">
+                <h2 className="mb-6 text-2xl font-extrabold tracking-wide text-center bg-clip-text drop-shadow-lg">
                     {djangoUserCountyName} County Election Results
                 </h2>
                 {/* Tabs */}
