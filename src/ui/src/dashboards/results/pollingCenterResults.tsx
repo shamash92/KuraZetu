@@ -245,114 +245,6 @@ function PollingCenterResults() {
         }
     }, [activeTab]);
 
-    // Mock data for county tabs
-    const countyData = {
-        president: [
-            {
-                name: "Candidate 1",
-                party: "Party A",
-                votes: 230450,
-                percentage: 17.2,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party B",
-                votes: 172340,
-                percentage: 82.8,
-                color: "#E9141D",
-            },
-        ],
-        governor: [
-            {
-                name: "Candidate 1",
-                party: "Party A",
-                votes: 230450,
-                percentage: 57.2,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party B",
-                votes: 172340,
-                percentage: 42.8,
-                color: "#E9141D",
-            },
-        ],
-        senator: [
-            {
-                name: "Candidate 1",
-                party: "Party A",
-                votes: 215670,
-                percentage: 53.6,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party B",
-                votes: 186590,
-                percentage: 46.4,
-                color: "#E9141D",
-            },
-        ],
-        women_rep: [
-            {
-                name: "Candidate 1",
-                party: "Party B",
-                votes: 195230,
-                percentage: 48.5,
-                color: "#E9141D",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party A",
-                votes: 207340,
-                percentage: 51.5,
-                color: "#0015BC",
-            },
-        ],
-
-        mp: [
-            {
-                name: "Candidate 1",
-                party: "Party B",
-                votes: 195230,
-                percentage: 48.5,
-                color: "#E9141D",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party A",
-                votes: 207340,
-                percentage: 51.5,
-                color: "#0015BC",
-            },
-        ],
-        mca: [
-            {
-                name: "Candidate 1",
-                party: "Party B",
-                votes: 45230,
-                percentage: 31.2,
-                color: "#E9141D",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party A",
-                votes: 52170,
-                percentage: 36.0,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 3",
-                party: "Independent",
-                votes: 47620,
-                percentage: 32.8,
-                color: "#FFB90F",
-            },
-        ],
-    };
-
     return (
         <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
             <h2 className="mb-4 text-xl font-bold text-center">
@@ -497,41 +389,9 @@ function PollingCenterResults() {
                                     mcaResultsProcessed={mcaResultsProcessed}
                                 />
                             ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={countyData[activeTab]}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            outerRadius={80}
-                                            fill="#8884d8"
-                                            dataKey="votes"
-                                            nameKey="name"
-                                            label={({name, percentage}) =>
-                                                `${name}: ${percentage}%`
-                                            }
-                                        >
-                                            {countyData[activeTab].map(
-                                                (entry, index) => (
-                                                    <Cell
-                                                        key={`cell-${index}`}
-                                                        fill={entry.color}
-                                                    />
-                                                ),
-                                            )}
-                                        </Pie>
-                                        <Tooltip
-                                            formatter={(value) => [
-                                                `${formatNumber(
-                                                    parseInt(value.toString()),
-                                                )} votes`,
-                                                "Votes",
-                                            ]}
-                                        />
-                                        <Legend />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                <p className="text-center text-gray-500">
+                                    No data available for the selected tab.
+                                </p>
                             )}
                         </div>
                     </div>

@@ -4,6 +4,8 @@ import {
     CartesianGrid,
     Cell,
     Legend,
+    Line,
+    LineChart,
     Pie,
     PieChart,
     ResponsiveContainer,
@@ -55,30 +57,30 @@ function PollingStationCandidatePieChart({
             <PieChart>
                 <Pie
                     data={activeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
                     dataKey="totalVotes"
                     nameKey="fullName"
-                    label={({name, percentage}) => `${name}: ${percentage.toFixed(2)}%`}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    label={({name, percent}) =>
+                        `${name}: ${(percent * 100).toFixed(1)}%`
+                    }
                 >
-                    {activeData &&
-                        activeData.map((entry, index) => (
-                            <Cell
-                                key={`cell-${activeTab}-${index}`}
-                                fill={entry.party_color}
-                            />
-                        ))}
+                    {activeData.map((entry, index) => (
+                        <Cell
+                            key={`cell-${index}`}
+                            fill={activeData[index].party_color}
+                        />
+                    ))}
                 </Pie>
                 <Tooltip
-                    formatter={(value) => [
-                        `${formatNumber(parseInt(value.toString()))} votes`,
-                        "Votes",
+                    formatter={(value: number, name: string, props: any) => [
+                        `${formatNumber(value)} votes`,
+                        props.payload.fullName,
                     ]}
                 />
-                <Legend />
             </PieChart>
         </ResponsiveContainer>
     );

@@ -80,5 +80,7 @@ export interface IPresidentialNationalResults {
     party_color: string;
     votes: number;
     percentage: number;
+    total_polling_stations_with_results: number;
+    nationwide_polling_stations_count: number;
     image: string;
 }

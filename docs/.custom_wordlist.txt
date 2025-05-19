@@ -1,9 +1,13 @@
 Cybersecurity
 geojson
+geospatial
 influencers
+LLMs
 NGOs
 Postgres
 sequential_nav
+Serverless
+Vite
 VPNs
 vscode
 Webpack
