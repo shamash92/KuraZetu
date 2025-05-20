@@ -4,12 +4,12 @@ Tutorials
 =========
 
 .. toctree::
-   :hidden:
-   :maxdepth: 1
+   :maxdepth: 2
 
-   Getting Started <setup.md>
+   Option 1: Getting Started(web) <setup.md>
+   Option 2: Getting started (docker) <docker-setup.md>
    Getting Started (android) <setup-android.md>
 
 
-* :doc:`Getting Started <./setup>`
-   Learn how to set up the project on Linux
+.. * :doc:`Getting Started <./setup>`
+..    Learn how to set up the project on Linux

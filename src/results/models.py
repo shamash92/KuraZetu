@@ -153,7 +153,7 @@ class Aspirant(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.level} - {self.party.name}"
+        return f"{self.level} - {self.first_name + ' '} {self.last_name} - {self.party.name}"
 
 
 # Results
@@ -175,6 +175,15 @@ class PollingStationPresidentialResults(models.Model):
     )
     votes = models.PositiveIntegerField(default=0)
     is_verified = models.BooleanField(default=False)
+
+    def clean(self):
+        if self.presidential_candidate.level != "president":
+            raise ValidationError(_("Candidate is not running for president."))
+
+    def save(self, *args, **kwargs):
+        # Call clean to validate before saving
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class PollingStationGovernorResults(models.Model):
@@ -199,6 +208,20 @@ class PollingStationGovernorResults(models.Model):
     def clean(self):
         if self.governor_candidate.level != "governor":
             raise ValidationError(_("Candidate is not running for governor."))
+
+        # validation that governors can not run in multiple counties
+        if self.governor_candidate and self.polling_station:
+            station_county = (
+                self.polling_station.polling_center.ward.constituency.county
+            )
+            governor_county = self.governor_candidate.county
+
+            if station_county != governor_county:
+                raise ValidationError(
+                    _(
+                        "Governor candidate must be from the same county as the polling station."
+                    )
+                )
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -234,8 +257,8 @@ class PollingStationSenatorResults(models.Model):
 class PollingStationWomenRepResults(models.Model):
     class Meta:
         unique_together = ("polling_station", "woman_rep_candidate")
-        verbose_name = "Polling Station  Senator Results"
-        verbose_name_plural = "Polling Station  Senator Results"
+        verbose_name = "Polling Station  Women Rep Results"
+        verbose_name_plural = "Polling Station Women Rep Results"
 
     polling_station = models.ForeignKey(
         PollingStation,
@@ -251,8 +274,8 @@ class PollingStationWomenRepResults(models.Model):
         return f"{self.polling_station} - {self.woman_rep_candidate} - {self.votes}"
 
     def clean(self):
-        if self.woman_rep_candidate.level != "senator":
-            raise ValidationError(_("Candidate is not running for senator."))
+        if self.woman_rep_candidate.level != "women_rep":
+            raise ValidationError(_("Candidate is not running for Women Rep."))
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -288,8 +311,8 @@ class PollingStationMpResults(models.Model):
 class PollingStationMCAResults(models.Model):
     class Meta:
         unique_together = ("polling_station", "mca_candidate")
-        verbose_name = "Polling Station MP Results"
-        verbose_name_plural = "Polling Station MP Results"
+        verbose_name = "Polling Station MCA Results"
+        verbose_name_plural = "Polling Station MCA Results"
 
     polling_station = models.ForeignKey(
         PollingStation, on_delete=models.CASCADE, related_name="mca_polling_station"

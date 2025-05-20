@@ -137,7 +137,7 @@ class PollingStation(models.Model):
     def save(self, *args, **kwargs):
         if not self.stream_number:
             num = self.code[-2:]
-            print(num, "num")
+            # print(num, "num")
             self.stream_number = int(num)
 
         super().save(*args, **kwargs)
