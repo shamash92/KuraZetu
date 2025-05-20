@@ -71,7 +71,7 @@ export const useUser = () => useContext(UserContext);
 
 function App() {
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center justify-start w-full min-h-screen">
             <AuthProvider>
                 <UserProvider>
                     <RoutesApp />
