@@ -235,6 +235,9 @@ def create_polling_station_results():
 
     user = User.objects.get(id=1)  # Replace with the ID of the superuser
     polling_center = user.polling_center
+    user_ward = polling_center.ward
+    user_constituency = user_ward.constituency
+    user_county = user_constituency.county
     polling_stations = PollingStation.objects.filter(polling_center=polling_center)
 
     for polling_station in tqdm(

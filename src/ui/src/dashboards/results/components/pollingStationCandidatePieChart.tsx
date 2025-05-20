@@ -18,7 +18,10 @@ import {IPollingCenterResultsProcessed, TLevelDjango} from "../types";
 import React from "react";
 import {formatNumber} from "../utils";
 
+// TODO: Add a check for zero votes since its rendering badly, maybe exclude it from the chart
+// TODO: Fix pie charts, it renders out of bounds when aspirants names are long
 // TODO: add types for props
+
 function PollingStationCandidatePieChart({
     activeTab,
     presResultsProcessed,

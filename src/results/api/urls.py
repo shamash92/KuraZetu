@@ -1,5 +1,7 @@
 from django.urls import path
 
+from results.api.county_views import CountyTotalResultsAPIView
+from results.api.national_views import TotalPresResultsAPIView
 from results.api.views import (
     PollingCenterGovernorResultsAPIView,
     PollingCenterMCAResultsAPIView,
@@ -7,7 +9,6 @@ from results.api.views import (
     PollingCenterPresidentialResultsAPIView,
     PollingCenterSenatorResultsAPIView,
     PollingCenterWomenRepResultsAPIView,
-    TotalPresResultsAPIView,
 )
 
 urlpatterns = [
@@ -45,5 +46,11 @@ urlpatterns = [
         "total-votes/presidential/",
         TotalPresResultsAPIView.as_view(),
         name="total-votes",
+    ),
+    # county apis
+    path(
+        "county/<str:level>/",
+        CountyTotalResultsAPIView.as_view(),
+        name="county-presidential-results",
     ),
 ]

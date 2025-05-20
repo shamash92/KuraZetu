@@ -2,27 +2,29 @@
 {% load static %}
 
 {% block head %}
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 {% endblock %}
 
 {% block content %}
-  <script>
-    window.djangoAuthenticated = '{{ user.is_authenticated|lower }}'
-    window.djangoUserPhoneNumber = '{{ user.phone_number |safe }}'
-    window.djangoUserPollingCenterCode = '{{ user.polling_center.code |safe }}'
-    window.djangoUserPollingCenterName = '{{ user.polling_center.name |safe }}'
+    <script>
+        window.djangoAuthenticated = '{{ user.is_authenticated|lower }}'
+        window.djangoUserPhoneNumber = '{{ user.phone_number |safe }}'
+        window.djangoUserPollingCenterCode = '{{ user.polling_center.code |safe }}'
+        window.djangoUserPollingCenterName = '{{ user.polling_center.name |safe }}'
 
-    window.djangoUserWardNumber = '{{ user.polling_center.ward.number |safe}}'
-    window.djangoUserWardName = '{{ user.polling_center.ward.name |safe}}'
+        window.djangoUserWardNumber = '{{ user.polling_center.ward.number |safe}}'
+        window.djangoUserWardName = '{{ user.polling_center.ward.name |safe}}'
 
-    window.djangoUserConstName = '{{ user.polling_center.ward.constituency.name |safe}}'
-    window.djangoUserConstNumber = '{{ user.polling_center.ward.constituency.number |safe}}'
+        window.djangoUserConstName = '{{ user.polling_center.ward.constituency.name |safe}}'
+        window.djangoUserConstNumber = '{{ user.polling_center.ward.constituency.number |safe}}'
 
-    window.djangoUserCountyName = '{{ user.polling_center.ward.constituency.county.name |safe}}'
-    window.djangoUserCountyNumber = '{{ user.polling_center.ward.constituency.county.number |safe}}'
-  </script>
-  <div id="root"></div>
+        window.djangoUserCountyName =
+            '{{ user.polling_center.ward.constituency.county.name |safe}}'
+        window.djangoUserCountyNumber =
+            '{{ user.polling_center.ward.constituency.county.number |safe}}'
+    </script>
+    <div class="flex w-full" id="root"></div>
 
-  <script src="{% static 'ui' %}{{ js_bundle }}"></script>
+    <script src="{% static 'ui' %}{{ js_bundle }}"></script>
 {% endblock %}

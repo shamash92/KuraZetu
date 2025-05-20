@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     gdal-bin \
     nodejs \
     npm
-    
+
 WORKDIR /app
 
 COPY /requirements.txt .
@@ -15,7 +15,8 @@ RUN pip install  -r requirements.txt
 
 COPY / .
 
-RUN python manage.py tailwind install
+RUN python manage.py tailwind install --no-package-lock --no-input;
+RUN python manage.py tailwind build --no-input;
+RUN python manage.py collectstatic --no-input;
 
 CMD ["python", "manage.py", "tailwind", "start"]
-

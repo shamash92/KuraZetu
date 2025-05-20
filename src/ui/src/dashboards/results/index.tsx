@@ -4,18 +4,17 @@ import {
     CartesianGrid,
     Cell,
     Legend,
-    Pie,
-    PieChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
     YAxis,
 } from "recharts";
-import React, {useEffect} from "react";
 
+import CountyResults from "./countyResults";
 import {IPresidentialNationalResults} from "./types";
 import PollingCenterResults from "./pollingCenterResults";
 import {formatNumber} from "./utils";
+import {useEffect} from "react";
 import {useState} from "react";
 import {useUser} from "../../App";
 
@@ -159,13 +158,13 @@ export default function ResultsDashboard() {
         Example: fetch("/api/results/total-votes/presidential/")
             .then((response) => response.json())
             .then((data) => {
-                console.log(data, "data");
+                // console.log(data, "data");
                 setPresidentialData(data["results"]);
             });
     }, []);
 
     return (
-        <div className="flex flex-col w-full min-h-screen p-4 bg-gray-100">
+        <div className="flex flex-col w-full min-h-screen p-4 bg-gray-100 ">
             {/* Header */}
             <header className="flex w-full p-4 mb-4 text-white bg-blue-900 rounded-t-lg">
                 <h1 className="text-2xl font-bold text-center">
@@ -179,47 +178,53 @@ export default function ResultsDashboard() {
 
             {/* Presidential Results Section */}
             <div className="flex flex-col w-full p-4 mb-6 bg-white rounded-lg shadow-md">
-                <h2 className="mb-4 text-xl font-bold text-center">
-                    Presidential Election Results
-                </h2>
+                <div className="flex flex-row items-center justify-between p-4 mb-4 rounded-lg bg-blue-50">
+                    <div className="flex items-center w-1/2 gap-2">
+                        <h2 className="text-xl font-bold text-center ">
+                            Presidential Election Results
+                        </h2>
+                    </div>
 
-                {presidentialData.length > 0 &&
-                    presidentialData[0].total_polling_stations_with_results && (
-                        <div className="flex flex-col items-center justify-center w-full p-4 mb-4 rounded-lg shadow-sm bg-blue-50">
-                            {(() => {
-                                const reported =
-                                    presidentialData[0]
-                                        .total_polling_stations_with_results;
-                                const total =
-                                    presidentialData[0]
-                                        .nationwide_polling_stations_count;
-                                const percent = total ? (reported / total) * 100 : 0;
-                                return (
-                                    <>
-                                        <div className="flex items-center justify-between w-full mb-2">
-                                            <span className="text-sm font-medium text-blue-900">
-                                                Polling Stations Reported
-                                            </span>
-                                            <span className="text-sm font-medium text-blue-900">
-                                                {reported} / {total}
-                                            </span>
-                                        </div>
-                                        <div className="relative w-full h-6 overflow-hidden bg-blue-100 rounded-full">
-                                            <div
-                                                className="absolute top-0 left-0 h-full transition-all duration-700 bg-gradient-to-r from-blue-500 to-blue-700"
-                                                style={{width: `${percent}%`}}
-                                            />
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-sm font-semibold text-white drop-shadow">
-                                                    {percent.toFixed(1)}%
+                    {presidentialData.length > 0 &&
+                        presidentialData[0].total_polling_stations_with_results && (
+                            <div className="flex flex-col items-center justify-center w-1/2 rounded-lg shadow-sm ">
+                                {(() => {
+                                    const reported =
+                                        presidentialData[0]
+                                            .total_polling_stations_with_results;
+                                    const total =
+                                        presidentialData[0]
+                                            .nationwide_polling_stations_count;
+                                    const percent = total
+                                        ? (reported / total) * 100
+                                        : 0;
+                                    return (
+                                        <div className="flex flex-col items-center justify-center w-full">
+                                            <div className="flex items-center justify-between w-full px-4 mb-2">
+                                                <span className="text-sm font-medium text-blue-900">
+                                                    Polling Stations Reported
+                                                </span>
+                                                <span className="text-sm font-medium text-blue-900">
+                                                    {reported} / {total}
                                                 </span>
                                             </div>
+                                            <div className="relative w-full h-6 overflow-hidden bg-blue-100 rounded-full">
+                                                <div
+                                                    className="absolute top-0 left-0 h-full transition-all duration-700 bg-gradient-to-r from-blue-500 to-blue-700"
+                                                    style={{width: `${percent}%`}}
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <span className="text-sm font-semibold text-white drop-shadow">
+                                                        {percent.toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </>
-                                );
-                            })()}
-                        </div>
-                    )}
+                                    );
+                                })()}
+                            </div>
+                        )}
+                </div>
 
                 <div className="flex flex-wrap justify-center gap-6 mb-6">
                     {presidentialData.map((candidate) => (
@@ -318,110 +323,7 @@ export default function ResultsDashboard() {
             {/* County Results Section */}
 
             <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
-                <h2 className="mb-6 text-2xl font-extrabold tracking-wide text-center bg-clip-text drop-shadow-lg">
-                    {djangoUserCountyName} County Election Results
-                </h2>
-                {/* Tabs */}
-                <div className="flex mb-4 border-b">
-                    {["governor", "senator", "womanRep", "mp", "wardMCAs"].map(
-                        (tab) => (
-                            <button
-                                key={tab}
-                                className={`px-4 py-2 font-medium ${
-                                    activeTab === tab
-                                        ? "border-b-2 border-blue-500 text-blue-600"
-                                        : "text-gray-500"
-                                }`}
-                                onClick={() => setActiveTab(tab)}
-                            >
-                                {tab === "womanRep"
-                                    ? "Woman Rep"
-                                    : tab === "mp"
-                                    ? "MP"
-                                    : tab === "senator"
-                                    ? "Senator"
-                                    : tab === "wardMCAs"
-                                    ? "Ward MCAs"
-                                    : tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </button>
-                        ),
-                    )}
-                </div>
-                {/* Tab Content */}
-                <div className="mb-6">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {/* Left side: List of candidates */}
-                        <div>
-                            <h3 className="mb-3 font-semibold">Candidates</h3>
-                            <div className="space-y-3">
-                                {countyData[activeTab].map((candidate) => (
-                                    <div
-                                        key={candidate.name}
-                                        className="flex items-center justify-between p-3 border-l-4 rounded-lg shadow-sm"
-                                        style={{borderColor: candidate.color}}
-                                    >
-                                        <div>
-                                            <div className="font-medium">
-                                                {candidate.name}
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                {candidate.party}
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="font-bold">
-                                                {candidate.percentage}%
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                {formatNumber(candidate.votes)} votes
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Right side: Pie chart */}
-                        <div>
-                            <h3 className="mb-3 font-semibold">Vote Distribution</h3>
-                            <div className="h-64">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={countyData[activeTab]}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            outerRadius={80}
-                                            fill="#8884d8"
-                                            dataKey="votes"
-                                            nameKey="name"
-                                            label={({name, percentage}) =>
-                                                `${name}: ${percentage}%`
-                                            }
-                                        >
-                                            {countyData[activeTab].map(
-                                                (entry, index) => (
-                                                    <Cell
-                                                        key={`cell-${index}`}
-                                                        fill={entry.color}
-                                                    />
-                                                ),
-                                            )}
-                                        </Pie>
-                                        <Tooltip
-                                            formatter={(value) => [
-                                                `${formatNumber(value)} votes`,
-                                                "Votes",
-                                            ]}
-                                        />
-                                        <Legend />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <CountyResults />
             </div>
 
             {/* Results at Polling Center*/}
