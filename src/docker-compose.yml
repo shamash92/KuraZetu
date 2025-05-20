@@ -39,12 +39,15 @@ services:
       context: .
       dockerfile: Dockerfile.tailwind
     depends_on:
-      - db
       - web
     volumes:
       - ./:/app
     working_dir: /app
-    command: sh -c "python manage.py tailwind install && python manage.py tailwind start"
+    restart: "unless-stopped"
+    command: python manage.py tailwind start
+    tty: true
+    # Without tty, no stdin, and tailwind watcher aborts
+    # https://github.com/tailwindlabs/tailwindcss/issues/5324
 
   webpack:
     build:

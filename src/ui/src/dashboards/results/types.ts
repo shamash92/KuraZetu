@@ -84,3 +84,13 @@ export interface IPresidentialNationalResults {
     nationwide_polling_stations_count: number;
     image: string;
 }
+
+export interface ICountyPresResults {
+    fullName: string;
+    party: string;
+    party_color: string;
+    totalVotes: number;
+    countedStreams: number;
+    county_polling_stations_count: number;
+    percentage: number;
+}

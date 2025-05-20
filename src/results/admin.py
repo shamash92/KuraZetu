@@ -128,7 +128,7 @@ class PollingStationWomenRepResultsAdmin(admin.ModelAdmin):
     )
     search_fields = (
         "polling_station__polling_center__name",
-        "women_rep_candidate__first_name",
+        "woman_rep_candidate__first_name",
     )
 
 
