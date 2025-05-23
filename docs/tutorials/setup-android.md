@@ -15,7 +15,6 @@ Make sure you have **Node.js v20 or higher** installed. You can check your versi
 Inside the `NATIVE/` directory, copy the `.env.sample` file to `.env` and fill in the required values.
 The value for `EXPO_PUBLIC_DEVELOPMENT_IP_ADDRESS` is the computer local IP address (e.g., `192.168.XX.X`). Also make sure to add this IP address to the `src/.env` file as part of the `ALLOWED_HOSTS` variable.
 
-```bash
 To obtain this, run the following command in your terminal:
 
 ````{tabs}
