@@ -18,7 +18,7 @@ const LandingComponent = () => {
                 // paddingTop: Constants.statusBarHeight,
             }}
         >
-            <StatusBar backgroundColor={"transparent"} translucent />
+            <StatusBar translucent />
 
             {/* content */}
 

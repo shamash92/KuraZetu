@@ -1,4 +1,4 @@
-import {BarChart, Flame, ListFilter, Map, User} from "lucide-react-native";
+import {BarChart, ListFilter, Map, User} from "lucide-react-native";
 import {Platform, StyleSheet, View} from "react-native";
 
 import {BlurView} from "expo-blur";

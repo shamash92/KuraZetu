@@ -27,6 +27,11 @@ export default {
             },
             edgeToEdgeEnabled: true,
             package: "com.communitytally.app",
+            config: {
+                googleMaps: {
+                    apiKey: process.env.GOOGLE_MAPS_API_KEY,
+                },
+            },
         },
         web: {
             bundler: "metro",
@@ -51,7 +56,13 @@ export default {
                 },
             ],
             "expo-font",
-            "expo-maps",
+            [
+                "expo-maps",
+                {
+                    requestLocationPermission: "true",
+                    locationPermission: "Allow $(PRODUCT_NAME) to use your location",
+                },
+            ],
             "expo-secure-store",
             [
                 "expo-quick-actions",
