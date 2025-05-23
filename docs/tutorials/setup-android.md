@@ -12,6 +12,40 @@ Make sure you have **Node.js v20 or higher** installed. You can check your versi
 
 ## 1. Initial Setup
 
+Inside the `NATIVE/` directory, copy the `.env.sample` file to `.env` and fill in the required values.
+The value for `EXPO_PUBLIC_DEVELOPMENT_IP_ADDRESS` is the computer local IP address (e.g., `192.168.XX.X`). Also make sure to add this IP address to the `src/.env` file as part of the `ALLOWED_HOSTS` variable.
+
+```bash
+To obtain this, run the following command in your terminal:
+
+````{tabs}
+```{group-tab} MacOS
+- run the following command in your terminal:
+    ```bash
+    ipconfig getifaddr en0
+    ```
+```
+
+```{group-tab} Windows
+- run the following command in your terminal:
+
+    ```shell
+    ipconfig
+    ```
+```
+
+```{group-tab} Linux (Ubuntu)
+- run the following command in your terminal:
+
+    ```bash
+    hostname -I
+    ```
+```
+
+````
+
+For now, you can leave `EXPO_PUBLIC_PRODUCTION_BASE_URL` empty. This will be set up later when we deploy the app.
+
 ```bash
 cd NATIVE/
 yarn install
@@ -89,10 +123,14 @@ The prebuilt development build APK and QR code are intended for installing the a
     ```
 - NOTE: This may take a while to finish the first time (especially if Android SDK Platform will be installed and depending on your internet speed). However, consecutive runs will be faster.
 
-- Open the app and connect to your local server.
+- Open the app and connect to your local android device/simulator.
 
 ```
 ````
+
+## 3. Note about local Django backend
+
+The app is set up to connect to a local Django backend server. To run the backend server, follow the instructions in the [Backend Setup](./setup.md) tutorial. Make sure to set the `EXPO_PUBLIC_DEVELOPMENT_IP_ADDRESS` in the `.env` file to your local IP address (e.g., `192.168.XX.X`) and add this IP address to the `ALLOWED_HOSTS` variable in the `src/.env` file.
 
 ## Troubleshooting
 

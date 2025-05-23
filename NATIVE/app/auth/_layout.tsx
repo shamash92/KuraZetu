@@ -8,6 +8,15 @@ export default function ExamLayout() {
             <Stack.Screen
                 name="signUp"
                 options={{
+                    headerShown: false,
+                    // headerBackTitle: "Login",
+                    // headerTitle: "Create an Account",
+                    // headerBackTitleVisible: true,
+                }}
+            />
+            <Stack.Screen
+                name="signUpForm"
+                options={{
                     headerShown: true,
                     headerBackTitle: "Login",
                     headerTitle: "Create an Account",
