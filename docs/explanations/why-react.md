@@ -1,15 +1,15 @@
 
-## Why We Chose Django + React + Webpack (and not Next.js)
+# Why We Chose Django + React + Webpack (and not Next.js)
 
 At the heart of our technical decision-making is a desire to balance **developer autonomy**, **ecosystem support**, and **architectural clarity**. For the Community Tally project, we chose **React** with a **Webpack-based SPA architecture**, rather than adopting **Next.js** or a similar framework. Here's why.
 
-### React Won
+## React Won
 
 Let’s begin with what is indisputable: **React has won** the frontend war — not by force, but by versatility. Its component model, vast community, rich ecosystem, and adaptability across use cases (including mobile via React Native) make it the most accessible and future-proof UI library today.
 
 This flexibility is critical to our project. We are engaging **a diverse set of contributors** — from experienced engineers to students and open-source newcomers. React, as a library, meets them where they are. It is easy to get help via community forums, LLMs, and abundant learning materials. A framework like Next.js, despite its power, introduces a **heavier conceptual and technical overhead**, especially for developers not already versed in its conventions.
 
-### Why Not Next.js?
+## Why Not Next.js?
 
 While Next.js offers many advantages — especially for SSR, SEO, and file-based routing — we consciously **rejected it** for this project. This decision was not made in ignorance of its features, but **in protest of its philosophical imposition**.
 
@@ -25,11 +25,11 @@ We reject the current trend of **developer experience virtue signalling**. For o
 
 Even if the community later votes to adopt Next.js (and we will respect that democratic process), we want it to be a choice made out of **need and alignment**, not out of **ideological pressure**.
 
-### Why not Vite?
+## Why not Vite?
 
 Vite is a great tool, an we love it. We would welcome a PR to migrate our current setup to Vite.
 
-### Why Django?
+## Why Django?
 
 For the backend, we chose **Django**, not because it’s trendy, but because it’s **reliable** and **battle-tested**, especially in the geospatial domain. Its first-class support for:
 

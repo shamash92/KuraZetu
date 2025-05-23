@@ -34,6 +34,8 @@ for polling_center in tqdm(
     # print(f"Processing {polling_center.name}...")
     error_message = None
 
+    not_found_error_message = "Pin location not registered in database"
+
     # TODO: This is a temporary fix since re-running the save_polling_center_pin_locations.py script makes is_verified=True by default.
     #  Delete this once the mobile app is up and running
 
@@ -41,30 +43,32 @@ for polling_center in tqdm(
 
     polling_center.is_verified = False  # this is to fix the issue of is_verified being set to True when the pin_locations are processed in the previous script
     polling_center.save()
+
+    # Check if pin_location is at (0, 0) and clean it up to null
     if (
         polling_center.pin_location
         and polling_center.pin_location.x == 0
         and polling_center.pin_location.y == 0
     ):
         polling_center.pin_location = None
-        polling_center.pin_location_error = None
+        polling_center.pin_location_error = not_found_error_message
         polling_center.is_verified = False
         polling_center.save()
         continue
 
-    if (
-        polling_center.pin_location_error is not None
-        and polling_center.pin_location is None
-    ):
-        polling_center.is_verified = False
-        polling_center.pin_location_error = None
-        polling_center.save()
-        continue
+    # clean errors for polling centers with pins but have errors #TODO: this should be removed if we have a check in model save()
+    # if (
+    #     polling_center.pin_location_error is not None
+    #     and polling_center.pin_location is None
+    # ):
+    #     polling_center.is_verified = False
+    #     polling_center.pin_location_error = None
+    #     polling_center.save()
+    #     continue
 
     if polling_center.pin_location_error:
         polling_center.is_verified = False
         polling_center.save()
-        continue
 
     # Check if pin_location is null. second check is to make sure we do not update the center if we have already saved the message the first time.
     if polling_center.ward.boundary is None:
@@ -74,7 +78,7 @@ for polling_center in tqdm(
         polling_center.pin_location is None
         and polling_center.pin_location_error is None
     ):
-        error_message = "Pin location not registered in database"
+        error_message = not_found_error_message
 
     elif (
         polling_center.pin_location is not None
