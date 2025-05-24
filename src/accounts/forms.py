@@ -15,7 +15,7 @@ class LoginForm(forms.Form):
         required=True,
     )
     password = forms.CharField(
-        help_text="Enter your new password",
+        help_text="Enter your  password",
         widget=forms.PasswordInput,
         required=True,
     )
