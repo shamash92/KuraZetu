@@ -92,6 +92,9 @@ class PollingCenter(gis_models.Model):
     pin_location = gis_models.PointField(blank=True, null=True)
     pin_location_error = models.CharField(max_length=255, blank=True, null=True)
 
+    radius = models.FloatField(default=0.05, help_text="km")  # 50m
+    boundary = gis_models.PolygonField(blank=True, null=True)
+
     is_verified = models.BooleanField(default=False)
     verified_by = models.ForeignKey(
         User,
@@ -102,6 +105,40 @@ class PollingCenter(gis_models.Model):
 
     def __str__(self):
         return str(self.name)
+
+    def save(self, *args, **kwargs):
+        creating = self._state.adding
+        update_boundary = False
+
+        # print(creating, "creating value")
+        # print(update_boundary, "update_boundary")
+
+        if not creating:
+            # print("not creating, updating ...")
+            old = type(self).objects.get(pk=self.pk)
+            # Only update if pin_location changed and not if boundary changed directly
+            if old.pin_location != self.pin_location:
+                update_boundary = True
+            if self.pin_location and self.boundary is None:
+                update_boundary = True
+            if old.boundary != self.boundary:
+                if self.boundary is None:
+                    pass
+                else:
+                    self.pin_location = self.boundary.centroid
+        else:
+            update_boundary = True
+
+        if update_boundary and self.pin_location:
+            center = self.pin_location
+            radius = self.radius * 0.008  # Convert km to degrees
+            circle = center.buffer(radius)
+            self.boundary = circle
+
+        if self.boundary and self.pin_location is None:
+            self.pin_location = self.boundary.centroid
+
+        super().save(*args, **kwargs)
 
 
 class PollingStation(models.Model):

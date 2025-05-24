@@ -4,13 +4,12 @@ import "react-native-reanimated";
 import * as QuickActions from "expo-quick-actions";
 import * as SplashScreen from "expo-splash-screen";
 
-import {Platform, Text} from "react-native";
 import {Slot, router} from "expo-router";
 import {TSaveSecureStore, getFromSecureStore} from "./(utils)/secureStore";
 import {useEffect, useState} from "react";
 
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import {View} from "lucide-react-native";
+import {Platform} from "react-native";
 import {handleLogout} from "./(utils)/auth";
 import {useFonts} from "expo-font";
 import {useQuickActionRouting} from "expo-quick-actions/router";
