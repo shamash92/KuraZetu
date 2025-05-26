@@ -1,5 +1,5 @@
-import MapUpdates from "../(tabTwo)";
+import PollingCentersLanding from "../pollingCentersEdit/LandingScreen";
 
 export default function TabTwoScreen() {
-    return <MapUpdates />;
+    return <PollingCentersLanding />;
 }

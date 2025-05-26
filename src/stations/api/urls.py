@@ -4,6 +4,7 @@ from stations.api.views import (
     ConstituenciesBoundariesListAPIView,
     CountiesBoundariesListAPIView,
     WardBoundariesListAPIView,
+    WardPollingCenterFromLocationListAPIView,
     WardPollingCenterListAPIView,
 )
 
@@ -27,5 +28,10 @@ urlpatterns = [
         "wards/<int:ward_number>/polling-centers/pins/",
         WardPollingCenterListAPIView.as_view(),
         name="polling_centers_pins_api",
+    ),
+    path(
+        "ward/polling-centers/<int:distance_meters>/pins/",
+        WardPollingCenterFromLocationListAPIView.as_view(),
+        name="polling_centers_from_user_location_pins_api",
     ),
 ]
