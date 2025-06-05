@@ -107,7 +107,7 @@ This command will automatically build and install the development build onto you
 
 Otherwise, if you are using a physical device, you can download the APK from the  link below or scan the QR code to install the development build:
 
-- [Download the APK](https://expo.dev/accounts/shamash92/projects/community-tally/builds/35fa584b-1943-42ea-8aff-c24c0fc523be)
+- [Download the APK](https://expo.dev/accounts/shamash92/projects/community-tally/builds/29597eff-c59b-4eae-81e6-f87ecc92c6d5)
 
 - Scan the QR code below to install the development build on your device:
 
