@@ -1,7 +1,7 @@
 
 # Why We Chose Django + React + Webpack (and not Next.js)
 
-At the heart of our technical decision-making is a desire to balance **developer autonomy**, **ecosystem support**, and **architectural clarity**. For the Community Tally project, we chose **React** with a **Webpack-based SPA architecture**, rather than adopting **Next.js** or a similar framework. Here's why.
+At the heart of our technical decision-making is a desire to balance **developer autonomy**, **ecosystem support**, and **architectural clarity**. For the Kura Zetu project, we chose **React** with a **Webpack-based SPA architecture**, rather than adopting **Next.js** or a similar framework. Here's why.
 
 ## React Won
 
