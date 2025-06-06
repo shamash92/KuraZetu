@@ -39,4 +39,6 @@ const getApiBaseURL = (): string => {
     return PRODUCTION_BASE_URL;
 };
 
+export const apiBaseURL = getApiBaseURL();
+
 export default getApiBaseURL;
