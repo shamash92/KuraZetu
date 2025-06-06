@@ -177,9 +177,9 @@ export default function ProfileScreen() {
                 </View>
 
                 <View style={styles.appInfo}>
-                    <Text style={styles.version}>Community Tally v0.1.0</Text>
+                    <Text style={styles.version}>Kura Zetu v0.1.0</Text>
                     <Text style={styles.copyright}>
-                        © 2025 Community Tally. All rights reserved.
+                        © 2025 Kura Zetu. All rights reserved.
                     </Text>
                 </View>
             </ScrollView>

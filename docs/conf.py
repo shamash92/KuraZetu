@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Community Tally"
+project = "Kura Zetu"
 copyright = "2025, shamash92"
 author = "shamash92"
 

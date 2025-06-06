@@ -1,5 +1,5 @@
 
-# 🗳️ Community Tally
+# 🗳️ Kura Zetu
 
 ![Backend CI](https://github.com/shamash92/Community-Tally/actions/workflows/django.yml/badge.svg)
 ![Documentation CI](https://github.com/shamash92/Community-Tally/actions/workflows/automatic-doc-checks.yml/badge.svg)
@@ -8,7 +8,7 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/shamash92/Community-Tally)
 ![GitHub contributors](https://img.shields.io/github/contributors/shamash92/Community-Tally)
 
-**Community Tally** is an open source platform (plus mobile app) built **by and for Kenyans** to empower communities to **track, verify, and tally election results** at the polling station level.
+**Kura Zetu** is an open source platform (plus mobile app) built **by and for Kenyans** to empower communities to **track, verify, and tally election results** at the polling station level.
 
 In Kenya, every voter has access to a smart phone, and since results announced at the polling station are final, we believe the public can play a powerful role in protecting the vote. We can all be agents.
 
@@ -21,11 +21,11 @@ The platform is designed to be **open source** and **community-driven**, allowin
 > This project is **not an official tallying system**. It is **not a legal representation** of election results, and it does **not replace** the Independent Electoral and Boundaries Commission (IEBC) systems.
 > It is a **parallel citizen-led tool** for transparency, verification, and civic vigilance.
 
-## 🤷‍♂️ Why Community Tally?
+## 🤷‍♂️ Why Kura Zetu?
 
 Kenya has over **46,000 polling stations**. Each polling station posts **Form 34A** results that are legally binding — but these results are often hard to verify at scale by citizens.
 
-Community Tally aims to solve this by:
+Kura Zetu aims to solve this by:
 
 - **Crowdsourcing results** from each polling station
 - Allowing the public to **cross-verify votes** and flag irregularities
