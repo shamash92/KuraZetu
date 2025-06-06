@@ -7,7 +7,6 @@ import {
     Platform,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -22,13 +21,14 @@ import {
     Region as RegionType,
 } from "./types/Location";
 import MapView, {Marker, PROVIDER_GOOGLE} from "react-native-maps";
-import {Navigation, RefreshCw, Search} from "lucide-react-native";
+import {Navigation, RefreshCw} from "lucide-react-native";
 import React, {useEffect, useRef, useState} from "react";
 import {windowHeight, windowWidth} from "@/app/(utils)/screenDimensions";
 
 import LocationEditDrawer from "./components/LocationEditDrawer";
 import LocationItem from "./components/PollingCenterItem";
 import LocationPin from "./components/LocationPin";
+import Slider from "@react-native-community/slider";
 import {StatusBar} from "expo-status-bar";
 import getApiBaseURL from "@/app/(utils)/apiBaseURL";
 import {updateLocation} from "./(utils)/LocationService";
@@ -53,7 +53,8 @@ export default function LocationsScreen() {
         useState<IPollingCenterFeature | null>(null);
     const [userLocationFound, setUserLocationFound] = useState(false);
 
-    const [editingLocation, setEditingLocation] = useState<LocationType | null>(null);
+    const [editingLocation, setEditingLocation] =
+        useState<IPollingCenterFeature | null>(null);
     const [region, setRegion] = useState<RegionType>(INITIAL_REGION);
     const [userLocation, setUserLocation] = useState<{
         latitude: number;
@@ -188,7 +189,7 @@ export default function LocationsScreen() {
         );
     };
 
-    const handleEditLocation = (location: LocationType) => {
+    const handleEditLocation = (location: IPollingCenterFeature) => {
         setEditingLocation(location);
         setIsDrawerVisible(true);
     };
@@ -311,6 +312,104 @@ export default function LocationsScreen() {
 
             {/* Map View */}
             <View style={styles.mapContainer}>
+                <View
+                    style={{
+                        position: "absolute",
+                        top: 24,
+                        left: 0,
+                        right: 0,
+                        alignItems: "center",
+                        zIndex: 20,
+                        pointerEvents: "box-none",
+                    }}
+                >
+                    <View
+                        style={{
+                            backgroundColor: "#fff",
+                            borderRadius: 16,
+                            paddingHorizontal: 20,
+                            paddingVertical: 12,
+                            shadowColor: "#000",
+                            shadowOffset: {width: 0, height: 2},
+                            shadowOpacity: 0.12,
+                            shadowRadius: 8,
+                            elevation: 4,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            minWidth: 220,
+                        }}
+                    >
+                        <Text
+                            style={{
+                                fontWeight: "600",
+                                color: "#1E293B",
+                                marginRight: 12,
+                            }}
+                        >
+                            Search Radius
+                        </Text>
+                        <Text
+                            style={{
+                                fontWeight: "500",
+                                color: "#3B82F6",
+                                marginRight: 8,
+                            }}
+                        >
+                            {(searchDistance / 1000).toFixed(1)} km
+                        </Text>
+                    </View>
+                    <View
+                        style={{
+                            width: 240,
+                            marginTop: 8,
+                            backgroundColor: "#F1F5F9",
+                            borderRadius: 8,
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                        }}
+                    >
+                        <View style={{flexDirection: "row", alignItems: "center"}}>
+                            <Text style={{color: "#64748B", fontSize: 12, width: 32}}>
+                                0.5
+                            </Text>
+                            <Slider
+                                style={{flex: 1, marginHorizontal: 8}}
+                                minimumValue={500}
+                                maximumValue={10000}
+                                step={100}
+                                value={searchDistance}
+                                minimumTrackTintColor="#3B82F6"
+                                maximumTrackTintColor="#CBD5E1"
+                                thumbTintColor="#3B82F6"
+                                onValueChange={setSearchDistance}
+                                onSlidingComplete={() => {
+                                    // Trigger a refresh when the radius is changed
+                                    setRefreshing(true);
+                                }}
+                            />
+                            <Text
+                                style={{
+                                    color: "#64748B",
+                                    fontSize: 12,
+                                    width: 32,
+                                    textAlign: "right",
+                                }}
+                            >
+                                10
+                            </Text>
+                        </View>
+                        <Text
+                            style={{
+                                color: "#94A3B8",
+                                fontSize: 11,
+                                textAlign: "center",
+                                marginTop: 2,
+                            }}
+                        >
+                            Drag to adjust radius (km)
+                        </Text>
+                    </View>
+                </View>
                 <MapView
                     ref={mapRef}
                     style={styles.map}
@@ -318,7 +417,7 @@ export default function LocationsScreen() {
                     initialRegion={region}
                     showsUserLocation
                     showsMyLocationButton={false}
-                    mapType="hybrid"
+                    mapType="standard"
                 >
                     {locations !== null &&
                         locations !== undefined &&
