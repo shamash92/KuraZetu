@@ -171,8 +171,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Community Tally API",
-    "DESCRIPTION": "An API for Community Tally",
+    "TITLE": "Kura Zetu API",
+    "DESCRIPTION": "An API for Kura Zetu",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     # OTHER SETTINGS
@@ -213,5 +213,5 @@ LEAFLET_CONFIG = {
     #         },
     #     ),
     # ],
-    "ATTRIBUTION_PREFIX": "&copy; <a href='https://community-tally.readthedocs.io/'>Community Tally</a>",
+    "ATTRIBUTION_PREFIX": "&copy; <a href='https://community-tally.readthedocs.io/'>Kura Zetu</a>",
 }
