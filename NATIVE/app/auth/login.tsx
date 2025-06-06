@@ -1,7 +1,8 @@
+import {Alert, Pressable, Text, TextInput, View} from "react-native";
 import Animated, {FadeInUp, FadeOut} from "react-native-reanimated";
 import {Link, router} from "expo-router";
-import {Pressable, Text, TextInput, View} from "react-native";
 import React, {useState} from "react";
+import getApiBaseURL, {apiBaseURL} from "../(utils)/apiBaseURL";
 
 import {Button} from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -19,16 +20,78 @@ function Login() {
 
     const [isSending, setIsSending] = useState(false);
 
+    const [error, setError] = useState<string | null>(null);
+
     async function signInSubmit() {
         setIsSending(true);
         console.log("sign in submit");
 
         // TODO: Replace this with backend login to return the auth token. The delay for now is to simulate API call
-        setTimeout(async () => {
-            await saveToSecureStore("userToken", "userToken");
+        // setTimeout(async () => {
+        //     await saveToSecureStore("userToken", "userToken");
 
-            router.replace("/(tabs)");
-        }, 2000);
+        //     router.replace("/(tabs)");
+        // }, 2000);
+
+        let data = {
+            phone_number: phoneNumber,
+            password: password,
+        };
+
+        console.log(apiBaseURL, "API Base URL");
+
+        fetch(`${apiBaseURL}/api/accounts/login/`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data, "data from server");
+                setIsSending(false);
+
+                if (data["error"]) {
+                    if (data["error"] === "Invalid credentials") {
+                        console.log("Invalid credentials");
+                        setError(data["error"]);
+                        Alert.alert(
+                            "Invalid credentials",
+                            "Please check your phone number and password.",
+                        );
+                    } else if (
+                        data["error"] === "Invalid data" &&
+                        data["details"]["phone_number"]
+                    ) {
+                        console.log("Phone number error");
+                        setError(data["details"]["phone_number"]);
+                        Alert.alert(
+                            "Phone number error",
+                            data["details"]["phone_number"][0],
+                        );
+                    } else {
+                        // setError(data["details"]);
+                        console.log("Error: ", data["details"]);
+                        Alert.alert(JSON.stringify(data["details"]));
+                    }
+                } else if (data["message"] === "User login successful") {
+                    let token = data["data"]["token"];
+
+                    console.log(token, "token from server");
+
+                    if (typeof token === "string" && token.length > 0) {
+                        saveToSecureStore("userToken", token);
+
+                        router.replace("/(tabs)");
+                    } else {
+                        console.error("Invalid token format");
+                    }
+
+                    // navigate("/ui/signup/accounts/registration-success/");
+                }
+            });
     }
     function handlePhoneNumberInput(text: string) {
         console.log(text, "phone input");
@@ -124,7 +187,7 @@ function Login() {
                             // borderWidth: 1,
                         }}
                     >
-                        {/* Email */}
+                        {/* Phone Number */}
                         <View
                             style={{
                                 flexDirection: "row",

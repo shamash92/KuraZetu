@@ -12,11 +12,11 @@ import {
 } from "react-native";
 import React, {useState} from "react";
 import {blueColor, purpleColor} from "@/app/(utils)/colors";
+import getApiBaseURL, {apiBaseURL} from "../(utils)/apiBaseURL";
 
 import {Button} from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import LottieComponent from "@/components/lottieLoading";
-import getApiBaseURL from "../(utils)/apiBaseURL";
 import {saveToSecureStore} from "../(utils)/secureStore";
 import {useLocalSearchParams} from "expo-router";
 import {useRouter} from "expo-router";
@@ -60,8 +60,6 @@ export default function Auth() {
 
     const params = useLocalSearchParams();
     console.log(params, "params");
-
-    let apiBaseURL = getApiBaseURL();
 
     function handleFirstNameInput(text: string) {
         setFirstName(text);
