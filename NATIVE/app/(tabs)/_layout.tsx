@@ -58,10 +58,11 @@ export default function TabLayout() {
                     ),
                 }}
             />
+
             <Tabs.Screen
                 name="tabTwo"
                 options={{
-                    title: "Map",
+                    title: "Verify Centers",
                     tabBarIcon: ({focused, color, size}) => (
                         <TabBarIcon
                             IconComponent={Map}
@@ -72,6 +73,7 @@ export default function TabLayout() {
                     ),
                 }}
             />
+
             <Tabs.Screen
                 name="communityNotes"
                 options={{

@@ -1,4 +1,10 @@
+from django.contrib.gis.geos import Point
+
+from rest_framework import status
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from stations.api.serializers import (
     ConstituencySerializer,
@@ -67,3 +73,63 @@ class WardPollingCenterListAPIView(ListAPIView):
         ward = Ward.objects.get(number=ward_number)
 
         return PollingCenter.objects.filter(ward=ward).order_by("name")
+
+
+class WardPollingCenterFromLocationListAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    queryset = PollingCenter.objects.all()
+    serializer_class = PollingCenterSerializer
+
+    def post(self, *args, **kwargs):
+        data = self.request.data
+
+        distance = kwargs.get(
+            "distance_meters", 5000
+        )  # Default distance is 5000 meters (5 km)
+
+        distance_km = distance / 1000  # Convert meters to kilometers
+        print(data, "data inside the server")
+        print(distance, "distance inside the server")
+
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
+
+        if latitude is None or longitude is None:
+            return Response(
+                {"error": "Latitude and Longitude are required."},
+                status=status.HTTP_200_OK,
+            )
+
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "Latitude and Longitude must be valid numbers."},
+                status=status.HTTP_200_OK,
+            )
+
+        user_location = Point(
+            float(longitude), float(latitude)
+        )  # Note: (x, y) = (lon, lat)
+
+        qs = PollingCenter.objects.filter(
+            pin_location__distance_lte=(
+                user_location,
+                distance,
+            )
+        ).order_by("name")
+
+        if not qs.exists():
+            return Response(
+                {"error": f"No polling centers found within {distance_km} km."},
+                status=status.HTTP_200_OK,
+            )
+        serializer = PollingCenterSerializer(qs, many=True)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )

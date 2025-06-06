@@ -28,7 +28,7 @@ const LandingComponent = () => {
                     justifyContent: "center",
                     alignItems: "center",
                     paddingTop: Constants.statusBarHeight,
-                    borderWidth: 4,
+                    // borderWidth: 4,
                 }}
             >
                 <View

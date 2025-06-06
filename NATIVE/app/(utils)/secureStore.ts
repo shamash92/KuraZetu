@@ -26,3 +26,8 @@ export async function getFromSecureStore(
 export async function deleteFromSecureStore(key: TSaveSecureStore) {
     await SecureStore.deleteItemAsync(key);
 }
+
+// Default export: a placeholder React component for routing requirements
+export default function SecureStoreUtils() {
+    return null;
+}
