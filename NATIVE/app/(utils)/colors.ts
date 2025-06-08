@@ -1,3 +1,5 @@
+import React from "react";
+
 export const orangeColor = "#BB8700";
 
 export const blueColor = "#334586";
@@ -103,3 +105,10 @@ export const STATUS_COLORS = {
     upcoming: WARNING[500],
     completed: NEUTRAL[500],
 };
+
+// This file does not export a React component by default.
+// To satisfy the requirement, export a dummy React component as default.
+
+const ColorsComponent: React.FC = () => null;
+
+export default ColorsComponent;
