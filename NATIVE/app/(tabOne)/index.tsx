@@ -49,7 +49,7 @@ const LandingComponent = () => {
                             fontFamily: "Inter",
                         }}
                     >
-                        Community Tally
+                        Kura Zetu
                     </Text>
                     <Text
                         style={{

@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.api.serializers import UserSerializer
+from accounts.api.serializers import PhoneNumberSerializer, UserSerializer
 from accounts.models import User
 from stations.models import PollingCenter, Ward
 
@@ -120,4 +120,59 @@ class SignupView(APIView):
                     },
                 },
                 status=status.HTTP_200_OK,
+            )
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        """
+        Handle POST request for user login.
+        """
+        data = request.data
+        print("Login data received:", data)
+
+        phone_serializer = PhoneNumberSerializer(
+            data={"number": data.get("phone_number", "")}
+        )
+
+        if not phone_serializer.is_valid(raise_exception=False):
+            print(
+                "Phone number validation errors:",
+                phone_serializer.errors.get("number"),
+            )
+            return Response(
+                {
+                    "error": "Invalid phone number",
+                    "details": phone_serializer.errors.get("number", [])[0],
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        user = authenticate(
+            username=data["phone_number"],
+            password=data["password"],
+        )
+
+        if user is not None:
+            token, created = Token.objects.get_or_create(user=user)
+            print("Token created:", token)
+            login(request, user)
+            return Response(
+                {
+                    "message": "User login successful",
+                    "data": {
+                        "user": UserSerializer(user).data,
+                        "token": token.key,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            print("User authentication failed")
+            return Response(
+                {"error": "Invalid credentials"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
