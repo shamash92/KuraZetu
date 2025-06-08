@@ -1,22 +1,74 @@
-FROM python:3.12-slim
+# Stage 1: Node for Tailwind build
+FROM node:20-alpine as tailwind-build
 
-RUN apt-get update && apt-get install -y \
-    libgdal-dev \
-    binutils \
-    libproj-dev \
-    gdal-bin \
-    nodejs \
-    npm
 
 WORKDIR /app
 
-COPY /requirements.txt .
-RUN pip install  -r requirements.txt
 
-COPY / .
+# Copy only package files first for better caching
+COPY theme/static_src/package*.json ./theme/static_src/
 
-RUN python manage.py tailwind install --no-package-lock --no-input;
-RUN python manage.py tailwind build --no-input;
-RUN python manage.py collectstatic --no-input;
+COPY theme/static_src/ ./theme/static_src/
+
+# Use npm ci for faster, reliable installs if package-lock.json exists
+RUN cd theme/static_src && \
+    if [ -f package-lock.json ]; then npm ci; else npm install; fi && \
+    npm run build
+
+COPY theme/static ./staticfiles
+
+
+# Stage 2: Python for Django
+FROM python:3.12-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends  \
+    libgdal-dev \
+    binutils \
+    libproj-dev \
+    gdal-bin
+
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+# Copy built assets from Node stage
+COPY --from=tailwind-build /app/theme/static/ /app/theme/static/
+
+
+RUN python manage.py collectstatic --no-input
+
 
 CMD ["python", "manage.py", "tailwind", "start"]
+
+
+
+
+
+# FROM python:3.12-slim
+
+
+
+# WORKDIR /app
+
+# RUN apt-get update && apt-get install -y curl \
+#     npm \
+#      # Install Node.js (required by django-tailwind)
+#     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+#     && apt-get install -y --no-install-recommends nodejs \
+#     && rm -rf /var/lib/apt/lists/*
+
+
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir -r requirements.txt
+
+
+# COPY . .
+
+# RUN python manage.py tailwind install --no-package-lock --no-input
+# RUN python manage.py tailwind update
+# RUN python manage.py tailwind build
+# RUN python manage.py collectstatic --no-input
+
+# CMD ["python", "manage.py", "tailwind", "start"]
+
