@@ -1,15 +1,19 @@
 FROM node:20-alpine
 
-
-RUN apk update && apk add --no-cache \
-    yarn
+RUN apk update && apk add --no-cache yarn
 
 WORKDIR /app
 
-COPY /ui/package.json .
-
-RUN yarn install
+COPY /ui/package.json ./package.json
 
 COPY /ui/ .
+COPY /ui/webpack.config.js ./webpack.config.js
+
+
+# RUN yarn global add webpack webpack-cli
+
+RUN yarn install --no-lockfile
+RUN yarn run build
 
 CMD ["yarn", "run", "dev"]
+

@@ -1,22 +1,14 @@
-FROM python:3.12-slim
+FROM node:20-alpine
 
-RUN apt-get update && apt-get install -y \
-    libgdal-dev \
-    binutils \
-    libproj-dev \
-    gdal-bin \
-    nodejs \
-    npm
+RUN apk update && apk add --no-cache yarn
 
 WORKDIR /app
 
-COPY /requirements.txt .
-RUN pip install  -r requirements.txt
+COPY /tailwind/package.json ./package.json
 
-COPY / .
+COPY /tailwind/ .
 
-RUN python manage.py tailwind install --no-package-lock --no-input;
-RUN python manage.py tailwind build --no-input;
-RUN python manage.py collectstatic --no-input;
+RUN yarn install --no-lockfile
+# RUN yarn run build 
 
-CMD ["python", "manage.py", "tailwind", "start"]
+CMD ["sh", "-c", "NODE_OPTIONS='--max-old-space-size=2048' yarn run dev"]

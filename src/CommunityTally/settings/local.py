@@ -32,8 +32,8 @@ DATABASES = {
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "staticfiles"),
-    os.path.join(BASE_DIR, "theme/static"),
     os.path.join(BASE_DIR, "ui/static"),
+    os.path.join(BASE_DIR, "tailwind/static"),
 ]  # This is the directory that you should serve static files from in development.
 # STATIC_ROOT and STATICFILES_DIRS cannot point to the same directory.
 

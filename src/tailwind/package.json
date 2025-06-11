@@ -1,0 +1,29 @@
+{
+    "name": "tailwind",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build": " tailwindcss -i ./input.css -o ./staticfiles/css/styles.css --minify",
+        "dev": " tailwindcss -i ./input.css -o ../staticfiles/css/styles.css --watch",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "devDependencies": {
+        "@tailwindcss/aspect-ratio": "^0.4.0",
+        "@tailwindcss/forms": "^0.4.0",
+        "@tailwindcss/line-clamp": "^0.3.1",
+        "@tailwindcss/typography": "^0.5.0",
+        "autoprefixer": "^10.4.21",
+        "cross-env": "^7.0.3",
+        "postcss": "^8.5.4",
+        "postcss-import": "^16.1.0",
+        "postcss-nested": "^7.0.2",
+        "postcss-simple-vars": "^6.0.3",
+        "rimraf": "^3.0.2",
+        "tailwindcss": "^3.4.17"
+    }
+}

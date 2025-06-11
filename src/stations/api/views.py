@@ -129,6 +129,8 @@ class WardPollingCenterFromLocationListAPIView(APIView):
             )
         serializer = PollingCenterSerializer(qs, many=True)
 
+        # print(serializer.data, "serializer data")
+
         return Response(
             serializer.data,
             status=status.HTTP_200_OK,

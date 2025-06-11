@@ -101,6 +101,8 @@ export default function LocationsScreen() {
             )
                 .then((response) => response.json())
                 .then((data) => {
+                    console.log(JSON.stringify(data), "data from ward server");
+
                     if (data.error) {
                         console.log(
                             "Error fetching data from ward server:",
@@ -112,15 +114,28 @@ export default function LocationsScreen() {
                     }
                     // Process the data as needed
                     if (data.features && data.features.length > 0) {
-                        setLocations(data.features);
-                        // console.log(JSON.stringify(data), "data from ward server");
+                        if (locations !== null) {
+                            // Filter out features that already exist based on unique key (name + code)
+                            const existingKeys = new Set(
+                                locations.map((loc) => loc.id),
+                            );
+                            const newFeatures = data.features.filter(
+                                (feature: IPollingCenterFeature) =>
+                                    !existingKeys.has(feature.id),
+                            );
+                            setLocations([...locations, ...newFeatures]);
+                        } else {
+                            setLocations(data.features);
+                        }
+
+                        setError(null);
                     }
 
                     setLoading(false);
                     setRefreshing(false);
                 });
         }
-    }, [apiBaseURL, userLocationFound, refreshing]);
+    }, [userLocationFound, refreshing, searchDistance]);
 
     const requestLocationPermission = async () => {
         if (Platform.OS === "web") {
@@ -423,7 +438,7 @@ export default function LocationsScreen() {
                         locations !== undefined &&
                         locations.map((location) => (
                             <Marker
-                                key={location.properties.code}
+                                key={location.id}
                                 coordinate={{
                                     latitude: location?.geometry.coordinates[1],
                                     longitude: location?.geometry.coordinates[0],
@@ -437,8 +452,8 @@ export default function LocationsScreen() {
                                 <LocationPin
                                     location={location}
                                     selected={
-                                        selectedLocation?.properties.code ===
-                                        location.properties.code
+                                        selectedLocation?.properties.name ===
+                                        location.properties.name
                                     }
                                 />
                             </Marker>
@@ -481,6 +496,16 @@ export default function LocationsScreen() {
 
                 <Text style={styles.listTitle}>Locations</Text>
 
+                <Text
+                    style={{
+                        marginLeft: 16,
+                    }}
+                >
+                    {locations && locations.length > 0
+                        ? `Found ${locations.length} locations`
+                        : "No locations found"}
+                </Text>
+
                 {error ? (
                     <View style={styles.loadingContainer}>
                         <Text style={styles.loadingText}>{error}</Text>
@@ -488,7 +513,7 @@ export default function LocationsScreen() {
                 ) : (
                     <FlatList
                         data={locations}
-                        keyExtractor={(item) => item.properties.code}
+                        keyExtractor={(item) => item.id.toString()}
                         renderItem={({item}) => (
                             <LocationItem
                                 location={item}

@@ -1,6 +1,19 @@
 
-
 services:
+
+  webpack:
+    build:
+      context: .
+      dockerfile: Dockerfile.webpack
+    volumes:
+      - ./ui:/app
+      - react_static_volume:/app/staticfiles
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+    command: yarn run dev
+    restart: "unless-stopped"
+    tty: true
 
   db:
     image: postgis/postgis:14-3.3
@@ -22,10 +35,14 @@ services:
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./:/app
+      - tailwind_static_volume:/app/staticfiles
+      - react_static_volume:/app/staticfiles/ui
+    
     ports:
       - "8000:8000"
     depends_on:
       - db
+      - webpack #This is because we need the js bundle and manifest to be created as they are needed in initial page load
     environment:
       - DEBUG=${DEBUG}
       # - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
@@ -34,30 +51,25 @@ services:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - POSTGRES_HOST=${DATABASE_HOST}
 
+
   tailwind:
     build:
       context: .
       dockerfile: Dockerfile.tailwind
     depends_on:
-      - web
+      - webpack
     volumes:
-      - ./:/app
-    working_dir: /app
-    restart: "unless-stopped"
-    command: python manage.py tailwind start
-    tty: true
-    # Without tty, no stdin, and tailwind watcher aborts
-    # https://github.com/tailwindlabs/tailwindcss/issues/5324
-
-  webpack:
-    build:
-      context: .
-      dockerfile: Dockerfile.webpack
-    volumes:
-      - ./ui:/app
+      - ./tailwind:/app
+      - tailwind_static_volume:/app/css
     working_dir: /app
     command: yarn run dev
+    restart: "unless-stopped"
+    tty: true
+
 
 
 volumes:
   postgres_data:
+  tailwind_static_volume:
+  react_static_volume:
+

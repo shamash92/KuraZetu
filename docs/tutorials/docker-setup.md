@@ -40,6 +40,7 @@ DATABASE_HOST=db
 Run the following command to build and start the containers in detached mode:
 
 ```bash
+docker compose build --progress=plain 
 docker compose up -d
 ```
 
