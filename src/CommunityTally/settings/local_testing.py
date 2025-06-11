@@ -6,14 +6,14 @@ from CommunityTally.settings.base import *
 
 SECRET_KEY = "!8ytp74y4!l5x%rw6*mx4fmuzi&o14v$_x&^))$jyajl6py356"
 DATABASES = {
-	"default": {
-		"ENGINE": "django.contrib.gis.db.backends.postgis",
-		"NAME": "community_test_db",
-		"USER": "test_admin",
-		"HOST": "localhost",
-		"PASSWORD": "community_password",
-		"PORT": "5432",
-	}
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "kurazetu_test_db",
+        "USER": "test_admin",
+        "HOST": "localhost",
+        "PASSWORD": "kurazetu_password",
+        "PORT": "5432",
+    }
 }
 
 

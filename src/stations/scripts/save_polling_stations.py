@@ -90,17 +90,34 @@ def save_polling_stations_and_streams(geojson_file_path):
                             stream_code = polling_station["stream_code"]
                             registered_voters = polling_station["registered_voters"]
 
+                            # TODO: We have a bug where we can have duplicate stream codes from data (data entry error)
                             try:
                                 polling_station_obj = PollingStation.objects.get(
                                     code=stream_code, polling_center=reg_center_obj
                                 )
 
                             except Exception as e:
-                                PollingStation.objects.create(
-                                    code=stream_code,
-                                    polling_center=reg_center_obj,
-                                    registered_voters=registered_voters,
+                                polling_station_qs = PollingStation.objects.filter(
+                                    code=stream_code, polling_center=reg_center_obj
                                 )
+
+                                # print(polling_station_qs.count(), "polling_station_qs.count()")
+
+                                if (
+                                    polling_station_qs.exists()
+                                    and polling_station_qs.count() > 1
+                                ):
+                                    print(
+                                        f"\033[91mDuplicate polling station found for code {stream_code} in center {reg_center_obj.name}. Skipping.\033[0m"
+                                    )
+                                    continue
+
+                                else:
+                                    PollingStation.objects.create(
+                                        code=stream_code,
+                                        polling_center=reg_center_obj,
+                                        registered_voters=registered_voters,
+                                    )
 
                             continue
 
