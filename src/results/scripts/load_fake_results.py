@@ -251,7 +251,7 @@ def create_polling_station_results():
                         presidential_candidate=aspirant,
                     )
                 except PollingStationPresidentialResults.DoesNotExist:
-                    print("does not exist")
+                    # print("does not exist")
                     pres_results = PollingStationPresidentialResults.objects.create(
                         polling_station=polling_station,
                         presidential_candidate=aspirant,

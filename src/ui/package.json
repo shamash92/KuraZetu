@@ -17,6 +17,7 @@
         "clean-webpack-plugin": "^4.0.0",
         "clsx": "^2.1.1",
         "dotenv-webpack": "^8.1.0",
+        "framer-motion": "^12.16.0",
         "leaflet": "^1.9.4",
         "lucide-react": "^0.503.0",
         "react-cookies": "^0.1.1",

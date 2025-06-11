@@ -66,6 +66,8 @@ This guide assumes you have already set up your django project and run migration
     src_dir = os.getcwd()
     geojson_file = os.path.join(src_dir, "stations/scripts", "wards.geojson")
     save_wards_from_geojson_file(geojson_file)
+
+    exit()
     ```
 
 > For all the below steps, you can run the scripts in the terminal.
@@ -167,7 +169,7 @@ This guide assumes you have already set up your django project and run migration
 
     ```{caution}
 
-    This step is only for development environment. In production, you will need to create a superuser and assign them a polling center using the admin panel.
+    This step is only for development environment and to visualise data. In production, you will need to create a superuser and assign them a polling center using the admin panel and ofcourse, data will come from users who will be submitting results from the polling stations through the app.
     ```
 
 ````{tabs}

@@ -1,0 +1,7 @@
+
+groups:
+  - vscode
+runcmd:
+  - adduser ubuntu vscode
+ssh_authorized_keys:
+  - ssh-rsa shshshhs  user@host
