@@ -45,7 +45,7 @@ For Windows and MacOS users, it is recommended to use a virtual machine to run t
     Also note that the first time you run the command, it will take a while to download the image and create the virtual machine. Subsequent runs will be much faster.
     ```
 
-3. Start the virtual machine:
+3. Start the virtual machine if using the shell otherwise jump to step 5 if using VScODE and you have already started the VM and connected to it via SSH:
 
     ```bash
     multipass start kurazetu-vm
@@ -86,7 +86,7 @@ cd KuraZetu
 ## Setup Instructions Frontend (React + Webpack)
 
 ```{important}
-Running the frontend does not open any ports e.g 3000. It only enables webpack to build a bundle on code change and hot reload to help with development. The bundle is injected inside a django template and django serves all the consecutive react-router links under the /ui/ paths.
+Running the frontend does not open any ports e.g 3000. It only enables webpack to build a bundle on code change and hot reload to help with development. The bundle is injected inside a django template and django serves all the consecutive react-router links under the `/ui/` paths.
 ```
 
 Open a new terminal to run the following commands parallel to the backend commands
