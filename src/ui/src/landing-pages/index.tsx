@@ -22,7 +22,7 @@ function LandingPage() {
     return (
         <div className="flex flex-col w-full pt-2">
             <NavComponent />
-            <Disclaimer />
+            {/* <Disclaimer /> */}
             <Hero />
             <Features />
             <WhyComponent />

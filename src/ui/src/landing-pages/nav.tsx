@@ -32,7 +32,7 @@ export default function NavComponent() {
                 </nav>
                 <div className="flex gap-4">
                     <Button variant="outline" asChild>
-                        <a href="/ui/signup/">Register</a>
+                        <a href="/ui/signup/">Login / Register</a>
                     </Button>
                 </div>
             </div>
