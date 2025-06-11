@@ -19,8 +19,8 @@ jobs:
         image: postgis/postgis:14-3.3  # Use PostgreSQL 14 with PostGIS
         env:
           POSTGRES_USER: test_admin
-          POSTGRES_PASSWORD: community_password
-          POSTGRES_DB: community_test_db
+          POSTGRES_PASSWORD: kurazetu_password
+          POSTGRES_DB: kurazetu_test_db
         ports:
           - 5432:5432
         options: >-
