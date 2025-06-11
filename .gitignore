@@ -24,3 +24,7 @@ Thumbs.db
 static/
 
 src/tallies/
+
+kurazetu_key
+kurazetu_key.pub
+vscode.yaml

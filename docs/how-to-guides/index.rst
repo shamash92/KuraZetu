@@ -8,3 +8,5 @@ How-to guides
 
    Anonymous contributions <anonymous_github>
    Load boundaries data <load_boundaries_data>
+   Customize your Multipass VM <customize-multipass>
+   Connect VSCode to Multipass <vscode-multipass>
