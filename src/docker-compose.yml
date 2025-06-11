@@ -59,16 +59,13 @@ services:
     depends_on:
       - webpack
     volumes:
-      - ./:/app
-      - tailwind_static_volume:/app/theme/static
+      - ./tailwind:/app
+      - tailwind_static_volume:/app/css
     working_dir: /app
-    environment:
-      - NODE_ENV=development
-    command: python manage.py tailwind start
+    command: yarn run dev
     restart: "unless-stopped"
     tty: true
-    # Without tty, no stdin, and tailwind watcher aborts
-    # https://github.com/tailwindlabs/tailwindcss/issues/5324
+
 
 
 volumes:

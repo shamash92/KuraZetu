@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 {% load static %}
-{% load tailwind_tags %}
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -14,7 +13,7 @@
 
         {% endblock %}
 
-        {% tailwind_css %}
+        <link href="{% static 'css/dist/styles.css' %}" rel="stylesheet" />
     </head>
     <body class="flex w-full min-h-screen bg-white">
         <div class="w-full">

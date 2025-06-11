@@ -36,8 +36,6 @@ DEFAULT_APPS = [
 THIRD_PARTY_APPS = [
     "corsheaders",
     "leaflet",
-    "tailwind",
-    "theme",
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_gis",
@@ -47,18 +45,12 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
 ]
 
-MY_APPS = [
-    "accounts",
-    "stations",
-    "ui",
-    "results",
-]
+MY_APPS = ["accounts", "stations", "ui", "results", "tailwind"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 
 SITE_ID = 1
 
-TAILWIND_APP_NAME = "theme"
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
