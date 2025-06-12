@@ -12,6 +12,7 @@ django-tailwind
 djangorestframework == 3.15.2
 djangorestframework_gis
 drf-spectacular
+gunicorn
 isort
 markdown
 phonenumbers
