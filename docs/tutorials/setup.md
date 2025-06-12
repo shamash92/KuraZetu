@@ -174,7 +174,6 @@ Create a virtual environment and install the required Python packages:
     pip install -r requirements.txt
     pre-commit install
     ```
-
 ```
 ````
 
@@ -184,7 +183,6 @@ Before proceeding, install the required system dependencies for PostgreSQL, Post
 NB: This project is built and tested with Postgres 14.
 
 ```bash
-
 sudo apt update
 
 sudo apt install -y wget gnupg lsb-release ca-certificates
