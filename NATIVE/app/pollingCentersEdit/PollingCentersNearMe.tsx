@@ -88,7 +88,6 @@ export default function LocationsScreen() {
                 latitude: userLocation?.latitude || null,
                 longitude: userLocation?.longitude || null,
             };
-
             fetch(
                 `${apiBaseURL}/api/stations/ward/polling-centers/${searchDistance}/pins/`,
                 {

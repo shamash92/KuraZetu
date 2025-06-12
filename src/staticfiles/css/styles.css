@@ -814,11 +814,6 @@ select {
   top: 0px;
 }
 
-.mx-auto {
-  margin-left: auto;
-  margin-right: auto;
-}
-
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -1138,18 +1133,9 @@ select {
   text-align: center;
 }
 
-.font-serif {
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-}
-
 .text-2xl {
   font-size: 1.5rem;
   line-height: 2rem;
-}
-
-.text-5xl {
-  font-size: 3rem;
-  line-height: 1;
 }
 
 .text-sm {
@@ -1185,10 +1171,6 @@ select {
 
 .leading-normal {
   line-height: 1.5;
-}
-
-.tracking-normal {
-  letter-spacing: 0em;
 }
 
 .text-blue-500 {

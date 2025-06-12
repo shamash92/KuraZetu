@@ -62,7 +62,7 @@ export function Hero() {
                             <a href="https://kurazetu.readthedocs.io/tutorials/setup-android/#running-the-app">
                                 <Button className="bg-gradient-to-r from-[#008751] to-green-600 hover:from-[#006B40] hover:to-green-700 text-white shadow-lg transform transition-all duration-200 hover:scale-105">
                                     <Download className="w-4 h-4 mr-2" />
-                                    Download APK
+                                    Download Development APK
                                 </Button>
                             </a>
 
@@ -78,12 +78,9 @@ export function Hero() {
 
                         <div className="flex items-center justify-center mt-6 lg:justify-start gap-x-6">
                             <a href="https://kurazetu.readthedocs.io">
-                                <Button
-                                    variant="ghost"
-                                    className="text-gray-600 hover:text-gray-900"
-                                >
-                                    Documentation{" "}
-                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                <Button className="bg-gradient-to-r from-[#008751] to-green-600 hover:from-[#006B40] hover:to-green-700 text-white shadow-lg transform transition-all duration-200 hover:scale-105">
+                                    Documentation
+                                    <ArrowRight className="w-4 h-4 mr-2" />
                                 </Button>
                             </a>
                         </div>

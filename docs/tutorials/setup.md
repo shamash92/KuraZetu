@@ -174,7 +174,6 @@ Create a virtual environment and install the required Python packages:
     pip install -r requirements.txt
     pre-commit install
     ```
-
 ```
 ````
 
@@ -364,7 +363,6 @@ python manage.py createsuperuser
 python manage.py runserver 0.0.0.0:8000
 ```
 
-
 ### 10. Next steps: Load Administrative Boundaries Data
 
 This step is optional but recommended for testing purposes. You can load administrative boundaries data (Counties, Constituencies, and Wards) into your system using the Django `manage.py shell`. The necessary geojson data and the scripts to save them are already provided in the `stations/scripts` directory.
@@ -372,8 +370,6 @@ This step is optional but recommended for testing purposes. You can load adminis
 > See the [Load Administrative Boundaries Data](../how-to-guides/load_boundaries_data.md) guide for detailed instructions.
 
 ---
-
-
 
 ## 3. Setup Tailwind CSS
 
