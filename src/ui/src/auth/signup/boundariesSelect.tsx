@@ -258,18 +258,59 @@ function CountySelect() {
     return (
         <div className="flex flex-col w-full md:h-screen md:flex-row ">
             {activePolygon == null ? (
-                <div className="flex flex-col items-center justify-center w-full h-screen">
-                    <button className="px-12 py-4 mb-12 text-2xl font-medium text-white bg-gray-800 rounded shadow">
-                        <a href="/accounts/login/">Login</a>
-                    </button>
-                    <button
-                        onClick={() => {
-                            setActivePolygon(0);
-                        }}
-                        className="px-12 py-4 text-2xl font-medium text-white bg-gray-800 rounded shadow"
-                    >
-                        Start Registration
-                    </button>
+                <div className="flex flex-col items-center justify-center w-full min-h-screen px-4 py-8 bg-gradient-to-br from-green-50 to-blue-50">
+                    <div className="flex flex-col w-full max-w-xl gap-8">
+                        {/* Login Card */}
+                        <div className="flex flex-col items-center overflow-hidden transition-shadow duration-300 bg-white shadow-xl md:flex-row rounded-2xl hover:shadow-2xl">
+                            <div className="flex items-center justify-center flex-shrink-0 w-full h-40 md:w-1/3 md:h-48 bg-gradient-to-tr from-gray-800 to-gray-600">
+                                <img
+                                    src="https://img.icons8.com/ios-filled/100/ffffff/lock-2.png"
+                                    alt="Login"
+                                    className="w-20 h-20"
+                                />
+                            </div>
+                            <div className="flex flex-col justify-center w-full p-6 md:w-2/3">
+                                <h2 className="mb-2 text-xl font-bold text-gray-800 md:text-2xl">
+                                    Already have an account?
+                                </h2>
+                                {/* <p className="mb-4 text-sm text-gray-600 md:text-base">
+                                    If you have previously registered, you can log in to
+                                    your account to continue.
+                                </p> */}
+                                <a
+                                    href="/accounts/login/"
+                                    className="inline-block px-6 py-2 mt-12 font-semibold text-center text-white transition bg-gray-800 rounded-lg shadow hover:bg-gray-700"
+                                >
+                                    Login
+                                </a>
+                            </div>
+                        </div>
+                        {/* Registration Card */}
+                        <div className="flex flex-col items-center py-0 overflow-hidden transition-shadow duration-300 bg-white shadow-xl md:flex-row rounded-2xl hover:shadow-2xl">
+                            <div className="flex items-center justify-center w-full h-full md:w-1/3 bg-gradient-to-tr from-green-400 to-blue-400">
+                                <img
+                                    src="https://img.icons8.com/ios-filled/100/ffffff/add-user-group-man-man.png"
+                                    alt="Register"
+                                    className="object-contain w-20 h-20"
+                                />
+                            </div>
+                            <div className="flex flex-col justify-center w-full p-6 md:w-2/3">
+                                <h2 className="mb-2 text-xl font-bold text-gray-800 md:text-2xl">
+                                    New here?
+                                </h2>
+                                <p className="mb-4 text-sm text-gray-600 md:text-xs lg:text-md ">
+                                    Start your registration to join our community and
+                                    access all features. It only takes a few minutes!
+                                </p>
+                                <button
+                                    onClick={() => setActivePolygon(0)}
+                                    className="inline-block px-6 py-2 font-semibold text-white transition bg-green-500 rounded-lg shadow hover:bg-green-600"
+                                >
+                                    Start Registration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             ) : selectedPollingCenter ? (
                 <div className="flex flex-col-reverse items-center justify-center w-full h-full bg-gray-100 md:flex-row md:justify-between">
@@ -279,10 +320,32 @@ function CountySelect() {
                             You are almost done...
                         </h1>
 
-                        <p>County: {selectedCounty}</p>
-                        <p>Constituency: {selectedConstituency}</p>
-                        <p>Ward: {selectedWard}</p>
-                        <p>Polling Center: {selectedPollingCenter}</p>
+                        <div className="w-full max-w-md p-4 mt-8 font-mono text-sm text-green-300 bg-gray-900 rounded-lg shadow-lg">
+                            <div className="mb-1">
+                                <span className="text-gray-400">County Code:</span>{" "}
+                                <span className="font-semibold">{selectedCounty}</span>
+                            </div>
+                            <div className="mb-1">
+                                <span className="text-gray-400">
+                                    Constituency Code:
+                                </span>{" "}
+                                <span className="font-semibold">
+                                    {selectedConstituency}
+                                </span>
+                            </div>
+                            <div className="mb-1">
+                                <span className="text-gray-400">Ward Code:</span>{" "}
+                                <span className="font-semibold">{selectedWard}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-400">
+                                    Polling Center Code:
+                                </span>{" "}
+                                <span className="font-semibold">
+                                    {selectedPollingCenter}
+                                </span>
+                            </div>
+                        </div>
 
                         <p className="mt-8 mb-12 text-center">
                             Proceed below to share your information
@@ -290,9 +353,9 @@ function CountySelect() {
 
                         <a
                             href={`/ui/signup/accounts/${selectedWard}/${selectedPollingCenter}/`}
-                            className="flex-row items-center justify-center w-2/3 p-4 px-5 py-3 overflow-hidden font-medium bg-gray-800 rounded-lg shadow-2xl md:w-1/2 group"
+                            className="flex-row items-center justify-center w-10/12 p-4 px-5 py-3 overflow-hidden font-medium bg-gray-800 rounded-lg shadow-2xl md:w-1/2 group"
                         >
-                            <span className="font-bold text-center text-white text-md">
+                            <span className="w-full text-sm font-bold text-center text-white md:text-md">
                                 Proceed To registration
                             </span>
                         </a>

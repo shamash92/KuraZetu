@@ -4,6 +4,23 @@
 {% block head %}
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <style>
+        #loading-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: white;
+            z-index: 9999;
+        }
+        #root {
+            display: none;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -12,19 +29,44 @@
         window.djangoUserPhoneNumber = '{{ user.phone_number |safe }}'
         window.djangoUserPollingCenterCode = '{{ user.polling_center.code |safe }}'
         window.djangoUserPollingCenterName = '{{ user.polling_center.name |safe }}'
-
+        
         window.djangoUserWardNumber = '{{ user.polling_center.ward.number |safe}}'
         window.djangoUserWardName = '{{ user.polling_center.ward.name |safe}}'
-
+        
         window.djangoUserConstName = '{{ user.polling_center.ward.constituency.name |safe}}'
         window.djangoUserConstNumber = '{{ user.polling_center.ward.constituency.number |safe}}'
-
+        
         window.djangoUserCountyName =
             '{{ user.polling_center.ward.constituency.county.name |safe}}'
         window.djangoUserCountyNumber =
             '{{ user.polling_center.ward.constituency.county.number |safe}}'
     </script>
+
+    {% comment %}For some reason if the above script is moved down, the variables are not passed{% endcomment %}
+
+    <div id="loading-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div class="flex flex-col items-center w-full max-w-xs p-8 mx-4 space-y-6 shadow-lg rounded-xl bg-gradient-to-br from-blue-50 to-blue-100">
+            <svg class="w-10 h-10 mb-2 text-blue-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <h2 class="text-lg font-semibold text-blue-700">Loading KuraZetu...</h2>
+            <p class="text-sm text-center text-gray-600">
+                This may take a moment the first time as we set things up.<br />
+                Future visits will be much faster!
+            </p>
+        </div>
+    </div>
+
     <div class="flex w-full" id="root"></div>
 
-    <script src="{% static 'ui' %}{{ js_bundle }}"></script>
+    <script>
+        // When the JS bundle is loaded, hide loading and show root
+        function hideLoadingShowRoot() {
+            document.getElementById('loading-screen').style.display = 'none'
+            document.getElementById('root').style.display = 'flex'
+        }
+    </script>
+
+    <script src="{% static 'ui' %}{{ js_bundle }}" onload="hideLoadingShowRoot()"></script>
 {% endblock %}
