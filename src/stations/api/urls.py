@@ -8,6 +8,7 @@ from stations.api.views import (
     WardPollingCenterListAPIView,
     RandomUnverifiedPollingCenterAPIView,
     VerificationPollingCenterAPIView,
+    PartiallyVerifiedPollingCenterAPIView,
 )
 
 urlpatterns = [
@@ -45,5 +46,10 @@ urlpatterns = [
         "polling-centers/verify/",
         VerificationPollingCenterAPIView.as_view(),
         name="polling_centers_verification_api",
+    ),
+    path(
+        "polling-centers/partially-verified/",
+        PartiallyVerifiedPollingCenterAPIView.as_view(),
+        name="polling_centers_partially_verified_api",
     ),
 ]

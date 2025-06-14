@@ -13,6 +13,7 @@ from stations.api.serializers import (
     PollingCenterSerializer,
     WardSerializer,
     PollingCenterBoundarySerializer,
+    PartiallyVerifiedPollingCenterBoundarySerializer,
 )
 from stations.models import (
     Constituency,
@@ -200,13 +201,22 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                     .first()
                 )
 
-            verified_by_user_qs = PollingCenterVerification.objects.filter(
+            verified_by_qs = PollingCenterVerification.objects.filter(
                 polling_center=random_unverified_polling_center,
+            )
+
+            verified_by_user_qs = verified_by_qs.filter(
                 verified_by=user,
             )
+
             if verified_by_user_qs.exists():
                 return Response(
-                    {"error": "You have already verified this polling center"},
+                    {
+                        "error": "You have already verified this polling center",
+                        "data": PollingCenterBoundarySerializer(
+                            random_unverified_polling_center
+                        ).data,
+                    },
                     status=status.HTTP_200_OK,
                 )
             else:
@@ -215,10 +225,12 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                     random_unverified_polling_center
                 ).data
 
+                partial_data = PartiallyVerifiedPollingCenterBoundarySerializer(
+                    verified_by_qs, many=True
+                ).data
+
                 return Response(
-                    {
-                        "data": boundary_data,
-                    },
+                    {"data": boundary_data, "partially_verified": partial_data},
                     status=status.HTTP_200_OK,
                 )
         else:
@@ -266,6 +278,7 @@ class VerificationPollingCenterAPIView(APIView):
         latitude = data.get("latitude")
         longitude = data.get("longitude")
         pollingCenterDBId = data.get("pollingCenterDBId")
+        isUpvote = data.get("isUpvote", False)
 
         if latitude is None or longitude is None or pollingCenterDBId is None:
             return Response(
@@ -279,6 +292,18 @@ class VerificationPollingCenterAPIView(APIView):
         except PollingCenter.DoesNotExist:
             return Response(
                 {"error": "Polling Center does not exist."},
+                status=status.HTTP_200_OK,
+            )
+
+        print(isUpvote, "is upvote value")
+        print(isUpvote is True, "is upvote boolean value")
+
+        if isUpvote is True:
+            # Increment the location upvotes
+            polling_center.location_upvotes += 1
+            polling_center.save()
+            return Response(
+                {"message": "Polling Center location upvoted successfully"},
                 status=status.HTTP_200_OK,
             )
 
@@ -317,5 +342,58 @@ class VerificationPollingCenterAPIView(APIView):
 
         return Response(
             {"message": "Suggested pin saved successfully"},
+            status=status.HTTP_200_OK,
+        )
+
+
+class PartiallyVerifiedPollingCenterAPIView(APIView):
+    authentication_classes = [
+        SessionAuthentication,
+        TokenAuthentication,
+    ]
+    permission_classes = [AllowAny]
+
+    queryset = PollingCenter.objects.all()
+    serializer_class = PollingCenterSerializer
+
+    def post(self, *args, **kwargs):
+        data = self.request.data
+
+        print(data, "data inside the server")
+
+        user = self.request.user
+
+        print(user, "user inside the server")
+
+        pollingCenterDBId = data.get("pollingCenterDBId")
+
+        if pollingCenterDBId is None:
+            return Response(
+                {"error": "Polling Center ID is required."},
+                status=status.HTTP_200_OK,
+            )
+
+        if not user.is_authenticated:
+            polling_center = PollingCenterVerification.objects.filter(
+                polling_center__pk=pollingCenterDBId,
+            ).last()
+            print(polling_center, "polling center")
+        else:
+            try:
+                polling_center = PollingCenterVerification.objects.get(
+                    polling_center__pk=pollingCenterDBId,
+                    verified_by=user,
+                )
+                print(polling_center, "polling center")
+            except PollingCenterVerification.DoesNotExist:
+                return Response(
+                    {"error": "Polling Center Verification does not exist."},
+                    status=status.HTTP_200_OK,
+                )
+
+        data = PartiallyVerifiedPollingCenterBoundarySerializer(polling_center).data
+
+        return Response(
+            {"data": data},
             status=status.HTTP_200_OK,
         )

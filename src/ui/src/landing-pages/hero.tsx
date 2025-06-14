@@ -12,6 +12,7 @@ import {
 import {Alert, AlertDescription, AlertTitle} from "../@/components/ui/alert";
 import {s3BaseUrl} from "../utils";
 import AppScreenshots from "./appScreenshots";
+import PlayGameCallToActionButton from "./gameButton";
 
 export function Hero() {
     return (
@@ -163,6 +164,10 @@ export function Hero() {
                                     Contribute on GitHub
                                 </Button>
                             </a>
+                        </div>
+
+                        <div className="flex flex-col-reverse items-center justify-center mt-6 gap-x-6 md:flex-row lg:justify-start">
+                            <PlayGameCallToActionButton />
                         </div>
                     </div>
 

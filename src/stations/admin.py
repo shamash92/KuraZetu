@@ -51,6 +51,7 @@ class PollingCenterAdmin(LeafletGeoAdmin):
         "name",
         "code",
         "number_of_streams",
+        "location_upvotes",
         "is_verified",
         "ward",
         "ward__constituency",

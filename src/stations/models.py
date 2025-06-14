@@ -96,6 +96,9 @@ class PollingCenter(gis_models.Model):
     boundary = gis_models.PolygonField(blank=True, null=True)
 
     is_verified = models.BooleanField(default=False)
+    location_upvotes = models.PositiveIntegerField(
+        default=0
+    )  # TODO: For now the upvotes are not being tied to any user whether authenticated or not. I mean, whoever is bored to keep upvoting, let the be.
     verified_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,

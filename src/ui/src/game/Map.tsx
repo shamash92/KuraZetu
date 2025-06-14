@@ -9,25 +9,20 @@ import L from "leaflet";
 import {IPollingCenterFeature} from "./types";
 import {GeoJSON, Tooltip} from "react-leaflet";
 
-interface Location {
-    id: string;
-    lat: number;
-    lng: number;
-    name: string;
-    description: string;
-    imageUrl: string;
-}
-
 interface MapComponentProps {
     location: IPollingCenterFeature;
     onPinDrag: (lat: number, lng: number) => void;
     isEditing: boolean;
+    suggestedLocation?: IPollingCenterFeature | null;
+    partiallyVerifiedLocations?: IPollingCenterFeature[] | null;
 }
 
 export default function MapComponent({
     location,
     onPinDrag,
     isEditing,
+    suggestedLocation,
+    partiallyVerifiedLocations,
 }: MapComponentProps) {
     const [pinPosition, setPinPosition] = useState({x: 50, y: 50}); // Percentage position
     const [zoom, setZoom] = useState(1);
@@ -38,41 +33,7 @@ export default function MapComponent({
     useEffect(() => {
         setPinPosition({x: 50, y: 50});
         setZoom(1);
-    }, [location]);
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (!isEditing) return;
-        setIsDragging(true);
-        e.preventDefault();
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging || !isEditing || !mapRef.current) return;
-
-        const rect = mapRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-        // Keep pin within bounds
-        const clampedX = Math.max(0, Math.min(100, x));
-        const clampedY = Math.max(0, Math.min(100, y));
-
-        setPinPosition({x: clampedX, y: clampedY});
-    };
-
-    const handleMouseUp = () => {
-        if (isDragging && isEditing) {
-            setIsDragging(false);
-            // Convert percentage position to approximate lat/lng
-            const newLat =
-                location.properties.pin_location.coordinates[1] +
-                (50 - pinPosition.y) * 0.01;
-            const newLng =
-                location.properties.pin_location.coordinates[0] +
-                (pinPosition.x - 50) * 0.01;
-            onPinDrag(newLat, newLng);
-        }
-    };
+    }, [location, suggestedLocation]);
 
     const handleZoomIn = () => {
         setZoom((prev) => Math.min(prev + 0.2, 2));
@@ -86,21 +47,69 @@ export default function MapComponent({
         <div className="relative w-full h-full overflow-hidden bg-gray-800">
             {/* Map Background */}
             <MapContainer
+                attributionControl={true}
                 center={[
-                    location.properties.pin_location.coordinates[1],
-                    location.properties.pin_location.coordinates[0],
+                    suggestedLocation
+                        ? suggestedLocation.properties.pin_location.coordinates[1]
+                        : location.properties.pin_location.coordinates[1],
+                    suggestedLocation
+                        ? suggestedLocation.properties.pin_location.coordinates[0]
+                        : location.properties.pin_location.coordinates[0],
                 ]}
-                zoom={20 * zoom}
-                scrollWheelZoom={isEditing}
+                zoom={18 * zoom}
+                // scrollWheelZoom={isEditing}
                 style={{width: "100%", height: "100%", zIndex: 1}}
                 ref={mapRef as any}
                 zoomControl
-                minZoom={18}
+                touchZoom
+                minZoom={16}
+                maxZoom={22}
             >
                 <TileLayer
                     url="http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-                    attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+                    attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a> | &copy; <span title="KuraZetu Trademark">KuraZetu™</span>'
                 />
+
+                {partiallyVerifiedLocations &&
+                    partiallyVerifiedLocations.map((loc) => (
+                        <GeoJSON
+                            key={loc.id}
+                            data={loc}
+                            style={() => ({
+                                fillColor: "yellow",
+                                fillOpacity: 0.3,
+                                color: "rgba(255,255,0,0.5)",
+                                weight: 1,
+                                dashArray: "4 4",
+                            })}
+                        >
+                            <Tooltip permanent>
+                                Partially Verified Location
+                                <br />
+                                {loc.properties.name}
+                            </Tooltip>
+                        </GeoJSON>
+                    ))}
+
+                {suggestedLocation && (
+                    <GeoJSON
+                        // key={suggestedLocation.id}
+                        data={suggestedLocation}
+                        style={() => ({
+                            fillColor: "blue",
+                            fillOpacity: 0.3,
+                            color: "rgba(255,0,0,0.5)",
+                            weight: 1,
+                            dashArray: "4 4",
+                        })}
+                    >
+                        <Tooltip>
+                            Suggested Location
+                            <br />
+                            {suggestedLocation.properties.name}
+                        </Tooltip>
+                    </GeoJSON>
+                )}
 
                 <GeoJSON
                     key={location.id}

@@ -13,6 +13,7 @@ export interface IPollingCenterFeature {
         county: string;
         pin_location_error: null | string;
         is_verified: boolean;
+        location_upvotes: number;
         pin_location: {
             type: "Point";
             coordinates: [number, number];

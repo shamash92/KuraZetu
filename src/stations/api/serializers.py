@@ -1,7 +1,14 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
-from stations.models import Constituency, County, PollingCenter, PollingStation, Ward
+from stations.models import (
+    Constituency,
+    County,
+    PollingCenter,
+    PollingStation,
+    Ward,
+    PollingCenterVerification,
+)
 from rest_framework.fields import SerializerMethodField
 
 
@@ -87,6 +94,7 @@ class PollingCenterBoundarySerializer(GeoFeatureModelSerializer):
             "pin_location",
             "pin_location_error",
             "is_verified",
+            "location_upvotes",
         )
 
 
@@ -100,4 +108,16 @@ class PollingStationSerializer(ModelSerializer):
             "date_created",
             "date_modified",
             "is_verified",
+        )
+
+
+class PartiallyVerifiedPollingCenterBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = PollingCenterVerification
+        geo_field = "boundary"
+        fields = (
+            "id",
+            "polling_center",
+            "pin_location",
         )

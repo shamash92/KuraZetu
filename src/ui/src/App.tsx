@@ -79,8 +79,8 @@ function App() {
             <HelmetProvider context={helmetContext}>
                 <AuthProvider>
                     <UserProvider>
-                        <RoutesApp />
                         <Toaster />
+                        <RoutesApp />
                     </UserProvider>
                 </AuthProvider>
             </HelmetProvider>

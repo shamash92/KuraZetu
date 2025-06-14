@@ -14,12 +14,12 @@ export default function GameStart({onStart}: GameStartProps) {
     console.log(auth, "auth from game start");
 
     return (
-        <div className="inset-0 flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+        <div className="flex items-center justify-center w-full min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
             <motion.div
                 initial={{opacity: 0, scale: 0.8}}
                 animate={{opacity: 1, scale: 1}}
                 transition={{duration: 0.6}}
-                className="max-w-md p-8 mx-auto text-center text-white"
+                className="max-w-lg p-8 mx-auto text-center text-white"
             >
                 <motion.div
                     initial={{y: -20}}
@@ -27,7 +27,7 @@ export default function GameStart({onStart}: GameStartProps) {
                     transition={{delay: 0.2, duration: 0.5}}
                     className="mb-8"
                 >
-                    <div className="flex justify-center mb-4">
+                    <div className="flex justify-center w-full mb-4 ">
                         <div className="relative">
                             <MapPin className="w-16 h-16 text-blue-400" />
                             <motion.div
