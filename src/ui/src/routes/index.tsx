@@ -7,6 +7,8 @@ import SignupComponent from "../auth/signup/index";
 import SignupForm from "../auth/signup/signupForm";
 import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
+import APKDownloadPage from "../pages/APKDownload";
+import GameLandingPage from "../game";
 
 export function NotFound() {
     return (
@@ -27,10 +29,15 @@ export function NotFound() {
 
 function RoutesApp() {
     const isAuthenticated = useAuth();
+    console.log(JSON.stringify(isAuthenticated, null, 2));
 
     return (
         <Routes>
             <Route path="/ui/" element={<LandingPage />} />
+            <Route path="/ui/download-apk/" element={<APKDownloadPage />} />
+            <Route path="/ui/game/" element={<GameLandingPage />} />
+
+            {/* Public Routes */}
 
             {isAuthenticated ? (
                 <>

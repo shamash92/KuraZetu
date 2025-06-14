@@ -1,6 +1,8 @@
 import React, {createContext, useContext} from "react";
 
 import RoutesApp from "./routes";
+import {HelmetProvider} from "react-helmet-async";
+import {Toaster} from "sonner";
 
 let djangoAuth = {djangoAuthenticated: window.djangoAuthenticated || "false"}; //  this comes from the django html template inside the script tag
 
@@ -70,13 +72,18 @@ export const useAuth = () => useContext(AuthContext);
 export const useUser = () => useContext(UserContext);
 
 function App() {
+    const helmetContext = {};
+
     return (
         <div className="flex flex-col items-center justify-start w-full min-h-screen">
-            <AuthProvider>
-                <UserProvider>
-                    <RoutesApp />
-                </UserProvider>
-            </AuthProvider>
+            <HelmetProvider context={helmetContext}>
+                <AuthProvider>
+                    <UserProvider>
+                        <Toaster />
+                        <RoutesApp />
+                    </UserProvider>
+                </AuthProvider>
+            </HelmetProvider>
         </div>
     );
 }

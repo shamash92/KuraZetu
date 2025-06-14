@@ -6,10 +6,10 @@ export default function NavComponent() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex items-center justify-between h-16">
-                <div className="flex items-center gap-2">
+                <a href="/ui" className="flex items-center gap-2">
                     <Users className="w-6 h-6 text-green-600" />
                     <span className="text-xl font-bold">Kura Zetu</span>
-                </div>
+                </a>
                 <nav className="hidden gap-6 md:flex">
                     <a
                         href="#about"

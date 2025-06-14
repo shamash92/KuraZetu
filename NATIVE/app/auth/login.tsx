@@ -1,10 +1,14 @@
-import {Alert, Pressable, Text, TextInput, View} from "react-native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+
+import {Alert, Platform, Pressable, Text, TextInput, View} from "react-native";
 import Animated, {FadeInUp, FadeOut} from "react-native-reanimated";
 import {Link, router} from "expo-router";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import getApiBaseURL, {apiBaseURL} from "../(utils)/apiBaseURL";
 
 import {Button} from "react-native-paper";
+import Constants from "expo-constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import LottieComponent from "@/components/lottieLoading";
 import {TouchableOpacity} from "react-native";
@@ -106,6 +110,80 @@ function Login() {
     const togglePasswordVisibility = () => {
         setIsPasswordVisible(!isPasswordVisible);
     };
+
+    function handleRegistrationError(errorMessage: string) {
+        alert(`registrationErrorLogin:", ${errorMessage}`);
+        // throw new Error(errorMessage);
+    }
+
+    useEffect(() => {
+        async function registerForPushNotificationsAsync() {
+            if (Platform.OS === "android") {
+                Notifications.setNotificationChannelAsync("default", {
+                    name: "default",
+                    importance: Notifications.AndroidImportance.MAX,
+                    vibrationPattern: [0, 250, 250, 250],
+                    lightColor: "#FF231F7C",
+                });
+            }
+
+            if (Device.isDevice) {
+                const {status: existingStatus} =
+                    await Notifications.getPermissionsAsync();
+                let finalStatus = existingStatus;
+                if (existingStatus !== "granted") {
+                    const {status} = await Notifications.requestPermissionsAsync();
+                    finalStatus = status;
+                }
+                if (finalStatus !== "granted") {
+                    handleRegistrationError(
+                        "Permission not granted to get push token for push notification!",
+                    );
+                    return;
+                }
+                const projectId =
+                    Constants?.expoConfig?.extra?.eas?.projectId ??
+                    Constants?.easConfig?.projectId;
+
+                // console.log(projectId, "project id step 1");
+                if (!projectId) {
+                    handleRegistrationError("Project ID not found");
+                }
+
+                try {
+                    // console.log(projectId, "projectId");
+                    const pushTokenString = (
+                        await Notifications.getExpoPushTokenAsync({
+                            projectId: projectId,
+                        })
+                    ).data;
+                    // console.log(pushTokenString, "pushTokenString");
+                    return pushTokenString;
+                } catch (e: unknown) {
+                    console.log(e, "error in pushToken");
+                    handleRegistrationError(`${e}`);
+                }
+            } else {
+                handleRegistrationError(
+                    "Must use physical device for push notifications",
+                );
+                console.log("login.tsx: object");
+            }
+        }
+
+        registerForPushNotificationsAsync()
+            .then(async (token) => {
+                console.log(token, "token");
+
+                if (token !== null && token !== undefined) {
+                    await saveToSecureStore("expoPushToken", token);
+                }
+            })
+            .catch((error: any) => {
+                // setExpoPushToken(`${error}`)
+                console.log(error, "login.tsx: error in getting expoPushToken ");
+            });
+    }, []);
 
     return (
         <View
