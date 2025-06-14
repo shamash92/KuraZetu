@@ -163,7 +163,7 @@ const LocationEditDrawer: React.FC<LocationEditDrawerProps> = ({
                             key={"x"}
                             provider={PROVIDER_GOOGLE}
                             style={{flex: 1}}
-                            mapType="mutedStandard"
+                            mapType="satellite"
                             initialRegion={{
                                 latitude: parseFloat(latitude) || 0,
                                 longitude: parseFloat(longitude) || 0,

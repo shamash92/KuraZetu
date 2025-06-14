@@ -2,7 +2,14 @@ from django.contrib import admin
 
 from leaflet.admin import LeafletGeoAdmin
 
-from stations.models import Constituency, County, PollingCenter, PollingStation, Ward
+from stations.models import (
+    Constituency,
+    County,
+    PollingCenter,
+    PollingStation,
+    Ward,
+    PollingCenterVerification,
+)
 
 
 @admin.register(County)
@@ -44,6 +51,7 @@ class PollingCenterAdmin(LeafletGeoAdmin):
         "name",
         "code",
         "number_of_streams",
+        "location_upvotes",
         "is_verified",
         "ward",
         "ward__constituency",
@@ -80,3 +88,15 @@ class PollingStationAdmin(LeafletGeoAdmin):
     )
     list_filter = ("polling_center",)
     ordering = ("polling_center__ward__constituency__county",)
+
+
+@admin.register(PollingCenterVerification)
+class PollingCenterVerificationAdmin(LeafletGeoAdmin):
+    list_display = (
+        "polling_center",
+        "verified_by",
+        "date_modified",
+    )
+    search_fields = ("polling_center__name",)
+    list_filter = ("polling_center__ward__constituency__county",)
+    # ordering = ("polling_center__ward__constituency__county",)

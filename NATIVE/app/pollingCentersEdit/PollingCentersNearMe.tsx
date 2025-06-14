@@ -35,11 +35,11 @@ import {updateLocation} from "./(utils)/LocationService";
 
 const {height} = Dimensions.get("window");
 const INITIAL_REGION = {
-    latitude: 40.7128,
-    longitude: -74.006,
+    latitude: -1.28949,
+    longitude: 36.820599,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
-};
+}; // centers on Parliament Road where our comrades were shot
 
 const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 

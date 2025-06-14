@@ -447,9 +447,16 @@ export default function SignupForm() {
                                                         {...field}
                                                     />
                                                 </FormControl>
-                                                <FormDescription className="text-xs text-gray-700 md:text-sm">
+                                                {/* <FormDescription className="text-xs text-gray-700 md:text-sm">
                                                     Enter your Kenyan phone number
                                                     starting with +254
+                                                </FormDescription> */}
+                                                <FormDescription className="text-xs italic text-red-700 md:text-sm">
+                                                    NOTE: You can guess any number for
+                                                    now if you want. We are deliberately
+                                                    not using OTP. Just know at some
+                                                    point in future, your account number
+                                                    will have to be verified.
                                                 </FormDescription>
                                                 <FormMessage className="italic text-red-800" />
                                                 {error && error["phone_number"] && (

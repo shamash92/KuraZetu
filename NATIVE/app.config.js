@@ -1,11 +1,11 @@
 export default {
     expo: {
-        name: "community-tally",
-        slug: "community-tally",
+        name: "kurazetu",
+        slug: "kurazetu",
         version: "1.0.0",
         orientation: "portrait",
         icon: "./assets/images/icon.png",
-        scheme: "communitytally",
+        scheme: "kurazetu",
         userInterfaceStyle: "automatic",
         newArchEnabled: true,
         splash: {
@@ -15,7 +15,7 @@ export default {
         },
         ios: {
             supportsTablet: true,
-            bundleIdentifier: "com.communitytally.app",
+            bundleIdentifier: "com.kurazetu.app",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
             },
@@ -26,7 +26,7 @@ export default {
                 backgroundColor: "#ffffff",
             },
             edgeToEdgeEnabled: true,
-            package: "com.communitytally.app",
+            package: "com.kurazetu.app",
             config: {
                 googleMaps: {
                     apiKey: process.env.GOOGLE_MAPS_API_KEY,
@@ -82,8 +82,14 @@ export default {
         extra: {
             router: {},
             eas: {
-                projectId: "120bc95a-c6a0-4385-a8a5-b8a3aa92fce1",
+                projectId: "60061ad7-298f-4fde-aa66-bf58babca20e",
             },
+        },
+        updates: {
+            url: "https://u.expo.dev/60061ad7-298f-4fde-aa66-bf58babca20e",
+        },
+        runtimeVersion: {
+            policy: "appVersion",
         },
     },
 };

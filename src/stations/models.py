@@ -96,6 +96,9 @@ class PollingCenter(gis_models.Model):
     boundary = gis_models.PolygonField(blank=True, null=True)
 
     is_verified = models.BooleanField(default=False)
+    location_upvotes = models.PositiveIntegerField(
+        default=0
+    )  # TODO: For now the upvotes are not being tied to any user whether authenticated or not. I mean, whoever is bored to keep upvoting, let the be.
     verified_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -176,5 +179,54 @@ class PollingStation(models.Model):
             num = self.code[-2:]
             # print(num, "num")
             self.stream_number = int(num)
+
+        super().save(*args, **kwargs)
+
+
+class PollingCenterVerification(gis_models.Model):
+    class Meta:
+        """Meta definition for PollingCenterVerification."""
+
+        verbose_name = "Polling Center Verification"
+        verbose_name_plural = "Polling Center Verifications"
+
+        # unique_together = ("code", "ward", "name")
+
+    polling_center = models.ForeignKey(
+        PollingCenter, on_delete=models.CASCADE, related_name="verifications"
+    )
+
+    number_of_streams = models.PositiveIntegerField(default=1)
+
+    pin_location = gis_models.PointField(blank=True, null=True)
+    comments = models.CharField(max_length=255, blank=True, null=True)
+
+    radius = models.FloatField(default=0.05, help_text="km")  # 50m
+    boundary = gis_models.PolygonField(blank=True, null=True)
+
+    anonymous_verification = models.BooleanField(default=False)
+    verified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    date_modified = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.polling_center.name)
+
+    def save(self, *args, **kwargs):
+        update_boundary = False
+
+        # print(creating, "creating value")
+        # print(update_boundary, "update_boundary")
+
+        if self.pin_location:
+            center = self.pin_location
+            radius = self.radius * 0.008  # Convert km to degrees
+            circle = center.buffer(radius)
+            self.boundary = circle
 
         super().save(*args, **kwargs)
