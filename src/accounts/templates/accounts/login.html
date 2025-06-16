@@ -2,6 +2,36 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
+{% block title %}
+    <title>Kura Zetu - Login</title>
+{% endblock %}
+
+{% block head %}
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="description" content="Kura Zetu is a community-powered platform that empowers every Kenyan to verify, tally, and track election results directly from polling stations. Built for transparency and accountability." />
+    <meta name="keywords" content="Kura Zetu, GenZ , voting, elections, transparency, secure voting, civic engagement, Kenya, democracy" />
+    <meta name="author" content="@shamash92_" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="Kura Zetu – Protecting the Integrity of the Kenyan Vote" />
+    <meta property="og:description" content="Login to join thousands of virtual agents across Kenya tracking and verifying results directly from polling stations." />
+    <meta property="og:image" content="https://kurazetu.s3.eu-west-1.amazonaws.com/static/images/logo/icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kurazetu.com/" />
+    <meta property="og:image" content="https://kurazetu.s3.eu-west-1.amazonaws.com/static/images/logo/icon.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kura Zetu – Protect the Kenyan Vote" />
+    <meta name="twitter:description" content="Become a virtual agent and help tally polling station results. Transparent. Community-led. Decentralized." />
+    <meta name="twitter:image" content="https://kurazetu.s3.eu-west-1.amazonaws.com/static/images/logo/icon.png" />
+    <meta name="twitter:site" content="@shamash92_" />
+{% endblock %}
+
 {% block content %}
     <div class="flex flex-col items-center justify-start min-h-screen bg-gray-100 md:flex-row md:justify-center">
         <div class="flex flex-col justify-start w-full max-w-4xl overflow-hidden bg-white rounded-lg shadow-lg md:flex-row">

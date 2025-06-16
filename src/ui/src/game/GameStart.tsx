@@ -1,8 +1,9 @@
-import {motion} from "framer-motion";
+import {MapPin, Target, Trophy} from "lucide-react";
+
 import {Button} from "../@/components/ui/button";
-import {MapPin, Trophy, Target} from "lucide-react";
-import {useAuth} from "../App";
 import {TLevel} from "./types";
+import {motion} from "framer-motion";
+import {useAuth} from "../App";
 
 interface GameStartProps {
     onStart: (level: TLevel | null) => void;
@@ -75,6 +76,19 @@ export default function GameStart({onStart}: GameStartProps) {
                             </li>
                             <li>• Select SKIP if you are unsure (+2 points)</li>
                         </ul>
+                    </div>
+
+                    <div>
+                        <p>
+                            You can{" "}
+                            <a
+                                className="text-blue-400 underline"
+                                href="/accounts/login/"
+                            >
+                                login
+                            </a>{" "}
+                            to start with centers in your ward
+                        </p>
                     </div>
 
                     <Button

@@ -6,6 +6,7 @@ import React from "react";
 import ResultsDashboard from "../dashboards/results";
 import WhyComponent from "./why";
 import {useAuth} from "../App";
+import ProjectProgressCarousel from "./timeline";
 
 function LandingPage() {
     const isAuthenticated = useAuth();
@@ -22,6 +23,7 @@ function LandingPage() {
         <div className="flex flex-col w-full pt-2">
             <NavComponent />
             <Hero />
+            <ProjectProgressCarousel />
             <Features />
             <WhyComponent />
             <ContributorSection />
