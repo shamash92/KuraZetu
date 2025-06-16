@@ -1,17 +1,18 @@
-import React, {useState} from "react";
 import {
-    Download,
     AlertTriangle,
     Bug,
-    Smartphone,
-    Shield,
-    Clock,
     ChevronDown,
     ChevronUp,
+    Clock,
+    Download,
     ExternalLink,
+    Shield,
+    Smartphone,
 } from "lucide-react";
-import NavComponent from "../landing-pages/nav";
+import React, {useState} from "react";
+
 import {Helmet} from "react-helmet-async";
+import NavComponent from "../landing-pages/nav";
 
 export default function APKDownloadPage() {
     const [changelogExpanded, setChangelogExpanded] = useState(false);
