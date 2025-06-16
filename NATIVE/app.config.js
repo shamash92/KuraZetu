@@ -32,6 +32,7 @@ export default {
                     apiKey: process.env.GOOGLE_MAPS_API_KEY,
                 },
             },
+            googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
         },
         web: {
             bundler: "metro",
@@ -56,11 +57,23 @@ export default {
                 },
             ],
             "expo-font",
+
             [
-                "expo-maps",
+                "expo-location",
                 {
-                    requestLocationPermission: "true",
-                    locationPermission: "Allow $(PRODUCT_NAME) to use your location",
+                    locationAlwaysAndWhenInUsePermission:
+                        "Allow $(PRODUCT_NAME) to use your location.",
+
+                    locationAlwaysPermission:
+                        "This app uses location to show your position on the map.",
+                    locationWhenInUsePermission:
+                        "This app uses location to show your position on the map.",
+                },
+            ],
+            [
+                "react-native-maps",
+                {
+                    androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
                 },
             ],
             "expo-secure-store",

@@ -50,6 +50,8 @@ export default function RootLayout() {
         "Inter-Black": require("../assets/fonts/Inter-Regular.ttf"),
     });
 
+    // const app = initializeApp(firebaseConfig);
+
     useEffect(() => {
         SplashScreen.preventAutoHideAsync();
 
