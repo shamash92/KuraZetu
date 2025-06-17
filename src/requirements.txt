@@ -2,6 +2,7 @@
 
 
 
+
 black
 crispy-tailwind
 django == 5.2.1
@@ -10,6 +11,7 @@ django-admin-honeypot-updated-2021
 django-cors-headers
 django-crispy-forms
 django-leaflet
+django-otp 
 django-phonenumber-field
 django-tailwind
 djangorestframework == 3.15.2
@@ -26,5 +28,6 @@ pytest-cov
 pytest-django
 pytest-sugar
 python-decouple
+qrcode
 requests
 tqdm

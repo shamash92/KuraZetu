@@ -9,12 +9,27 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 from rest_framework import permissions
-
+from decouple import config
 from accounts.views import home_view
 from ui.views import react_view
 
+
+from django.contrib.auth.models import User
+
+from django_otp.admin import OTPAdminSite
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
+from django.contrib import admin
+
+
+from django_otp.admin import OTPAdminSite
+
+admin.site.__class__ = OTPAdminSite
+
+
+admin_url_suffix = config("ADMIN_URL_SUFFIX", default="admin/")
 urlpatterns = [
-    path("dashboard/", admin.site.urls),  # this will be changed on the server code
+    path(f"{admin_url_suffix}/", admin.site.urls),  # to use OTP and dynamic name
     path("admin/", include("admin_honeypot.urls")),
     path("api/schema/yaml/", SpectacularAPIView.as_view(), name="schema"),
     path(
