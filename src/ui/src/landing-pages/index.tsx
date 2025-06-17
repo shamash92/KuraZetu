@@ -7,6 +7,7 @@ import React from "react";
 import ResultsDashboard from "../dashboards/results";
 import WhyComponent from "./why";
 import {useAuth} from "../App";
+import ProjectProgressCarousel from "./timeline";
 
 function LandingPage() {
     const isAuthenticated = useAuth();
