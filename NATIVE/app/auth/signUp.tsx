@@ -6,19 +6,19 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import {ICountyFeature, ICountyFeatureCollection} from "../types";
 import MapView, {Geojson, GeojsonProps, Marker} from "react-native-maps";
 import {statusBarHeight, windowHeight, windowWidth} from "../(utils)/screenDimensions";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 
 import {Ionicons} from "@expo/vector-icons";
 import LottieComponent from "@/components/lottieLoading";
 import React from "react";
-import getApiBaseURL from "../(utils)/apiBaseURL";
+import {apiBaseURL} from "../(utils)/apiBaseURL";
 import {router} from "expo-router";
-import {useBottomTabBarHeight} from "@react-navigation/bottom-tabs";
 
 function MapUpdates() {
-    const [counties, setCounties] = useState<GeojsonProps["geojson"] | null>(null);
+    const [counties, setCounties] = useState<ICountyFeature[] | null>(null);
     const [selectedCounty, setSelectedCounty] = useState<number | null>(null);
     const [selectedCountyName, setSelectedCountyName] = useState<string | null>(null);
 
@@ -51,14 +51,10 @@ function MapUpdates() {
         longitudeDelta: 8.0,
     });
 
-    let apiBaseURL = getApiBaseURL();
-
     const handleCountyPress = (countyId: number) => {
         setSelectedCounty(countyId);
         // gwt the county bounds to zoom in
-        const county = counties?.features.find(
-            (f) => f.properties?.number === countyId,
-        );
+        const county = counties?.find((f) => f.properties?.number === countyId);
 
         console.log(county, "selected county");
         if (county) {
@@ -225,10 +221,7 @@ function MapUpdates() {
                             // console.log(validFeatures, "validFeatures");
                             console.log(validFeatures?.length, "valid Counties");
 
-                            setCounties({
-                                type: "FeatureCollection",
-                                features: validFeatures,
-                            });
+                            setCounties(validFeatures);
 
                             // console.log(
                             //     JSON.stringify({
@@ -304,6 +297,23 @@ function MapUpdates() {
         await fetchPollingCenters(wardId);
     }
 
+    const [mapReady, setMapReady] = useState(false);
+
+    let finCountiesData = useMemo(() => {
+        // I spent my Father's whole day debugging failed build because of this. lack of memo creates some NUllPointer and crashes the app
+        if (counties && counties.length > 0) {
+            return counties.filter(
+                (f) =>
+                    f.geometry &&
+                    Array.isArray(f.geometry.coordinates) &&
+                    f.geometry.coordinates.length > 0,
+            );
+        }
+        return [];
+    }, [counties]);
+
+    // console.log(finCountiesData, "final counties data");
+
     return counties !== null ? (
         <View
             style={{
@@ -313,41 +323,56 @@ function MapUpdates() {
                 backgroundColor: "#fff",
             }}
         >
+            {/* <Text style={{}}>Map Status: {mapReady ? "✅ Ready" : "⏳ Loading"}</Text> */}
+
             <MapView
                 style={{
                     width: windowWidth,
                     height: 0.5 * windowHeight,
                     marginTop: statusBarHeight,
                 }}
-                loadingEnabled
-                userLocationAnnotationTitle="You are here"
-                showsUserLocation={true}
-                showsMyLocationButton={true}
-                showsCompass={true}
+                // loadingEnabled // enable this at your own peril
+                // I spent my Father's whole day debugging failed build because of this. lack of memo creates some NUllPointer and crashes the app
+
+                // showsCompass={true}
                 zoomEnabled
                 zoomControlEnabled
                 toolbarEnabled
-                zoomTapEnabled
                 mapType={pollingCenters === null ? "standard" : "hybrid"}
                 region={mapRegion}
                 onMapReady={() => {
-                    PermissionsAndroid.request(
-                        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                    ).then((granted) => {
-                        // alert(granted); // just to ensure that permissions were granted
-                        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                            console.log("Location permission granted");
-                        } else {
-                            console.log("Location permission denied");
-                        }
-                    });
+                    setTimeout(() => {
+                        setMapReady(true);
+                    }, 100); // ensure it’s fully mounted
                 }}
             >
-                {counties !== null &&
+                {/* {mapReady &&
+                    (finCountiesData !== null || finCountiesData !== undefined) &&
                     constituencies === null &&
-                    counties.features.map((feature, index) => (
+                    finCountiesData.map((feature, index) => (
                         <Geojson
-                            key={feature.properties?.number}
+                            key={index}
+                            geojson={{
+                                type: "FeatureCollection",
+                                features: [feature],
+                            }}
+                            strokeColor="black"
+                            fillColor={
+                                feature.properties?.number === selectedCounty
+                                    ? "#fc5c9c"
+                                    : "rgba(252, 92, 156, .2)"
+                            }
+                            strokeWidth={2}
+                            color="red"
+                        />
+                    ))} */}
+
+                {mapReady &&
+                    counties !== null &&
+                    constituencies === null &&
+                    counties.map((feature, index) => (
+                        <Geojson
+                            key={index}
                             geojson={{
                                 type: "FeatureCollection",
                                 features: [feature],
@@ -363,7 +388,8 @@ function MapUpdates() {
                         />
                     ))}
 
-                {constituencies !== null &&
+                {mapReady &&
+                    constituencies !== null &&
                     wards === null &&
                     constituencies.features.map((feature, index) => (
                         <Geojson
@@ -383,7 +409,8 @@ function MapUpdates() {
                         />
                     ))}
 
-                {wards !== null &&
+                {mapReady &&
+                    wards !== null &&
                     pollingCenters === null &&
                     wards.features.map((feature, index) => (
                         <Geojson
@@ -403,7 +430,8 @@ function MapUpdates() {
                         />
                     ))}
 
-                {pollingCenters !== null &&
+                {mapReady &&
+                    pollingCenters !== null &&
                     pollingCenters.features.map((feature) => {
                         return feature.geometry !== null ? (
                             <Marker
@@ -449,8 +477,8 @@ function MapUpdates() {
                             width: windowWidth,
                             backgroundColor: "#fff",
                         }}
-                        data={counties?.features || []}
-                        keyExtractor={(item) => item.properties?.number}
+                        data={counties ? counties : []}
+                        keyExtractor={(item) => item?.properties.number.toString()}
                         ListHeaderComponent={
                             selectedCounty === null ? (
                                 <View

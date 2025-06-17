@@ -1,10 +1,6 @@
-import {useEffect, useState} from "react";
-import {motion, AnimatePresence} from "framer-motion";
-import {Button} from "../@/components/ui/button";
-import {Badge} from "../@/components/ui/badge";
-
-import {Home, Minus, Plus, ThumbsUp} from "lucide-react";
-
+import {Alert, AlertDescription} from "../@/components/ui/alert";
+import {AnimatePresence, motion} from "framer-motion";
+import {CheckCircle, Edit, HelpCircle, MapPin, Trophy} from "lucide-react";
 import {
     Drawer,
     DrawerClose,
@@ -15,14 +11,16 @@ import {
     DrawerTitle,
     DrawerTrigger,
 } from "../@/components/ui/drawer";
-
-import {Alert, AlertDescription} from "../@/components/ui/alert";
-import {Trophy, MapPin, CheckCircle, HelpCircle, Edit} from "lucide-react";
-import MapComponent from "./Map";
+import {Home, Minus, Plus, ThumbsUp} from "lucide-react";
 import {IPollingCenterFeature, TLevel} from "./types";
-import {toast} from "sonner";
-import cookie from "react-cookies";
+import {useEffect, useState} from "react";
+
+import {Badge} from "../@/components/ui/badge";
+import {Button} from "../@/components/ui/button";
+import MapComponent from "./Map";
 import PinEditComponent from "./PinEditComponent";
+import cookie from "react-cookies";
+import {toast} from "sonner";
 
 interface GameMapProps {
     score: number;
@@ -294,7 +292,7 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
                         }}
                     >
                         <Trophy className="w-4 h-4 text-yellow-500" />
-                        <span className="text-base">{score} points</span>
+                        <span className="text-base">{score.toFixed(1)} points</span>
                     </Badge>
                 </div>
             </header>

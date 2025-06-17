@@ -96,8 +96,8 @@ We believe transparency in the electoral process is not just a right but a **civ
 Let’s build it together.
 
 * `Contributing Guidelines <contributing.md>`_
-* `Join the conversation <https://github.com/shamash92/Community-Tally>`_
+* `Join the conversation <https://github.com/shamash92/KuraZetu>`_
 
-Thinking about integrating this platform into your organization or initiative? Want to request a workshop? `Get in touch! <https://github.com/shamash92/Community-Tally>`_
+Thinking about integrating this platform into your organization or initiative? Want to request a workshop? `Get in touch! <https://github.com/shamash92/KuraZetu>`_
 
 .. _heading--navigation:

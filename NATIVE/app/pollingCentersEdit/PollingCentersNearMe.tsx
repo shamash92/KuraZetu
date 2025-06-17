@@ -30,7 +30,7 @@ import LocationItem from "./components/PollingCenterItem";
 import LocationPin from "./components/LocationPin";
 import Slider from "@react-native-community/slider";
 import {StatusBar} from "expo-status-bar";
-import getApiBaseURL from "@/app/(utils)/apiBaseURL";
+import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
 import {updateLocation} from "./(utils)/LocationService";
 
 const {height} = Dimensions.get("window");
@@ -63,6 +63,7 @@ export default function LocationsScreen() {
 
     const [searchDistance, setSearchDistance] = useState(2000); // Default search distance in meters
     const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+    const [hasLocationPermission2, setHasLocationPermission2] = useState(false);
 
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -71,8 +72,6 @@ export default function LocationsScreen() {
     // Animation values
     const listHeight = useSharedValue(height * 0.45);
     const isDragging = useSharedValue(false);
-
-    let apiBaseURL = getApiBaseURL();
 
     // Fetch locations
     useEffect(() => {
@@ -165,6 +164,7 @@ export default function LocationsScreen() {
         try {
             const {status} = await Location.requestForegroundPermissionsAsync();
 
+            setHasLocationPermission2(status === "granted");
             if (status === "granted") {
                 const location = await Location.getCurrentPositionAsync({});
                 const {latitude, longitude} = location.coords;
@@ -425,12 +425,13 @@ export default function LocationsScreen() {
                         </Text>
                     </View>
                 </View>
+
                 <MapView
                     ref={mapRef}
                     style={styles.map}
                     provider={Platform.OS === "ios" ? undefined : PROVIDER_GOOGLE}
                     initialRegion={region}
-                    showsUserLocation
+                    showsUserLocation={hasLocationPermission2}
                     showsMyLocationButton={false}
                     mapType="standard"
                 >

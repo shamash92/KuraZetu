@@ -1,17 +1,18 @@
-import React, {useState} from "react";
 import {
-    Download,
     AlertTriangle,
     Bug,
-    Smartphone,
-    Shield,
-    Clock,
     ChevronDown,
     ChevronUp,
+    Clock,
+    Download,
     ExternalLink,
+    Shield,
+    Smartphone,
 } from "lucide-react";
-import NavComponent from "../landing-pages/nav";
+import React, {useState} from "react";
+
 import {Helmet} from "react-helmet-async";
+import NavComponent from "../landing-pages/nav";
 
 export default function APKDownloadPage() {
     const [changelogExpanded, setChangelogExpanded] = useState(false);
@@ -93,7 +94,7 @@ export default function APKDownloadPage() {
                             Latest Beta Release
                         </h2>
                         <div className="inline-block px-6 py-2 mb-6 text-sm font-medium text-white bg-green-600 rounded-md">
-                            Version 2.1.0
+                            Version 0.0.1
                         </div>
                         <a
                             href="https://kurazetu.s3.eu-west-1.amazonaws.com/static/builds/0.0.1.apk"

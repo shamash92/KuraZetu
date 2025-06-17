@@ -2,16 +2,21 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
 import {Alert, Platform, Pressable, Text, TextInput, View} from "react-native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+
+import {Alert, Platform, Pressable, Text, TextInput, View} from "react-native";
 import Animated, {FadeInUp, FadeOut} from "react-native-reanimated";
 import {Link, router} from "expo-router";
 import React, {useEffect, useState} from "react";
-import getApiBaseURL, {apiBaseURL} from "../(utils)/apiBaseURL";
 
 import {Button} from "react-native-paper";
+import Constants from "expo-constants";
 import Constants from "expo-constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import LottieComponent from "@/components/lottieLoading";
 import {TouchableOpacity} from "react-native";
+import {apiBaseURL} from "../(utils)/apiBaseURL";
 import {blueColor} from "../(utils)/colors";
 import {saveToSecureStore} from "../(utils)/secureStore";
 import {windowWidth} from "../(utils)/screenDimensions";
@@ -161,7 +166,7 @@ function Login() {
                     return pushTokenString;
                 } catch (e: unknown) {
                     console.log(e, "error in pushToken");
-                    handleRegistrationError(`${e}`);
+                    // handleRegistrationError(`${e}`);
                 }
             } else {
                 handleRegistrationError(

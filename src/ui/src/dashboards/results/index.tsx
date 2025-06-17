@@ -9,13 +9,13 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
+import {useEffect, useState} from "react";
 
 import CountyResults from "./countyResults";
 import {IPresidentialNationalResults} from "./types";
+import PlayGameCallToActionButton from "../../landing-pages/gameButton";
 import PollingCenterResults from "./pollingCenterResults";
 import {formatNumber} from "./utils";
-import {useEffect} from "react";
-import {useState} from "react";
 import {useUser} from "../../App";
 
 //TODO: split into smaller components for each administrative level
@@ -24,6 +24,8 @@ export default function ResultsDashboard() {
     const [presidentialData, setPresidentialData] = useState<
         IPresidentialNationalResults[]
     >([]);
+
+    const [showPinGameAlert, setShowPinGameAlert] = useState(true);
 
     const {
         djangoUserPollingCenterCode,
@@ -167,19 +169,17 @@ export default function ResultsDashboard() {
         <div className="flex flex-col w-full min-h-screen p-4 bg-gray-100 ">
             {/* Header */}
             <header className="flex w-full p-4 mb-4 text-white bg-blue-900 rounded-t-lg">
-                <h1 className="text-2xl font-bold text-center">
+                <h1 className="text-sm font-bold text-center md:text-2xl">
                     2027 Election Results Dashboard
                 </h1>
-
-                <a href="/accounts/logout/" className="ml-auto text-white">
-                    Logout
-                </a>
             </header>
+
+            <PlayGameCallToActionButton />
 
             {/* Presidential Results Section */}
             <div className="flex flex-col w-full p-4 mb-6 bg-white rounded-lg shadow-md">
-                <div className="flex flex-row items-center justify-between p-4 mb-4 rounded-lg bg-blue-50">
-                    <div className="flex items-center w-1/2 gap-2">
+                <div className="flex flex-col items-center justify-between p-4 mb-4 rounded-lg md:flex-row bg-blue-50">
+                    <div className="flex items-center w-full gap-2 md:w-1/2">
                         <h2 className="text-xl font-bold text-center ">
                             Presidential Election Results
                         </h2>
@@ -187,7 +187,7 @@ export default function ResultsDashboard() {
 
                     {presidentialData.length > 0 &&
                         presidentialData[0].total_polling_stations_with_results && (
-                            <div className="flex flex-col items-center justify-center w-1/2 rounded-lg shadow-sm ">
+                            <div className="flex flex-col items-center justify-center w-full rounded-lg shadow-sm md:w-1/2 ">
                                 {(() => {
                                     const reported =
                                         presidentialData[0]
@@ -319,17 +319,12 @@ export default function ResultsDashboard() {
                     </div>
                 </div>
             </div>
-
             {/* County Results Section */}
-
             <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
                 <CountyResults />
             </div>
-
             {/* Results at Polling Center*/}
-
             <PollingCenterResults />
-
             {/* Footer */}
             <footer className="mt-4 text-sm text-center text-gray-500">
                 Last updated: May 6, 2025 9:00 pm | Data source: Community members

@@ -275,7 +275,7 @@ export default function ResultsLandingPage() {
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <Text style={styles.header}>Presidential Results</Text>
+                <Text style={styles.header}>Presidential (Dummy) Results</Text>
                 <FlatList
                     data={presidentialData}
                     keyExtractor={(item) => item.name}
