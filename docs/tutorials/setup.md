@@ -368,6 +368,32 @@ This step is optional but recommended for testing purposes. You can load adminis
 
 > See the [Load Administrative Boundaries Data](../how-to-guides/load_boundaries_data.md) guide for detailed instructions.
 
+### 11. Django Admin and OTP
+
+You will need to set up the One Time Password (OTP) for the admin interface. This is a security feature that requires you to enter a one-time password sent to your email or phone number. Since you will the first to login to the admin in your system, you will need to set up the OTP first.
+To set up the OTP, follow these steps:
+
+- Comment out this line in the `src/CommunityTally/urls.py` file:
+
+``` diff
+- from django_otp.admin import OTPAdminSite
+- admin.site.__class__ = OTPAdminSite
+```
+
+```bash
+python manage.py runserver
+```
+
+- Login to the Django admin interface at `http://localhost:8000/<ADMIN_URL_SUFFIX>` or `http://<your-multipass-ipv4-address>:8000/ADMIN_URL_SUFFIX` using the superuser credentials you created earlier.
+- Under TOTP devices, click "Add". After filling in the form, click on "Save and Continue editing". At the bottom of the page, you will see a QR code link.Click it and scan this QR code using an authenticator app (e.g., Google Authenticator, Microsoft Authenticator etc.) on your phone.
+
+Go back to the urls file and un-comment the lines you commented out earlier. This will enable the OTP authentication for the admin interface.
+
+```diff
++ from django_otp.admin import OTPAdminSite
++ admin.site.__class__ = OTPAdminSite
+```
+
 ---
 
 ## 3. Setup Tailwind CSS
