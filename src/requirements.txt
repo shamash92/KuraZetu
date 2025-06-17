@@ -1,9 +1,12 @@
 
 
+
+
 black
 crispy-tailwind
 django == 5.2.1
 django_browser_reload
+django-admin-honeypot-updated-2021
 django-cors-headers
 django-crispy-forms
 django-leaflet

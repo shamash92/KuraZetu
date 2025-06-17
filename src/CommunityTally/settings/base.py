@@ -43,6 +43,7 @@ THIRD_PARTY_APPS = [
     "crispy_tailwind",
     "django_browser_reload",
     "drf_spectacular",
+    "admin_honeypot",
 ]
 
 MY_APPS = ["accounts", "stations", "ui", "results", "tailwind"]

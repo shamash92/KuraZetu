@@ -14,7 +14,8 @@ from accounts.views import home_view
 from ui.views import react_view
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("dashboard/", admin.site.urls),  # this will be changed on the server code
+    path("admin/", include("admin_honeypot.urls")),
     path("api/schema/yaml/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger/",
