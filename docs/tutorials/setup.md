@@ -1,6 +1,6 @@
 # Kura Zetu Setup Instructions
 
-This guide will walk you through setting up the Community-Tally project, from cloning the repository to configuring the database and installing dependencies.
+This guide will walk you through setting up the KuraZetu project, from cloning the repository to configuring the database and installing dependencies.
 
 ``` {important}
 Before  you start, please note that this project is in its early stages and is not yet ready for production use. It is intended for development and testing purposes only.

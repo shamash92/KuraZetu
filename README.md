@@ -3,10 +3,10 @@
 
 ![Backend CI](https://github.com/shamash92/KuraZetu/actions/workflows/django.yml/badge.svg)
 ![Documentation CI](https://github.com/shamash92/KuraZetu/actions/workflows/automatic-doc-checks.yml/badge.svg)
-![GitHub License](https://img.shields.io/github/license/shamash92/Community-Tally?label=License&color=blue)
-![GitHub issues](https://img.shields.io/github/issues/shamash92/Community-Tally)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/shamash92/Community-Tally)
-![GitHub contributors](https://img.shields.io/github/contributors/shamash92/Community-Tally)
+![GitHub License](https://img.shields.io/github/license/shamash92/KuraZetu?label=License&color=blue)
+![GitHub issues](https://img.shields.io/github/issues/shamash92/KuraZetu)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/shamash92/KuraZetu)
+![GitHub contributors](https://img.shields.io/github/contributors/shamash92/KuraZetu)
 
 **Kura Zetu** is an open source platform (plus mobile app) built **by and for Kenyans** to empower communities to **track, verify, and tally election results** at the polling station level.
 
@@ -73,9 +73,9 @@ This project requires **all hands on deck** — not just developers. We need:
 
 Everything you need to get started — from how to set up the project to contributing and building locally — is in our official documentation:
 
-👉 **[Read the Docs](https://community-tally.readthedocs.io)**
-👉 **[Raise an issue](<https://github.com/shamash92/KuraZetu/issues/new?title=docs%3A+TYPE+YOUR+QUESTION+HERE&body=*Please%20describe%20the%20question%20or%20issue%20you%27re%20facing%20with%20%22Community%20Tally%20documentation%22.*%0A%0A%0A%0A%0A---%0A*Reported+from%3A+https://community-tally.readthedocs.io/>)**
+👉 **[Read the Docs](https://kurazetu.readthedocs.io)**
+👉 **[Raise an issue](<https://github.com/shamash92/KuraZetu/issues/new?title=docs%3A+TYPE+YOUR+QUESTION+HERE&body=*Please%20describe%20the%20question%20or%20issue%20you%27re%20facing%20with%20%22Community%20Tally%20documentation%22.*%0A%0A%0A%0A%0A---%0A*Reported+from%3A+https://kurazetu.readthedocs.io/>)**
 
 ## ✅ Getting Started (Developers)
 
-> See the [setup guide](https://community-tally.readthedocs.io/tutorials/setup)  for detailed instructions.
+> See the [setup guide](https://kurazetu.readthedocs.io/tutorials/setup)  for detailed instructions.

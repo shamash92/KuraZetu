@@ -15,7 +15,7 @@ The documentation process has not been integrated in docker yet. You will need t
 
 ```bash
 git clone https://github.com/shamash92/KuraZetu.git
-cd Community-Tally
+cd KuraZetu
 ```
 
 ## 2. Configure Environment Variables

@@ -107,7 +107,7 @@ This command will automatically build and install the development build onto you
 
 Otherwise, if you are using a physical device, you can download the APK from the  link below or scan the QR code to install the development build:
 
-- [Download the APK](https://expo.dev/accounts/shamash92/projects/community-tally/builds/29597eff-c59b-4eae-81e6-f87ecc92c6d5)
+- [Download the APK](https://expo.dev/accounts/shamash92/projects/kurazetu/builds/29597eff-c59b-4eae-81e6-f87ecc92c6d5)
 
 - Scan the QR code below to install the development build on your device:
 
@@ -137,10 +137,10 @@ The app is set up to connect to a local Django backend server. To run the backen
 
 ```{terminal}
 
-A problem occurred evaluating root project 'community-tally'.
+A problem occurred evaluating root project 'kurazetu'.
 > Failed to apply plugin 'com.facebook.react.rootproject'.
    > A problem occurred configuring project ':app'.
-      > SDK location not found. Define a valid SDK location with an ANDROID_HOME environment variable or by setting the sdk.dir path in your project's local properties file at '/Users/'your-user-name'/Documents/code/Community-Tally/NATIVE/android/local.properties'.
+      > SDK location not found. Define a valid SDK location with an ANDROID_HOME environment variable or by setting the sdk.dir path in your project's local properties file at '/Users/'your-user-name'/Documents/code/KuraZetu/NATIVE/android/local.properties'.
 ```
 
 Then create a `local.properties` file in the `android` folder with the following command:

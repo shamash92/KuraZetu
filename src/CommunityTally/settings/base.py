@@ -211,5 +211,5 @@ LEAFLET_CONFIG = {
     #         },
     #     ),
     # ],
-    "ATTRIBUTION_PREFIX": "&copy; <a href='https://community-tally.readthedocs.io/'>Kura Zetu</a>",
+    "ATTRIBUTION_PREFIX": "&copy; <a href='https://kurazetu.readthedocs.io/'>Kura Zetu</a>",
 }
