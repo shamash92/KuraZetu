@@ -14,7 +14,7 @@ The documentation process has not been integrated in docker yet. You will need t
 ## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/shamash92/Community-Tally.git
+git clone https://github.com/shamash92/KuraZetu.git
 cd Community-Tally
 ```
 

@@ -1,8 +1,11 @@
 import {Button} from "../@/components/ui/button";
 import React from "react";
 import {Users} from "lucide-react";
+import {useAuth} from "../App";
 
 export default function NavComponent() {
+    const authInfo = useAuth();
+    // console.log("Auth Info:", authInfo);
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex items-center justify-between h-16">
@@ -31,9 +34,15 @@ export default function NavComponent() {
                     </a>
                 </nav>
                 <div className="flex gap-4">
-                    <Button variant="outline" asChild>
-                        <a href="/ui/signup/">Login / Register</a>
-                    </Button>
+                    {authInfo ? (
+                        <Button variant="outline" asChild>
+                            <a href="/accounts/logout/">Logout</a>
+                        </Button>
+                    ) : (
+                        <Button variant="outline" asChild>
+                            <a href="/ui/signup/">Login / Register</a>
+                        </Button>
+                    )}
                 </div>
             </div>
         </header>

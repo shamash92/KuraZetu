@@ -34,10 +34,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_context = {
     #
-    "discourse": "https://github.com/shamash92/Community-Tally",
+    "discourse": "https://github.com/shamash92/KuraZetu",
     # NOTE: If set, links for viewing the documentation source files
     #       and creating GitHub issues are added at the bottom of each page.
-    "github_url": "https://github.com/shamash92/Community-Tally",
+    "github_url": "https://github.com/shamash92/KuraZetu",
     # Docs branch in the repo; used in links for viewing the source files
     "repo_default_branch": "main",
     # Docs location in the repo; used in links for viewing the source files
@@ -52,6 +52,9 @@ html_context = {
     "product_tag": "_static/logo.jpg",
 }
 
+html_theme_options = {
+    "source_edit_link": "https://github.com/shamash92/KuraZetu/blob/main/docs/",
+}
 
 linkcheck_ignore = []
 linkcheck_anchors_ignore_for_url = []

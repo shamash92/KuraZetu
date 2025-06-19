@@ -2,7 +2,7 @@ import {ContributorSection} from "./contributors";
 import {Features} from "./features";
 import {Hero} from "./hero";
 import NavComponent from "./nav";
-import React from "react";
+import ProjectProgressCarousel from "./timeline";
 import ResultsDashboard from "../dashboards/results";
 import WhyComponent from "./why";
 import {useAuth} from "../App";
@@ -14,6 +14,8 @@ function LandingPage() {
     if (isAuthenticated) {
         return (
             <div className="flex flex-col w-full">
+                <NavComponent />
+
                 <ResultsDashboard />
             </div>
         );
