@@ -258,7 +258,7 @@ function CountySelect() {
     return (
         <div className="flex flex-col w-full md:h-screen md:flex-row ">
             {activePolygon == null ? (
-                <>
+                <div className="flex flex-col justify-start w-full">
                     <NavComponent />
                     <div className="flex flex-col items-center justify-center w-full min-h-screen px-4 py-8 bg-gradient-to-br from-green-50 to-blue-50">
                         <div className="flex flex-col w-full max-w-xl gap-8">
@@ -315,7 +315,7 @@ function CountySelect() {
                             </div>
                         </div>
                     </div>
-                </>
+                </div>
             ) : selectedPollingCenter ? (
                 <div className="flex flex-col-reverse items-center justify-center w-full h-full bg-gray-100 md:flex-row md:justify-between">
                     {/* Success message and proceed to signup form */}
