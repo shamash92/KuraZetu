@@ -21,6 +21,11 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
 from django.contrib import admin
 
+# Django admin customizations
+admin.site.site_header = "Kura Zetu Admin"
+admin.site.site_title = "Kura Zetu Admin Portal"
+admin.site.index_title = "Welcome to the Kura Zetu Admin"
+
 
 from django_otp.admin import OTPAdminSite
 
