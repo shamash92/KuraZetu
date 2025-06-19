@@ -99,4 +99,8 @@ class PollingCenterVerificationAdmin(LeafletGeoAdmin):
     )
     search_fields = ("polling_center__name",)
     list_filter = ("polling_center__ward__constituency__county",)
+    autocomplete_fields = [
+        "polling_center",
+    ]
+
     # ordering = ("polling_center__ward__constituency__county",)
