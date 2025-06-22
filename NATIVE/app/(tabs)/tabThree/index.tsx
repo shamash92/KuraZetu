@@ -1,15 +1,5 @@
 import {
-    AlertCircle,
-    Bell,
-    BookOpen,
-    DatabaseIcon,
-    LogOut,
-    Moon,
-    User2,
-} from "lucide-react-native";
-import {NEUTRAL, PRIMARY} from "../(utils)/colors";
-import React, {useState} from "react";
-import {
+    Alert,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -18,8 +8,20 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import {
+    AlertCircle,
+    Bell,
+    DatabaseIcon,
+    LogOut,
+    Moon,
+    User2,
+} from "lucide-react-native";
+import {NEUTRAL, PRIMARY} from "../../(utils)/colors";
+import React, {useState} from "react";
 
-import {handleLogout} from "../(utils)/auth";
+import {deleteFromSecureStore} from "@/app/(utils)/secureStore";
+import {router} from "expo-router";
+import useAuthStore from "@/app/(utils)/authStore";
 
 interface SettingItemProps {
     icon: React.ReactNode;
@@ -93,6 +95,21 @@ export default function ProfileScreen() {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [darkModeEnabled, setDarkModeEnabled] = useState(false);
     const [locationEnabled, setLocationEnabled] = useState(true);
+
+    const {logOut} = useAuthStore();
+
+    const handleLogout = async () => {
+        try {
+            logOut();
+
+            await deleteFromSecureStore("userToken");
+
+            router.replace("/auth/login");
+        } catch (error) {
+            console.error("Logout failed:", error);
+            Alert.alert("Error", "Failed to log out. Please try again.");
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>

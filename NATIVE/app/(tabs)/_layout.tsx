@@ -60,7 +60,7 @@ export default function TabLayout() {
             />
 
             <Tabs.Screen
-                name="tabTwo"
+                name="pollingCentersEdit"
                 options={{
                     title: "Verify Centers",
                     tabBarIcon: ({focused, color, size}) => (
@@ -90,7 +90,7 @@ export default function TabLayout() {
             />
 
             <Tabs.Screen
-                name="tabThree"
+                name="tabThree/index"
                 options={{
                     title: "Profile",
                     tabBarIcon: ({focused, color, size}) => (

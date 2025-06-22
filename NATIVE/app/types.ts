@@ -15,3 +15,5 @@ export interface ICountyFeatureCollection {
     type: "FeatureCollection";
     features: ICountyFeature[];
 }
+
+export default {};
