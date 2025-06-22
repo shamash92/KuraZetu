@@ -73,7 +73,7 @@ class SignupView(APIView):
             )
             if user:
                 token, created = Token.objects.get_or_create(user=user)
-                print("Token created:", token)
+                print("Token from server:", token)
                 #  authenticate
                 user = authenticate(
                     username=data["data"]["phone_number"],
@@ -132,7 +132,7 @@ class LoginView(APIView):
         Handle POST request for user login.
         """
         data = request.data
-        print("Login data received:", data)
+        print("Login data received:", data)  # dangerous to log in production
 
         phone_serializer = PhoneNumberSerializer(
             data={"number": data.get("phone_number", "")}
@@ -157,6 +157,17 @@ class LoginView(APIView):
         )
 
         if user is not None:
+            # first update the push notification token from mobile
+            expo_push_token = data.get("expo_push_token", None)
+            if expo_push_token:
+                if user.expo_push_token == expo_push_token:
+                    print("Expo push token is the same, no update needed.")
+                else:
+                    print("Updating expo push token for user:", user)
+                    user.expo_push_token = expo_push_token
+                    user.save()
+                    print("Expo push token updated:", expo_push_token)
+
             token, created = Token.objects.get_or_create(user=user)
             print("Token created:", token)
             login(request, user)
