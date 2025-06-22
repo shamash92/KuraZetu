@@ -43,3 +43,5 @@ const getApiBaseURL = (): string => {
 export const apiBaseURL = "https://kurazetu.com"; // Use this for production
 
 // export default getApiBaseURL;
+
+export default getApiBaseURL;

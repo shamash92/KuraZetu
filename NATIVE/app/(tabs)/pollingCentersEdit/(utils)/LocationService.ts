@@ -41,3 +41,5 @@ export const getStatusText = (location: IPollingCenterFeature): string => {
     }
     return "Unverified";
 };
+
+export default {};

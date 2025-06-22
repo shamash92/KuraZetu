@@ -28,11 +28,13 @@ class UserAdmin(BaseUserAdmin):
 
     autocomplete_fields = ["polling_center"]
 
+    readonly_fields = ("expo_push_token",)
+
     fieldsets = (
-        (None, {"fields": ("phone_number", "password")}),
+        (None, {"fields": ("phone_number", "password", "expo_push_token")}),
         (
             "Personal info",
-            {"fields": ("first_name", "last_name", "polling_center")},
+            {"fields": ("first_name", "last_name", "polling_center", "gender", "age")},
         ),
         ("Permissions", {"fields": ("staff", "active", "is_verified")}),
     )

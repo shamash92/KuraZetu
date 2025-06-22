@@ -6,24 +6,25 @@ export default function PollingCentersLayout() {
         <Stack
             screenOptions={{
                 headerShown: false,
+                headerBackVisible: false,
+                headerTitle: "",
             }}
-            initialRouteName="LandingScreen"
+            initialRouteName="index"
         >
             <Stack.Screen
                 name="LandingScreen"
                 options={{
                     headerShown: false,
+                    headerBackVisible: false,
+                    headerTitle: "",
                 }}
             />
             <Stack.Screen
                 name="PollingCentersNearMe"
                 options={{
                     headerShown: false,
-                    // headerBackVisible: true,
-                    // headerBackButtonDisplayMode: "minimal",
-
-                    // headerBackTitle: "Back",
-                    // headerTitle: "Polling centers near me",
+                    headerBackVisible: false,
+                    headerTitle: "",
                 }}
             />
         </Stack>

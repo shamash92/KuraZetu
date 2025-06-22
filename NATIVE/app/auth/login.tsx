@@ -1,50 +1,118 @@
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
+import * as LocalAuthentication from "expo-local-authentication";
 
-import {Alert, Platform, Pressable, Text, TextInput, View} from "react-native";
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-
-import {Alert, Platform, Pressable, Text, TextInput, View} from "react-native";
-import Animated, {FadeInUp, FadeOut} from "react-native-reanimated";
+import {
+    Alert,
+    Image,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import {Eye, EyeOff, Fingerprint, Lock, Phone} from "lucide-react-native";
 import {Link, router} from "expo-router";
 import React, {useEffect, useState} from "react";
+import {windowHeight, windowWidth} from "../(utils)/screenDimensions";
 
-import {Button} from "react-native-paper";
-import Constants from "expo-constants";
-import Constants from "expo-constants";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import {ActivityIndicator} from "react-native-paper";
 import LottieComponent from "@/components/lottieLoading";
-import {TouchableOpacity} from "react-native";
+import RegisterPushNotifications from "../(utils)/registerPushNotifications";
+import UpdateCheckerModal from "../(utils)/updateModal";
 import {apiBaseURL} from "../(utils)/apiBaseURL";
-import {blueColor} from "../(utils)/colors";
-import {saveToSecureStore} from "../(utils)/secureStore";
-import {windowWidth} from "../(utils)/screenDimensions";
+import useAuthStore from "../(utils)/authStore";
 
-function Login() {
-    const [phoneNumber, setPhoneNumber] = useState<string>("");
-    const [password, setPassword] = useState<string>("");
-
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
-    const [isSending, setIsSending] = useState(false);
+export default function LoginScreen() {
+    const [phoneNumber, setPhoneNumber] = useState("+254");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [error, setError] = useState<string | null>(null);
 
-    async function signInSubmit() {
-        setIsSending(true);
-        console.log("sign in submit");
+    const [shouldRedirect, setShouldRedirect] = useState(false);
 
-        // TODO: Replace this with backend login to return the auth token. The delay for now is to simulate API call
-        // setTimeout(async () => {
-        //     await saveToSecureStore("userToken", "userToken");
+    const {logIn, hasSavedUserToken, userToken, expoPushToken} = useAuthStore();
 
-        //     router.replace("/(tabs)");
-        // }, 2000);
+    const handleBiometricAuth = async (userTokenValue: string) => {
+        if (Platform.OS === "web") {
+            Alert.alert(
+                "Info",
+                "Biometric authentication is not available on web platform",
+            );
+            return;
+        }
+
+        try {
+            const hasHardware = await LocalAuthentication.hasHardwareAsync();
+
+            console.log(hasHardware, "has hardware");
+            if (!hasHardware) {
+                Alert.alert("Error", "Biometric hardware not available");
+                return;
+            }
+
+            const supportedAuthTypes =
+                await LocalAuthentication.supportedAuthenticationTypesAsync();
+
+            console.log(supportedAuthTypes, "supported auth types");
+            if (supportedAuthTypes.length === 0) {
+                Alert.alert("Error", "No biometric authentication methods available");
+                return;
+            }
+
+            const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: "Authenticate to login",
+                fallbackLabel: "Use passcode",
+            });
+
+            console.log(result, "biometric auth result");
+
+            let x = {
+                error: "not_enrolled",
+                success: false,
+                warning: "KeyguardManager#isDeviceSecure() returned false",
+            };
+
+            let y = {success: true};
+
+            if (result.success) {
+                // Navigate to tabs on successful authentication
+                setShouldRedirect(true);
+
+                setTimeout(() => {
+                    logIn(userTokenValue);
+                }, 2000); // just to create a delay for the animation
+            } else if (result.error === "not_enrolled") {
+                Alert.alert(
+                    "Error",
+                    "No biometric credentials found. Please set up biometrics in your device settings.",
+                );
+            } else {
+                Alert.alert("Error", "Biometric authentication failed");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Biometric authentication failed");
+        }
+    };
+
+    const handleLogin = () => {
+        if (!phoneNumber || phoneNumber === "+254") {
+            Alert.alert("Error", "Please enter your phone number");
+            return;
+        }
+        if (!password) {
+            Alert.alert("Error", "Please enter your password");
+            return;
+        }
+
+        setIsLoading(true);
 
         let data = {
             phone_number: phoneNumber,
             password: password,
+            expo_push_token: expoPushToken, // so that we update the notifications for this user for the current device.
         };
 
         console.log(apiBaseURL, "API Base URL");
@@ -60,7 +128,7 @@ function Login() {
             .then((response) => response.json())
             .then((data) => {
                 console.log(data, "data from server");
-                setIsSending(false);
+                setIsLoading(false);
 
                 if (data["error"]) {
                     if (data["error"] === "Invalid credentials") {
@@ -91,521 +159,533 @@ function Login() {
                     console.log(token, "token from server");
 
                     if (typeof token === "string" && token.length > 0) {
-                        saveToSecureStore("userToken", token);
+                        console.log("login you in");
+                        logIn(token);
 
-                        router.replace("/(tabs)");
+                        setTimeout(() => {
+                            setIsLoading(false);
+
+                            router.replace("/(tabs)");
+                        }, 3000); // just to create a delay for the animation
+                    } else if (typeof token === "object" && token !== null) {
                     } else {
                         console.error("Invalid token format");
                     }
-
-                    // navigate("/ui/signup/accounts/registration-success/");
                 }
             });
-    }
-    function handlePhoneNumberInput(text: string) {
-        console.log(text, "phone input");
-        setPhoneNumber(text);
-    }
-
-    function handlePasswordInput(text: string) {
-        // console.log(text, "password input");
-        setPassword(text);
-    }
-
-    const togglePasswordVisibility = () => {
-        setIsPasswordVisible(!isPasswordVisible);
     };
 
-    function handleRegistrationError(errorMessage: string) {
-        alert(`registrationErrorLogin:", ${errorMessage}`);
-        // throw new Error(errorMessage);
-    }
-
-    useEffect(() => {
-        async function registerForPushNotificationsAsync() {
-            if (Platform.OS === "android") {
-                Notifications.setNotificationChannelAsync("default", {
-                    name: "default",
-                    importance: Notifications.AndroidImportance.MAX,
-                    vibrationPattern: [0, 250, 250, 250],
-                    lightColor: "#FF231F7C",
-                });
-            }
-
-            if (Device.isDevice) {
-                const {status: existingStatus} =
-                    await Notifications.getPermissionsAsync();
-                let finalStatus = existingStatus;
-                if (existingStatus !== "granted") {
-                    const {status} = await Notifications.requestPermissionsAsync();
-                    finalStatus = status;
-                }
-                if (finalStatus !== "granted") {
-                    handleRegistrationError(
-                        "Permission not granted to get push token for push notification!",
-                    );
-                    return;
-                }
-                const projectId =
-                    Constants?.expoConfig?.extra?.eas?.projectId ??
-                    Constants?.easConfig?.projectId;
-
-                // console.log(projectId, "project id step 1");
-                if (!projectId) {
-                    handleRegistrationError("Project ID not found");
-                }
-
-                try {
-                    // console.log(projectId, "projectId");
-                    const pushTokenString = (
-                        await Notifications.getExpoPushTokenAsync({
-                            projectId: projectId,
-                        })
-                    ).data;
-                    // console.log(pushTokenString, "pushTokenString");
-                    return pushTokenString;
-                } catch (e: unknown) {
-                    console.log(e, "error in pushToken");
-                    // handleRegistrationError(`${e}`);
-                }
-            } else {
-                handleRegistrationError(
-                    "Must use physical device for push notifications",
-                );
-                console.log("login.tsx: object");
-            }
+    const formatPhoneNumber = (text: string) => {
+        if (!text.startsWith("+254")) {
+            return "+254";
         }
+        return text;
+    };
 
-        registerForPushNotificationsAsync()
-            .then(async (token) => {
-                console.log(token, "token");
+    useEffect(() => {}, [shouldRedirect]);
 
-                if (token !== null && token !== undefined) {
-                    await saveToSecureStore("expoPushToken", token);
-                }
-            })
-            .catch((error: any) => {
-                // setExpoPushToken(`${error}`)
-                console.log(error, "login.tsx: error in getting expoPushToken ");
-            });
-    }, []);
+    if (isLoading && !shouldRedirect) {
+        return (
+            <Modal
+                transparent
+                animationType="slide"
+                visible={isLoading}
+                onRequestClose={() => {}}
+            >
+                <View
+                    style={{
+                        flex: 1,
+                        justifyContent: "flex-end",
+                        backgroundColor: "rgba(0,0,0,0.3)",
+                    }}
+                >
+                    <View
+                        style={{
+                            height: 0.5 * windowHeight,
+                            backgroundColor: "rgba(255,255,255,0.97)",
+                            borderTopLeftRadius: 24,
+                            borderTopRightRadius: 24,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            shadowColor: "#000",
+                            shadowOffset: {width: 0, height: -2},
+                            shadowOpacity: 0.2,
+                            shadowRadius: 8,
+                            elevation: 8,
+                        }}
+                    >
+                        <LottieComponent
+                            name="login"
+                            backgroundColor="transparent"
+                            width={0.75 * windowWidth}
+                        />
+
+                        <View>
+                            <Text
+                                style={{
+                                    fontSize: 14,
+                                    // fontWeight: "bold",
+                                    color: "#000",
+                                    // marginTop: 16,
+                                }}
+                            >
+                                Signing In ...
+                            </Text>
+                            <ActivityIndicator
+                                size="small"
+                                color="#DC143C"
+                                style={{marginTop: 8}}
+                            />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        );
+    }
 
     return (
         <View
             style={{
                 flex: 1,
                 flexDirection: "column",
-                justifyContent: "space-between",
-                alignItems: "center",
-                // backgroundColor: orangeColor,
-
-                backgroundColor: "rgba(0,0,0,0.5)",
+                justifyContent: "space-evenly",
+                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                paddingHorizontal: 24,
+                paddingTop: 30,
+                //borderWidth: 1,
+                borderColor: "red",
+                paddingBottom: 30,
             }}
         >
+            <RegisterPushNotifications />
+
+            <UpdateCheckerModal />
+
+            <Modal
+                transparent
+                animationType="slide"
+                visible={shouldRedirect}
+                onRequestClose={() => {}}
+            >
+                <View
+                    style={{
+                        flex: 1,
+                        justifyContent: "flex-end",
+                        // backgroundColor: "rgba(0,0,0,0.3)",
+                    }}
+                >
+                    <View
+                        style={{
+                            height: 0.5 * windowHeight,
+                            backgroundColor: "rgba(255,255,255,0.97)",
+                            borderTopLeftRadius: 24,
+                            borderTopRightRadius: 24,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            shadowColor: "#000",
+                            shadowOffset: {width: 0, height: -2},
+                            shadowOpacity: 0.2,
+                            shadowRadius: 8,
+                            elevation: 8,
+                        }}
+                    >
+                        <LottieComponent
+                            name="login-fingerprint"
+                            backgroundColor="transparent"
+                            width={200}
+                        />
+                    </View>
+                </View>
+            </Modal>
+            {/* image */}
+            <View
+                style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                    //borderWidth: 1,
+                    borderColor: "blue",
+                    flex: 1,
+                }}
+            >
+                <Image
+                    source={require("../../assets/images/icon.png")}
+                    style={{
+                        width: 0.3 * windowWidth,
+                        height: 80,
+                        // height: 0.2 * windowHeight,
+                    }}
+                    resizeMode="cover"
+                />
+            </View>
+
+            {/* Body */}
+            <View
+                style={{
+                    flex: 4,
+                    flexDirection: "column",
+                    justifyContent: "space-evenly",
+                    //borderWidth: 1,
+                    borderColor: "yellow",
+                }}
+            >
+                <Text
+                    style={{
+                        fontSize: 24,
+                        fontWeight: "bold",
+                        color: "#000",
+                        // marginBottom: 32,
+                    }}
+                >
+                    Welcome Back
+                </Text>
+                {/* <Text
+                    style={{
+                        fontSize: 16,
+                        color: "#666",
+                        marginBottom: 12,
+                    }}
+                >
+                    Sign in to continue
+                </Text> */}
+
+                <View
+                    style={{
+                        marginBottom: 12,
+                    }}
+                >
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "#F8F9FA",
+                            borderRadius: 12,
+                            paddingHorizontal: 16,
+                            paddingVertical: 8,
+                            marginBottom: 8,
+                            //borderWidth: 1,
+                            borderColor: "#E9ECEF",
+                        }}
+                    >
+                        <Phone size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Phone Number"
+                            placeholderTextColor="#666"
+                            value={phoneNumber}
+                            onChangeText={(text) =>
+                                setPhoneNumber(formatPhoneNumber(text))
+                            }
+                            keyboardType="phone-pad"
+                            maxLength={13}
+                            returnKeyType="next"
+                        />
+                    </View>
+
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "#F8F9FA",
+                            borderRadius: 12,
+                            paddingHorizontal: 16,
+                            paddingVertical: 8,
+                            marginBottom: 8,
+                            //borderWidth: 1,
+                            borderColor: "#E9ECEF",
+                        }}
+                    >
+                        <Lock size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                            style={{
+                                flex: 1,
+                                fontSize: 16,
+                                color: "#000",
+                            }}
+                            placeholder="Password"
+                            placeholderTextColor="#666"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry={!showPassword}
+                            returnKeyType="send"
+                            returnKeyLabel="Submit"
+                        />
+                        <TouchableOpacity
+                            onPress={() => setShowPassword(!showPassword)}
+                            style={styles.eyeIcon}
+                        >
+                            {showPassword ? (
+                                <EyeOff size={20} color="#666" />
+                            ) : (
+                                <Eye size={20} color="#666" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <Link href="/auth/forgot-password" asChild>
+                    <TouchableOpacity
+                        style={{
+                            alignSelf: "flex-end",
+                            marginBottom: 12,
+                        }}
+                    >
+                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                    </TouchableOpacity>
+                </Link>
+
+                <TouchableOpacity
+                    style={[styles.loginButton, isLoading && styles.buttonDisabled]}
+                    onPress={() => handleLogin()}
+                    disabled={isLoading}
+                >
+                    <Text style={styles.loginButtonText}>
+                        {isLoading ? "Signing In..." : "Sign In"}
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Biometrics */}
+                <View
+                    style={{
+                        // flex: 1,
+                        //borderWidth: 1,
+                        borderColor: "green",
+                    }}
+                >
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: 8,
+                        }}
+                    >
+                        <View style={styles.dividerLine} />
+                        <Text style={styles.dividerText}>OR</Text>
+                        <View style={styles.dividerLine} />
+                    </View>
+
+                    {hasSavedUserToken && userToken ? (
+                        <>
+                            <TouchableOpacity
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    backgroundColor: "#F8F9FA",
+                                    borderRadius: 12,
+                                    paddingVertical: 12,
+                                    borderWidth: 1,
+                                    borderColor: "#DC143C",
+                                    marginTop: 24,
+                                }}
+                                onPress={() => handleBiometricAuth(userToken)}
+                            >
+                                <Fingerprint size={24} color="#DC143C" />
+                                <Text style={styles.biometricButtonText}>
+                                    Use Biometrics
+                                </Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : (
+                        <>
+                            <Text
+                                style={{
+                                    fontSize: 14,
+                                    color: "#666",
+                                    marginBottom: 16,
+                                    textAlign: "center",
+                                }}
+                            >
+                                No saved biometric credentials found. Please login with
+                                your phone number and password first to enable
+                                biometrics.
+                            </Text>
+
+                            <TouchableOpacity
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    backgroundColor: "#E9ECEF",
+                                    borderRadius: 12,
+                                    paddingVertical: 12,
+                                    borderWidth: 1,
+                                    borderColor: "#B0B0B0",
+                                    opacity: 0.6,
+                                }}
+                                disabled
+                            >
+                                <Fingerprint size={24} color="#B0B0B0" />
+                                <Text
+                                    style={[
+                                        styles.biometricButtonText,
+                                        {color: "#B0B0B0"},
+                                    ]}
+                                >
+                                    Biometrics Unavailable
+                                </Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
+                </View>
+            </View>
+
+            {/* Sign Up */}
             <View
                 style={{
                     flex: 1,
+                    flexDirection: "row",
                     justifyContent: "center",
                     alignItems: "center",
-                    width: 1 * windowWidth,
-                    // paddingTop: Constants.statusBarHeight,
-                    // borderWidth: 4,
+                    //borderWidth: 1,
+                    borderColor: "purple",
                 }}
             >
-                {/* Heading */}
-                <Animated.View
-                    entering={FadeInUp.duration(1000)}
-                    exiting={FadeOut.duration(1000)}
-                    style={{
-                        flex: 2,
-                        flexDirection: "column",
-                        justifyContent: "center",
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 40,
-                            fontWeight: "bold",
-                            letterSpacing: 1,
-                            color: "white",
-                        }}
-                    >
-                        Welcome
-                    </Text>
-                </Animated.View>
-
-                {isSending ? (
-                    <View
-                        style={{
-                            flex: 1,
-                            flexDirection: "column",
-                            justifyContent: "space-around",
-                            alignItems: "center",
-                            width: "100%",
-                            marginBottom: 40,
-                        }}
-                    >
-                        <LottieComponent name="login" backgroundColor={"transparent"} />
-                        <Text
-                            style={{
-                                marginTop: 20,
-                                color: "white",
-                                fontSize: 20,
-                            }}
-                        >
-                            Logging you in ....
-                        </Text>
-                    </View>
-                ) : (
-                    //  {/* Login Form */}
-
-                    <View
-                        style={{
-                            flex: 4,
-                            flexDirection: "column",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: 1 * windowWidth,
-                            gap: 20,
-                            // borderWidth: 1,
-                        }}
-                    >
-                        {/* Phone Number */}
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: 5,
-                                paddingVertical: 0,
-                                width: 1 * windowWidth,
-                            }}
-                        >
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: blueColor,
-
-                                    paddingVertical: 0,
-                                    width: 0.2 * windowWidth,
-                                    height: "100%",
-                                }}
-                            >
-                                <Ionicons
-                                    name="mail"
-                                    size={24}
-                                    color="white"
-                                    style={{
-                                        margin: 0,
-                                        paddingVertical: 0,
-                                    }}
-                                />
-                            </View>
-
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: blueColor,
-
-                                    paddingVertical: 0,
-
-                                    width: 0.7 * windowWidth,
-
-                                    height: "100%",
-                                }}
-                            >
-                                <TextInput
-                                    style={{
-                                        width: "100%",
-                                        flexDirection: "row",
-                                        justifyContent: "flex-start",
-                                        marginVertical: 0,
-                                        paddingLeft: 10,
-                                        borderRadius: 0,
-                                        borderTopLeftRadius: 0,
-                                        borderBottomLeftRadius: 0,
-                                        fontSize: 20,
-                                        paddingVertical: 18,
-                                        backgroundColor: "white",
-                                    }}
-                                    onChangeText={(text) =>
-                                        handlePhoneNumberInput(text)
-                                    }
-                                    value={phoneNumber ? phoneNumber : "+254"}
-                                    keyboardType="phone-pad"
-                                    placeholder={"+254"}
-                                    returnKeyType="next"
-                                    placeholderTextColor={"#9ca3af"}
-                                />
-                            </View>
-                        </View>
-
-                        {/* Password */}
-
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: 5,
-                                paddingVertical: 0,
-                                width: 1 * windowWidth,
-                            }}
-                        >
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: blueColor,
-
-                                    paddingVertical: 0,
-                                    width: 0.2 * windowWidth,
-                                    height: "100%",
-                                }}
-                            >
-                                <Ionicons
-                                    name="lock-closed-outline"
-                                    size={24}
-                                    color="white"
-                                    style={{
-                                        margin: 0,
-                                        // paddingHorizontal: 20,
-                                        paddingVertical: 0,
-                                    }}
-                                />
-                            </View>
-
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: blueColor,
-
-                                    paddingVertical: 0,
-
-                                    width: 0.7 * windowWidth,
-
-                                    height: "100%",
-                                }}
-                            >
-                                <TextInput
-                                    style={{
-                                        width: "100%",
-                                        flexDirection: "row",
-                                        justifyContent: "flex-start",
-                                        marginVertical: 0,
-                                        paddingLeft: 10,
-                                        borderRadius: 0,
-                                        borderTopLeftRadius: 0,
-                                        borderBottomLeftRadius: 0,
-                                        fontSize: 20,
-                                        paddingVertical: 18,
-                                        backgroundColor: "white",
-                                    }}
-                                    value={password}
-                                    placeholder={"Password"}
-                                    secureTextEntry={!isPasswordVisible}
-                                    placeholderTextColor={"#9ca3af"}
-                                    onChangeText={(text) => handlePasswordInput(text)}
-                                    returnKeyType="send"
-                                    returnKeyLabel="Submit"
-                                />
-                            </View>
-
-                            <TouchableOpacity
-                                onPress={togglePasswordVisibility}
-                                style={{
-                                    position: "absolute",
-                                    right: 0.05 * windowWidth,
-                                    backgroundColor: "white",
-                                    height: "100%",
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <Ionicons
-                                    name={!isPasswordVisible ? "eye-off" : "eye"}
-                                    size={24}
-                                    color="black"
-                                    style={{
-                                        margin: 0,
-                                        paddingHorizontal: 20,
-                                        paddingVertical: 0,
-                                    }}
-                                />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Submit */}
-
-                        <Button
-                            icon="arrow-right"
-                            mode="contained"
-                            style={{
-                                width: "85%",
-                                borderRadius: 10,
-                                paddingVertical: 10,
-                                backgroundColor: blueColor,
-                                marginTop: 24,
-                            }}
-                            contentStyle={{
-                                flexDirection: "row-reverse",
-                            }}
-                            onPress={async () => {
-                                setIsSending(true);
-                                await signInSubmit();
-                            }}
-                            disabled={phoneNumber === "" || password === ""}
-                        >
-                            <Text style={{fontSize: 20}}>Log In</Text>
-                        </Button>
-                    </View>
-                )}
-
-                {/* FORGOT yOUR password */}
-
-                {phoneNumber === "" && password === "" ? (
-                    <View
-                        style={{
-                            flex: 1,
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "100%",
-                            flexDirection: "column",
-                            gap: 20,
-                            marginTop: 24,
-                        }}
-                    >
-                        {/* FORGOT yOUR password */}
-                        <View
-                            style={{
-                                flex: 1,
-                            }}
-                        >
-                            <Text
-                                style={{
-                                    fontSize: 24,
-                                    fontWeight: "bold",
-                                    textDecorationStyle: "solid",
-                                    textDecorationLine: "underline",
-                                    color: "white",
-                                }}
-                            >
-                                Forgot Your Password?
-                            </Text>
-                        </View>
-
-                        {/* OR  row*/}
-
-                        <View
-                            style={{
-                                flex: 1,
-                                width: "90%",
-                                flexDirection: "row",
-                                alignItems: "center",
-                                // backgroundColor: "red",
-                            }}
-                        >
-                            <View
-                                style={{
-                                    flex: 3,
-                                    borderWidth: 1,
-                                    borderColor: "white",
-                                    height: 2,
-                                }}
-                            ></View>
-
-                            <View
-                                style={{
-                                    flex: 2,
-                                    justifyContent: "center",
-                                    flexDirection: "row",
-                                }}
-                            >
-                                <Text
-                                    style={{
-                                        fontSize: 24,
-                                        fontWeight: "bold",
-                                        color: "white",
-                                    }}
-                                >
-                                    OR
-                                </Text>
-                            </View>
-
-                            <View
-                                style={{
-                                    flex: 3,
-                                    borderWidth: 1,
-                                    borderColor: "white",
-                                    height: 2,
-                                }}
-                            ></View>
-                        </View>
-                    </View>
-                ) : null}
-
-                {/* Sign Up */}
-                <View
-                    style={{
-                        flex: 2,
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        width: "85%",
-                    }}
-                >
-                    {password === "" ? (
-                        <Link
-                            href="/auth/signUp"
-                            asChild
-                            style={{
-                                width: "100%",
-                                borderRadius: 10,
-                                backgroundColor: blueColor,
-                                height: 60,
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flex: 1,
-                            }}
-                        >
-                            <Pressable
-                                style={{
-                                    flex: 1,
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    paddingHorizontal: 0,
-                                }}
-                            >
-                                <Text style={{fontSize: 20, color: "white"}}>
-                                    Create an Account
-                                </Text>
-
-                                <Ionicons
-                                    name="arrow-forward"
-                                    size={24}
-                                    color="white"
-                                    style={{
-                                        margin: 0,
-                                        paddingLeft: 20,
-                                        paddingVertical: 0,
-                                    }}
-                                />
-                            </Pressable>
-                        </Link>
-                    ) : null}
-                </View>
+                <Text style={styles.signupText}>Don&apos;t have an account? </Text>
+                <Link href="/auth/signUp" asChild>
+                    <TouchableOpacity>
+                        <Text style={styles.signupLink}>Create Account</Text>
+                    </TouchableOpacity>
+                </Link>
             </View>
         </View>
     );
 }
 
-export default Login;
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        paddingHorizontal: 24,
+        paddingTop: 30,
+    },
+    logoContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        height: 0.15 * windowHeight,
+    },
+    logo: {
+        width: 0.3 * windowWidth,
+        height: 0.2 * windowHeight,
+    },
+    appName: {
+        fontSize: 28,
+        fontWeight: "bold",
+        color: "#DC143C",
+    },
+    formContainer: {
+        flex: 1,
+        borderWidth: 1,
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: "bold",
+        color: "#000",
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: "#666",
+        marginBottom: 32,
+    },
+    inputContainer: {
+        marginBottom: 24,
+    },
+    inputWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#F8F9FA",
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: "#E9ECEF",
+    },
+    inputIcon: {
+        marginRight: 12,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: "#000",
+    },
+    eyeIcon: {
+        padding: 4,
+    },
+    forgotPassword: {
+        alignSelf: "flex-end",
+        marginBottom: 32,
+    },
+    forgotPasswordText: {
+        color: "#DC143C",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    loginButton: {
+        backgroundColor: "#DC143C",
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: "center",
+        // marginBottom: 8,
+    },
+    buttonDisabled: {
+        opacity: 0.6,
+    },
+    loginButtonText: {
+        color: "#FFF",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+    divider: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 24,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: "#E9ECEF",
+    },
+    dividerText: {
+        marginHorizontal: 16,
+        color: "#666",
+        fontSize: 14,
+    },
+    biometricButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#F8F9FA",
+        borderRadius: 12,
+        paddingVertical: 16,
+        borderWidth: 1,
+        borderColor: "#DC143C",
+        marginBottom: 32,
+    },
+    biometricButtonText: {
+        color: "#DC143C",
+        fontSize: 16,
+        fontWeight: "600",
+        marginLeft: 8,
+    },
+    signupContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: "auto",
+        paddingBottom: 32,
+    },
+    signupText: {
+        color: "#666",
+        fontSize: 16,
+    },
+    signupLink: {
+        color: "#DC143C",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+});

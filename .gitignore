@@ -22,7 +22,7 @@ Thumbs.db
 
 
 static/
-src/staticfiles/css/
+staticfiles/css/
 
 src/tallies/
 

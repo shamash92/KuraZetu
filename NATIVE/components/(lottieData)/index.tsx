@@ -1,5 +1,6 @@
 export type TLottiePropsName =
     | "login"
+    | "login-fingerprint"
     | "chat"
     | "signup"
     | "maps-loading"
@@ -18,7 +19,9 @@ export type TLottiePropsName =
     | "translateModal"
     | "visitor-welcome"
     | "audio"
-    | "contact-us";
+    | "contact-us"
+    | "tea"
+    | "wave";
 
 export interface ILottiePropsType {
     id: number;
@@ -54,7 +57,7 @@ export const LOTTIE_DATA: ILottiePropsType[] = [
         image: require("../../assets/lottie/notifications-disabled.json"),
     },
     {
-        id: 5,
+        id: 6,
         title: "network-lost",
         image: require("../../assets/lottie/network-lost.json"),
     },
@@ -66,8 +69,24 @@ export const LOTTIE_DATA: ILottiePropsType[] = [
     },
 
     {
-        id: 18,
+        id: 8,
+        title: "login-fingerprint",
+        image: require("../../assets/lottie/loginFingerprint.json"),
+    },
+
+    {
+        id: 9,
         title: "contact-us",
         image: require("../../assets/lottie/contact-us.json"),
+    },
+    {
+        id: 10,
+        title: "tea",
+        image: require("../../assets/lottie/boiling.json"),
+    },
+    {
+        id: 11,
+        title: "wave",
+        image: require("../../assets/lottie/wave.json"),
     },
 ];

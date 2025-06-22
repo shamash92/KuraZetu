@@ -323,7 +323,7 @@ export default function LocationsScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="dark" />
+            {/* <StatusBar style="dark" /> */}
 
             {/* Map View */}
             <View style={styles.mapContainer}>

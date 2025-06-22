@@ -4,13 +4,13 @@ import "react-native-reanimated";
 import * as QuickActions from "expo-quick-actions";
 import * as SplashScreen from "expo-splash-screen";
 
-import {PermissionsAndroid, Platform, Text} from "react-native";
-import {Slot, router} from "expo-router";
-import {TSaveSecureStore, getFromSecureStore} from "./(utils)/secureStore";
-import {useEffect, useState} from "react";
+import {PermissionsAndroid, Platform} from "react-native";
+import React, {useEffect} from "react";
 
-import {GestureHandlerRootView} from "react-native-gesture-handler";
-import {handleLogout} from "./(utils)/auth";
+import {Stack} from "expo-router";
+import {StatusBar} from "expo-status-bar";
+import UpdateCheckerModal from "./(utils)/updateModal";
+import {useAuthStore} from "./(utils)/authStore";
 import {useFonts} from "expo-font";
 import {useQuickActionRouting} from "expo-quick-actions/router";
 
@@ -18,39 +18,34 @@ import {useQuickActionRouting} from "expo-quick-actions/router";
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+    const {isLoggedIn, shouldCreateAccount} = useAuthStore();
 
-    useEffect(() => {
-        async function getValueFor(storeKey: TSaveSecureStore) {
-            let result = await getFromSecureStore(storeKey);
-            if (result !== null) {
-                setIsLoggedIn(true);
-                return true;
-            } else {
-                setIsLoggedIn(false);
-                await handleLogout();
-                return false;
-            }
-        }
-
-        getValueFor("userToken").then((data) => {
-            if (data === true) {
-                router.replace("/(tabs)");
-            } else {
-                router.replace("/auth/login");
-            }
-        });
-    }, []);
-
-    return <Slot />;
+    return (
+        <React.Fragment>
+            <StatusBar style="auto" />
+            <Stack>
+                <Stack.Protected guard={!isLoggedIn}>
+                    <Stack.Screen
+                        name="auth"
+                        options={{headerShown: false, animation: "fade_from_bottom"}}
+                    />
+                    <Stack.Protected guard={shouldCreateAccount}>
+                        <Stack.Screen name="auth/signUp" />
+                    </Stack.Protected>
+                </Stack.Protected>
+                <Stack.Protected guard={isLoggedIn}>
+                    <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+                </Stack.Protected>
+            </Stack>
+        </React.Fragment>
+    );
 }
 
-export default function RootLayout() {
+// Export the complete component with provider
+export default function AuthenticatedLayout() {
     const [fontsLoaded, fontError] = useFonts({
         "Inter-Black": require("../assets/fonts/Inter-Regular.ttf"),
     });
-
-    // const app = initializeApp(firebaseConfig);
 
     useEffect(() => {
         SplashScreen.preventAutoHideAsync();
@@ -96,10 +91,5 @@ export default function RootLayout() {
     if (!fontsLoaded && !fontError) {
         return null;
     }
-
-    return (
-        <GestureHandlerRootView style={{flex: 1}}>
-            <RootLayoutNav />
-        </GestureHandlerRootView>
-    );
+    return <RootLayoutNav />;
 }

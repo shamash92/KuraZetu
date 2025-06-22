@@ -63,6 +63,9 @@ class User(AbstractBaseUser):
         choices=GENDER_CHOICES, max_length=6, blank=True, null=True
     )
     role = models.CharField(choices=ROLE, max_length=40, default="voter")
+    expo_push_token = models.CharField(
+        max_length=255, blank=True, null=True
+    )  # For push notifications
 
     first_name = models.CharField(max_length=20, blank=True, null=True)
     last_name = models.CharField(max_length=20, blank=True, null=True)

@@ -1,6 +1,6 @@
 # Kura Zetu Setup Instructions
 
-This guide will walk you through setting up the Community-Tally project, from cloning the repository to configuring the database and installing dependencies.
+This guide will walk you through setting up the KuraZetu project, from cloning the repository to configuring the database and installing dependencies.
 
 ``` {important}
 Before  you start, please note that this project is in its early stages and is not yet ready for production use. It is intended for development and testing purposes only.
@@ -35,7 +35,7 @@ For Windows and MacOS users, it is recommended to use a virtual machine to run t
     ```{important} Recommended
     If you want to use VSCode to connect to this VM using the Remote SSH extension, you will need first follow this [VSCode Multipass Guide](../how-to-guides/vscode-multipass.md) for more details.
 
-    VSCode integration brings  a few key bemefits such as opening files in the VM directly, forwarding ports, and running commands in the terminal directly from VSCode.
+    VSCode integration brings  a few key benefits such as opening files in the VM directly, forwarding ports, and running commands in the terminal directly from VSCode.
     ```
 
     ```bash

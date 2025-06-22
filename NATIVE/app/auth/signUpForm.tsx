@@ -1,105 +1,131 @@
 import {
     Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
+    Animated,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
     View,
 } from "react-native";
+import {ArrowLeft, Eye, EyeOff, Lock, Phone, User} from "lucide-react-native";
+import {Link, router, useLocalSearchParams} from "expo-router";
 import React, {useState} from "react";
-import {blueColor, purpleColor} from "@/app/(utils)/colors";
 
-import {Button} from "react-native-paper";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import {ISignUpData} from "./signUpFormOLD";
+import {LinearGradient} from "expo-linear-gradient";
 import LottieComponent from "@/components/lottieLoading";
 import {apiBaseURL} from "../(utils)/apiBaseURL";
-import {saveToSecureStore} from "../(utils)/secureStore";
-import {useLocalSearchParams} from "expo-router";
-import {useRouter} from "expo-router";
-import {windowWidth} from "@/app/(utils)/screenDimensions";
+import {blueColor} from "../(utils)/colors";
+import useAuthStore from "../(utils)/authStore";
+import {windowWidth} from "../(utils)/screenDimensions";
 
-export interface ISignUpData {
-    phone_number: string;
-    first_name: string;
-    last_name: string;
-    gender: "M" | "F";
-    age: number;
-    role:
-        | "other"
-        | "voter"
-        | "candidate"
-        | "media"
-        | "observer"
-        | "party_agent"
-        | "party_rep"
-        | "election_officer";
-    password: string;
-    confirm_password: string;
-    polling_center?: string;
-}
+export default function SignupScreen() {
+    const [formData, setFormData] = useState({
+        phoneNumber: "+254",
+        firstName: "",
+        lastName: "",
+        password: "",
+        confirmPassword: "",
+        gender: "",
+        age: "",
+    });
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-//TODO: Add age and gender to the signup form. For now they are hardcoded
-export default function Auth() {
-    const [firstName, setFirstName] = useState<string>("");
-    const [lastName, setLastName] = useState<string>("");
-
-    const [password, setPassword] = useState<string>("");
-    const [password1, setPassword1] = useState<string>("");
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [showGenderDropdown, setShowGenderDropdown] = useState(false);
 
     const [error, setError] = useState<string>("");
 
-    const router = useRouter();
+    const {logIn} = useAuthStore();
 
     const params = useLocalSearchParams();
     console.log(params, "params");
 
-    function handleFirstNameInput(text: string) {
-        setFirstName(text);
-    }
+    const genders = ["Male", "Female"];
 
-    function handleLastNameInput(text: string) {
-        setLastName(text);
-    }
+    const updateFormData = (field: string, value: string) => {
+        if (field === "phoneNumber" && !value.startsWith("+254")) {
+            value = "+254";
+        }
+        setFormData((prev) => ({...prev, [field]: value}));
+    };
 
-    function handlePhoneNumberInput(text: string) {
-        setPhoneNumber(text);
-    }
+    const validateForm = () => {
+        const {
+            phoneNumber,
+            firstName,
+            lastName,
+            password,
+            confirmPassword,
+            gender,
+            age,
+        } = formData;
 
-    function handlePasswordInput(text: string) {
-        setPassword(text);
-    }
-    function handlePassword1Input(text: string) {
-        setPassword1(text);
-    }
-
-    async function signUpSubmit() {
-        console.log("signing up");
-        if (password !== password1) {
-            return Alert.alert("Your passwords do not match");
+        // Phone number must start with "+254" and be exactly 13 characters (e.g., +2547XXXXXXXX)
+        if (
+            !phoneNumber ||
+            (!phoneNumber.startsWith("+2547") && !phoneNumber.startsWith("+2541")) ||
+            phoneNumber.length !== 13
+        ) {
+            Alert.alert(
+                "Error",
+                "Please enter a valid Kenyan phone number (e.g., +254 7XX XXX XXX or +254 1XX XXX XXX)",
+            );
+            return false;
+        }
+        if (!firstName.trim()) {
+            Alert.alert("Error", "Please enter your first name");
+            return false;
+        }
+        if (!lastName.trim()) {
+            Alert.alert("Error", "Please enter your last name");
+            return false;
+        }
+        if (password.length < 6) {
+            Alert.alert("Error", "Password must be at least 6 characters");
+            return false;
+        }
+        if (password !== confirmPassword) {
+            Alert.alert("Error", "Passwords do not match");
+            return false;
+        }
+        if (!gender) {
+            Alert.alert("Error", "Please select your gender");
+            return false;
         }
 
-        setLoading(true);
+        if (age && parseInt(age) >= 80) {
+            Alert.alert("Error", "Uko aje na smartphone at this age?");
+            return false;
+        }
+        if (!age || parseInt(age) < 18 || parseInt(age) > 80) {
+            Alert.alert("Error", "Please enter a valid age");
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleSignup = () => {
+        if (!validateForm()) return;
+
+        setIsLoading(true);
+
         // TODO: Add Backend API call here
         let wardCode = params.ward;
         let pollingCenterNumber = params.pollingCenter;
 
         let data: ISignUpData = {
-            phone_number: phoneNumber,
-            first_name: firstName,
-            last_name: lastName,
-            gender: "M",
-            age: 18,
+            phone_number: formData.phoneNumber,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            gender: formData.gender === "Male" ? "M" : "F",
+            age: parseInt(formData.age),
             role: "voter",
-            password: password,
-            confirm_password: password1,
+            password: formData.password,
+            confirm_password: formData.confirmPassword,
         };
 
         data["polling_center"] = pollingCenterNumber.toString();
@@ -120,7 +146,7 @@ export default function Auth() {
                 console.log(data, "data from server");
 
                 if (data["error"]) {
-                    setLoading(false);
+                    setIsLoading(false);
 
                     if (data["error"] === "Polling center not found") {
                         console.log("Polling center not found");
@@ -143,592 +169,389 @@ export default function Auth() {
                     console.log(token, "token from server");
 
                     if (typeof token === "string" && token.length > 0) {
-                        saveToSecureStore("userToken", token);
-                        setLoading(false);
-
-                        router.replace("/(tabs)");
+                        setTimeout(() => {
+                            logIn(token);
+                            setIsLoading(false);
+                            router.replace("/(tabs)");
+                        }, 5000); // just to create a delay for the animation
                     } else {
                         console.error("Invalid token format");
                     }
-
-                    // navigate("/ui/signup/accounts/registration-success/");
                 }
             });
-    }
-
-    const togglePasswordVisibility = () => {
-        setIsPasswordVisible(!isPasswordVisible);
     };
 
-    return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{
-                flex: 1,
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                // backgroundColor: orangeColor,
-                paddingTop: Platform.OS === "ios" ? 30 : 0,
-            }}
-        >
+    if (isLoading) {
+        return (
             <View
                 style={{
                     flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    width: 1 * windowWidth,
                     flexDirection: "column",
-                    // paddingTop: Constants.statusBarHeight,
-                    // borderWidth: 4,
+                    justifyContent: "flex-start",
+                    alignItems: "center",
+                    width: "100%",
                 }}
             >
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View
+                <LottieComponent
+                    name="wave"
+                    backgroundColor={"transparent"}
+                    width={0.6 * windowWidth}
+                />
+                <LottieComponent
+                    name="tea"
+                    backgroundColor={"transparent"}
+                    width={0.3 * windowWidth}
+                />
+
+                <Animated.Text
+                    style={{
+                        textAlign: "center",
+                        marginTop: 40,
+                        opacity: 0.9,
+                    }}
+                >
+                    <Text
                         style={{
-                            flex: 1,
-                            flexDirection: "column",
-                            justifyContent: "center",
-                            alignItems: "center",
+                            fontSize: 16,
+                            color: blueColor,
+                            marginTop: 20,
                         }}
                     >
-                        {/* Heading */}
-                        <View
-                            style={{
-                                flex: 2,
-                                flexDirection: "column",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <Text
-                                style={{
-                                    fontSize: 40,
-                                    fontWeight: "bold",
-                                    letterSpacing: 1,
-                                    color: purpleColor,
-                                }}
-                            >
-                                Register
-                            </Text>
-                        </View>
-
-                        {loading ? (
-                            <View
-                                style={{
-                                    flex: 4,
-                                    flexDirection: "column",
-                                    justifyContent: "flex-start",
-                                    alignItems: "center",
-                                    width: "100%",
-                                    marginBottom: 40,
-                                }}
-                            >
-                                <LottieComponent
-                                    name="signup"
-                                    backgroundColor={"transparent"}
-                                />
-
-                                <Text
-                                    style={{
-                                        marginTop: 60,
-                                        color: blueColor,
-                                        fontSize: 20,
-                                    }}
-                                >
-                                    Creating your account ...
-                                </Text>
-                            </View>
-                        ) : (
-                            // {/* Forms */}
-
-                            <View
-                                style={{
-                                    flex: 8,
-                                    flexDirection: "column",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    width: "100%",
-
-                                    gap: 20,
-                                }}
-                            >
-                                {/* First Name */}
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        borderRadius: 5,
-                                        paddingVertical: 0,
-                                        width: 1 * windowWidth,
-                                    }}
-                                >
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-                                            width: 0.2 * windowWidth,
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name="person-circle"
-                                            size={24}
-                                            color="white"
-                                            style={{
-                                                margin: 0,
-                                                paddingHorizontal: 20,
-                                                paddingVertical: 0,
-                                            }}
-                                        />
-                                    </View>
-
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-
-                                            width: 0.7 * windowWidth,
-
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <TextInput
-                                            style={{
-                                                width: "100%",
-                                                flexDirection: "row",
-                                                justifyContent: "flex-start",
-                                                marginVertical: 0,
-                                                paddingLeft: 10,
-                                                borderRadius: 0,
-                                                borderTopLeftRadius: 0,
-                                                borderBottomLeftRadius: 0,
-                                                fontSize: 20,
-                                                paddingVertical: 18,
-                                                backgroundColor: "white",
-                                            }}
-                                            value={firstName}
-                                            keyboardType="default"
-                                            placeholder={"First Name"}
-                                            placeholderTextColor={"#9ca3af"}
-                                            onChangeText={(text) =>
-                                                handleFirstNameInput(text)
-                                            }
-                                        />
-                                    </View>
-                                </View>
-
-                                {/* Last Name */}
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        borderRadius: 5,
-                                        paddingVertical: 0,
-                                        width: 1 * windowWidth,
-                                    }}
-                                >
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-                                            width: 0.2 * windowWidth,
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name="person-circle-outline"
-                                            size={24}
-                                            color="white"
-                                            style={{
-                                                margin: 0,
-                                                paddingHorizontal: 20,
-                                                paddingVertical: 0,
-                                            }}
-                                        />
-                                    </View>
-
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-
-                                            width: 0.7 * windowWidth,
-
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <TextInput
-                                            style={{
-                                                width: "100%",
-                                                flexDirection: "row",
-                                                justifyContent: "flex-start",
-                                                marginVertical: 0,
-                                                paddingLeft: 10,
-                                                borderRadius: 0,
-                                                borderTopLeftRadius: 0,
-                                                borderBottomLeftRadius: 0,
-                                                fontSize: 20,
-                                                paddingVertical: 18,
-                                                backgroundColor: "white",
-                                            }}
-                                            value={lastName}
-                                            placeholder={"Last Name"}
-                                            placeholderTextColor={"#9ca3af"}
-                                            onChangeText={(text) =>
-                                                handleLastNameInput(text)
-                                            }
-                                        />
-                                    </View>
-                                </View>
-
-                                {/* Email */}
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        borderRadius: 5,
-                                        paddingVertical: 0,
-                                        width: 1 * windowWidth,
-                                    }}
-                                >
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-                                            width: 0.2 * windowWidth,
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name="mail"
-                                            size={24}
-                                            color="white"
-                                            style={{
-                                                margin: 0,
-                                                paddingVertical: 0,
-                                            }}
-                                        />
-                                    </View>
-
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-
-                                            width: 0.7 * windowWidth,
-
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <TextInput
-                                            style={{
-                                                width: "100%",
-                                                flexDirection: "row",
-                                                justifyContent: "flex-start",
-                                                marginVertical: 0,
-                                                paddingLeft: 10,
-                                                borderRadius: 0,
-                                                borderTopLeftRadius: 0,
-                                                borderBottomLeftRadius: 0,
-                                                fontSize: 20,
-                                                paddingVertical: 18,
-                                                backgroundColor: "white",
-                                            }}
-                                            keyboardType="phone-pad"
-                                            value={phoneNumber}
-                                            placeholder={"+254"}
-                                            placeholderTextColor={"#9ca3af"}
-                                            onChangeText={(text) =>
-                                                handlePhoneNumberInput(text)
-                                            }
-                                        />
-                                    </View>
-                                </View>
-
-                                {/* Password  1*/}
-
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        borderRadius: 5,
-                                        paddingVertical: 0,
-                                        width: 1 * windowWidth,
-                                    }}
-                                >
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-                                            width: 0.2 * windowWidth,
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name="lock-closed-outline"
-                                            size={24}
-                                            color="white"
-                                            style={{
-                                                margin: 0,
-                                                // paddingHorizontal: 20,
-                                                paddingVertical: 0,
-                                            }}
-                                        />
-                                    </View>
-
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-
-                                            width: 0.7 * windowWidth,
-
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <TextInput
-                                            style={{
-                                                width: "100%",
-                                                flexDirection: "row",
-                                                justifyContent: "flex-start",
-                                                marginVertical: 0,
-                                                paddingLeft: 10,
-                                                borderRadius: 0,
-                                                borderTopLeftRadius: 0,
-                                                borderBottomLeftRadius: 0,
-                                                fontSize: 20,
-                                                paddingVertical: 18,
-                                                backgroundColor: "white",
-                                            }}
-                                            placeholder={"Password"}
-                                            // keyboardType="visible-password"
-                                            value={password}
-                                            secureTextEntry={!isPasswordVisible}
-                                            blurOnSubmit={true}
-                                            placeholderTextColor={"#9ca3af"}
-                                            onChangeText={(text) =>
-                                                handlePasswordInput(text)
-                                            }
-                                        />
-                                    </View>
-
-                                    <TouchableOpacity
-                                        onPress={togglePasswordVisibility}
-                                        style={{
-                                            position: "absolute",
-                                            right: 0.05 * windowWidth,
-                                            backgroundColor: "white",
-                                            height: "100%",
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name={
-                                                !isPasswordVisible ? "eye-off" : "eye"
-                                            }
-                                            size={24}
-                                            color="black"
-                                            style={{
-                                                margin: 0,
-                                                paddingHorizontal: 20,
-                                                paddingVertical: 0,
-                                            }}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-
-                                {/* Password  2*/}
-
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        borderRadius: 5,
-                                        paddingVertical: 0,
-                                        width: 1 * windowWidth,
-                                    }}
-                                >
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-                                            width: 0.2 * windowWidth,
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name="lock-closed-outline"
-                                            size={24}
-                                            color="white"
-                                            style={{
-                                                margin: 0,
-                                                // paddingHorizontal: 20,
-                                                paddingVertical: 0,
-                                            }}
-                                        />
-                                    </View>
-
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: blueColor,
-
-                                            paddingVertical: 0,
-
-                                            width: 0.7 * windowWidth,
-
-                                            height: "100%",
-                                        }}
-                                    >
-                                        <TextInput
-                                            style={{
-                                                width: "100%",
-                                                flexDirection: "row",
-                                                justifyContent: "flex-start",
-                                                marginVertical: 0,
-                                                paddingLeft: 10,
-                                                borderRadius: 0,
-                                                borderTopLeftRadius: 0,
-                                                borderBottomLeftRadius: 0,
-                                                fontSize: 20,
-                                                paddingVertical: 18,
-                                                backgroundColor: "white",
-                                            }}
-                                            value={password1}
-                                            placeholder={"Password Confirm"}
-                                            secureTextEntry={!isPasswordVisible}
-                                            placeholderTextColor={"#9ca3af"}
-                                            onChangeText={(text) =>
-                                                handlePassword1Input(text)
-                                            }
-                                        />
-                                    </View>
-
-                                    <TouchableOpacity
-                                        onPress={togglePasswordVisibility}
-                                        style={{
-                                            position: "absolute",
-                                            right: 0.05 * windowWidth,
-                                            backgroundColor: "white",
-                                            height: "100%",
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name={
-                                                !isPasswordVisible ? "eye-off" : "eye"
-                                            }
-                                            size={24}
-                                            color="black"
-                                            style={{
-                                                margin: 0,
-                                                paddingHorizontal: 20,
-                                                paddingVertical: 0,
-                                            }}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-
-                                {/* Submit */}
-
-                                <View
-                                    style={{
-                                        flex: 1,
-                                    }}
-                                >
-                                    <Button
-                                        icon="arrow-right"
-                                        mode="contained"
-                                        style={{
-                                            width: "85%",
-                                            borderRadius: 10,
-                                            paddingVertical: 10,
-                                            backgroundColor: blueColor,
-                                            marginTop: 24,
-                                        }}
-                                        contentStyle={{
-                                            flexDirection: "row-reverse",
-                                        }}
-                                        disabled={
-                                            firstName === "" ||
-                                            lastName === "" ||
-                                            phoneNumber === "" ||
-                                            password === "" ||
-                                            password1 === ""
-                                        }
-                                        onPress={() => signUpSubmit()}
-                                    >
-                                        <Text style={{fontSize: 20}}>
-                                            Create an Account
-                                        </Text>
-                                    </Button>
-                                </View>
-                            </View>
-                        )}
-                    </View>
-                </TouchableWithoutFeedback>
+                        Things are boiling nicely
+                    </Text>
+                </Animated.Text>
             </View>
-        </KeyboardAvoidingView>
+        );
+    }
+
+    return (
+        <LinearGradient
+            colors={["#DC143C", "#006B3C", "#1E40AF"]}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
+            style={styles.container}
+        >
+            <ScrollView style={styles.overlay} showsVerticalScrollIndicator={false}>
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={styles.backButton}
+                    >
+                        <ArrowLeft size={24} color="#DC143C" />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>Create Account</Text>
+                    <Text style={styles.subtitle}>Join our community today</Text>
+                </View>
+
+                <View style={styles.formContainer}>
+                    <View style={styles.inputWrapper}>
+                        <Phone size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Phone Number"
+                            placeholderTextColor="#666"
+                            value={formData.phoneNumber}
+                            onChangeText={(text) => updateFormData("phoneNumber", text)}
+                            keyboardType="phone-pad"
+                            maxLength={13}
+                        />
+                    </View>
+
+                    <View style={styles.row}>
+                        <View style={[styles.inputWrapper, styles.halfWidth]}>
+                            <User size={20} color="#666" style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="First Name"
+                                placeholderTextColor="#666"
+                                value={formData.firstName}
+                                maxLength={20} // because the backend enforces a max length of 20
+                                onChangeText={(text) =>
+                                    updateFormData("firstName", text)
+                                }
+                            />
+                        </View>
+                        <View style={[styles.inputWrapper, styles.halfWidth]}>
+                            <User size={20} color="#666" style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Last Name"
+                                placeholderTextColor="#666"
+                                maxLength={20} // because the backend enforces a max length of 20
+                                value={formData.lastName}
+                                onChangeText={(text) =>
+                                    updateFormData("lastName", text)
+                                }
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.inputWrapper}>
+                        <Lock size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Password"
+                            placeholderTextColor="#666"
+                            value={formData.password}
+                            onChangeText={(text) => updateFormData("password", text)}
+                            secureTextEntry={!showPassword}
+                        />
+                        <TouchableOpacity
+                            onPress={() => setShowPassword(!showPassword)}
+                            style={styles.eyeIcon}
+                        >
+                            {showPassword ? (
+                                <EyeOff size={20} color="#666" />
+                            ) : (
+                                <Eye size={20} color="#666" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.inputWrapper}>
+                        <Lock size={20} color="#666" style={styles.inputIcon} />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Confirm Password"
+                            placeholderTextColor="#666"
+                            value={formData.confirmPassword}
+                            onChangeText={(text) =>
+                                updateFormData("confirmPassword", text)
+                            }
+                            secureTextEntry={!showConfirmPassword}
+                        />
+                        <TouchableOpacity
+                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                            style={styles.eyeIcon}
+                        >
+                            {showConfirmPassword ? (
+                                <EyeOff size={20} color="#666" />
+                            ) : (
+                                <Eye size={20} color="#666" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.row}>
+                        <View style={[styles.inputWrapper, styles.halfWidth]}>
+                            {/* <Users size={20} color="#666" style={styles.inputIcon} /> */}
+                            <View style={{flex: 1}}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.genderOption,
+                                        formData.gender ? styles.selectedGender : null,
+                                        {
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                        },
+                                    ]}
+                                    onPress={() =>
+                                        setShowGenderDropdown((prev) => !prev)
+                                    }
+                                    activeOpacity={0.8}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.genderText,
+                                            formData.gender
+                                                ? styles.selectedGenderText
+                                                : null,
+                                        ]}
+                                    >
+                                        {formData.gender || "Select Gender"}
+                                    </Text>
+                                    <Text style={{color: "#666", fontSize: 16}}>▼</Text>
+                                </TouchableOpacity>
+                                {showGenderDropdown && (
+                                    <View
+                                        style={{
+                                            backgroundColor: "#fff",
+                                            borderRadius: 8,
+                                            marginTop: 4,
+                                            borderWidth: 1,
+                                            borderColor: "#E9ECEF",
+                                            zIndex: 10,
+                                            elevation: 2,
+                                        }}
+                                    >
+                                        {genders.map((gender) => (
+                                            <TouchableOpacity
+                                                key={gender}
+                                                style={[
+                                                    styles.genderOption,
+                                                    formData.gender === gender &&
+                                                        styles.selectedGender,
+                                                ]}
+                                                onPress={() => {
+                                                    updateFormData("gender", gender);
+                                                    setShowGenderDropdown(false);
+                                                }}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.genderText,
+                                                        formData.gender === gender &&
+                                                            styles.selectedGenderText,
+                                                    ]}
+                                                >
+                                                    {gender}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+                        <View style={[styles.inputWrapper, styles.halfWidth]}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Age"
+                                placeholderTextColor="#666"
+                                value={formData.age}
+                                onChangeText={(text) => updateFormData("age", text)}
+                                keyboardType="numeric"
+                                maxLength={3}
+                            />
+                        </View>
+                    </View>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.signupButton,
+                            isLoading && styles.buttonDisabled,
+                        ]}
+                        onPress={handleSignup}
+                        disabled={isLoading}
+                    >
+                        <Text style={styles.signupButtonText}>
+                            {isLoading ? "Creating Account..." : "Create Account"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.loginContainer}>
+                        <Text style={styles.loginText}>Already have an account? </Text>
+                        <Link href="/auth/login" asChild>
+                            <TouchableOpacity>
+                                <Text style={styles.loginLink}>Sign In</Text>
+                            </TouchableOpacity>
+                        </Link>
+                    </View>
+                </View>
+            </ScrollView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 40,
-        padding: 12,
     },
-    verticallySpaced: {
-        paddingTop: 4,
-        paddingBottom: 4,
-        alignSelf: "stretch",
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
     },
-    mt20: {
-        marginTop: 20,
+    header: {
+        paddingHorizontal: 24,
+        paddingTop: 60,
+        paddingBottom: 32,
+    },
+    backButton: {
+        alignSelf: "flex-start",
+        padding: 8,
+        marginBottom: 16,
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: "bold",
+        color: "#000",
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: "#666",
+    },
+    formContainer: {
+        paddingHorizontal: 24,
+        paddingBottom: 32,
+    },
+    inputWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#F8F9FA",
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: "#E9ECEF",
+    },
+    inputIcon: {
+        marginRight: 12,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: "#000",
+    },
+    eyeIcon: {
+        padding: 4,
+    },
+    row: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    halfWidth: {
+        width: "48%",
+    },
+    pickerContainer: {
+        flex: 1,
+    },
+    genderOption: {
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 6,
+        marginBottom: 4,
+    },
+    selectedGender: {
+        backgroundColor: "#DC143C",
+    },
+    genderText: {
+        fontSize: 14,
+        color: "#666",
+    },
+    selectedGenderText: {
+        color: "#FFF",
+        fontWeight: "600",
+    },
+    signupButton: {
+        backgroundColor: "#DC143C",
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: "center",
+        marginTop: 24,
+        marginBottom: 24,
+    },
+    buttonDisabled: {
+        opacity: 0.6,
+    },
+    signupButtonText: {
+        color: "#FFF",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+    loginContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loginText: {
+        color: "#666",
+        fontSize: 16,
+    },
+    loginLink: {
+        color: "#DC143C",
+        fontSize: 16,
+        fontWeight: "bold",
     },
 });

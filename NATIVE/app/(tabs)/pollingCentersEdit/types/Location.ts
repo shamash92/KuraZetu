@@ -39,3 +39,5 @@ export interface IPollingCenterData {
     type: "FeatureCollection";
     features: IPollingCenterFeature[];
 }
+
+export default {};

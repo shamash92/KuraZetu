@@ -19,6 +19,9 @@ export default {
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
             },
+            entitlements: {
+                "com.apple.developer.networking.wifi-info": true,
+            },
         },
         android: {
             adaptiveIcon: {
