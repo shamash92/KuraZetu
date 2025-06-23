@@ -186,60 +186,66 @@ export default function LoginScreen() {
 
     if (isLoading && !shouldRedirect) {
         return (
-            <Modal
-                transparent
-                animationType="slide"
-                visible={isLoading}
-                onRequestClose={() => {}}
+            <View
+                style={{
+                    flex: 1,
+                }}
             >
-                <View
-                    style={{
-                        flex: 1,
-                        justifyContent: "flex-end",
-                        backgroundColor: "rgba(0,0,0,0.3)",
-                    }}
+                <Modal
+                    transparent
+                    animationType="slide"
+                    visible={isLoading}
+                    onRequestClose={() => {}}
                 >
                     <View
                         style={{
-                            height: 0.5 * windowHeight,
-                            backgroundColor: "rgba(255,255,255,0.97)",
-                            borderTopLeftRadius: 24,
-                            borderTopRightRadius: 24,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            shadowColor: "#000",
-                            shadowOffset: {width: 0, height: -2},
-                            shadowOpacity: 0.2,
-                            shadowRadius: 8,
-                            elevation: 8,
+                            flex: 1,
+                            justifyContent: "flex-end",
+                            backgroundColor: "rgba(0,0,0,0.3)",
                         }}
                     >
-                        <LottieComponent
-                            name="login"
-                            backgroundColor="transparent"
-                            width={0.75 * windowWidth}
-                        />
-
-                        <View>
-                            <Text
-                                style={{
-                                    fontSize: 14,
-                                    // fontWeight: "bold",
-                                    color: "#000",
-                                    // marginTop: 16,
-                                }}
-                            >
-                                Signing In ...
-                            </Text>
-                            <ActivityIndicator
-                                size="small"
-                                color="#DC143C"
-                                style={{marginTop: 8}}
+                        <View
+                            style={{
+                                height: 0.5 * windowHeight,
+                                backgroundColor: "rgba(255,255,255,0.97)",
+                                borderTopLeftRadius: 24,
+                                borderTopRightRadius: 24,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                shadowColor: "#000",
+                                shadowOffset: {width: 0, height: -2},
+                                shadowOpacity: 0.2,
+                                shadowRadius: 8,
+                                elevation: 8,
+                            }}
+                        >
+                            <LottieComponent
+                                name="login"
+                                backgroundColor="transparent"
+                                width={0.75 * windowWidth}
                             />
+
+                            <View>
+                                <Text
+                                    style={{
+                                        fontSize: 14,
+                                        // fontWeight: "bold",
+                                        color: "#000",
+                                        // marginTop: 16,
+                                    }}
+                                >
+                                    Signing In ...
+                                </Text>
+                                <ActivityIndicator
+                                    size="small"
+                                    color="#DC143C"
+                                    style={{marginTop: 8}}
+                                />
+                            </View>
                         </View>
                     </View>
-                </View>
-            </Modal>
+                </Modal>
+            </View>
         );
     }
 

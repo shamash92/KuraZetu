@@ -12,7 +12,7 @@ export default function PollingCentersLayout() {
             initialRouteName="index"
         >
             <Stack.Screen
-                name="LandingScreen"
+                name="index"
                 options={{
                     headerShown: false,
                     headerBackVisible: false,
