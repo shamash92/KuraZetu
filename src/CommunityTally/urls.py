@@ -21,21 +21,33 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
 from django.contrib import admin
 
+from django.views.generic import TemplateView
+
 # Django admin customizations
 admin.site.site_header = "Kura Zetu Admin"
 admin.site.site_title = "Kura Zetu Admin Portal"
 admin.site.index_title = "Welcome to the Kura Zetu Admin"
 
+if not settings.DEBUG:
+    from django_otp.admin import OTPAdminSite
 
-from django_otp.admin import OTPAdminSite
-
-admin.site.__class__ = OTPAdminSite
+    admin.site.__class__ = OTPAdminSite
 
 
 admin_url_suffix = config("ADMIN_URL_SUFFIX", default="admin/")
 urlpatterns = [
     path(f"{admin_url_suffix}/", admin.site.urls),  # to use OTP and dynamic name
     path("admin/", include("admin_honeypot.urls")),
+    path(
+        "sitemap.xml",
+        TemplateView.as_view(
+            template_name="sitemap.xml", content_type="application/xml"
+        ),
+    ),
+    path(
+        "robots.txt",
+        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
+    ),
     path("api/schema/yaml/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger/",
