@@ -6,7 +6,6 @@ import ProjectProgressCarousel from "./timeline";
 import ResultsDashboard from "../dashboards/results";
 import WhyComponent from "./why";
 import {useAuth} from "../App";
-import ProjectProgressCarousel from "./timeline";
 
 function LandingPage() {
     const isAuthenticated = useAuth();
