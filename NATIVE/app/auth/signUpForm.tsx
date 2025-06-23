@@ -173,7 +173,7 @@ export default function SignupScreen() {
                             logIn(token);
                             setIsLoading(false);
                             router.replace("/(tabs)");
-                        }, 5000); // just to create a delay for the animation
+                        }, 3000); // just to create a delay for the animation
                     } else {
                         console.error("Invalid token format");
                     }
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 12,
         color: "#000",
     },
     eyeIcon: {

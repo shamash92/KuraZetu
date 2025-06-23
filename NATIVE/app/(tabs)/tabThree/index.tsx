@@ -21,6 +21,7 @@ import React, {useState} from "react";
 
 import {deleteFromSecureStore} from "@/app/(utils)/secureStore";
 import {router} from "expo-router";
+import {statusBarHeight} from "@/app/(utils)/screenDimensions";
 import useAuthStore from "@/app/(utils)/authStore";
 
 interface SettingItemProps {
@@ -208,6 +209,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#F8FAFC",
+        paddingTop: statusBarHeight,
     },
     header: {
         padding: 16,

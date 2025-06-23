@@ -592,34 +592,40 @@ function CountySelect() {
                                 </span>
                             </h2>
                         </div>
-                        <div className="flex w-full p-4 pb-4 overflow-y-scroll bg-gray-100 md:w-10/12 rounded-lg md:h-[80vh] h-[50vh] ring-2 ring-gray-300 shadow-md">
-                            <div className="w-full h-auto pb-6 ">
+                        {/*  */}
+                        <div className="flex w-full p-6 overflow-y-scroll bg-gradient-to-br from-slate-50 to-gray-100/50 md:w-10/12 rounded-2xl md:h-[80vh] h-[50vh] border border-gray-200/60 shadow-xl backdrop-blur-sm">
+                            <div className="w-full h-auto pb-8">
                                 {counties !== null &&
                                 counties.length > 0 &&
                                 constituencies.length <= 0
                                     ? counties.map((county) => (
-                                          <a
+                                          <div
                                               key={county.id}
-                                              className={`flex flex-row items-center justify-between my-2 bg-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-50 transition duration-200 ${
+                                              className={`group flex flex-row items-center justify-between my-3 bg-white/80 backdrop-blur-sm py-3 px-5 rounded-xl shadow-sm hover:shadow-lg  transition-all duration-300 ease-out transform hover:-translate-y-0.5 ${
                                                   activePolygon ===
                                                   county.properties.number
-                                                      ? "border-2 border-blue-500"
-                                                      : "border border-gray-300"
+                                                      ? "ring-2 ring-green-400/60 py-5 bg-green-200/50 shadow-md"
+                                                      : "border border-gray-200/40 hover:border-gray-300/60"
                                               }`}
                                               onClick={() =>
                                                   handlePolygonClick(
                                                       county.properties.number,
                                                   )
                                               }
+                                              role="button"
+                                              tabIndex={0}
                                           >
-                                              <p className="font-semibold tracking-wide text-gray-800">
-                                                  {county.properties.name}
-                                              </p>
+                                              <div className="flex items-center space-x-3">
+                                                  <div className="w-2 h-8 rounded-full bg-gradient-to-b from-green-500 to-green-600 opacity-70"></div>
+                                                  <p className="font-medium text-lg text-gray-800 tracking-wide leading-relaxed font-['Inter','system-ui',sans-serif]">
+                                                      {county.properties.name}
+                                                  </p>
+                                              </div>
 
                                               {activePolygon ===
                                               county.properties.number ? (
                                                   <button
-                                                      className="flex flex-row items-center px-3 py-1 text-white transition duration-200 bg-blue-500 rounded-full shadow hover:bg-blue-600"
+                                                      className="flex items-center gap-2 px-4 py-2.5 text-white bg-gradient-to-r from-red-400  to-red-500 rounded-full shadow-md hover:shadow-lg transition-all duration-200 ease-out transform hover:scale-105 font-medium text-sm tracking-wide"
                                                       onClick={() =>
                                                           handleCountySelect(
                                                               activePolygon,
@@ -627,14 +633,14 @@ function CountySelect() {
                                                           )
                                                       }
                                                   >
-                                                      <p className="pr-2">Select</p>
+                                                      <span>Select</span>
                                                       <svg
                                                           xmlns="http://www.w3.org/2000/svg"
                                                           fill="none"
                                                           viewBox="0 0 24 24"
-                                                          strokeWidth="1.5"
+                                                          strokeWidth="2"
                                                           stroke="currentColor"
-                                                          className="w-5 h-5"
+                                                          className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5"
                                                       >
                                                           <path
                                                               strokeLinecap="round"
@@ -643,35 +649,38 @@ function CountySelect() {
                                                           />
                                                       </svg>
                                                   </button>
-                                              ) : (
-                                                  ""
-                                              )}
-                                          </a>
+                                              ) : null}
+                                          </div>
                                       ))
                                     : wards.length <= 0 && constituencies.length > 0
                                     ? constituencies.map((constituency) => (
-                                          <a
+                                          <div
                                               key={constituency.id}
-                                              className={` flex flex-row items-center justify-between my-2 bg-gray-50 py-2 pl-2 rounded-md text-blue-600 ${
+                                              className={`group flex flex-row items-center justify-between my-3 bg-white/60 backdrop-blur-sm py-3.5 px-4 rounded-xl transition-all duration-300 ease-out hover:bg-white/80 hover:shadow-md transform hover:-translate-y-0.5 ${
                                                   activePolygon ===
                                                   constituency.properties.number
-                                                      ? "active"
-                                                      : ""
+                                                      ? "ring-2 ring-red-400/60 bg-red-50/30 shadow-sm"
+                                                      : "border border-gray-200/30 hover:border-gray-300/50"
                                               }`}
                                               onClick={() =>
                                                   handlePolygonClick(
                                                       constituency.properties.number,
                                                   )
                                               }
+                                              role="button"
+                                              tabIndex={0}
                                           >
-                                              <p className="font-semibold tracking-wider">
-                                                  {constituency.properties.name}
-                                              </p>
+                                              <div className="flex items-center space-x-3">
+                                                  <div className="w-1.5 h-6 bg-gradient-to-b from-red-500 to-red-600 rounded-full opacity-80"></div>
+                                                  <p className="font-medium text-gray-700 tracking-wide font-['Inter','system-ui',sans-serif] leading-relaxed">
+                                                      {constituency.properties.name}
+                                                  </p>
+                                              </div>
 
                                               {activePolygon ===
                                               constituency.properties.number ? (
                                                   <button
-                                                      className="flex flex-row px-2 bg-blue-200 rounded-full ring-2"
+                                                      className="flex items-center gap-2 px-3.5 py-2 text-white bg-gradient-to-r from-green-400 to-green-600 rounded-full shadow-md hover:shadow-lg transition-all duration-200 ease-out transform hover:scale-105 font-medium text-sm"
                                                       onClick={() =>
                                                           handleCountySelect(
                                                               activePolygon,
@@ -679,14 +688,14 @@ function CountySelect() {
                                                           )
                                                       }
                                                   >
-                                                      <p className="pr-2">Select</p>
+                                                      <span>Select</span>
                                                       <svg
                                                           xmlns="http://www.w3.org/2000/svg"
                                                           fill="none"
                                                           viewBox="0 0 24 24"
-                                                          strokeWidth="1.5"
+                                                          strokeWidth="2"
                                                           stroke="currentColor"
-                                                          className="w-6 h-6"
+                                                          className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5"
                                                       >
                                                           <path
                                                               strokeLinecap="round"
@@ -695,49 +704,50 @@ function CountySelect() {
                                                           />
                                                       </svg>
                                                   </button>
-                                              ) : (
-                                                  ""
-                                              )}
-                                          </a>
+                                              ) : null}
+                                          </div>
                                       ))
                                     : pollingCenters.length <= 0 && wards.length > 0
                                     ? wards.map((ward) => (
-                                          <a
+                                          <div
                                               key={ward.id}
-                                              className={` flex flex-row items-center justify-between my-2 bg-gray-50 py-2 pl-2 rounded-md text-blue-600 ${
+                                              className={`group flex flex-row items-center justify-between my-3 bg-white/60 backdrop-blur-sm py-3.5 px-4 rounded-xl transition-all duration-300 ease-out hover:bg-white/80 hover:shadow-md transform hover:-translate-y-0.5 ${
                                                   activePolygon ===
                                                   ward.properties.number
-                                                      ? "active"
-                                                      : ""
+                                                      ? "ring-2 ring-black/40 bg-gray-50/40 shadow-sm"
+                                                      : "border border-gray-200/30 hover:border-gray-300/50"
                                               }`}
                                               onClick={() =>
                                                   handlePolygonClick(
                                                       ward.properties.number,
                                                   )
                                               }
+                                              role="button"
+                                              tabIndex={0}
                                           >
-                                              <p className="font-semibold tracking-wider">
-                                                  {ward.properties.name}
-                                              </p>
+                                              <div className="flex items-center space-x-3">
+                                                  <div className="w-1.5 h-6 bg-gradient-to-b from-gray-600 to-black rounded-full opacity-80"></div>
+                                                  <p className="font-medium text-gray-700 tracking-wide font-['Inter','system-ui',sans-serif] leading-relaxed">
+                                                      {ward.properties.name}
+                                                  </p>
+                                              </div>
 
                                               {activePolygon ===
                                               ward.properties.number ? (
                                                   <button
-                                                      className="flex flex-row px-2 bg-blue-200 rounded-full ring-2"
+                                                      className="flex items-center gap-2 px-3.5 py-2 text-white bg-gradient-to-r from-gray-600  to-gray-700 rounded-full shadow-md hover:shadow-lg transition-all duration-200 ease-out transform hover:scale-105 font-medium text-sm"
                                                       onClick={() =>
-                                                          // handleCountySelect(activePolygon, 'ward')
-
                                                           handleWardSelect(ward)
                                                       }
                                                   >
-                                                      <p className="pr-2">Select</p>
+                                                      <span>Select</span>
                                                       <svg
                                                           xmlns="http://www.w3.org/2000/svg"
                                                           fill="none"
                                                           viewBox="0 0 24 24"
-                                                          strokeWidth="1.5"
+                                                          strokeWidth="2"
                                                           stroke="currentColor"
-                                                          className="w-6 h-6"
+                                                          className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5"
                                                       >
                                                           <path
                                                               strokeLinecap="round"
@@ -746,20 +756,18 @@ function CountySelect() {
                                                           />
                                                       </svg>
                                                   </button>
-                                              ) : (
-                                                  ""
-                                              )}
-                                          </a>
+                                              ) : null}
+                                          </div>
                                       ))
                                     : pollingCenters.length > 0 &&
                                       pollingCenters.map((pollingCenter) => (
-                                          <a
+                                          <div
                                               key={pollingCenter.id}
-                                              className={` flex flex-row items-center justify-between my-2 bg-gray-50 py-2 pl-2 rounded-md text-blue-600 ${
+                                              className={`group flex flex-row items-center justify-between my-3 bg-white/60 backdrop-blur-sm py-3.5 px-4 rounded-xl transition-all duration-300 ease-out hover:bg-white/80 hover:shadow-md transform hover:-translate-y-0.5 ${
                                                   activePolygon ===
                                                   pollingCenter.properties.code
-                                                      ? "active"
-                                                      : ""
+                                                      ? "ring-2 ring-green-400/60 bg-green-50/30 shadow-sm"
+                                                      : "border border-gray-200/30 hover:border-gray-300/50"
                                               }`}
                                               onClick={() => {
                                                   handlePolygonClick(
@@ -769,31 +777,37 @@ function CountySelect() {
                                                       pollingCenter,
                                                   );
                                               }}
+                                              role="button"
+                                              tabIndex={0}
                                           >
-                                              <p className="font-semibold tracking-wider">
-                                                  {pollingCenter.properties.name}
-                                              </p>
+                                              <div className="flex items-center space-x-3">
+                                                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-green-100 to-green-200">
+                                                      <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                                                  </div>
+                                                  <p className="font-medium text-gray-700 tracking-wide font-['Inter','system-ui',sans-serif] leading-relaxed">
+                                                      {pollingCenter.properties.name}
+                                                  </p>
+                                              </div>
 
                                               {activePolygon ===
                                               pollingCenter.properties.code ? (
                                                   <button
-                                                      className="flex flex-row px-2 bg-blue-200 rounded-full ring-2"
+                                                      className="flex items-center gap-2 px-3.5 py-2 text-white bg-gradient-to-r from-green-600 to-red-600 rounded-full shadow-md hover:shadow-lg transition-all duration-200 ease-out transform hover:scale-105 font-medium text-sm"
                                                       onClick={() =>
-                                                          // handleCountySelect(activePolygon, 'pollingCenter')
                                                           handlePollingCenterSelect(
                                                               activePolygon,
                                                               "polling_center",
                                                           )
                                                       }
                                                   >
-                                                      <p className="pr-2">Select</p>
+                                                      <span>Select</span>
                                                       <svg
                                                           xmlns="http://www.w3.org/2000/svg"
                                                           fill="none"
                                                           viewBox="0 0 24 24"
-                                                          strokeWidth="1.5"
+                                                          strokeWidth="2"
                                                           stroke="currentColor"
-                                                          className="w-6 h-6"
+                                                          className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5"
                                                       >
                                                           <path
                                                               strokeLinecap="round"
@@ -802,13 +816,13 @@ function CountySelect() {
                                                           />
                                                       </svg>
                                                   </button>
-                                              ) : (
-                                                  ""
-                                              )}
-                                          </a>
+                                              ) : null}
+                                          </div>
                                       ))}
                             </div>
                         </div>
+
+                        {/*  */}
                     </div>
                     {/* Map Container */}
                     <div className="z-0 flex w-full md:w-8/12 h-[50vh] md:h-full">

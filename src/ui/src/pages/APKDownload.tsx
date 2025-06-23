@@ -1,5 +1,6 @@
 import {
     AlertTriangle,
+    Badge,
     Bug,
     ChevronDown,
     ChevronUp,
@@ -19,7 +20,20 @@ export default function APKDownloadPage() {
 
     const changelog = [
         {
-            version: "v0.0.1",
+            version: "0.0.2",
+            codeName: "Sanji",
+            date: "2025-06-23",
+            changes: [
+                "Added biometric authentication for secure login",
+                "New login and registration UI",
+                "Notifications support",
+                "Loading screens for smoother user experience",
+                "Refactored verify stack under tabs for better navigation (header title bug fix)",
+            ],
+        },
+        {
+            version: "0.0.1",
+            codeName: "Kamina",
             date: "2025-06-10",
             changes: [
                 "User authentication and secure login flows",
@@ -30,8 +44,9 @@ export default function APKDownloadPage() {
             ],
         },
         {
-            version: "v0.0.0",
+            version: "0.0.0",
             date: "2025-05-28",
+            codeName: "Mikasa",
             changes: [
                 "Minor UI improvements",
                 "Bug fixes around station registration",
@@ -88,24 +103,51 @@ export default function APKDownloadPage() {
                 </div>
 
                 {/* Download Section */}
-                <div className="p-8 mb-8 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
-                    <div className="text-center">
-                        <h2 className="mb-4 text-2xl font-bold text-green-800">
-                            Latest Beta Release
-                        </h2>
-                        <div className="inline-block px-6 py-2 mb-6 text-sm font-medium text-white bg-green-600 rounded-md">
-                            Version 0.0.1
+                <div className="p-8 mb-8 border border-green-100 shadow-lg rounded-2xl bg-gradient-to-br from-green-50 via-white to-green-100">
+                    <div className="flex flex-col items-center gap-4 md:flex-row md:items-start md:gap-8">
+                        <div className="flex items-center justify-center w-16 h-16 mb-4 bg-green-600 shadow-md rounded-xl md:mb-0">
+                            <Download className="w-8 h-8 text-white" />
                         </div>
-                        <a
-                            href="https://kurazetu.s3.eu-west-1.amazonaws.com/static/builds/0.0.1.apk"
-                            className="flex items-center justify-center w-full gap-2 px-6 py-3 mb-6 text-base font-medium text-white transition duration-200 bg-green-600 rounded-md md:w-auto hover:bg-green-700"
-                        >
-                            <Download className="w-5 h-5" />
-                            Download APK (136.0 MB)
-                        </a>
-                        <p className="text-sm text-gray-500">
-                            Compatible with Android 7.0+ • Released June 10, 2025
-                        </p>
+                        <div className="flex-1 text-center md:text-left">
+                            <h2 className="mb-2 text-2xl font-extrabold text-green-800">
+                                Download Latest Beta
+                            </h2>
+                            <div className="mb-3 text-sm font-semibold text-green-700">
+                                Version v{changelog[0].version}{" "}
+                                <span className="mx-2 text-xs text-green-900 bg-green-200 rounded px-2 py-0.5">
+                                    {changelog[0].codeName}
+                                </span>
+                            </div>
+                            <a
+                                href={`https://kurazetu.s3.eu-west-1.amazonaws.com/static/builds/${changelog[0].version}.apk`}
+                                className="inline-flex items-center gap-2 px-6 py-3 mb-3 text-base font-semibold text-white transition bg-green-600 rounded-lg shadow hover:bg-green-700"
+                            >
+                                <Download className="w-5 h-5" />
+                                Download APK
+                                <span className="ml-2 text-xs font-normal text-green-100">
+                                    (136.0 MB)
+                                </span>
+                            </a>
+                            <div className="flex flex-wrap items-center justify-center gap-2 mt-2 text-xs text-gray-600 md:justify-start">
+                                <span className="flex items-center gap-1">
+                                    <Smartphone className="w-4 h-4" />
+                                    Android 7.0+
+                                </span>
+                                <span className="hidden md:inline">•</span>
+                                <span className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    Released{" "}
+                                    {new Date(changelog[0].date).toLocaleDateString(
+                                        "en-US",
+                                        {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                        },
+                                    )}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -206,7 +248,16 @@ export default function APKDownloadPage() {
                                 >
                                     <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center">
                                         <span className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md">
-                                            {release.version}
+                                            v{release.version}{" "}
+                                        </span>
+                                        <span
+                                            className={`mx-2 text-xs rounded px-2 py-0.5 ${
+                                                index === 0
+                                                    ? "text-green-900 bg-green-200"
+                                                    : "text-red-900 bg-red-200"
+                                            }`}
+                                        >
+                                            {release.codeName}
                                         </span>
                                         <span className="text-sm text-gray-500">
                                             {new Date(release.date).toLocaleDateString(
