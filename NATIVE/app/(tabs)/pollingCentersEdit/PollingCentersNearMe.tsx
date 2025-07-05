@@ -156,7 +156,7 @@ export default function LocationsScreen() {
                     {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
                 );
             } catch (error) {
-                console.log("Error requesting location permission:", error);
+                console.log("b. Error requesting location permission:", error);
             }
             return;
         }
@@ -180,7 +180,7 @@ export default function LocationsScreen() {
                 });
             }
         } catch (error) {
-            console.log("Error requesting location permission:", error);
+            console.log("A. Error requesting location permission:", error);
         }
     };
 

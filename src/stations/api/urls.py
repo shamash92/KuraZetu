@@ -9,6 +9,8 @@ from stations.api.views import (
     RandomUnverifiedPollingCenterAPIView,
     VerificationPollingCenterAPIView,
     PartiallyVerifiedPollingCenterAPIView,
+    CommunityNotesPollingCenterDetailsAPIView,
+    PollingStationInfoAPIView,
 )
 
 urlpatterns = [
@@ -51,5 +53,15 @@ urlpatterns = [
         "polling-centers/partially-verified/",
         PartiallyVerifiedPollingCenterAPIView.as_view(),
         name="polling_centers_partially_verified_api",
+    ),
+    path(
+        "community-notes/polling-center-info/",
+        CommunityNotesPollingCenterDetailsAPIView.as_view(),
+        name="community_notes_polling_center_details_api",
+    ),
+    path(
+        "community-notes/polling-stations/<str:polling_station_code>/info/",
+        PollingStationInfoAPIView.as_view(),
+        name="polling_station_info_api",
     ),
 ]

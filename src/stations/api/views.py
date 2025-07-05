@@ -2,7 +2,7 @@ from django.contrib.gis.geos import Point
 
 from rest_framework import status
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
@@ -14,6 +14,9 @@ from stations.api.serializers import (
     WardSerializer,
     PollingCenterBoundarySerializer,
     PartiallyVerifiedPollingCenterBoundarySerializer,
+    CommunityNotesPollingCenterSerializer,
+    PollingStationSerializer,
+    PollingStationInfoSerializer,
 )
 from stations.models import (
     Constituency,
@@ -21,6 +24,7 @@ from stations.models import (
     PollingCenter,
     Ward,
     PollingCenterVerification,
+    PollingStation,
 )
 
 
@@ -395,5 +399,75 @@ class PartiallyVerifiedPollingCenterAPIView(APIView):
 
         return Response(
             {"data": data},
+            status=status.HTTP_200_OK,
+        )
+
+
+class CommunityNotesPollingCenterDetailsAPIView(APIView):
+    authentication_classes = [
+        SessionAuthentication,
+        TokenAuthentication,
+    ]
+    permission_classes = [AllowAny]
+
+    queryset = PollingCenter.objects.all()
+    serializer_class = CommunityNotesPollingCenterSerializer
+
+    def get(self, *args, **kwargs):
+
+        user = self.request.user
+
+        print(user, "user inside the server")
+
+        try:
+            polling_center = PollingCenter.objects.get(pk=user.polling_center.pk)
+            print(polling_center, "polling center")
+        except PollingCenter.DoesNotExist:
+            return Response(
+                {"error": "Polling Center does not exist."},
+                status=status.HTTP_200_OK,
+            )
+
+        stations_qs = PollingStation.objects.filter(
+            polling_center=polling_center,
+        )
+
+        data = CommunityNotesPollingCenterSerializer(polling_center).data
+        stations = PollingStationSerializer(stations_qs, many=True).data
+
+        return Response(
+            {
+                "data": data,
+                "stations": stations,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PollingStationInfoAPIView(APIView):
+    authentication_classes = [
+        SessionAuthentication,
+        TokenAuthentication,
+    ]
+    permission_classes = [IsAuthenticated]
+
+    queryset = PollingStation.objects.all()
+    serializer_class = PollingStationSerializer
+
+    def get(self, *args, **kwargs):
+        polling_station_code = self.kwargs.get("polling_station_code")
+
+        try:
+            polling_station = PollingStation.objects.get(code=polling_station_code)
+        except PollingStation.DoesNotExist:
+            return Response(
+                {"error": "Polling Station does not exist."},
+                status=status.HTTP_200_OK,
+            )
+
+        data = PollingStationInfoSerializer(polling_station).data
+
+        return Response(
+            data,
             status=status.HTTP_200_OK,
         )

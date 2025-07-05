@@ -9,6 +9,7 @@ from results.api.views import (
     PollingCenterPresidentialResultsAPIView,
     PollingCenterSenatorResultsAPIView,
     PollingCenterWomenRepResultsAPIView,
+    PollingStationPresidentialResultsAPIView,
 )
 
 urlpatterns = [
@@ -52,5 +53,10 @@ urlpatterns = [
         "county/<str:level>/",
         CountyTotalResultsAPIView.as_view(),
         name="county-presidential-results",
+    ),
+    path(
+        "polling-station/<str:polling_station_code>/presidential/",
+        PollingStationPresidentialResultsAPIView.as_view(),
+        name="polling-station-presidential-results",
     ),
 ]

@@ -24,7 +24,9 @@ export default function PollingCentersLanding() {
                 <TouchableOpacity
                     style={[styles.card, {backgroundColor: "#EFF6FF"}]}
                     onPress={() =>
-                        router.navigate("/pollingCentersEdit/PollingCentersNearMe")
+                        router.navigate(
+                            "/(tabs)/pollingCentersEdit/PollingCentersNearMe",
+                        )
                     }
                 >
                     <View style={[styles.iconContainer, {backgroundColor: "#DBEAFE"}]}>

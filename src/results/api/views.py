@@ -425,3 +425,56 @@ class TotalPresResultsAPIView(APIView):
             {"results": candidate_results},
             status=status.HTTP_200_OK,
         )
+
+
+from django.shortcuts import render
+
+from results.models import PollingStationPresidentialResults
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.decorators import permission_classes
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
+
+
+class PollingStationPresidentialResultsAPIView(APIView):
+
+    authentication_classes = [
+        TokenAuthentication,
+        SessionAuthentication,
+    ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        polling_station_code = kwargs.get("polling_station_code")
+        print(
+            polling_station_code,
+            "polling_station_code in PollingStationPresidentialResultsAPIView",
+        )
+
+        try:
+            polling_station = PollingStation.objects.get(code=polling_station_code)
+        except PollingStation.DoesNotExist:
+            return Response(
+                {"error": "Polling station not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        pres_results_qs = PollingStationPresidentialResults.objects.filter(
+            polling_station=polling_station
+        ).order_by("votes")
+
+        serializer = PollingStationPresidentialResultsSerializer(
+            pres_results_qs, many=True
+        )
+
+        # print(serializer.data, "serializer data in PollingStationPresResultsAPIView")
+        return Response(
+            {
+                "data": serializer.data,
+                "status": status.HTTP_200_OK,
+            }
+        )
