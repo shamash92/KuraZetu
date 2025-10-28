@@ -936,11 +936,11 @@ function CountySelect() {
                                                 icon={L.icon({
                                                     iconUrl: pollingCenter.properties
                                                         .is_verified
-                                                        ? "/static/pins/verified.png" // Green icon for verified TODO: This may fail in prod if we are hosting on AWS
+                                                        ? "https://kurazetu.s3.eu-west-1.amazonaws.com/static/pins/verified.png" // Green icon for verified TODO: This may fail in prod if we are hosting on AWS
                                                         : pollingCenter.properties
                                                               .pin_location_error
                                                         ? "https://cdn-icons-png.flaticon.com/512/684/684908.png" // Red icon for errors
-                                                        : "/static/pins/unverified.png", // Black icon for unverified without errors
+                                                        : "https://kurazetu.s3.eu-west-1.amazonaws.com/static/pins/unverified.png", // Black icon for unverified without errors
                                                     iconSize: [25, 25], // Size of the icon
                                                     iconAnchor: [12, 41], // Anchor point of the icon
                                                     popupAnchor: [0, -41], // Position of the popup relative to the icon

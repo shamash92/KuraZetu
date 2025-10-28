@@ -1,14 +1,22 @@
+import json
+
 from django.core.cache import cache
 from django.db.models import Sum
+from django.shortcuts import render
 
 from rest_framework import status
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from results.api.serializers import (
+    AspirantSerializer,
     PollingStationGovernorResultsSerializer,
     PollingStationMCAResultsSerializer,
     PollingStationMpResultsSerializer,
+    PollingStationPresidentialExtrasSerializer,
     PollingStationPresidentialResultsSerializer,
     PollingStationSenatorResultsSerializer,
     PollingStationWomenRepResultsSerializer,
@@ -18,6 +26,7 @@ from results.models import (
     PollingStationGovernorResults,
     PollingStationMCAResults,
     PollingStationMpResults,
+    PollingStationPresidentialExtras,
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
@@ -424,4 +433,228 @@ class TotalPresResultsAPIView(APIView):
         return Response(
             {"results": candidate_results},
             status=status.HTTP_200_OK,
+        )
+
+
+class PollingStationPresidentialResultsAPIView(APIView):
+
+    authentication_classes = [
+        TokenAuthentication,
+        SessionAuthentication,
+    ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        polling_station_code = kwargs.get("polling_station_code")
+        print(
+            polling_station_code,
+            "polling_station_code in PollingStationPresidentialResultsAPIView",
+        )
+
+        try:
+            polling_station = PollingStation.objects.get(code=polling_station_code)
+        except PollingStation.DoesNotExist:
+            return Response(
+                {"error": "Polling station not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        pres_results_qs = PollingStationPresidentialResults.objects.filter(
+            polling_station=polling_station
+        ).order_by("votes")
+
+        serializer = PollingStationPresidentialResultsSerializer(
+            pres_results_qs, many=True
+        )
+
+        try:
+            polling_station_extras = PollingStationPresidentialExtras.objects.get(
+                polling_station=polling_station
+            )
+        except PollingStationPresidentialExtras.DoesNotExist:
+            polling_station_extras = None
+
+        extra_data = (
+            PollingStationPresidentialExtrasSerializer(polling_station_extras).data
+            if polling_station_extras
+            else None
+        )
+
+        # print(serializer.data, "serializer data in PollingStationPresResultsAPIView")
+        return Response(
+            {
+                "data": serializer.data,
+                "extra_data": extra_data,
+                "status": status.HTTP_200_OK,
+            }
+        )
+
+
+class PollingStationCandidatesListAPIView(APIView):
+
+    authentication_classes = [
+        TokenAuthentication,
+        SessionAuthentication,
+    ]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        polling_station_code = kwargs.get("polling_station_code")
+        level = kwargs.get("level")
+
+        try:
+            polling_station = PollingStation.objects.get(code=polling_station_code)
+        except PollingStation.DoesNotExist:
+            return Response(
+                {"error": "Polling station not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        print(
+            polling_station_code,
+            "polling_station_code in PollingStationPresidentialResultsAPIView",
+        )
+        if level == "president":
+            aspirants = Aspirant.objects.filter(level="president")
+        elif level == "governor":
+            aspirants = Aspirant.objects.filter(
+                level="governor",
+                county=polling_station.polling_center.ward.constituency.county,
+            )
+        elif level == "senator":
+            aspirants = Aspirant.objects.filter(
+                level="senator",
+                county=polling_station.polling_center.ward.constituency.county,
+            )
+        elif level == "mp":
+            aspirants = Aspirant.objects.filter(
+                level="mp",
+                constituency=polling_station.polling_center.ward.constituency,
+            )
+        elif level == "mca":
+            aspirants = Aspirant.objects.filter(
+                level="mca",
+                ward=polling_station.polling_center.ward,
+            )
+        else:
+            return Response(
+                {"error": "Invalid level specified."},
+                status=status.HTTP_200_OK,
+            )
+
+        aspirants = AspirantSerializer(aspirants, many=True)
+
+        return Response(
+            {
+                "data": aspirants.data,
+                "status": status.HTTP_200_OK,
+            }
+        )
+
+
+class PollingStationResultsCreateAPIView(APIView):
+    """
+    API view to create results for a polling station.
+    """
+
+    authentication_classes = [
+        TokenAuthentication,
+        SessionAuthentication,
+    ]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        level = kwargs.get("level")
+
+        client_data = request.data
+
+        data = json.loads(client_data.get("data", "{}"))
+        image = client_data.get("image", "{}")
+
+        print(data, "data in PollingStationResultsCreateAPIView")
+        print(image, "image in PollingStationResultsCreateAPIView")
+
+        polling_station_code = data.get("polling_station")
+
+        print(
+            polling_station_code,
+            "polling_station_code in PollingStationResultsCreateAPIView",
+        )
+
+        print(
+            data["polling_station"],
+            "polling_station_code in PollingStationResultsCreateAPIView 2222",
+        )
+
+        if not polling_station_code:
+            return Response(
+                {"error": "Polling station code is required."},
+                status=status.HTTP_200_OK,
+            )
+
+        if level != data.get("level"):
+            return Response(
+                {"error": "Level mismatch."},
+                status=status.HTTP_200_OK,
+            )
+        print("-------")
+        try:
+            polling_station = PollingStation.objects.get(code=polling_station_code)
+        except PollingStation.DoesNotExist:
+            return Response(
+                {"error": "Polling station not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if len(data.get("votes")) <= 0:
+            return Response(
+                {"error": "No votes provided."},
+                status=status.HTTP_200_OK,
+            )
+
+        for aspirant_votes in data.get("votes"):
+            print(
+                aspirant_votes,
+                "aspirant_votes in for loop",
+            )
+            try:
+                aspirant = Aspirant.objects.get(pk=aspirant_votes["id"])
+                result = PollingStationPresidentialResults.objects.create(
+                    polling_station=polling_station,
+                    presidential_candidate=aspirant,
+                    votes=aspirant_votes["votes"],
+                )
+
+            except Exception as e:
+                return Response(
+                    {"error": str(e), "message": "Failed to create results."},
+                    status=status.HTTP_200_OK,
+                )
+        # Create extra
+        try:
+            x = PollingStationPresidentialExtras.objects.create(
+                polling_station=polling_station,
+                rejected_votes=data.get("rejected_votes", 0),
+                disputed_votes=data.get("disputed_votes", 0),
+                valid_votes_cast=sum(
+                    aspirant["votes"] for aspirant in data.get("votes", [])
+                ),
+                added_by=request.user if request.user.is_authenticated else None,
+            )
+
+            x.form_34A.save(
+                "form34A.jpg",
+                image,
+                save=True,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e), "message": "Failed to create extra results."},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"message": "Results created successfully."},
+            status=status.HTTP_201_CREATED,
         )

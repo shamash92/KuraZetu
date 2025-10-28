@@ -9,10 +9,10 @@ import React, {useEffect} from "react";
 import {windowHeight, windowWidth} from "./(utils)/screenDimensions";
 
 import Animated from "react-native-reanimated";
+import {GestureHandlerRootView} from "react-native-gesture-handler";
 import LottieComponent from "@/components/lottieLoading";
 import {Stack} from "expo-router";
 import {StatusBar} from "expo-status-bar";
-import UpdateCheckerModal from "./(utils)/updateModal";
 import {blueColor} from "./(utils)/colors";
 import {useAuthStore} from "./(utils)/authStore";
 import {useFonts} from "expo-font";
@@ -51,6 +51,8 @@ export default function AuthenticatedLayout() {
 
     const [fontsLoaded, fontError] = useFonts({
         "Inter-Black": require("../assets/fonts/Inter-Regular.ttf"),
+        "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
+        "Sora-Regular": require("../assets/fonts/Sora-Regular.ttf"),
     });
 
     useEffect(() => {
@@ -115,49 +117,69 @@ export default function AuthenticatedLayout() {
             >
                 <View
                     style={{
-                        flex: 7,
+                        flex: 8,
+                        // borderWidth: 4,
+                        // borderColor: "red",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
                     }}
                 >
-                    <LottieComponent
-                        name="wave"
-                        backgroundColor={"transparent"}
-                        width={0.6 * windowWidth}
-                    />
-                    <LottieComponent
-                        name="tea"
-                        backgroundColor={"transparent"}
-                        width={0.3 * windowWidth}
-                    />
-
-                    <Animated.Text
+                    <View
                         style={{
-                            textAlign: "center",
-                            marginTop: 40,
-                            opacity: 0.9,
+                            flex: 8,
+                            // borderWidth: 4,
+                            // borderColor: "blue",
+                            flexDirection: "column",
+                            justifyContent: "flex-end",
                         }}
                     >
-                        <Text
+                        <LottieComponent
+                            name="wave"
+                            backgroundColor={"transparent"}
+                            width={1.6 * windowWidth}
+                        />
+                    </View>
+                    <View
+                        style={{
+                            flex: 2,
+                            // borderWidth: 4,
+                            // borderColor: "blue",
+                            flexDirection: "column",
+                            justifyContent: "flex-start",
+                            paddingRight: 20,
+                        }}
+                    >
+                        <LottieComponent
+                            name="tea"
+                            backgroundColor={"transparent"}
+                            width={0.25 * windowWidth}
+                        />
+
+                        <Animated.Text
                             style={{
-                                fontSize: 16,
+                                fontSize: 20,
                                 color: blueColor,
-                                marginTop: 20,
+                                fontFamily: "Sora-Regular",
+                                textAlign: "center",
                             }}
                         >
-                            Things are boiling nicely
-                        </Text>
-                    </Animated.Text>
+                            Things are boiling nicely ...
+                        </Animated.Text>
+                    </View>
                 </View>
 
                 <View
                     style={{
-                        flex: 3,
+                        flex: 2,
+                        flexDirection: "column",
+                        justifyContent: "center",
                     }}
                 >
                     <Image
                         source={require("../assets/images/icon.png")}
                         style={{
-                            width: 0.75 * windowWidth,
-                            height: 0.25 * windowHeight,
+                            width: 0.3 * windowWidth,
+                            height: 0.2 * windowHeight,
                             marginTop: 20,
                         }}
                     />
@@ -169,5 +191,9 @@ export default function AuthenticatedLayout() {
     if (!fontsLoaded && !fontError) {
         return null;
     }
-    return <RootLayoutNav />;
+    return (
+        <GestureHandlerRootView style={{flex: 1}}>
+            <RootLayoutNav />
+        </GestureHandlerRootView>
+    );
 }

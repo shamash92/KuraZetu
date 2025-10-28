@@ -1,11 +1,13 @@
 import {ContributorSection} from "./contributors";
 import {Features} from "./features";
-import {Hero} from "./hero";
+import Hero from "./hero";
 import NavComponent from "./nav";
 import ProjectProgressCarousel from "./timeline";
 import ResultsDashboard from "../dashboards/results";
 import WhyComponent from "./why";
 import {useAuth} from "../App";
+import TravelPerkLanding from "./footer";
+import Footer from "./footer";
 
 function LandingPage() {
     const isAuthenticated = useAuth();
@@ -14,8 +16,8 @@ function LandingPage() {
         return (
             <div className="flex flex-col w-full">
                 <NavComponent />
-
                 <ResultsDashboard />
+                <Footer />
             </div>
         );
     }
@@ -28,6 +30,7 @@ function LandingPage() {
             <Features />
             <WhyComponent />
             <ContributorSection />
+            <Footer />
         </div>
     );
 }

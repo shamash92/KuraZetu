@@ -1,4 +1,11 @@
-import {BarChart, ListFilter, Map, User} from "lucide-react-native";
+import {
+    BarChart,
+    BinocularsIcon,
+    ChartSplineIcon,
+    ListFilter,
+    Map,
+    User,
+} from "lucide-react-native";
 import {Platform, StyleSheet, View} from "react-native";
 
 import {BlurView} from "expo-blur";
@@ -62,22 +69,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="pollingCentersEdit"
                 options={{
-                    title: "Verify Centers",
-                    tabBarIcon: ({focused, color, size}) => (
-                        <TabBarIcon
-                            IconComponent={Map}
-                            focused={focused}
-                            color={color}
-                            size={size}
-                        />
-                    ),
-                }}
-            />
-
-            <Tabs.Screen
-                name="communityNotes"
-                options={{
-                    title: "Notes",
+                    title: "Verify Results",
                     tabBarIcon: ({focused, color, size}) => (
                         <TabBarIcon
                             IconComponent={User}
@@ -90,7 +82,22 @@ export default function TabLayout() {
             />
 
             <Tabs.Screen
-                name="tabThree/index"
+                name="communityNotes"
+                options={{
+                    title: "Polling Station",
+                    tabBarIcon: ({focused, color, size}) => (
+                        <TabBarIcon
+                            IconComponent={ChartSplineIcon}
+                            focused={focused}
+                            color={color}
+                            size={size}
+                        />
+                    ),
+                }}
+            />
+
+            <Tabs.Screen
+                name="settings/index"
                 options={{
                     title: "Profile",
                     tabBarIcon: ({focused, color, size}) => (

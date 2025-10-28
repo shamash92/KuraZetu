@@ -23,6 +23,7 @@ Thumbs.db
 
 static/
 staticfiles/css/
+media/
 
 src/tallies/
 

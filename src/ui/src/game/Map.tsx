@@ -162,7 +162,7 @@ export default function MapComponent({
             </MapContainer>
 
             {/* Zoom Controls */}
-            <div className="absolute flex flex-col gap-2 top-4 right-4">
+            <div className="absolute flex flex-col gap-2 top-20 md:top-4 right-4">
                 <Button
                     size="sm"
                     variant="outline"

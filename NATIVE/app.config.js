@@ -60,7 +60,6 @@ export default {
                 },
             ],
             "expo-font",
-
             [
                 "expo-location",
                 {
@@ -89,6 +88,15 @@ export default {
                             backgroundColor: "#29cfc1",
                         },
                     },
+                },
+            ],
+            [
+                "expo-camera",
+                {
+                    cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
+                    microphonePermission:
+                        "Allow $(PRODUCT_NAME) to access your microphone",
+                    recordAudioAndroid: true,
                 },
             ],
         ],

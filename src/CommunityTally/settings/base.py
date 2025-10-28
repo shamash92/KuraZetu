@@ -48,7 +48,7 @@ THIRD_PARTY_APPS = [
     "django_otp.plugins.otp_totp",
 ]
 
-MY_APPS = ["accounts", "stations", "ui", "results", "tailwind"]
+MY_APPS = ["accounts", "stations", "ui", "results", "tailwind","historical"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 

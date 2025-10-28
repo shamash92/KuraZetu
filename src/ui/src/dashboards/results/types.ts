@@ -45,15 +45,17 @@ export interface ICandidateDetails {
     verified_by_party: boolean;
 }
 
+export interface IPollingStationData {
+    code: string;
+    stream_number: number;
+    registered_voters: number;
+    date_created: string;
+    date_modified: string;
+    is_verified: boolean;
+}
+
 export interface IPollingCenterCandidateResults {
-    polling_station: {
-        code: string;
-        stream_number: number;
-        registered_voters: number;
-        date_created: string;
-        date_modified: string;
-        is_verified: boolean;
-    };
+    polling_station: IPollingStationData;
     presidential_candidate: ICandidateDetails | null;
     governor_candidate: ICandidateDetails | null;
     senator_candidate: ICandidateDetails | null;
@@ -93,4 +95,11 @@ export interface ICountyPresResults {
     countedStreams: number;
     county_polling_stations_count: number;
     percentage: number;
+}
+
+export interface IPollingStationPresResults {
+    polling_station: IPollingStationData;
+    presidential_candidate: ICandidateDetails;
+    votes: number;
+    is_verified: boolean;
 }

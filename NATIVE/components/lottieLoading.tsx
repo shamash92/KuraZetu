@@ -14,6 +14,7 @@ export default function LottieComponent({
     name,
     backgroundColor,
     width,
+    height,
 }: ILottieFilePath) {
     const animation = useRef(null);
 

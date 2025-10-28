@@ -9,6 +9,7 @@ from results.models import (
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
+    PollingStationPresidentialExtras,
 )
 
 
@@ -75,6 +76,32 @@ class PollingStationPresidentialResultsAdmin(admin.ModelAdmin):
 admin.site.register(
     PollingStationPresidentialResults,
     PollingStationPresidentialResultsAdmin,
+)
+
+
+class PollingStationPresidentialExtrasAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "polling_station",
+        "rejected_votes",
+        "rejected_objected_to_votes",
+        "disputed_votes",
+        "valid_votes_cast",
+        "is_verified",
+        "added_by",
+    )
+
+    autocomplete_fields = [
+        "polling_station",
+    ]
+    search_fields = ("polling_station__polling_center__name", "added_by")
+    list_filter = ("is_verified",)
+    # ordering = ("-is_verified",)
+
+
+admin.site.register(
+    PollingStationPresidentialExtras,
+    PollingStationPresidentialExtrasAdmin,
 )
 
 

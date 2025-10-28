@@ -1,5 +1,4 @@
-
-# 🗳️ Kura Zetu
+# Kura Zetu
 
 ![Backend CI](https://github.com/shamash92/KuraZetu/actions/workflows/django.yml/badge.svg)
 ![Documentation CI](https://github.com/shamash92/KuraZetu/actions/workflows/automatic-doc-checks.yml/badge.svg)
@@ -8,74 +7,78 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/shamash92/KuraZetu)
 ![GitHub contributors](https://img.shields.io/github/contributors/shamash92/KuraZetu)
 
-**Kura Zetu** is an open source platform (plus mobile app) built **by and for Kenyans** to empower communities to **track, verify, and tally election results** at the polling station level.
+**Kura Zetu** is an open source platform with mobile application built by and for Kenyans to enable communities to track, verify, and tally election results at the polling station level.
 
-In Kenya, every voter has access to a smart phone, and since results announced at the polling station are final, we believe the public can play a powerful role in protecting the vote. We can all be agents.
+Since every Kenyan voter has access to a smartphone and results announced at polling stations are legally final, citizens can serve as agents of electoral transparency. The platform implements crowd-sourced uploads, real-time tallies, and a community verification system that allows everyday citizens, developers, journalists, civil society organizations, and oversight bodies to participate in safeguarding electoral integrity from the ground up.
 
-With features like crowdsourced uploads, real-time tallies, and a community notes system for public verification, the platform enables everyday citizens, developers, journalists, civil society, and oversight bodies to participate in safeguarding the integrity of elections — from the ground up.
+The system is designed as an open source, community-driven project where anyone can contribute, verify, and improve the codebase.
 
-The platform is designed to be **open source** and **community-driven**, allowing anyone to contribute, verify, and improve the system.
+> [!CAUTION]
+> This project is not an official tallying system. It does not provide legal representation of election results and does not replace Independent Electoral and Boundaries Commission (IEBC) systems. This is a parallel citizen-led tool for transparency, verification, and civic vigilance. It may contain inaccuracies and gaps and should not be used as a sole source for official election results.
 
-> ⚠️ **Disclaimer**
->
-> This project is **not an official tallying system**. It is **not a legal representation** of election results, and it does **not replace** the Independent Electoral and Boundaries Commission (IEBC) systems.
-> It is a **parallel citizen-led tool** for transparency, verification, and civic vigilance.
+## Why Kura Zetu?
 
-## 🤷‍♂️ Why Kura Zetu?
+Kenya conducts elections in over 46,000 polling stations. Each station posts Form 34A results that carry legal weight, but verifying these results at scale (and self-tallying) remains challenging for citizens.
 
-Kenya has over **46,000 polling stations**. Each polling station posts **Form 34A** results that are legally binding — but these results are often hard to verify at scale by citizens.
+Kura Zetu addresses this challenge by:
 
-Kura Zetu aims to solve this by:
+- Crowdsourcing results from individual polling stations
+- Enabling public cross-verification of vote counts and irregularity flagging  
+- Providing live, transparent tally dashboards
+- Implementing a community notes system for flagging suspected fraud, misinformation, or conflicting results
 
-- **Crowdsourcing results** from each polling station
-- Allowing the public to **cross-verify votes** and flag irregularities
-- Providing a **live, transparent tally dashboard**
-- Creating a **"Community Notes"** system where users can flag suspected fraud, misinformation, or conflicting results
-
-## 💡 What This Project Is
+## Project Scope
 
 ![timeline](https://github.com/user-attachments/assets/e2bf626c-1624-4d9d-991e-2eaee51259b4)
 
-- ✅ A **citizen-driven platform** to increase transparency and accountability
-- ✅ An **open-source system** built for collaboration
-- ✅ A **tool for civic empowerment**, not political affiliation
-- ✅ A platform for **education, participation, and digital oversight**
+This project is:
 
-## 🚫 What This Project Is NOT
+[x] A citizen-driven platform for transparency and accountability
 
-- ❌ Not a system to legally challenge election results
-- ❌ Not a means to announce or declare election results
-- ❌ Not an official government or IEBC system or a replacement for the official IEBC tallying system
-- ❌ Not a replacement for legal electoral processes
-- ❌ Not a partisan or politically-affiliated project
-- ❌ Not a guaranteed source of accurate results without verification
-- ❌ Not a tool for harassment, promoting violence, illegal activities or intimidation of any kind
-- ❌ Not a platform for spreading misinformation, disinformation, propaganda or hate speech
-- ❌ Not a substitute for responsible journalism or civic engagement
-- ❌ Not a tool for personal gain or political manipulation
+[x] An open-source collaborative system
 
-## 👥 Who Should Contribute?
+[x]  A civic empowerment tool with no political affiliation
 
-This project requires **all hands on deck** — not just developers. We need:
+[x]  A platform for education, participation, and digital oversight
 
-- 🧑‍💻 **Backend & Frontend Developers** (Django, React, etc.)
-- ⚙️ **DevOps Engineers** (CI/CD, Docker, GH Actions)
-- 🛡️ **Security Experts** (software verification, data integrity)
-- ⚖️ **Legal Professionals** (electoral laws, privacy, rights)
-- 🧠 **UX/UI Designers** (accessibility, community input)
-- 📣 **Media & Influencers** (spread the message, guide usage)
-- 🧭 **NGOs & Civil Society** (oversight, community engagement)
-- 🧑🏾‍🤝‍🧑🏽 **Community Organizers** (local mobilization and awareness)
+This project is not:
 
-> 💬 _“Free and fair elections are not just about voting — they are about knowing your vote is counted. We are the eyes of our democracy.”_
+- A system for legally challenging election results
+- A means to announce or declare election results  
+- An official government or IEBC system replacement
+- A substitute for legal electoral processes
+- A partisan or politically-affiliated project
+- A guaranteed source of unverified accurate results
+- A tool for harassment, violence promotion, or intimidation
+- A platform for misinformation, disinformation, or hate speech distribution
+- A replacement for responsible journalism or civic engagement
+- A tool for personal gain or political manipulation
 
-## 📚 Documentation
+## Contributors Needed
 
-Everything you need to get started — from how to set up the project to contributing and building locally — is in our official documentation:
+This project requires diverse expertise beyond software development:
 
-👉 **[Read the Docs](https://kurazetu.readthedocs.io)**
-👉 **[Raise an issue](<https://github.com/shamash92/KuraZetu/issues/new?title=docs%3A+TYPE+YOUR+QUESTION+HERE&body=*Please%20describe%20the%20question%20or%20issue%20you%27re%20facing%20with%20%22Community%20Tally%20documentation%22.*%0A%0A%0A%0A%0A---%0A*Reported+from%3A+https://kurazetu.readthedocs.io/>)**
+**Technical Contributors:**
 
-## ✅ Getting Started (Developers)
+- Backend and Frontend Developers (Django, React)
+- DevOps Engineers (CI/CD, Docker, GitHub Actions)  
+- Security Experts (software verification, data integrity)
 
-> See the [setup guide](https://kurazetu.readthedocs.io/tutorials/setup)  for detailed instructions.
+**Non-Technical Contributors:**
+
+- Legal Professionals (electoral law, privacy, rights)
+- UX/UI Designers (accessibility, community input)
+- Media and Influencers (messaging, usage guidance)
+- NGOs and Civil Society (oversight, community engagement)
+- Community Organizers (local mobilization and awareness)
+
+## Documentation
+
+Complete setup instructions, contribution guidelines, and local build documentation:
+
+**[Read the Documentation](https://kurazetu.readthedocs.io)**
+**[Report Issues](https://github.com/shamash92/KuraZetu/issues/new?title=docs%3A+TYPE+YOUR+QUESTION+HERE&body=*Please%20describe%20the%20question%20or%20issue%20you%27re%20facing%20with%20%22Community%20Tally%20documentation%22.*%0A%0A%0A%0A%0A---%0A*Reported+from%3A+https://kurazetu.readthedocs.io/)**
+
+## Getting Started
+
+See the [setup guide](https://kurazetu.readthedocs.io/tutorials/setup) for detailed development environment configuration.

@@ -111,6 +111,32 @@ class PollingStationSerializer(ModelSerializer):
         )
 
 
+class CommunityNotesPollingCenterSerializer(ModelSerializer):
+    ward = SerializerMethodField()
+    constituency = SerializerMethodField()
+    county = SerializerMethodField()
+
+    def get_ward(self, obj):
+        return obj.ward.name if obj.ward else None
+
+    def get_constituency(self, obj):
+        return obj.ward.constituency.name if obj.ward else None
+
+    def get_county(self, obj):
+        return obj.ward.constituency.county.name if obj.ward else None
+
+    class Meta:
+        model = PollingCenter
+        fields = (
+            "id",
+            "name",
+            "code",
+            "ward",
+            "constituency",
+            "county",
+        )
+
+
 class PartiallyVerifiedPollingCenterBoundarySerializer(GeoFeatureModelSerializer):
 
     class Meta:
@@ -120,4 +146,21 @@ class PartiallyVerifiedPollingCenterBoundarySerializer(GeoFeatureModelSerializer
             "id",
             "polling_center",
             "pin_location",
+        )
+
+
+class PollingStationInfoSerializer(ModelSerializer):
+    polling_center = SerializerMethodField()
+
+    def get_polling_center(self, obj):
+        return obj.polling_center.name if obj.polling_center else None
+
+    class Meta:
+        model = PollingStation
+        fields = (
+            "polling_center",
+            "stream_number",
+            "code",
+            "registered_voters",
+            "is_verified",
         )
