@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
-
+from decouple import config
 from results.models import (
     Aspirant,
     Party,
@@ -12,8 +12,11 @@ from results.models import (
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
+    PollingStationPresidentialExtras,
 )
 from stations.api.serializers import PollingStationSerializer
+from django.contrib.sites.models import Site
+from django.conf import settings
 
 User = get_user_model()
 
@@ -76,6 +79,54 @@ class PollingStationPresidentialResultsSerializer(ModelSerializer):
             "presidential_candidate",
             "votes",
             "is_verified",
+        )
+
+
+class PollingStationPresidentialExtrasSerializer(ModelSerializer):
+    """
+    Serializer for PollingStationPresidentialExtras model.
+    """
+
+    form_34A = serializers.SerializerMethodField()
+    registered_voters = serializers.SerializerMethodField()
+
+    def get_form_34A(self, obj):
+        request = self.context.get("request")
+        if obj.form_34A and request:
+            return request.build_absolute_uri(obj.form_34A.url)
+        elif obj.form_34A:
+            domain = Site.objects.get_current().domain
+            current_ip = config("CURRENT_IP", default="127.0.0.1")
+            is_debug = config("DEBUG")
+            is_prod = config("IS_PROD")
+            print(f"DEBUG: {is_debug}, IS_PROD: {is_prod}")
+            if str(is_prod).lower() in ("true", "1", "yes"):
+                scheme = "https"
+                return f"{scheme}://{domain}{obj.form_34A.url}"
+            else:
+                scheme = "http"
+                port = "8000"
+                return f"{scheme}://{current_ip}:{port}{obj.form_34A.url}"
+        else:
+            return None
+
+    def get_registered_voters(self, obj):
+        if obj.polling_station and obj.polling_station.registered_voters:
+            return obj.polling_station.registered_voters
+        return None
+
+    class Meta:
+        model = PollingStationPresidentialExtras
+        fields = (
+            "polling_station",
+            "rejected_votes",
+            "rejected_objected_to_votes",
+            "disputed_votes",
+            "valid_votes_cast",
+            "is_verified",
+            "added_by",
+            "form_34A",
+            "registered_voters",
         )
 
 

@@ -1,420 +1,329 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useState, useRef, useEffect} from "react";
 
-const ProjectProgressCarousel = () => {
-    const [currentIndex, setCurrentIndex] = useState(4); // Start at "Create Mobile App" (present)
-    const [isAutoScrolling, setIsAutoScrolling] = useState(false);
-    const carouselRef = useRef(null);
-    const [isInitialized, setIsInitialized] = useState(false);
+const KuraZetuTimeline = () => {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [showScrollHint, setShowScrollHint] = useState(true);
 
-    const projectSteps = [
+    const steps = [
         {
             id: 1,
             title: "Initial Requirements",
-            description: "Defined goals, users, scope",
             status: "done",
-            icon: "🧠",
-            progress: 100,
+            description: "Defined key project and civic-tech goals.",
         },
         {
             id: 2,
-            title: "Bootstrap Docs",
-            description: "Created foundational documentation",
+            title: "Bootstrap Web Platform",
             status: "done",
-            icon: "📋",
-            progress: 100,
+            description: "Set up backend and frontend core systems.",
         },
         {
             id: 3,
-            title: "Backend & Frontend",
-            description: "Built core infrastructure and UI",
-            status: "done",
-            icon: "🧑‍💻",
-            progress: 100,
+            title: "PinVerify254 Game",
+            status: "active",
+            description: "A playful way to validate awareness and polling knowledge.",
         },
         {
             id: 4,
-            title: "PinVerify254 Game",
-            description: "Interactive verification system",
-            status: "in progress",
-            icon: "🎮",
-            progress: 75,
+            title: "Launch Mobile App",
+            status: "next",
+            description: "KuraZetu mobile beta release for Android users.",
         },
         {
             id: 5,
-            title: "Create Mobile App",
-            description: "Native mobile application development",
-            status: "present",
-            icon: "📱",
-            progress: 45,
+            title: "Developer Onboarding",
+            status: "upcoming",
+            description: "Allow contributors to join and build together.",
         },
         {
             id: 6,
-            title: "Marketing & Developer Onboarding",
-            description: "Outreach and team expansion",
+            title: "Verification at Stations",
             status: "upcoming",
-            icon: "📣",
-            progress: 15,
+            description: "Begin polling station-based data verification.",
         },
         {
             id: 7,
-            title: "Verifying Polling Stations",
-            description: "Ground truth data collection",
+            title: "IEBC Data Sync",
             status: "upcoming",
-            icon: "🔍",
-            progress: 5,
+            description: "Update based on latest open IEBC results.",
         },
         {
             id: 8,
-            title: "Sync with IEBC Data",
-            description: "Integration with official systems",
-            status: "future",
-            icon: "🔗",
-            progress: 0,
+            title: "Ground Simulations",
+            status: "upcoming",
+            description: "Run community simulations on field-based data gathering.",
         },
         {
             id: 9,
-            title: "On-ground Simulation",
-            description: "Real-world testing scenarios",
-            status: "future",
-            icon: "🧪",
-            progress: 0,
+            title: "Aspirant Onboarding",
+            status: "upcoming",
+            description: "Engage candidates to share manifestos and vision.",
         },
         {
             id: 10,
-            title: "Aspirant Data Onboarding",
-            description: "Candidate information integration",
-            status: "future",
-            icon: "👥",
-            progress: 0,
-        },
-        {
-            id: 11,
-            title: "D-Day",
-            description: "Election day deployment",
-            status: "future",
-            icon: "🗳️",
-            progress: 0,
+            title: "Election Day (D-Day)",
+            status: "final",
+            description: "Live civic results, verified by the people.",
         },
     ];
 
-    const getStatusConfig = (status) => {
-        switch (status) {
-            case "done":
-                return {
-                    gradient: "from-emerald-400 via-green-500 to-emerald-600",
-                    cardBg: "bg-emerald-900/20",
-                    cardBorder: "border-emerald-600/30",
-                    shadow: "shadow-emerald-500/20",
-                    glow: "shadow-emerald-500/40",
-                    badge: "bg-emerald-600",
-                    ring: "ring-emerald-400",
-                };
-            case "in progress":
-                return {
-                    gradient: "from-blue-400 via-cyan-500 to-blue-600",
-                    cardBg: "bg-blue-900/20",
-                    cardBorder: "border-blue-600/30",
-                    shadow: "shadow-blue-500/20",
-                    glow: "shadow-blue-500/40",
-                    badge: "bg-blue-600",
-                    ring: "ring-blue-400",
-                };
-            case "present":
-                return {
-                    gradient: "from-orange-400 via-red-500 to-pink-500",
-                    cardBg: "bg-gradient-to-br from-orange-900/20 to-pink-900/20",
-                    cardBorder: "border-orange-500/40",
-                    shadow: "shadow-orange-500/20",
-                    glow: "shadow-orange-500/40",
-                    badge: "bg-gradient-to-r from-orange-500 to-pink-500",
-                    ring: "ring-orange-400",
-                };
-            case "upcoming":
-                return {
-                    gradient: "from-purple-400 via-violet-500 to-indigo-500",
-                    cardBg: "bg-purple-900/20",
-                    cardBorder: "border-purple-600/30",
-                    shadow: "shadow-purple-500/20",
-                    glow: "shadow-purple-500/40",
-                    badge: "bg-purple-600",
-                    ring: "ring-purple-400",
-                };
-            case "future":
-                return {
-                    gradient: "from-gray-500 via-slate-600 to-gray-700",
-                    cardBg: "bg-gray-800/20",
-                    cardBorder: "border-gray-600/30",
-                    shadow: "shadow-gray-500/20",
-                    glow: "shadow-gray-500/40",
-                    badge: "bg-gray-700",
-                    ring: "ring-gray-400",
-                };
-            default:
-                return {
-                    gradient: "from-gray-500 to-gray-600",
-                    cardBg: "bg-gray-800/20",
-                    cardBorder: "border-gray-600/30",
-                    shadow: "shadow-gray-500/20",
-                    glow: "shadow-gray-500/40",
-                    badge: "bg-gray-700",
-                    ring: "ring-gray-400",
-                };
-        }
+    const getStepConfig = (status) => {
+        const configs = {
+            done: {
+                bgColor: "bg-white",
+                borderColor: "border-slate-200",
+                numberBg: "bg-green-500",
+                numberText: "text-white",
+                titleText: "text-gray-900",
+                descText: "text-gray-500",
+                shadow: "shadow-sm",
+                icon: "✓",
+            },
+            active: {
+                bgColor: "bg-white",
+                borderColor: "border-blue-600",
+                numberBg: "bg-blue-600",
+                numberText: "text-white",
+                titleText: "text-blue-600",
+                descText: "text-gray-600",
+                shadow: "shadow-md ring-2 ring-blue-600 ring-opacity-20",
+                icon: "⟳",
+                pulse: true,
+            },
+            next: {
+                bgColor: "bg-white",
+                borderColor: "border-blue-600",
+                numberBg: "bg-blue-600",
+                numberText: "text-white",
+                titleText: "text-blue-600",
+                descText: "text-gray-600",
+                shadow: "shadow-sm",
+                icon: "→",
+            },
+            upcoming: {
+                bgColor: "bg-slate-50",
+                borderColor: "border-slate-200",
+                numberBg: "bg-slate-300",
+                numberText: "text-slate-600",
+                titleText: "text-gray-700",
+                descText: "text-gray-500",
+                shadow: "shadow-sm",
+                icon: "○",
+            },
+            final: {
+                bgColor: "bg-slate-50",
+                borderColor: "border-slate-200",
+                numberBg: "bg-slate-400",
+                numberText: "text-white",
+                titleText: "text-gray-700",
+                descText: "text-gray-500",
+                shadow: "shadow-sm",
+                icon: "🗳️",
+            },
+        };
+        return configs[status] || configs.upcoming;
     };
 
-    // Auto-scroll to present card on initial load
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsAutoScrolling(true);
-            // Find the present card (index 4 - "Create Mobile App")
-            const presentIndex = projectSteps.findIndex(
-                (step) => step.status === "present",
-            );
-            if (presentIndex !== -1) {
-                setCurrentIndex(presentIndex);
-            }
-            setTimeout(() => {
-                setIsAutoScrolling(false);
-                setIsInitialized(true);
-            }, 2000);
-        }, 1000);
+    const scrollLeft = () => {
+        scrollRef.current?.scrollBy({left: -240, behavior: "smooth"});
+    };
 
+    const scrollRight = () => {
+        scrollRef.current?.scrollBy({left: 240, behavior: "smooth"});
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShowScrollHint(false), 3000);
         return () => clearTimeout(timer);
     }, []);
 
-    const nextSlide = () => {
-        setCurrentIndex((prev) => (prev + 1) % projectSteps.length);
-    };
-
-    const prevSlide = () => {
-        setCurrentIndex(
-            (prev) => (prev - 1 + projectSteps.length) % projectSteps.length,
-        );
-    };
-
-    const goToSlide = (index) => {
-        setCurrentIndex(index);
-    };
-
-    const StatusBadge = ({status, config}) => {
-        const badges = {
-            done: {text: "DONE", icon: "✓"},
-            "in progress": {text: "ACTIVE", icon: "⟳"},
-            present: {text: "CURRENT", icon: "◉"},
-            upcoming: {text: "NEXT", icon: "◯"},
-            future: {text: "PLANNED", icon: "○"},
-        };
-
-        const badge = badges[status];
-
-        return (
-            <div
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold text-white ${config.badge} shadow-lg`}
-            >
-                <span
-                    className={
-                        status === "in progress"
-                            ? "animate-spin mr-1"
-                            : status === "present"
-                            ? "animate-pulse mr-1"
-                            : "mr-1"
-                    }
-                >
-                    {badge.icon}
-                </span>
-                {badge.text}
-            </div>
-        );
-    };
-
-    const overallProgress = Math.round(
-        projectSteps.reduce((sum, step) => sum + step.progress, 0) /
-            projectSteps.length,
-    );
+    const currentStepIndex = steps.findIndex((step) => step.status === "active");
 
     return (
-        <div className="h-[50vh] justify-start px-4 pb-12 bg-gradient-to-br from-gray-50 via-white to-rose-50 sm:px-6 lg:px-8">
-            {/* Animated background elements */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute rounded-full -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-pink-300/20 to-orange-400/20 blur-3xl animate-pulse"></div>
-                <div
-                    className="absolute rounded-full -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-rose-300/20 to-pink-400/20 blur-3xl animate-pulse"
-                    style={{animationDelay: "2s"}}
-                ></div>
+        <div className="flex flex-col items-center w-full px-6 pt-8 mx-auto overflow-hidden md:pb-8 md:pt-0 bg-gray-50">
+            {/* Header */}
+            <div className="flex flex-row items-center justify-between w-full mb-8 md:mb-8 md:max-w-7xl">
+                <div>
+                    <h2 className="mb-2 text-2xl font-semibold text-gray-900">
+                        Project Timeline
+                    </h2>
+                    <p className="font-light text-gray-500">
+                        Track our progress building KuraZetu civic-tech platform
+                    </p>
+                </div>
+
+                {/* Current Step Indicator */}
+                <div className="items-center hidden px-4 py-2 space-x-3 rounded-lg md:flex bg-blue-50">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-blue-600">
+                        Currently: {steps[currentStepIndex]?.title}
+                    </span>
+                </div>
             </div>
 
-            <div className="relative mx-auto max-w-7xl">
-                {/* Header */}
-                <div className="py-4 mb-0 text-center md:mb-12 md:py-0">
-                    <div className="flex flex-col items-center justify-center md:flex-row backdrop-blur-sm ">
-                        <div className="flex flex-row items-center">
-                            <h1 className="text-lg font-black text-transparent md:text-3xl sm:text-md bg-clip-text bg-gradient-to-r from-gray-800 via-pink-600 to-orange-600">
-                                Project Timeline
-                            </h1>
-                        </div>
-                        <div className="flex items-center justify-center pl-4 ">
-                            <p className="font-bold text-gray-800 text-md md:text-2xl">
-                                ( {overallProgress}% Complete)
-                            </p>
-                        </div>
+            {/* Mobile View Note */}
+            <div className="text-sm text-center text-gray-500 md:hidden">
+                Swipe left or right to navigate timeline
+            </div>
+
+            {/* Timeline Container */}
+            <div className="relative max-w-7xl">
+                {/* Navigation Buttons */}
+                <button
+                    onClick={scrollLeft}
+                    className="absolute left-0 z-10 flex items-center justify-center w-10 h-10 transition-all duration-200 -translate-y-1/2 bg-white border rounded-full shadow-md top-1/2 border-slate-200 hover:shadow-lg hover:bg-slate-50"
+                >
+                    <svg
+                        className="w-5 h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                        />
+                    </svg>
+                </button>
+
+                <button
+                    onClick={scrollRight}
+                    className="absolute right-0 z-10 flex items-center justify-center w-10 h-10 transition-all duration-200 -translate-y-1/2 bg-white border rounded-full shadow-md top-1/2 border-slate-200 hover:shadow-lg hover:bg-slate-50"
+                >
+                    <svg
+                        className="w-5 h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                        />
+                    </svg>
+                </button>
+
+                {/* Scroll Hint */}
+                {showScrollHint && (
+                    <div className="absolute top-0 z-20 px-3 py-1 text-xs text-white bg-gray-900 rounded shadow-lg right-16 animate-bounce">
+                        Scroll to explore →
+                    </div>
+                )}
+
+                {/* Scrollable Timeline */}
+                <div
+                    ref={scrollRef}
+                    className="px-12 overflow-x-auto scrollbar-hide"
+                    style={{scrollbarWidth: "none", msOverflowStyle: "none"}}
+                >
+                    <div
+                        className="flex pb-4 space-x-6 md:pb-0 "
+                        style={{width: "max-content"}}
+                    >
+                        {steps.map((step, index) => {
+                            const config = getStepConfig(step.status);
+                            const isActive = step.status === "active";
+
+                            return (
+                                <div key={step.id} className="flex-none ">
+                                    {/* Step Card */}
+                                    <div
+                                        className={`
+                    min-w-[220px] max-w-[220px] p-6 rounded-xl border-2 transition-all duration-300
+                    ${config.bgColor} ${config.borderColor} ${config.shadow}
+                    ${isActive ? "scale-105" : "hover:scale-102"}
+                  `}
+                                    >
+                                        {/* Step Number */}
+                                        <div
+                                            className={`
+                      w-10 h-10 rounded-full flex items-center justify-center mb-4 font-semibold text-sm
+                      ${config.numberBg} ${config.numberText}
+                      ${config.pulse ? "animate-pulse" : ""}
+                    `}
+                                        >
+                                            {step.status === "done"
+                                                ? config.icon
+                                                : step.id}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div>
+                                            <h3
+                                                className={`font-semibold text-lg mb-3 leading-tight ${config.titleText}`}
+                                            >
+                                                {step.title}
+                                            </h3>
+                                            <p
+                                                className={`text-sm leading-relaxed ${config.descText}`}
+                                            >
+                                                {step.description}
+                                            </p>
+                                        </div>
+
+                                        {/* Status Badge */}
+                                        <div className="mt-4">
+                                            <span
+                                                className={`
+                        inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                        ${
+                            step.status === "done"
+                                ? "bg-green-100 text-green-700"
+                                : step.status === "active"
+                                ? "bg-blue-100 text-blue-700"
+                                : step.status === "next"
+                                ? "bg-blue-50 text-blue-600"
+                                : "bg-slate-100 text-slate-600"
+                        }
+                      `}
+                                            >
+                                                {config.icon}{" "}
+                                                {step.status === "done"
+                                                    ? "Complete"
+                                                    : step.status === "active"
+                                                    ? "In Progress"
+                                                    : step.status === "next"
+                                                    ? "Up Next"
+                                                    : step.status === "final"
+                                                    ? "Final Goal"
+                                                    : "Planned"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Carousel Container */}
-                <div className="relative ">
-                    {/* Navigation Buttons */}
-                    <button
-                        onClick={prevSlide}
-                        className="absolute z-20 flex items-center justify-center w-12 h-12 text-gray-700 transition-all duration-300 -translate-y-1/2 border rounded-full shadow-lg left-4 top-1/2 bg-white/80 backdrop-blur-sm border-pink-200/50 hover:bg-white/90 hover:shadow-xl group"
-                    >
-                        <svg
-                            className="w-6 h-6 transition-transform transform group-hover:-translate-x-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 19l-7-7 7-7"
-                            />
-                        </svg>
-                    </button>
-
-                    <button
-                        onClick={nextSlide}
-                        className="absolute z-20 flex items-center justify-center w-12 h-12 text-gray-700 transition-all duration-300 -translate-y-1/2 border rounded-full shadow-lg right-4 top-1/2 bg-white/80 backdrop-blur-sm border-pink-200/50 hover:bg-white/90 hover:shadow-xl group"
-                    >
-                        <svg
-                            className="w-6 h-6 transition-transform transform group-hover:translate-x-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                            />
-                        </svg>
-                    </button>
-
-                    {/* Carousel Track with Blur Edges */}
-                    <div className="relative overflow-hidden">
-                        {/* Left blur edge */}
-                        <div className="absolute top-0 bottom-0 left-0 z-10 w-20 pointer-events-none bg-gradient-to-r from-gray-50/80 to-transparent"></div>
-
-                        {/* Right blur edge */}
-                        <div className="absolute top-0 bottom-0 right-0 z-10 w-20 pointer-events-none bg-gradient-to-l from-gray-50/80 to-transparent"></div>
-
-                        {/* Cards Container */}
-                        <div
-                            ref={carouselRef}
-                            className="flex px-20 transition-transform duration-700 ease-out "
-                            style={{
-                                transform: `translateX(-${currentIndex * 25}vw)`,
-                                transitionDuration: isAutoScrolling
-                                    ? "2000ms"
-                                    : "700ms",
-                            }}
-                        >
-                            {projectSteps.map((step, index) => {
-                                const config = getStatusConfig(step.status);
-                                const isActive = index === currentIndex;
-                                const isAdjacent = Math.abs(index - currentIndex) === 1;
-
-                                return (
-                                    <div
-                                        key={step.id}
-                                        className={`flex-shrink-0 transition-all duration-700 w-[80vw] md:w-[25vw] ${
-                                            isActive
-                                                ? "scale-110"
-                                                : isAdjacent
-                                                ? "scale-95"
-                                                : "scale-90"
-                                        } ${isActive ? "opacity-100" : "opacity-80"}`}
-                                        style={{marginRight: "0"}}
-                                    >
-                                        <div
-                                            className={`mx-2 h-full ${
-                                                config.cardBg
-                                            } backdrop-blur-sm rounded-2xl p-6 border ${
-                                                config.cardBorder
-                                            } transition-all duration-300 hover:shadow-2xl ${
-                                                isActive
-                                                    ? config.glow +
-                                                      " " +
-                                                      config.cardBorder
-                                                    : ""
-                                            } transform hover:-translate-y-2 cursor-pointer shadow-lg`}
-                                            onClick={() => goToSlide(index)}
-                                        >
-                                            {/* Icon & Progress */}
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div
-                                                    className={`w-12 h-12 bg-gradient-to-br ${
-                                                        config.gradient
-                                                    } rounded-xl flex items-center justify-center text-xl shadow-lg transform transition-transform duration-300 ${
-                                                        isActive
-                                                            ? "rotate-12 scale-110"
-                                                            : ""
-                                                    }`}
-                                                >
-                                                    {step.icon}
-                                                </div>
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="space-y-3">
-                                                <h3 className="text-base font-bold leading-tight text-gray-800">
-                                                    {step.title}
-                                                </h3>
-
-                                                <p className="text-sm leading-relaxed text-gray-600 line-clamp-2">
-                                                    {step.description}
-                                                </p>
-
-                                                <div className="flex items-center justify-between pt-2">
-                                                    <StatusBadge
-                                                        status={step.status}
-                                                        config={config}
-                                                    />
-                                                    <div className="text-right">
-                                                        <div className="text-xs text-gray-500">
-                                                            {step.id}/11
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Active indicator */}
-                                            {isActive && (
-                                                <div
-                                                    className={`absolute -inset-0.5 bg-gradient-to-r ${config.gradient} rounded-2xl blur opacity-20 transition-opacity duration-300`}
-                                                ></div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                {/* Progress Indicator */}
+                <div className="hidden px-12 mt-8 md:mt-0 md:block">
+                    <div className="flex items-center justify-between mb-2 text-sm text-gray-500">
+                        <span>Progress</span>
+                        <span>
+                            {Math.round(
+                                (steps.filter((s) => s.status === "done").length /
+                                    steps.length) *
+                                    100,
+                            )}
+                            % Complete
+                        </span>
                     </div>
-
-                    {/* Carousel Indicators */}
-                    <div className="flex justify-center mt-8 space-x-2">
-                        {projectSteps.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => goToSlide(index)}
-                                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                    index === currentIndex
-                                        ? "bg-pink-500 shadow-lg"
-                                        : "bg-pink-300/50 hover:bg-pink-400/70"
-                                }`}
-                            />
-                        ))}
+                    <div className="w-full h-2 rounded-full bg-slate-200">
+                        <div
+                            className="h-2 transition-all duration-700 rounded-full bg-gradient-to-r from-green-500 to-blue-600"
+                            style={{
+                                width: `${
+                                    (steps.filter((s) => s.status === "done").length /
+                                        steps.length) *
+                                    100
+                                }%`,
+                            }}
+                        ></div>
                     </div>
                 </div>
             </div>
@@ -422,4 +331,4 @@ const ProjectProgressCarousel = () => {
     );
 };
 
-export default ProjectProgressCarousel;
+export default KuraZetuTimeline;

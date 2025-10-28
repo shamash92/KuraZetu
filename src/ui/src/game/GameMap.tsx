@@ -1,26 +1,34 @@
-import {Alert, AlertDescription} from "../@/components/ui/alert";
 import {AnimatePresence, motion} from "framer-motion";
-import {CheckCircle, Edit, HelpCircle, MapPin, Trophy} from "lucide-react";
+import {
+    CheckCircle,
+    Edit,
+    HelpCircle,
+    Home,
+    MapPin,
+    ThumbsUp,
+    Trophy,
+} from "lucide-react";
+import {useEffect, useState} from "react";
+import {Alert, AlertDescription} from "../@/components/ui/alert";
 import {
     Drawer,
     DrawerClose,
     DrawerContent,
-    DrawerDescription,
     DrawerFooter,
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
 } from "../@/components/ui/drawer";
-import {Home, Minus, Plus, ThumbsUp} from "lucide-react";
 import {IPollingCenterFeature, TLevel} from "./types";
-import {useEffect, useState} from "react";
 
+import cookie from "react-cookies";
+import {toast} from "sonner";
 import {Badge} from "../@/components/ui/badge";
 import {Button} from "../@/components/ui/button";
 import MapComponent from "./Map";
 import PinEditComponent from "./PinEditComponent";
-import cookie from "react-cookies";
-import {toast} from "sonner";
+import {set} from "react-hook-form";
+import {useAuth} from "../App";
 
 interface GameMapProps {
     score: number;
@@ -35,6 +43,9 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
     const [partiallyVerifiedLocations, setPartiallyVerifiedLocations] = useState<
         IPollingCenterFeature[] | null
     >(null);
+
+    const [totalStationsCount, setTotalStationsCount] = useState<number>(0);
+    const [verifiedStationsCount, setVerifiedStationsCount] = useState<number>(0);
 
     const [isEditing, setIsEditing] = useState(false);
     const [showConfirmDrawer, setShowConfirmDrawer] = useState(false);
@@ -59,9 +70,11 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
 
     const [isDrawerOpen, setDrawerOpen] = useState(false);
 
-    const handleCloseDrawer = () => setDrawerOpen(false);
-
     const csrfToken = cookie.load("csrftoken");
+
+    const isAuthenticated = useAuth();
+
+    const handleCloseDrawer = () => setDrawerOpen(false);
 
     const handleAlreadyVerified = (data: IPollingCenterFeature) => {
         setAlreadyVerifiedByUser(true);
@@ -86,6 +99,11 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
                 }
                 let unverifiedPollingCenter = data["data"];
                 console.log(unverifiedPollingCenter, "unverified data");
+                console.log(data["total_stations_count"], "total_stations_count");
+                console.log(data["verified_stations_count"], "verified_stations_count");
+
+                setTotalStationsCount(data["total_stations_count"]);
+                setVerifiedStationsCount(data["verified_stations_count"]);
 
                 let partiallyVerifiedPollingCenters = data["partially_verified"];
 
@@ -259,8 +277,8 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
     return (
         <div className="fixed inset-0 bg-gray-900">
             {/* Header */}
-            <header className="absolute top-0 left-0 right-0 z-[1000] bg-white/95 shadow-md backdrop-blur-lg">
-                <div className="flex items-center justify-between px-6 py-3 mx-auto">
+            <header className="absolute top-0 left-0 right-0 z-[1000] bg-white/95 shadow-md backdrop-blur-lg  ">
+                <div className="flex flex-col items-center justify-between px-6 py-3 mx-auto md:flex-row">
                     <a
                         href="/ui"
                         className="flex items-center gap-2 font-semibold text-blue-700 transition-colors hover:text-blue-900"
@@ -272,18 +290,16 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
                         <span className="text-sm tracking-tight ">Go Home</span>
                     </a>
 
-                    <a
-                        href="/ui/game"
-                        className="flex items-center gap-2 font-semibold text-blue-700 transition-colors hover:text-blue-900"
-                        style={{
-                            fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
-                        }}
-                    >
-                        <MapPin className="w-6 h-6" />
-                        <span className="font-extrabold tracking-tight text-md ">
-                            PinVerify254
-                        </span>
-                    </a>
+                    {isAuthenticated && (
+                        <div className="flex flex-col items-center gap-2 md:flex-row">
+                            <span className="text-xs font-semibold text-gray-700 md:text-sm">
+                                Polling Centers in {level}: {totalStationsCount}
+                            </span>
+                            <span className="text-xs font-semibold text-gray-700 md:text-sm">
+                                Verified by you: {verifiedStationsCount}
+                            </span>
+                        </div>
+                    )}
                     <Badge
                         variant="secondary"
                         className="flex items-center gap-2 px-3 py-1 font-medium text-yellow-800 border border-yellow-200 rounded-full shadow-sm bg-yellow-50"
@@ -384,7 +400,7 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
                         animate={{opacity: 1, y: 0}}
                         exit={{opacity: 0, y: -20}}
                         transition={{duration: 0.25}}
-                        className="absolute top-24 left-12 md:left-1/4 -translate-x-1/2 z-[1000] w-[75vw] md:w-[90vw] max-w-md bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-2 md:p-6"
+                        className="absolute md:top-16 top-32 left-12 md:left-1/4 -translate-x-1/2 z-[1000] w-[75vw] md:w-[90vw] max-w-md bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-2 md:p-6"
                     >
                         <div className="flex items-center gap-3 mb-2">
                             <MapPin className="w-5 h-5 text-blue-500" />

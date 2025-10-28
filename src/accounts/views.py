@@ -49,7 +49,7 @@ class LoginView(generic.FormView):
 
 def logout_view(request):
     logout(request)
-    return HttpResponseRedirect("/accounts/login")
+    return HttpResponseRedirect("/")
 
 
 class PasswordResetView(generic.FormView):

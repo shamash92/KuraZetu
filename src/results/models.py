@@ -17,11 +17,12 @@ class Party(models.Model):
     class Meta:
         verbose_name = "Party"
         verbose_name_plural = "Parties"
+        unique_together = ("name", "short_name")
 
     name = models.CharField(max_length=140, unique=True)
     short_name = models.CharField(
-        max_length=6, unique=True
-    )  # e.g. PLP, ODM, SAFNA,JUBLE
+        max_length=20
+    )  # e.g. PLP, ODM, SAFNA,JUBLE, KADU-ASILI
     logo = models.FileField(
         upload_to=party_logo_upload_fn, max_length=300, blank=True, null=True
     )
@@ -175,6 +176,13 @@ class PollingStationPresidentialResults(models.Model):
     )
     votes = models.PositiveIntegerField(default=0)
     is_verified = models.BooleanField(default=False)
+    added_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="presidential_results_uploaded_by",
+    )
 
     def clean(self):
         if self.presidential_candidate.level != "president":
@@ -184,6 +192,57 @@ class PollingStationPresidentialResults(models.Model):
         # Call clean to validate before saving
         self.clean()
         super().save(*args, **kwargs)
+
+
+def upload_to_presidential_extras(instance, filename):
+
+    polling_center = instance.polling_station.polling_center
+    ward = polling_center.ward
+    constituency = ward.constituency
+    county = constituency.county
+    # print(
+    #     f"forms/34A/{county.name}/{constituency.name}/{ward.name}/{polling_center.name}/{instance.polling_station.code}/{filename}.{extension}"
+    # )
+    return f"forms/34A/{county.name}/{constituency.name}/{ward.name}/{polling_center.name}/{instance.polling_station.code}/{filename}"
+
+
+class PollingStationPresidentialExtras(models.Model):
+    class Meta:
+        verbose_name = "Polling Station Presidential Extras"
+        verbose_name_plural = "Polling Station Presidential Extras"
+
+    polling_station = models.ForeignKey(
+        PollingStation,
+        on_delete=models.CASCADE,
+        related_name="presidential_extras_polling_station",
+    )
+
+    form_34A = models.FileField(
+        upload_to=upload_to_presidential_extras,
+        blank=True,
+        null=True,
+    )  # Form 34A is the official results form for presidential elections
+
+    rejected_votes = models.PositiveIntegerField(default=0)
+    rejected_objected_to_votes = models.PositiveIntegerField(
+        default=0
+    )  # votes rejected by presiding officer but objected to by party agents
+    disputed_votes = models.PositiveIntegerField(default=0)
+    valid_votes_cast = models.PositiveIntegerField(default=0)
+
+    is_verified = models.BooleanField(default=False)
+    added_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="presidential_extras_uploaded_by",
+    )
+
+    # TODO: We need to make sure that the form_34A is uploaded
+
+    def __str__(self) -> str:
+        return f"{self.polling_station} - {self.rejected_votes} - {self.rejected_objected_to_votes} - {self.disputed_votes} - {self.valid_votes_cast} - {self.is_verified}"
 
 
 class PollingStationGovernorResults(models.Model):

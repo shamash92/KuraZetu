@@ -3,12 +3,6 @@ import {StyleSheet, Text, View} from "react-native";
 import {IPollingStationPresResults} from "@/app/types";
 import React from "react";
 
-interface Candidate {
-    name: string;
-    party: string;
-    votes: number;
-}
-
 export function ResultsTable({results}: {results: IPollingStationPresResults[]}) {
     // Sort candidates by votes in descending order
     const sortedCandidates = [...results].sort((a, b) => b.votes - a.votes);

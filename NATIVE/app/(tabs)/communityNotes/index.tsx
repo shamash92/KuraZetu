@@ -1,19 +1,18 @@
+import React, {useEffect, useState} from "react";
 import {
-    Dimensions,
     SafeAreaView,
     ScrollView,
     StatusBar,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
-import React, {useEffect, useState} from "react";
-import {TSaveSecureStore, getFromSecureStore} from "@/app/(utils)/secureStore";
 
 import {Ionicons} from "@expo/vector-icons";
 import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
 import {router} from "expo-router";
+import useAuthStore from "@/app/(utils)/authStore";
+import useCurrentPollingStationStore from "@/app/(utils)/curentStationStore";
 
 export interface IPollingCenterInfo {
     code: string;
@@ -33,24 +32,20 @@ export interface IPollingStation {
     stream_number: number;
 }
 
-// TODO: URGENT: We need to refactor the userToken to a global context
-
 const ElectionResultsApp = () => {
-    const [userToken, setUserToken] = useState<TSaveSecureStore | null>(null);
     const [pollingCenterInfo, setPollingCenterInfo] =
         useState<IPollingCenterInfo | null>(null);
-    const [pollingStations, setPollingStations] = useState<IPollingStation[] | null>(
-        null,
-    );
 
-    useEffect(() => {
-        const fetchUserToken = async () => {
-            const token = await getFromSecureStore("userToken");
-            setUserToken(token);
-        };
+    const {
+        setStations,
+        stations,
+        currentStationCode,
+        setCurrentCenter,
+        setCurrentStationCode,
+        currentCenter,
+    } = useCurrentPollingStationStore();
 
-        fetchUserToken();
-    }, []);
+    const {userToken} = useAuthStore();
 
     useEffect(() => {
         if (!userToken) return;
@@ -66,8 +61,10 @@ const ElectionResultsApp = () => {
             .then((data) => {
                 // console.log(data);
                 if (data && data.data) {
+                    // console.log(data.data, "data.data");
                     setPollingCenterInfo(data.data);
-                    setPollingStations(data.stations || []);
+                    setCurrentCenter(data.data);
+                    setStations(data.stations || []);
                 }
             })
             .catch((error) => {
@@ -169,7 +166,7 @@ const ElectionResultsApp = () => {
                                     color: "#2196F3",
                                 }}
                             >
-                                {pollingStations?.length.toLocaleString()}
+                                {stations?.length.toLocaleString()}
                             </Text>
                             <Text
                                 style={{
@@ -189,7 +186,7 @@ const ElectionResultsApp = () => {
                                     color: "#2196F3",
                                 }}
                             >
-                                {pollingStations
+                                {stations
                                     ?.reduce(
                                         (acc, station) =>
                                             acc + station.registered_voters,
@@ -220,8 +217,8 @@ const ElectionResultsApp = () => {
                         >
                             Polling Stations
                         </Text>
-                        {pollingStations &&
-                            pollingStations.map((station) => (
+                        {stations &&
+                            stations.map((station) => (
                                 <TouchableOpacity
                                     key={station.code}
                                     style={{
@@ -244,6 +241,7 @@ const ElectionResultsApp = () => {
                                         router.navigate(
                                             `/communityNotes/${station.code}`,
                                         );
+                                        setCurrentStationCode(station.code);
                                     }}
                                     activeOpacity={0.92}
                                 >

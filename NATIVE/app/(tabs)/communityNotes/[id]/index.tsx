@@ -1,5 +1,5 @@
+import React, {useEffect} from "react";
 import {
-    Dimensions,
     SafeAreaView,
     ScrollView,
     StatusBar,
@@ -8,39 +8,31 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import React, {useEffect, useState} from "react";
 import {router, useLocalSearchParams} from "expo-router";
 
 import {Ionicons} from "@expo/vector-icons";
 import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
-import {getFromSecureStore} from "@/app/(utils)/secureStore";
-
-export interface IPollingStationInfo {
-    code: string;
-    date_created: string;
-    date_modified: string;
-    is_verified: boolean;
-    registered_voters: number;
-    stream_number: number;
-    polling_center: string;
-}
+import useAuthStore from "@/app/(utils)/authStore";
+import useCurrentPollingStationStore from "@/app/(utils)/curentStationStore";
 
 const PollingStationResultsSummaryList = () => {
-    const [pollingStationInfo, setPollingCenterInfo] =
-        useState<IPollingStationInfo | null>(null);
-    const [userToken, setUserToken] = useState<string | null>(null);
-
     const {id} = useLocalSearchParams();
-    console.log(id, "params");
+    console.log(id, "params << PollingStationResultsSummaryList");
 
-    useEffect(() => {
-        const fetchUserToken = async () => {
-            const token = await getFromSecureStore("userToken");
-            setUserToken(token);
-        };
+    const {
+        setStations,
+        stations,
+        currentStationCode,
+        setCurrentCenter,
+        setCurrentStationCode,
+        currentCenter,
+        setCurrentStationInfo,
+        currentStationInfo,
+    } = useCurrentPollingStationStore();
 
-        fetchUserToken();
-    }, []);
+    console.log(currentStationCode === id, "should be True for matching station code");
+
+    const {userToken} = useAuthStore();
 
     useEffect(() => {
         if (!id) {
@@ -49,6 +41,10 @@ const PollingStationResultsSummaryList = () => {
 
         if (!userToken) {
             return;
+        }
+
+        if (currentStationCode !== id) {
+            setCurrentStationCode(id.toString());
         }
 
         const fetchStation = async () => {
@@ -63,7 +59,7 @@ const PollingStationResultsSummaryList = () => {
                 );
                 const data = await response.json();
                 console.log(data, "data in PollingStationResultsSummaryList");
-                setPollingCenterInfo(data);
+                setCurrentStationInfo(data);
             } catch (error) {
                 console.error("Error fetching polling station info:", error);
             }
@@ -153,7 +149,7 @@ const PollingStationResultsSummaryList = () => {
         <TouchableOpacity
             style={[styles.categoryCard, {backgroundColor: category.color}]}
             onPress={() => {
-                router.navigate(`/communityNotes/${id}/presResults`);
+                router.navigate(`/communityNotes/${currentStationCode}/presResults`);
             }}
             activeOpacity={0.8}
         >
@@ -172,21 +168,21 @@ const PollingStationResultsSummaryList = () => {
                         />
                     </View>
                     <View style={styles.cardInfo}>
-                        <Text style={styles.cardTitle}>{category.title}</Text>
-                        <Text style={styles.cardSubtitle}>
+                        <Text style={styles.cardTitle}>{category.title} results</Text>
+                        {/* <Text style={styles.cardSubtitle}>
                             {category.leadingCandidate}
-                        </Text>
+                        </Text> */}
                     </View>
                 </View>
                 <View style={styles.cardRight}>
-                    <View style={styles.percentageContainer}>
+                    {/* <View style={styles.percentageContainer}>
                         <Text style={styles.percentage}>{category.percentage}</Text>
                         <Text style={styles.votes}>{category.votes} votes</Text>
-                    </View>
+                    </View> */}
                     <Ionicons name="chevron-forward" size={20} color="#666" />
                 </View>
             </View>
-            <View style={styles.statusContainer}>
+            {/* <View style={styles.statusContainer}>
                 <View
                     style={[
                         styles.statusBadge,
@@ -197,7 +193,7 @@ const PollingStationResultsSummaryList = () => {
                         {category.status}
                     </Text>
                 </View>
-            </View>
+            </View> */}
         </TouchableOpacity>
     );
 
@@ -240,7 +236,7 @@ const PollingStationResultsSummaryList = () => {
                                 marginLeft: 8,
                             }}
                         >
-                            {pollingStationInfo?.polling_center}
+                            {currentStationInfo?.polling_center}
                         </Text>
                     </View>
                     <Text
@@ -251,18 +247,18 @@ const PollingStationResultsSummaryList = () => {
                             marginTop: 4,
                         }}
                     >
-                        Station Code: {pollingStationInfo?.code}
+                        Station Code: {currentStationInfo?.code}
                     </Text>
                     <View style={styles.stationStats}>
                         <View style={styles.statItem}>
                             <Text style={styles.statValue}>
-                                {pollingStationInfo?.registered_voters}
+                                {currentStationInfo?.registered_voters}
                             </Text>
                             <Text style={styles.statLabel}>Total Voters</Text>
                         </View>
                         <View style={styles.statItem}>
                             <Text style={styles.statValue}>
-                                {pollingStationInfo?.stream_number}
+                                {currentStationInfo?.stream_number}
                             </Text>
                             <Text style={styles.statLabel}>Stream Number</Text>
                         </View>

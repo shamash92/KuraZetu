@@ -7,6 +7,7 @@ import {Dimensions, Image, StyleSheet, Text, View} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
 import React from "react";
+import { windowWidth } from "@/app/(utils)/screenDimensions";
 
 const {width: screenWidth} = Dimensions.get("window");
 
@@ -21,6 +22,8 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
     const translateY = useSharedValue(0);
     const savedTranslateX = useSharedValue(0);
     const savedTranslateY = useSharedValue(0);
+
+    console.log(uri, "uri in ZoomableImage");
 
     const pinchGesture = Gesture.Pinch()
         .onUpdate((event) => {
@@ -80,21 +83,6 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
         };
     });
 
-    if (!uri) {
-        return (
-            <View
-                style={{
-                    height: 300,
-                    backgroundColor: "#F8F8F8",
-                    borderRadius: 8,
-                    overflow: "hidden",
-                }}
-            >
-                <Text>No image</Text>
-            </View>
-        );
-    }
-
     return (
         <View
             style={{
@@ -107,12 +95,18 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
             <GestureDetector gesture={composed}>
                 <Animated.View style={[styles.imageContainer, animatedStyle]}>
                     <Image
-                        source={typeof uri === "string" ? {uri} : uri}
+                        source={
+                            typeof uri === "string"
+                                ? { uri: uri }
+                                : uri
+                        }
                         style={{
-                            width: screenWidth,
-                            height: "100%",
+                            width: windowWidth,
+                            height: "100%", 
+                            borderRadius: 12,
+                            // backgroundColor: "#F8F8F8",
                         }}
-                        resizeMode="contain"
+                        resizeMode="cover"
                     />
                 </Animated.View>
             </GestureDetector>

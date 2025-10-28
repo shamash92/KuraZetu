@@ -164,19 +164,43 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
         print(user, "user inside the server")
         print(admin_level, "admin level inside the server")
 
+        total_stations_count = 0
+        verified_stations_count = 0
+
         if user.is_authenticated:
             print(user, "user is authenticated")
+
             if admin_level == "county":
+                all_county_stations_qs = PollingCenter.objects.filter(
+                    ward__constituency__county=user.polling_center.ward.constituency.county,
+                )
+                total_stations_count = all_county_stations_qs.count()
+
+                verified_by_user_in_county_qs = PollingCenterVerification.objects.filter(
+                    polling_center__ward__constituency__county=user.polling_center.ward.constituency.county,
+                    verified_by=user,
+                )
+                verified_stations_count = verified_by_user_in_county_qs.count()
+
                 random_unverified_polling_center = (
-                    PollingCenter.objects.filter(
-                        ward__constituency__county=user.polling_center.ward.constituency.county,  # Assuming user has a county attribute
+                    all_county_stations_qs.filter(
                         is_verified=False,
                         pin_location__isnull=False,
                     )
                     .order_by("?")
                     .first()
                 )
+
             elif admin_level == "constituency":
+                all_constituency_stations_qs = PollingCenter.objects.filter(
+                    ward__constituency=user.polling_center.ward.constituency,
+                )
+                total_stations_count = all_constituency_stations_qs.count()
+                verified_by_user_in_constituency_qs = PollingCenterVerification.objects.filter(
+                    polling_center__ward__constituency=user.polling_center.ward.constituency,
+                    verified_by=user,
+                )
+                verified_stations_count = verified_by_user_in_constituency_qs.count()
                 random_unverified_polling_center = (
                     PollingCenter.objects.filter(
                         ward__constituency=user.polling_center.ward.constituency,
@@ -187,6 +211,15 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                     .first()
                 )
             elif admin_level == "ward":
+                all_ward_stations_qs = PollingCenter.objects.filter(
+                    ward=user.polling_center.ward,
+                )
+                total_stations_count = all_ward_stations_qs.count()
+                verified_by_user_in_ward_qs = PollingCenterVerification.objects.filter(
+                    polling_center__ward=user.polling_center.ward,
+                    verified_by=user,
+                )
+                verified_stations_count = verified_by_user_in_ward_qs.count()
                 random_unverified_polling_center = (
                     PollingCenter.objects.filter(
                         ward=user.polling_center.ward,  # Assuming user has a ward attribute
@@ -214,17 +247,22 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
             )
 
             if verified_by_user_qs.exists():
+                print("xxxxxx", total_stations_count)
                 return Response(
                     {
                         "error": "You have already verified this polling center",
                         "data": PollingCenterBoundarySerializer(
                             random_unverified_polling_center
                         ).data,
+                        "total_stations_count": total_stations_count,
+                        "verified_stations_count": verified_stations_count,
                     },
                     status=status.HTTP_200_OK,
                 )
             else:
                 print("No verification record found.")
+                print("yyyyyyyy", total_stations_count)
+
                 boundary_data = PollingCenterBoundarySerializer(
                     random_unverified_polling_center
                 ).data
@@ -234,7 +272,12 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                 ).data
 
                 return Response(
-                    {"data": boundary_data, "partially_verified": partial_data},
+                    {
+                        "data": boundary_data,
+                        "partially_verified": partial_data,
+                        "total_stations_count": total_stations_count,
+                        "verified_stations_count": verified_stations_count,
+                    },
                     status=status.HTTP_200_OK,
                 )
         else:
