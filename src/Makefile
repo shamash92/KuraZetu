@@ -1,5 +1,3 @@
-
-
 VENV=venv
 PYTHON=$(VENV)/bin/python
 REQS=requirements.txt
@@ -25,3 +23,17 @@ results-extraction: install
 	$(PYTHON) historical/scripts/raw_iebc_results_pdfs_2027/extract_women_rep_excel.py
 	@echo "Running presidential extraction..."
 	$(PYTHON) historical/scripts/raw_iebc_results_pdfs_2027/extract_pres_excel.py
+
+results-save: install
+	@echo "Saving presidential results..."
+	$(PYTHON) historical/scripts/save_presidential_results.py
+	@echo "Saving governor results..."
+	$(PYTHON) historical/scripts/save_governor_results.py
+	@echo "Saving senator results..."
+	$(PYTHON) historical/scripts/save_senator_results.py
+	@echo "Saving women rep results..."
+	$(PYTHON) historical/scripts/save_women_rep_results.py
+	@echo "Saving mp results..."
+	$(PYTHON) historical/scripts/save_mp_results.py
+	@echo "Saving mca results..."
+	$(PYTHON) historical/scripts/save_mca_results.py

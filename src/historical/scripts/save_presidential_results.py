@@ -8,7 +8,9 @@ from django.conf import settings
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'CommunityTally.settings')  # Adjust if your settings module is different
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE", "CommunityTally.settings"
+)  # Adjust if your settings module is different
 django.setup()
 
 from historical.models import PresidentialResults, Aspirant2017
@@ -16,19 +18,20 @@ from stations.models import County
 from results.models import Party
 
 # Path to JSON file
-JSON_PATH = os.path.join(os.path.dirname(__file__), "raw_iebc_results_pdfs_2027", "2017_pres_results.json")
+JSON_PATH = os.path.join(
+    os.path.dirname(__file__), "raw_iebc_results_pdfs_2027", "2017_pres_results.json"
+)
 
 
 pres_parties = {
     "John Ekuru Longoggy Aukot": "Thirdway Alliance Kenya",
-    "Mohamed Abduba Dida":"Alliance For Real Change",
-    "Shakhalaga Khwa Jirongo":"United Democratic Party",
+    "Mohamed Abduba Dida": "Alliance For Real Change",
+    "Shakhalaga Khwa Jirongo": "United Democratic Party",
     "Japheth Kavinga Kaluyu": "Independent",
-    "Uhuru Kenyatta":"Jubilee Party",
+    "Uhuru Kenyatta": "Jubilee Party",
     "Michael Wainaina Mwaura": "Independent",
-    "Joseph William Nthiga Nyagah":"Independent",
-    "Raila Odinga": "Orange Democratic Movement"
-
+    "Joseph William Nthiga Nyagah": "Independent",
+    "Raila Odinga": "Orange Democratic Movement",
 }
 
 
@@ -37,12 +40,13 @@ def generate_short_name(party_name):
     if len(words) == 1:
         return words[0][:3].upper()
     else:
-        return ''.join(word[0] for word in words).upper()[:3]
+        return "".join(word[0] for word in words).upper()[:3]
+
 
 def clean_number(value):
     if isinstance(value, str):
-        value = value.replace(',', '').replace(' ', '')
-        if value == '-' or value == '':
+        value = value.replace(",", "").replace(" ", "")
+        if value == "-" or value == "":
             return 0
         try:
             return int(float(value))
@@ -50,13 +54,19 @@ def clean_number(value):
             return 0
     return value
 
+
 def main():
     with open(JSON_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     # Excluded keys that are not candidates
-    excluded_keys = ["COUNTY CODE", "COUNTY NAME", "REGISTERED VOTERS", "TOTAL VALID VOTES", "REJECTED BALLOTS"]
-
+    excluded_keys = [
+        "COUNTY CODE",
+        "COUNTY NAME",
+        "REGISTERED VOTERS",
+        "TOTAL VALID VOTES",
+        "REJECTED BALLOTS",
+    ]
 
     # Process each county result
     for county_data in data:
@@ -67,7 +77,9 @@ def main():
         county = County.objects.get(number=county_code)
 
         # Extract candidate votes
-        candidate_votes = {k: v for k, v in county_data.items() if k not in excluded_keys}
+        candidate_votes = {
+            k: v for k, v in county_data.items() if k not in excluded_keys
+        }
 
         registered_voters = clean_number(county_data.get("REGISTERED VOTERS", 0))
         total_valid_votes = clean_number(county_data.get("TOTAL VALID VOTES", 0))
@@ -84,15 +96,14 @@ def main():
             party_name = pres_parties.get(candidate_name.title(), "Unknown Party")
             short_name = generate_short_name(party_name)
             party, _ = Party.objects.get_or_create(
-                name=party_name,
-                defaults={'short_name': short_name}
+                name=party_name, defaults={"short_name": short_name}
             )
 
             # Parse candidate name
             name_parts = candidate_name.split()
             first_name = name_parts[0] if name_parts else ""
             surname = name_parts[-1] if len(name_parts) > 1 else ""
-            last_name = ' '.join(name_parts[1:-1]) if len(name_parts) > 2 else ""
+            last_name = " ".join(name_parts[1:-1]) if len(name_parts) > 2 else ""
 
             # Get or create aspirant
             aspirant, created = Aspirant2017.objects.get_or_create(
@@ -101,7 +112,7 @@ def main():
                 surname=surname,
                 level="president",
                 party=party,
-                defaults={'year': 2017}
+                defaults={"year": 2017},
             )
 
             # Create or update PresidentialResults
@@ -109,17 +120,18 @@ def main():
                 county=county,
                 aspirant=aspirant,
                 defaults={
-                    'registered_voters': registered_voters,
-                    'aspirant_votes': votes,
-                    'total_valid_votes': total_valid_votes,
-                    'rejected_ballots': rejected_ballots,
-                }
+                    "registered_voters": registered_voters,
+                    "aspirant_votes": votes,
+                    "total_valid_votes": total_valid_votes,
+                    "rejected_ballots": rejected_ballots,
+                },
             )
 
             if created:
                 print(f"Created results for {county.name} - {candidate_name}")
             else:
                 print(f"Results already exist for {county.name} - {candidate_name}")
+
 
 if __name__ == "__main__":
     main()

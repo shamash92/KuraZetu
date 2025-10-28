@@ -13,15 +13,13 @@ os.environ.setdefault(
 )  # Adjust if your settings module is different
 django.setup()
 
-from historical.models import GovernorResults, Aspirant2017
-from stations.models import County
+from historical.models import MCAResults, Aspirant2017
+from stations.models import Ward
 from results.models import Party
 
 # Path to JSON file
 JSON_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "raw_iebc_results_pdfs_2027",
-    "2017_governor_results.json",
+    os.path.dirname(__file__), "raw_iebc_results_pdfs_2027", "2017_mcas_results.json"
 )
 
 
@@ -55,32 +53,26 @@ def main():
         if not entry.get("SURNAME") or entry.get("SURNAME") == "":
             continue
 
-        county_code = entry.get("COUNTY CODE")
-        print(county_code, "county code")
-        if not int(county_code):
-            continue  # Skip invalid county codes
+        ward_code = entry.get("WARD CODE")
+        if not int(ward_code):
+            continue  # Skip invalid ward codes
 
         try:
-            county = County.objects.get(number=int(county_code))
-        except County.DoesNotExist:
-            print(f"County with code {county_code} does not exist")
+            ward = Ward.objects.get(number=int(ward_code))
+        except Ward.DoesNotExist:
+            print(f"Ward with code {ward_code} does not exist")
             continue
 
         party_name = entry.get("POLITICAL PARTY NAME", "")
         abbrv = entry.get("ABBRV", "")
-        print(party_name, "party name")
-        print(abbrv, "abbrv")
         party, created = Party.objects.get_or_create(
-            name=party_name,
+            name=party_name, defaults={"short_name": abbrv}
         )
-        print(party, "party obj")
-        print(created, "was created?")
         if not created and party.short_name != abbrv:
             party.short_name = abbrv
             party.save()
 
         # Parse candidate name
-        print("are we here")
         candidate_surname = entry.get("SURNAME", "")
         candidate_other_names = entry.get("OTHER NAMES", "")
         name_parts = candidate_other_names.split()
@@ -93,52 +85,31 @@ def main():
             first_name=first_name,
             last_name=last_name,
             surname=surname,
-            level="governor",
+            level="mca",
             party=party,
-            county=county,
+            ward=ward,
             is_running_mate=False,
-            defaults={"year": 2017},
-        )
-
-        # Parse running mate name
-        rm_surname = entry.get("RUNNING MATE SURNAME", "")
-        rm_other_names = entry.get("RUNNING MATE OTHER NAMES", "")
-        rm_name_parts = rm_other_names.split()
-        rm_first_name = rm_name_parts[0] if rm_name_parts else ""
-        rm_last_name = " ".join(rm_name_parts[1:]) if len(rm_name_parts) > 1 else ""
-        rm_surname_full = rm_surname
-
-        # Get or create running mate
-        running_mate, created = Aspirant2017.objects.get_or_create(
-            first_name=rm_first_name,
-            last_name=rm_last_name,
-            surname=rm_surname_full,
-            level="governor",
-            party=party,
-            county=county,
-            is_running_mate=True,
             defaults={"year": 2017},
         )
 
         votes = clean_number(entry.get("VOTES GARNERED", 0))
 
-        # Create or update GovernorResults
-        result, created = GovernorResults.objects.get_or_create(
-            county=county,
+        # Create or update MCAResults
+        result, created = MCAResults.objects.get_or_create(
+            ward=ward,
             aspirant=aspirant,
             defaults={
-                "running_mate": running_mate,
                 "aspirant_votes": votes,
             },
         )
 
         if created:
             print(
-                f"Created results for {county.name} - {candidate_other_names} {candidate_surname}"
+                f"Created results for {ward.name} - {candidate_other_names} {candidate_surname}"
             )
         else:
             print(
-                f"Results already exist for {county.name} - {candidate_other_names} {candidate_surname}"
+                f"Results already exist for {ward.name} - {candidate_other_names} {candidate_surname}"
             )
 
 

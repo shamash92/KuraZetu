@@ -36,7 +36,11 @@ def main(excel_path, output_path):
         for rec in cleaned:
             if "COUNTY CODE" in rec:
                 try:
-                    rec["COUNTY CODE"] = int(float(rec["COUNTY CODE"])) if str(rec["COUNTY CODE"]).replace(".", "").isdigit() else rec["COUNTY CODE"]
+                    rec["COUNTY CODE"] = (
+                        int(float(rec["COUNTY CODE"]))
+                        if str(rec["COUNTY CODE"]).replace(".", "").isdigit()
+                        else rec["COUNTY CODE"]
+                    )
                 except Exception:
                     pass
         combined.extend(cleaned)

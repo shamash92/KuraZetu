@@ -13,15 +13,13 @@ os.environ.setdefault(
 )  # Adjust if your settings module is different
 django.setup()
 
-from historical.models import GovernorResults, Aspirant2017
+from historical.models import SenatorResults, Aspirant2017
 from stations.models import County
 from results.models import Party
 
 # Path to JSON file
 JSON_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "raw_iebc_results_pdfs_2027",
-    "2017_governor_results.json",
+    os.path.dirname(__file__), "raw_iebc_results_pdfs_2027", "2017_senator_results.json"
 )
 
 
@@ -56,7 +54,6 @@ def main():
             continue
 
         county_code = entry.get("COUNTY CODE")
-        print(county_code, "county code")
         if not int(county_code):
             continue  # Skip invalid county codes
 
@@ -68,19 +65,14 @@ def main():
 
         party_name = entry.get("POLITICAL PARTY NAME", "")
         abbrv = entry.get("ABBRV", "")
-        print(party_name, "party name")
-        print(abbrv, "abbrv")
         party, created = Party.objects.get_or_create(
-            name=party_name,
+            name=party_name, defaults={"short_name": abbrv}
         )
-        print(party, "party obj")
-        print(created, "was created?")
         if not created and party.short_name != abbrv:
             party.short_name = abbrv
             party.save()
 
         # Parse candidate name
-        print("are we here")
         candidate_surname = entry.get("SURNAME", "")
         candidate_other_names = entry.get("OTHER NAMES", "")
         name_parts = candidate_other_names.split()
@@ -93,41 +85,20 @@ def main():
             first_name=first_name,
             last_name=last_name,
             surname=surname,
-            level="governor",
+            level="senator",
             party=party,
             county=county,
             is_running_mate=False,
             defaults={"year": 2017},
         )
 
-        # Parse running mate name
-        rm_surname = entry.get("RUNNING MATE SURNAME", "")
-        rm_other_names = entry.get("RUNNING MATE OTHER NAMES", "")
-        rm_name_parts = rm_other_names.split()
-        rm_first_name = rm_name_parts[0] if rm_name_parts else ""
-        rm_last_name = " ".join(rm_name_parts[1:]) if len(rm_name_parts) > 1 else ""
-        rm_surname_full = rm_surname
-
-        # Get or create running mate
-        running_mate, created = Aspirant2017.objects.get_or_create(
-            first_name=rm_first_name,
-            last_name=rm_last_name,
-            surname=rm_surname_full,
-            level="governor",
-            party=party,
-            county=county,
-            is_running_mate=True,
-            defaults={"year": 2017},
-        )
-
         votes = clean_number(entry.get("VOTES GARNERED", 0))
 
-        # Create or update GovernorResults
-        result, created = GovernorResults.objects.get_or_create(
+        # Create or update SenatorResults
+        result, created = SenatorResults.objects.get_or_create(
             county=county,
             aspirant=aspirant,
             defaults={
-                "running_mate": running_mate,
                 "aspirant_votes": votes,
             },
         )
