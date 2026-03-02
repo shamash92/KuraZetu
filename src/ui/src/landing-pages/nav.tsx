@@ -4,6 +4,9 @@ import {useEffect, useState} from "react";
 import {a} from "framer-motion/dist/types.d-B_QPEvFK";
 import {useAuth} from "../App";
 
+import {Menu, X} from "lucide-react";
+import {a} from "framer-motion/dist/types.d-B_QPEvFK";
+
 export default function NavComponent() {
     const [isVisible, setIsVisible] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
