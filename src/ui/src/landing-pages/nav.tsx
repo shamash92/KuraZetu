@@ -1,8 +1,8 @@
-import {useEffect, useState} from "react";
-import {useAuth} from "../App";
-
 import {Menu, X} from "lucide-react";
+import {useEffect, useState} from "react";
+
 import {a} from "framer-motion/dist/types.d-B_QPEvFK";
+import {useAuth} from "../App";
 
 export default function NavComponent() {
     const [isVisible, setIsVisible] = useState(false);
@@ -18,10 +18,11 @@ export default function NavComponent() {
         <header className="relative z-50 border-b bg-white/80 backdrop-blur-sm border-stone-200">
             <div className="px-6 mx-auto max-w-7xl">
                 <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center">
+                    <div className="flex flex-col items-start justify-center">
                         <a href="/" className="text-2xl font-bold text-stone-900">
                             KuraZetu<span className="text-red-500">.</span>
                         </a>
+                        <p className="text-xs text-stone-500">powered by Kiongozi</p>
                     </div>
 
                     {/* Desktop Navigation */}

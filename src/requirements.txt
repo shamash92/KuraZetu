@@ -14,6 +14,8 @@ djangorestframework_gis
 drf-spectacular
 isort
 markdown
+openpyxl
+pandas
 phonenumbers
 pre-commit
 psycopg2-binary
