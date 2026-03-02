@@ -169,11 +169,37 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Kura Zetu API",
-    "DESCRIPTION": "An API for Kura Zetu",
+    "TITLE": "Kura Zetu API - Kenyan Election Data & Results",
+    "DESCRIPTION": "Comprehensive API for accessing Kenyan election data, including presidential, parliamentary, and local government results. Features real-time data, historical archives, and interactive documentation.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    # OTHER SETTINGS
+    "SWAGGER_UI_DIST": "SIDECAR",  # Serve Swagger UI from CDN
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",  # Serve Redoc from CDN
+    # Custom templates for SEO
+    "SWAGGER_UI_TEMPLATE": "drf_spectacular/swagger_ui.html",
+    "REDOC_UI_TEMPLATE": "drf_spectacular/redoc.html",
+    # SEO and metadata
+    "CONTACT": {
+        "name": "Kura Zetu Team",
+        "url": "https://kurazetu.com",
+    },
+    "LICENSE": {
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    # Schema tags for better organization
+    "TAGS": [
+        {"name": "stations", "description": "Geographic location data for counties, constituencies, and wards"},
+        {"name": "results", "description": "Election results and party information"},
+        {"name": "historical", "description": "Historical election data and archives"},
+        {"name": "accounts", "description": "User authentication and account management"},
+    ],
+    # External documentation
+    "EXTERNAL_DOCS": {
+        "description": "Find more information about Kenyan elections",
+        "url": "https://kurazetu.readthedocs.io/",
+    },
 }
 
 # max upload size 20gb
