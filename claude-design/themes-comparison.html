@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>KuraZetu — Themes v2 (Brand + Onboarding)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&family=DM+Serif+Display&family=Caveat:wght@500;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+  rel="stylesheet" />
+
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #ECE7DC; }
+  body { font-family: "IBM Plex Sans", system-ui, sans-serif; color: #1d2330; }
+
+  /* Reset basic content rhythm inside artboards */
+  .kz h1, .kz h2, .kz h3, .kz h4, .kz p, .kz ul, .kz ol { margin: 0; padding: 0; }
+  .kz ul, .kz ol { list-style: none; }
+  .kz button { font: inherit; color: inherit; border: 0; background: transparent; cursor: pointer; }
+
+  /* Subtle paper grain reusable */
+  .grain::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+      radial-gradient(rgba(0,0,0,0.018) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+    mix-blend-mode: multiply;
+  }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+  integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+  crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+  integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+  crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+  integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+  crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Reuse existing canvas + android frame, not the existing brand tokens -->
+<script type="text/babel" src="src/design-canvas.jsx"></script>
+<script type="text/babel" src="src/android-frame.jsx"></script>
+
+<!-- Three independent theme sections -->
+<script type="text/babel" src="src/theme-tuma.jsx"></script>
+<script type="text/babel" src="src/theme-daftari.jsx"></script>
+<script type="text/babel" src="src/theme-ubao.jsx"></script>
+
+<!-- Mount -->
+<script type="text/babel" data-presets="env,react">
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="00-intro" title="KuraZetu · themes v2" subtitle="Three opinionated re-foundations. Brand + onboarding only — flows untouched.">
+          <DCArtboard id="brief" label="The ask" width={620} height={520}>
+            <div style={{ padding: "40px 44px", lineHeight: 1.55, color: "#1d2330", fontFamily: "IBM Plex Sans, system-ui" }}>
+              <div style={{ fontSize: 11, letterSpacing: 0.18, color: "#6d7589", textTransform: "uppercase", fontWeight: 600 }}>
+                Hail-Mary brief
+              </div>
+              <h2 style={{ fontSize: 30, margin: "10px 0 16px", letterSpacing: -0.5, fontWeight: 700, textWrap: "balance" }}>
+                Not another polish pass. A thematic re-foundation.
+              </h2>
+              <p style={{ fontSize: 14.5, color: "#3f475c", margin: "0 0 22px" }}>
+                The civic posture, the constraints, the compliance — none of it moves.
+                What moves is the world the product sits inside: the verb, the artefact, the
+                emotional register, the daily reason to open the app. Three swings. One recommendation.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "60px 1fr", rowGap: 14, columnGap: 14, fontSize: 13.5 }}>
+                <div style={{ fontFamily: "IBM Plex Mono", color: "#6d7589" }}>A</div>
+                <div><b>TUMA</b> — civic transaction. Receipt-driven, trust borrowed from sending money.</div>
+                <div style={{ fontFamily: "IBM Plex Mono", color: "#6d7589" }}>B</div>
+                <div><b>DAFTARI YA WANANCHI</b> — citizen passbook. Stamped, paper-treasured, chama-coded.</div>
+                <div style={{ fontFamily: "IBM Plex Mono", color: "#6d7589" }}>C</div>
+                <div><b>UBAO</b> — public board. Matatu route-board × stadium split-flap. Civic spectacle.</div>
+              </div>
+              <p style={{ fontSize: 12.5, color: "#6d7589", marginTop: 26, lineHeight: 1.6 }}>
+                The existing redesign canvas is untouched at <span style={{ fontFamily: "IBM Plex Mono", color: "#1d2330" }}>redesign.html</span>.
+                This file is the comparison set, scoped to brand + onboarding so we can pick a direction before pushing it through every screen.
+              </p>
+            </div>
+          </DCArtboard>
+
+          <DCArtboard id="how-to-read" label="How to read this canvas" width={420} height={520}>
+            <div style={{ padding: "32px 30px", lineHeight: 1.6, color: "#1d2330", fontFamily: "IBM Plex Sans, system-ui", fontSize: 13 }}>
+              <div style={{ fontSize: 11, letterSpacing: 0.16, color: "#6d7589", textTransform: "uppercase", fontWeight: 600 }}>
+                Per direction, you'll see:
+              </div>
+              <ol style={{ listStyle: "decimal", paddingLeft: 20, margin: "16px 0 0", display: "grid", rowGap: 10 }}>
+                <li><b>The pitch.</b> One sentence. The verb. The artefact. The identity. The atom.</li>
+                <li><b>Brand identity card.</b> Lockup, palette, type, the disclaimer treatment.</li>
+                <li><b>Onboarding · 1/3.</b> Welcome — what the act of using KuraZetu <i>feels</i> like.</li>
+                <li><b>Onboarding · 2/3.</b> How it works — three steps in the theme's grammar.</li>
+                <li><b>Onboarding · 3/3.</b> Sign in / pick your station — first commitment.</li>
+              </ol>
+              <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px dashed #c9c2b1", fontSize: 12, color: "#6d7589" }}>
+                Each direction ends with <b>the sentence a 22-year-old in Eldoret would actually say</b> to describe the app to a friend.
+              </div>
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <TumaSection />
+        <DaftariSection />
+        <UbaoSection />
+
+        <DCSection id="99-recommendation" title="Recommendation" subtitle="The one to push through every screen.">
+          <DCArtboard id="rec" label="Pick" width={620} height={420}>
+            <div style={{ padding: "36px 40px", lineHeight: 1.55, color: "#1d2330", fontFamily: "IBM Plex Sans, system-ui" }}>
+              <div style={{ fontSize: 11, letterSpacing: 0.18, color: "#6d7589", textTransform: "uppercase", fontWeight: 600 }}>
+                Recommendation
+              </div>
+              <h2 style={{ fontSize: 28, margin: "8px 0 14px", letterSpacing: -0.5, fontWeight: 700, textWrap: "balance" }}>
+                Push <span style={{ color: "#0E1B2C", background: "#F2B441", padding: "0 8px", borderRadius: 3 }}>TUMA</span> through every screen.
+              </h2>
+              <p style={{ fontSize: 14.5, color: "#3f475c", margin: "0 0 18px" }}>
+                It is the only direction that already has 50 million muscle-memories behind it. The receipt is a shareable atom by construction — a confirmation code is screenshot-resilient, hard to deface, and easy to verify against the public ledger. The civic act inherits the gravitas of the most-trusted UX in Kenya without inheriting its branding.
+              </p>
+              <p style={{ fontSize: 13.5, color: "#3f475c", margin: "0 0 14px" }}>
+                <b>What dies if we pick this:</b> the playful collectible warmth of DAFTARI and the mass-spectacle of UBAO. The cost is intimacy and theatre; the prize is trust and shareability under hostile conditions. On election week that trade is correct.
+              </p>
+              <p style={{ fontSize: 13, color: "#6d7589", fontStyle: "italic", marginTop: 18 }}>
+                Hold UBAO in reserve as the on-results-day spectacle layer — the public board that appears once the national tally is live. DAFTARI graduates to the verifier's profile view: their passbook of stations served.
+              </p>
+            </div>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -20,11 +20,11 @@ cd KuraZetu
 
 ## 2. Configure Environment Variables
 
-Copy the example `.env.local` file to `.env`:
+Copy the example `.env.example` file to `.env`:
 
 ```bash
 cd src
-cp .env.local .env
+cp .env.example .env
 ```
 
 Make sure to set the database host to `db` (matching the Docker Compose service name):

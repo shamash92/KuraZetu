@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>KuraZetu — Brand Archive (v1)</title>
+<meta name="viewport" content="width=1080" />
+<link rel="stylesheet" href="src/tokens.css" />
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; background: #e8e6e0; }
+  body { font-family: "Public Sans", system-ui, sans-serif; color: #1d2330; }
+
+  /* Page setup — A4 landscape, 12mm margins */
+  @page { size: A4 landscape; margin: 12mm; }
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; margin: 0 0 0 0; page-break-after: always; }
+    .page:last-of-type { page-break-after: auto; }
+    .no-print { display: none !important; }
+  }
+
+  .toolbar { position: sticky; top: 0; z-index: 10; background: #1d2330; color: #f4f1ea; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .toolbar h1 { font-size: 14px; font-weight: 700; margin: 0; }
+  .toolbar small { opacity: .6; font-size: 12px; font-family: "IBM Plex Mono", monospace; }
+  .toolbar button { background: #f4f1ea; color: #1d2330; border: 0; padding: 8px 14px; border-radius: 4px; font: 600 13px "Public Sans"; cursor: pointer; }
+
+  .page {
+    width: 277mm; height: 190mm;
+    box-sizing: border-box;
+    background: #fff;
+    margin: 18px auto;
+    padding: 16mm 18mm;
+    box-shadow: 0 4px 24px rgba(0,0,0,.1);
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+
+  .page-meta {
+    position: absolute; top: 8mm; right: 18mm;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #6d7589;
+  }
+  .page-num { position: absolute; bottom: 8mm; right: 18mm; font-family: "IBM Plex Mono", monospace; font-size: 9px; color: #6d7589; }
+  .page-foot { position: absolute; bottom: 8mm; left: 18mm; font-family: "IBM Plex Mono", monospace; font-size: 9px; color: #6d7589; letter-spacing: 0.08em; }
+
+  .kicker { font: 700 11px/1 "Public Sans"; letter-spacing: 0.14em; text-transform: uppercase; color: #6d7589; }
+  .title { font: 800 56px/0.95 "Public Sans"; letter-spacing: -0.04em; margin: 10px 0 0; }
+  .lede { font-size: 18px; line-height: 1.4; color: #3f475c; margin-top: 14px; max-width: 80%; }
+  .small { font-size: 12.5px; line-height: 1.5; color: #3f475c; }
+
+  /* Cover */
+  .cover { background: #f4f1ea; }
+  .cover .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; flex: 1; }
+  .cover .left { display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .right { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; justify-content: center; }
+  .cover .stat { font-family: "IBM Plex Mono"; font-size: 11px; color: #3f475c; letter-spacing: 0.05em; }
+  .cover .big { font: 800 200px/0.85 "Public Sans"; letter-spacing: -0.05em; color: #1d2330; }
+
+  /* Direction spread */
+  .spread { display: grid; grid-template-columns: 1.05fr 1fr; gap: 22mm; flex: 1; }
+  .spread h2 { font: 800 48px/0.95 "Public Sans"; letter-spacing: -0.04em; margin: 8px 0 4px; }
+  .spread .tagline { font-size: 16px; color: #3f475c; margin-bottom: 18px; }
+  .spread h3 { font: 700 11px/1 "Public Sans"; letter-spacing: 0.14em; text-transform: uppercase; color: #6d7589; margin: 0 0 8px; }
+
+  .swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 18px; }
+  .swatch { aspect-ratio: 1.2/1; border-radius: 4px; border: 1px solid rgba(0,0,0,.07); position: relative; padding: 6px; font: 500 9px "IBM Plex Mono"; }
+  .swatch span { position: absolute; bottom: 5px; left: 6px; }
+
+  .type-sample { padding: 14px 16px; border: 1px solid #e1ddd2; border-radius: 6px; background: #fafaf6; margin-bottom: 14px; }
+  .type-sample .display { font: 800 38px/0.95 "Public Sans"; letter-spacing: -0.04em; }
+  .type-sample .body { font-size: 13px; color: #3f475c; margin-top: 6px; }
+  .type-sample .mono { font: 500 13px "IBM Plex Mono"; color: #1d2330; margin-top: 8px; font-variant-numeric: tabular-nums; }
+
+  .notes { font-size: 12.5px; color: #3f475c; line-height: 1.55; }
+  .notes ul { margin: 0; padding: 0; list-style: none; }
+  .notes li { padding: 5px 0; display: flex; gap: 8px; }
+  .notes li::before { content: "·"; color: #c96442; font-weight: 700; }
+
+  /* Phone preview */
+  .preview { position: relative; }
+  .preview-frame {
+    width: 220px; height: 380px;
+    border-radius: 14px; border: 6px solid #cbcfcd;
+    overflow: hidden; box-shadow: 0 16px 48px rgba(20,24,32,.15);
+    margin: 0 auto;
+  }
+
+  /* Color token table */
+  .table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .table th { text-align: left; font: 700 10px "Public Sans"; letter-spacing: 0.12em; text-transform: uppercase; color: #6d7589; padding: 8px 6px 6px; border-bottom: 1px solid #e1ddd2; }
+  .table td { padding: 7px 6px; border-bottom: 1px solid #efece4; }
+  .chip { display: inline-block; width: 22px; height: 22px; border-radius: 4px; vertical-align: middle; border: 1px solid rgba(0,0,0,.07); margin-right: 6px; }
+  .mono-cell { font-family: "IBM Plex Mono", monospace; color: #3f475c; }
+
+  /* Components page */
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; }
+  .comp-block { border: 1px solid #e1ddd2; border-radius: 8px; padding: 14px 16px; }
+  .comp-block h4 { font: 700 11px/1 "Public Sans"; letter-spacing: 0.12em; text-transform: uppercase; color: #6d7589; margin: 0 0 10px; }
+
+  /* Verification badge */
+  .vbadge { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 99px; font: 600 11px "Public Sans"; letter-spacing: 0.02em; }
+  .vbadge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <h1>KuraZetu — Brand Archive (v1, prior directions)</h1>
+  <small>Use browser print → Save as PDF · A4 landscape</small>
+  <button onclick="window.print()">Print / Save PDF</button>
+</div>
+
+<!-- ════════════ COVER ════════════ -->
+<section class="page cover">
+  <div class="grid">
+    <div class="left">
+      <div>
+        <div class="kicker">Design archive · v1</div>
+        <h1 class="title">Kura Zetu<br/>brand &amp;<br/>system spec.</h1>
+        <p class="lede">Three early directions for a citizen-led, non-partisan tally platform. Calm civic, place-rooted, and loud-civic.</p>
+      </div>
+      <div class="stat">
+        <div>Audit + redesign brief · May 2026</div>
+        <div style="opacity:.6;margin-top:4px;">3 directions · 8 token groups · ~30 component states</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="big">3</div>
+      <div class="stat" style="text-align:right;">directions explored<br/>in this archive</div>
+    </div>
+  </div>
+  <div class="page-num">01 / 09</div>
+  <div class="page-foot">kurazetu · brand archive · v1</div>
+</section>
+
+<!-- ════════════ DIRECTION A — KARATASI ════════════ -->
+<section class="page" data-brand="karatasi" style="background:var(--kz-bg);">
+  <div class="page-meta">Direction A</div>
+  <div class="spread">
+    <div>
+      <div class="kicker">Direction A</div>
+      <h2 style="color:var(--kz-ink);">Karatasi</h2>
+      <p class="tagline" style="color:var(--kz-ink-2);">Paper-civic. The official document mode.</p>
+
+      <h3 style="color:var(--kz-ink-2);">Palette</h3>
+      <div class="swatches">
+        <div class="swatch" style="background:oklch(98% 0.005 80);color:#3f475c;"><span>bg</span></div>
+        <div class="swatch" style="background:oklch(22% 0.02 250);color:#f4f1ea;"><span>ink</span></div>
+        <div class="swatch" style="background:oklch(48% 0.09 200);color:#f4f1ea;"><span>accent</span></div>
+        <div class="swatch" style="background:oklch(58% 0.11 65);color:#f4f1ea;"><span>warn</span></div>
+        <div class="swatch" style="background:oklch(50% 0.14 25);color:#f4f1ea;"><span>danger</span></div>
+      </div>
+
+      <h3 style="color:var(--kz-ink-2);">Type</h3>
+      <div class="type-sample" style="background:var(--kz-bg-2);border-color:var(--kz-line);">
+        <div class="display" style="color:var(--kz-ink);">Karibu Kura&nbsp;Zetu</div>
+        <div class="body" style="color:var(--kz-ink-2);">Public Sans + IBM Plex Mono. Tabular figures everywhere — diacritics safi.</div>
+        <div class="mono" style="color:var(--kz-ink);">031164082006901 · 9,652,341 votes · 47.2%</div>
+      </div>
+
+      <h3 style="color:var(--kz-ink-2);">Voice &amp; tone</h3>
+      <div class="notes">
+        <ul>
+          <li>Reads as a printed gazette. Calm, civic, document-coded.</li>
+          <li>Single petrol-teal accent. Distinct from every Kenyan party palette.</li>
+          <li>Ochre / brick for semantic warnings — never bright yellow / red.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="preview-frame" style="background:var(--kz-bg);">
+        <div style="padding:14px 14px;border-bottom:1px solid var(--kz-line);">
+          <div style="font:700 9px/1 'IBM Plex Mono';letter-spacing:.1em;color:var(--kz-warn);text-transform:uppercase;">● Citizen tally · Not IEBC</div>
+        </div>
+        <div style="padding:14px;">
+          <div style="font:800 18px 'Public Sans';color:var(--kz-ink);letter-spacing:-0.4px;">National tally</div>
+          <div style="font:500 11px 'Public Sans';color:var(--kz-ink-2);margin-top:2px;">President · Aug 2027</div>
+          <div style="margin-top:14px;border:1px solid var(--kz-line);border-radius:8px;padding:10px;background:var(--kz-surface);">
+            <div style="font:700 12px 'Public Sans';color:var(--kz-ink);">J. E. LONGOGGY</div>
+            <div style="font:500 9.5px 'Public Sans';color:var(--kz-ink-2);">Thirdway Alliance Kenya</div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;">
+              <div style="font:600 24px 'IBM Plex Mono';color:var(--kz-ink);letter-spacing:-.04em;">47.2<span style="font-size:11px;color:var(--kz-ink-2);">%</span></div>
+              <div style="font:500 9px 'IBM Plex Mono';color:var(--kz-ink-2);">9.65M votes</div>
+            </div>
+            <div style="height:5px;background:var(--kz-bg-2);border-radius:3px;margin-top:8px;overflow:hidden;">
+              <div style="width:47.2%;height:100%;background:var(--kz-ink);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--kz-ink-2);margin-top:14px;">Dashboard · mobile</div>
+    </div>
+  </div>
+  <div class="page-num" style="color:var(--kz-ink-2);">02 / 09</div>
+  <div class="page-foot" style="color:var(--kz-ink-2);">karatasi · paper-civic</div>
+</section>
+
+<!-- ════════════ DIRECTION B — MWANGA ════════════ -->
+<section class="page" data-brand="mwanga" style="background:var(--kz-bg);">
+  <div class="page-meta" style="color:var(--kz-ink-2);">Direction B</div>
+  <div class="spread">
+    <div>
+      <div class="kicker" style="color:var(--kz-ink-2);">Direction B</div>
+      <h2 style="color:var(--kz-ink);">Mwanga</h2>
+      <p class="tagline" style="color:var(--kz-ink-2);">Dawn / landscape. Warmer, more visibly Kenyan.</p>
+
+      <h3 style="color:var(--kz-ink-2);">Palette</h3>
+      <div class="swatches">
+        <div class="swatch" style="background:oklch(96% 0.018 75);color:#3f475c;"><span>bg</span></div>
+        <div class="swatch" style="background:oklch(20% 0.015 50);color:#fafaf3;"><span>ink</span></div>
+        <div class="swatch" style="background:oklch(46% 0.08 145);color:#fafaf3;"><span>sage</span></div>
+        <div class="swatch" style="background:oklch(58% 0.13 55);color:#fafaf3;"><span>terra</span></div>
+        <div class="swatch" style="background:oklch(48% 0.14 20);color:#fafaf3;"><span>danger</span></div>
+      </div>
+
+      <h3 style="color:var(--kz-ink-2);">Type</h3>
+      <div class="type-sample" style="background:var(--kz-bg-2);border-color:var(--kz-line);">
+        <div class="display" style="color:var(--kz-ink);">Sauti yako, hesabu yetu.</div>
+        <div class="body" style="color:var(--kz-ink-2);">Two-accent system: sage (community-verified) + terracotta (warn). Earth-toned.</div>
+        <div class="mono" style="color:var(--kz-ink);">Likii Pri Sch · Stream 1 · 577 voters</div>
+      </div>
+
+      <h3 style="color:var(--kz-ink-2);">Voice &amp; tone</h3>
+      <div class="notes">
+        <ul>
+          <li>Warm sand background + sage + terracotta. Evokes Kenyan landscape without being literal.</li>
+          <li>Two-accent system gives more visual range but harder to keep neutral.</li>
+          <li>Best fit if KuraZetu wants a distinctly Kenyan visual identity, not international-civic.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="preview-frame" style="background:var(--kz-bg);">
+        <div style="padding:14px 14px;border-bottom:1px solid var(--kz-line);">
+          <div style="font:700 9px/1 'IBM Plex Mono';letter-spacing:.1em;color:var(--kz-warn);text-transform:uppercase;">● Citizen tally · Not IEBC</div>
+        </div>
+        <div style="padding:14px;">
+          <div style="font:800 18px 'Public Sans';color:var(--kz-ink);letter-spacing:-0.4px;">Hesabu ya kitaifa</div>
+          <div style="font:500 11px 'Public Sans';color:var(--kz-ink-2);margin-top:2px;">Rais · Agosti 2027</div>
+          <div style="margin-top:14px;border:1px solid var(--kz-line);border-radius:8px;padding:10px;background:var(--kz-surface);">
+            <div style="font:700 12px 'Public Sans';color:var(--kz-ink);">J. E. LONGOGGY</div>
+            <div style="font:500 9.5px 'Public Sans';color:var(--kz-ink-2);">Thirdway Alliance Kenya</div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;">
+              <div style="font:600 24px 'IBM Plex Mono';color:var(--kz-ink);letter-spacing:-.04em;">47.2<span style="font-size:11px;color:var(--kz-ink-2);">%</span></div>
+              <div style="font:500 9px 'IBM Plex Mono';color:var(--kz-ink-2);">9.65M kura</div>
+            </div>
+            <div style="height:5px;background:var(--kz-bg-2);border-radius:3px;margin-top:8px;overflow:hidden;">
+              <div style="width:47.2%;height:100%;background:var(--kz-accent);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--kz-ink-2);margin-top:14px;">Dashboard · mobile (sw)</div>
+    </div>
+  </div>
+  <div class="page-num" style="color:var(--kz-ink-2);">03 / 09</div>
+  <div class="page-foot" style="color:var(--kz-ink-2);">mwanga · dawn landscape</div>
+</section>
+
+<!-- ════════════ DIRECTION C — SAUTI ════════════ -->
+<section class="page" data-brand="sauti" style="background:var(--kz-bg);">
+  <div class="page-meta" style="color:var(--kz-ink-2);">Direction C</div>
+  <div class="spread">
+    <div>
+      <div class="kicker" style="color:var(--kz-ink-2);">Direction C</div>
+      <h2 style="color:var(--kz-ink);">Sauti</h2>
+      <p class="tagline" style="color:var(--kz-ink-2);">Loud civic. Built for the generation that already showed up.</p>
+
+      <h3 style="color:var(--kz-ink-2);">Palette</h3>
+      <div class="swatches">
+        <div class="swatch" style="background:oklch(98% 0.004 95);color:#3f475c;"><span>bg</span></div>
+        <div class="swatch" style="background:oklch(15% 0.02 260);color:#fafaf3;"><span>ink</span></div>
+        <div class="swatch" style="background:oklch(86% 0.21 125);color:#1d2330;"><span>highlt</span></div>
+        <div class="swatch" style="background:oklch(62% 0.16 60);color:#fafaf3;"><span>warn</span></div>
+        <div class="swatch" style="background:oklch(52% 0.18 25);color:#fafaf3;"><span>danger</span></div>
+      </div>
+
+      <h3 style="color:var(--kz-ink-2);">Type</h3>
+      <div class="type-sample" style="background:var(--kz-bg-2);border-color:var(--kz-ink);border-width:1.5px;">
+        <div class="display" style="color:var(--kz-ink);letter-spacing:-0.05em;">The count, <span style="background:var(--kz-accent);padding:0 4px;">our way.</span></div>
+        <div class="body" style="color:var(--kz-ink-2);">Public Sans 800. Tight tracking. Chartreuse as highlighter, never as fill.</div>
+        <div class="mono" style="color:var(--kz-ink);">9,652,341 votes · LIVE · 47.2%</div>
+      </div>
+
+      <h3 style="color:var(--kz-ink-2);">Voice &amp; tone</h3>
+      <div class="notes">
+        <ul>
+          <li>Bone paper + near-black ink. Hard 1.5px borders. Sharp 2px corners. No soft shadows.</li>
+          <li>Chartreuse highlighter under the words that matter — never as a button colour.</li>
+          <li>Speaks to the 2024 Gen-Z protest generation: "we already showed up — here's the receipt."</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="preview-frame" style="background:var(--kz-bg);">
+        <div style="padding:14px;background:var(--kz-ink);color:var(--kz-bg);">
+          <div style="font:600 9px 'IBM Plex Mono';letter-spacing:.15em;text-transform:uppercase;opacity:.7;">President · Aug 2027</div>
+          <div style="font:800 32px 'Public Sans';letter-spacing:-.04em;line-height:.95;margin-top:6px;">
+            The count,<br/><span style="background:var(--kz-accent);color:var(--kz-accent-ink);padding:0 4px;">our way.</span>
+          </div>
+        </div>
+        <div style="padding:12px 14px;border-bottom:1.5px solid var(--kz-ink);">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div>
+              <div style="font:700 10px 'Public Sans';color:var(--kz-ink-2);text-transform:uppercase;letter-spacing:.08em;">Leading</div>
+              <div style="font:800 14px 'Public Sans';color:var(--kz-ink);letter-spacing:-.02em;">J. E. LONGOGGY</div>
+            </div>
+            <div style="font:700 28px 'IBM Plex Mono';color:var(--kz-ink);letter-spacing:-.05em;line-height:.9;">47.2<span style="font-size:11px;color:var(--kz-ink-2);">%</span></div>
+          </div>
+          <div style="height:6px;background:var(--kz-bg-2);margin-top:10px;border:1.5px solid var(--kz-ink);position:relative;">
+            <div style="width:47.2%;height:100%;background:var(--kz-accent);"></div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--kz-ink-2);margin-top:14px;">Dashboard · mobile · loud</div>
+    </div>
+  </div>
+  <div class="page-num" style="color:var(--kz-ink-2);">04 / 09</div>
+  <div class="page-foot" style="color:var(--kz-ink-2);">sauti · loud civic</div>
+</section>
+
+<!-- ════════════ SYSTEM · TYPE ════════════ -->
+<section class="page" data-brand="karatasi" style="background:var(--kz-bg);">
+  <div class="page-meta" style="color:var(--kz-ink-2);">System · type</div>
+  <div class="kicker" style="color:var(--kz-ink-2);">Type system · shared across directions</div>
+  <h2 style="font:800 42px/0.95 'Public Sans';color:var(--kz-ink);letter-spacing:-0.04em;margin:6px 0 18px;">Public Sans + IBM Plex Mono</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:36px;flex:1;">
+    <div>
+      <h3 style="font:700 11px 'Public Sans';letter-spacing:.14em;text-transform:uppercase;color:var(--kz-ink-2);margin:0 0 10px;">Scale</h3>
+      <div style="border-top:1px solid var(--kz-line);">
+        <!-- type rows -->
+        <div style="display:flex;align-items:baseline;gap:14px;padding:8px 0;border-bottom:1px solid var(--kz-line);">
+          <div style="width:48px;font:500 10px 'IBM Plex Mono';color:var(--kz-ink-2);">38px</div>
+          <div style="flex:1;font:800 30px 'Public Sans';color:var(--kz-ink);letter-spacing:-.04em;">Display · National tally</div>
+          <div style="font:500 10px 'Public Sans';color:var(--kz-ink-3);">Display</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:14px;padding:8px 0;border-bottom:1px solid var(--kz-line);">
+          <div style="width:48px;font:500 10px 'IBM Plex Mono';color:var(--kz-ink-2);">24px</div>
+          <div style="flex:1;font:700 22px 'Public Sans';color:var(--kz-ink);letter-spacing:-.02em;">Title · Selecta polling-station</div>
+          <div style="font:500 10px 'Public Sans';color:var(--kz-ink-3);">Title</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:14px;padding:8px 0;border-bottom:1px solid var(--kz-line);">
+          <div style="width:48px;font:500 10px 'IBM Plex Mono';color:var(--kz-ink-2);">17px</div>
+          <div style="flex:1;font:600 16px 'Public Sans';color:var(--kz-ink);">Subhead · Likii Primary School</div>
+          <div style="font:500 10px 'Public Sans';color:var(--kz-ink-3);">Subhead</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:14px;padding:8px 0;border-bottom:1px solid var(--kz-line);">
+          <div style="width:48px;font:500 10px 'IBM Plex Mono';color:var(--kz-ink-2);">15px</div>
+          <div style="flex:1;font:400 14px/1.4 'Public Sans';color:var(--kz-ink);">Body · Ñandu njema · diacritics safi · Äö</div>
+          <div style="font:500 10px 'Public Sans';color:var(--kz-ink-3);">Body</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:14px;padding:8px 0;border-bottom:1px solid var(--kz-line);">
+          <div style="width:48px;font:500 10px 'IBM Plex Mono';color:var(--kz-ink-2);">20px</div>
+          <div style="flex:1;font:500 19px 'IBM Plex Mono';color:var(--kz-ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em;">Tally · 9,652,341 votes · 47.2%</div>
+          <div style="font:500 10px 'Public Sans';color:var(--kz-ink-3);">Mono</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:14px;padding:8px 0;">
+          <div style="width:48px;font:500 10px 'IBM Plex Mono';color:var(--kz-ink-2);">13px</div>
+          <div style="flex:1;font:400 12px 'IBM Plex Mono';color:var(--kz-ink);">Code · 031164082006901 · STREAM 1</div>
+          <div style="font:500 10px 'Public Sans';color:var(--kz-ink-3);">Mono</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font:700 11px 'Public Sans';letter-spacing:.14em;text-transform:uppercase;color:var(--kz-ink-2);margin:0 0 10px;">Why these two</h3>
+      <div class="notes" style="font-size:13px;color:var(--kz-ink-2);line-height:1.6;">
+        <ul>
+          <li><b style="color:var(--kz-ink);">Free for commercial use.</b> Both shipped with the SIL Open Font License.</li>
+          <li><b style="color:var(--kz-ink);">Full Latin Extended.</b> Kiswahili diacritics (Ñ, Á, Ä, Ö, etc.) and the long-vowel marks that show up in some place-names.</li>
+          <li><b style="color:var(--kz-ink);">Tabular figures everywhere.</b> A 1 and an 8 take the same horizontal space — vote tallies line up vertically without a designer doing anything.</li>
+          <li><b style="color:var(--kz-ink);">Low-DPI Android safe.</b> Public Sans was designed for US government web; tested on low-resolution rendering. Plex Mono has visible terminals at small sizes.</li>
+          <li><b style="color:var(--kz-ink);">Mono is reserved.</b> Codes, tallies, timestamps, hashes. Never body copy.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-num" style="color:var(--kz-ink-2);">05 / 09</div>
+  <div class="page-foot" style="color:var(--kz-ink-2);">system · type · shared</div>
+</section>
+
+<!-- ════════════ SYSTEM · COLOR TOKENS ════════════ -->
+<section class="page" data-brand="karatasi" style="background:var(--kz-bg);">
+  <div class="page-meta" style="color:var(--kz-ink-2);">System · color · karatasi</div>
+  <div class="kicker" style="color:var(--kz-ink-2);">Color tokens · karatasi (recommended baseline)</div>
+  <h2 style="font:800 42px/0.95 'Public Sans';color:var(--kz-ink);letter-spacing:-0.04em;margin:6px 0 14px;">Token map</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;flex:1;">
+    <div>
+      <h3 style="font:700 10px 'Public Sans';letter-spacing:.12em;text-transform:uppercase;color:var(--kz-ink-2);margin:0 0 6px;">Surfaces &amp; ink</h3>
+      <table class="table" style="color:var(--kz-ink);">
+        <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip" style="background:oklch(98% 0.005 80);"></span> --kz-bg</td><td class="mono-cell">oklch(98% .005 80)</td><td>App background</td></tr>
+          <tr><td><span class="chip" style="background:oklch(96% 0.008 80);"></span> --kz-bg-2</td><td class="mono-cell">oklch(96% .008 80)</td><td>Sunken / banded rows</td></tr>
+          <tr><td><span class="chip" style="background:oklch(99.5% 0.003 80);"></span> --kz-surface</td><td class="mono-cell">oklch(99.5% .003 80)</td><td>Cards, inputs</td></tr>
+          <tr><td><span class="chip" style="background:oklch(22% 0.02 250);"></span> --kz-ink</td><td class="mono-cell">oklch(22% .02 250)</td><td>Primary text</td></tr>
+          <tr><td><span class="chip" style="background:oklch(42% 0.015 250);"></span> --kz-ink-2</td><td class="mono-cell">oklch(42% .015 250)</td><td>Secondary text</td></tr>
+          <tr><td><span class="chip" style="background:oklch(58% 0.012 250);"></span> --kz-ink-3</td><td class="mono-cell">oklch(58% .012 250)</td><td>Tertiary / icon</td></tr>
+          <tr><td><span class="chip" style="background:oklch(88% 0.008 250);"></span> --kz-line</td><td class="mono-cell">oklch(88% .008 250)</td><td>Hairlines</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3 style="font:700 10px 'Public Sans';letter-spacing:.12em;text-transform:uppercase;color:var(--kz-ink-2);margin:0 0 6px;">Accent &amp; semantic</h3>
+      <table class="table" style="color:var(--kz-ink);">
+        <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip" style="background:oklch(48% 0.09 200);"></span> --kz-accent</td><td class="mono-cell">oklch(48% .09 200)</td><td>Primary actions, verified state</td></tr>
+          <tr><td><span class="chip" style="background:oklch(94% 0.025 200);"></span> --kz-accent-soft</td><td class="mono-cell">oklch(94% .025 200)</td><td>Accent backgrounds, hover</td></tr>
+          <tr><td><span class="chip" style="background:oklch(48% 0.08 155);"></span> --kz-success</td><td class="mono-cell">oklch(48% .08 155)</td><td>Sage — confirmations</td></tr>
+          <tr><td><span class="chip" style="background:oklch(58% 0.11 65);"></span> --kz-warn</td><td class="mono-cell">oklch(58% .11 65)</td><td>Ochre — disputed, warnings</td></tr>
+          <tr><td><span class="chip" style="background:oklch(50% 0.14 25);"></span> --kz-danger</td><td class="mono-cell">oklch(50% .14 25)</td><td>Brick — flagged, errors</td></tr>
+          <tr><td><span class="chip" style="background:oklch(48% 0.07 240);"></span> --kz-info</td><td class="mono-cell">oklch(48% .07 240)</td><td>Neutral notifications</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="font:700 10px 'Public Sans';letter-spacing:.12em;text-transform:uppercase;color:var(--kz-ink-2);margin:18px 0 6px;">Verification states (KuraZetu-specific)</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <span class="vbadge" style="background:#e6e7ea;color:#6c7385;">Unverified</span>
+        <span class="vbadge" style="background:oklch(94% .025 200);color:oklch(48% .09 200);">Community-verified</span>
+        <span class="vbadge" style="background:oklch(94% .04 65);color:oklch(58% .11 65);">Disputed</span>
+        <span class="vbadge" style="background:oklch(94% .03 25);color:oklch(50% .14 25);">Flagged</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-num" style="color:var(--kz-ink-2);">06 / 09</div>
+  <div class="page-foot" style="color:var(--kz-ink-2);">system · color · karatasi</div>
+</section>
+
+<!-- ════════════ SYSTEM · COMPONENTS ════════════ -->
+<section class="page" data-brand="karatasi" style="background:var(--kz-bg);">
+  <div class="page-meta" style="color:var(--kz-ink-2);">System · components</div>
+  <div class="kicker" style="color:var(--kz-ink-2);">Component primitives</div>
+  <h2 style="font:800 42px/0.95 'Public Sans';color:var(--kz-ink);letter-spacing:-0.04em;margin:6px 0 14px;">Buttons, inputs, banners</h2>
+
+  <div class="comp-grid">
+    <div class="comp-block" style="background:var(--kz-surface);border-color:var(--kz-line);">
+      <h4 style="color:var(--kz-ink-2);">Buttons</h4>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="kz-btn kz-btn--primary" style="height:42px;">Primary</button>
+        <button class="kz-btn kz-btn--accent" style="height:42px;">Accent</button>
+        <button class="kz-btn kz-btn--ghost" style="height:42px;">Ghost</button>
+        <button class="kz-btn kz-btn--danger" style="height:42px;">Danger</button>
+      </div>
+      <div style="font-size:11px;color:var(--kz-ink-2);margin-top:10px;line-height:1.4;">Min tap-target 48dp on mobile. Never paired with a destructive cancel next to the primary submit.</div>
+    </div>
+
+    <div class="comp-block" style="background:var(--kz-surface);border-color:var(--kz-line);">
+      <h4 style="color:var(--kz-ink-2);">Inputs</h4>
+      <input class="kz-input" placeholder="Search by school or code" style="height:42px;margin-bottom:6px;">
+      <input class="kz-input kz-mono" placeholder="+254 7XX XXX XXX" style="height:42px;">
+      <div style="font-size:11px;color:var(--kz-ink-2);margin-top:10px;line-height:1.4;">Mono input for codes / numerics so the digit alignment is unambiguous.</div>
+    </div>
+
+    <div class="comp-block" style="background:var(--kz-surface);border-color:var(--kz-line);">
+      <h4 style="color:var(--kz-ink-2);">Banners</h4>
+      <div style="background:var(--kz-warn-soft);border-left:3px solid var(--kz-warn);padding:8px 10px;border-radius:4px;margin-bottom:6px;">
+        <div style="font:600 12px 'Public Sans';color:var(--kz-ink);">You're offline</div>
+        <div style="font:400 11px 'Public Sans';color:var(--kz-ink-2);margin-top:2px;">Submission queued · syncs when you reconnect.</div>
+      </div>
+      <div style="background:var(--kz-accent-soft);border-left:3px solid var(--kz-accent);padding:8px 10px;border-radius:4px;">
+        <div style="font:600 12px 'Public Sans';color:var(--kz-ink);">Form 34A captured · synced</div>
+        <div style="font:400 11px 'Public Sans';color:var(--kz-ink-2);margin-top:2px;">Receipt sha256: a4f1c…d09b · station 031164082006901</div>
+      </div>
+    </div>
+
+    <div class="comp-block" style="background:var(--kz-surface);border-color:var(--kz-line);">
+      <h4 style="color:var(--kz-ink-2);">Station card</h4>
+      <div style="border:1px solid var(--kz-line);border-radius:8px;padding:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font:700 13px 'Public Sans';color:var(--kz-ink);">Likii Primary School</div>
+          <span class="vbadge" style="background:oklch(94% .025 200);color:oklch(48% .09 200);font-size:10px;">Verified</span>
+        </div>
+        <div style="font:500 10px 'IBM Plex Mono';color:var(--kz-ink-2);margin-top:4px;">031164082006901 · STREAM 1 · 577 voters</div>
+      </div>
+      <div style="font-size:11px;color:var(--kz-ink-2);margin-top:10px;line-height:1.4;">Station name + code first. Verification state right-aligned. Stream number sits with the code, not the name.</div>
+    </div>
+  </div>
+
+  <div class="page-num" style="color:var(--kz-ink-2);">07 / 09</div>
+  <div class="page-foot" style="color:var(--kz-ink-2);">system · components</div>
+</section>
+
+<!-- ════════════ DISCLAIMER + SCREENSHOT-RESILIENT ════════════ -->
+<section class="page" data-brand="karatasi" style="background:var(--kz-bg);">
+  <div class="page-meta" style="color:var(--kz-ink-2);">System · disclaimer</div>
+  <div class="kicker" style="color:var(--kz-ink-2);">The disclaimer system</div>
+  <h2 style="font:800 42px/0.95 'Public Sans';color:var(--kz-ink);letter-spacing:-0.04em;margin:6px 0 8px;">Calm. Unmissable. Uncroppable.</h2>
+  <p class="small" style="color:var(--kz-ink-2);max-width:70%;">Every results view shows a persistent strip directly under the OS status bar (so it's in any screenshot) plus a monogram watermark on shareable charts. Designed to never look alarmist — but also never absent.</p>
+
+  <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:24px;flex:1;margin-top:20px;">
+    <div>
+      <h3 style="font:700 11px 'Public Sans';letter-spacing:.14em;text-transform:uppercase;color:var(--kz-ink-2);margin:0 0 8px;">Persistent strip — three tones</h3>
+      <div style="font:500 10.5px 'IBM Plex Mono';color:var(--kz-ink-2);text-transform:uppercase;letter-spacing:.04em;padding:6px 12px;background:var(--kz-bg-2);border-bottom:1px solid var(--kz-line);margin-bottom:10px;border-radius:4px 4px 0 0;">
+        <span style="color:var(--kz-warn);">●</span> Citizen tally · Not IEBC
+      </div>
+      <div style="font:500 10.5px 'IBM Plex Mono';color:var(--kz-warn);text-transform:uppercase;letter-spacing:.04em;padding:6px 12px;background:var(--kz-warn-soft);border-bottom:1px solid var(--kz-warn);margin-bottom:10px;border-radius:4px 4px 0 0;">
+        <span>●</span> Provisional · 68.8% of stations reporting
+      </div>
+      <div style="font:500 10.5px 'IBM Plex Mono';color:var(--kz-danger);text-transform:uppercase;letter-spacing:.04em;padding:6px 12px;background:var(--kz-danger-soft);border-bottom:1px solid var(--kz-danger);margin-bottom:14px;border-radius:4px 4px 0 0;">
+        <span>●</span> Offline · last refresh 14 min ago
+      </div>
+
+      <h3 style="font:700 11px 'Public Sans';letter-spacing:.14em;text-transform:uppercase;color:var(--kz-ink-2);margin:14px 0 8px;">Watermark on charts</h3>
+      <div style="border:1px solid var(--kz-line);background:var(--kz-surface);padding:14px;border-radius:6px;position:relative;">
+        <div style="font:600 11px 'Public Sans';color:var(--kz-ink-2);margin-bottom:8px;">National Vote Share — President · 68.8% reporting</div>
+        <div style="height:8px;background:var(--kz-bg-2);border-radius:4px;overflow:hidden;display:flex;">
+          <div style="flex:47.2;background:var(--kz-accent);"></div>
+          <div style="flex:33.6;background:var(--kz-ink);"></div>
+          <div style="flex:14.1;background:var(--kz-warn);"></div>
+          <div style="flex:5.1;background:var(--kz-line-strong);"></div>
+        </div>
+        <div style="position:absolute;bottom:6px;right:10px;font:500 9px 'IBM Plex Mono';color:var(--kz-ink-3);letter-spacing:.1em;text-transform:uppercase;opacity:.8;">kurazetu · citizen tally · not iebc</div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font:700 11px 'Public Sans';letter-spacing:.14em;text-transform:uppercase;color:var(--kz-ink-2);margin:0 0 8px;">Rules</h3>
+      <div class="notes" style="font-size:13px;color:var(--kz-ink-2);line-height:1.6;">
+        <ul>
+          <li><b style="color:var(--kz-ink);">Always above the fold.</b> The strip is part of the status-bar-adjacent chrome, not a banner that can scroll away.</li>
+          <li><b style="color:var(--kz-ink);">No emoji, no exclamation marks.</b> Mono caps, single dot. Reads as a state indicator, not a warning.</li>
+          <li><b style="color:var(--kz-ink);">Tone is contextual.</b> Default neutral; ochre when results are provisional; brick when fully offline / stale &gt; 30 min.</li>
+          <li><b style="color:var(--kz-ink);">Charts carry a watermark.</b> Bottom-right, 60% opacity. Stays even if the rest of the screenshot is cropped.</li>
+          <li><b style="color:var(--kz-ink);">First-launch full-screen intercept.</b> Detailed disclaimer + What it IS / IS NOT table (see onboarding flow).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-num" style="color:var(--kz-ink-2);">08 / 09</div>
+  <div class="page-foot" style="color:var(--kz-ink-2);">system · disclaimer</div>
+</section>
+
+<!-- ════════════ CLOSING ════════════ -->
+<section class="page cover">
+  <div style="display:flex;flex-direction:column;justify-content:space-between;flex:1;">
+    <div>
+      <div class="kicker">Next</div>
+      <h2 class="title" style="font-size:48px;line-height:1.0;">These three<br/>were the<br/>warm-up.</h2>
+      <p class="lede">v2 explores two vastly different directions that move further from the newspaper / blog vocabulary toward more expressive territory.</p>
+    </div>
+    <div class="stat">
+      <div>Archive captured · v1 · superseded by canvas v2</div>
+      <div style="opacity:.6;margin-top:4px;">Keep this PDF for reference; live work continues in redesign.html.</div>
+    </div>
+  </div>
+  <div class="page-num">09 / 09</div>
+  <div class="page-foot">kurazetu · brand archive · v1</div>
+</section>
+
+</body>
+</html>

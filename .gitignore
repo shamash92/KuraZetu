@@ -4,6 +4,9 @@
 *.pyd
 __pycache__/
 *.env
+*.env.local
+.env.local
+local.properties
 
 # Django
 *.log

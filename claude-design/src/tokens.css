@@ -1,0 +1,494 @@
+/* ============================================================
+   KuraZetu — Design tokens
+   Cross-platform: web CSS + RN-compatible color names.
+   Three brand directions co-exist via [data-brand]; default is "karatasi"
+   (paper-civic), which is the recommended direction.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+:root {
+  /* ── Type stack ───────────────────────────────────────────── */
+  --kz-font-sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --kz-font-mono: "IBM Plex Mono", ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+
+  /* Type scale — mobile-first. Same scale on web w/ larger leading. */
+  --kz-text-xs: 12px;
+  --kz-text-sm: 13px;
+  --kz-text-base: 15px;
+  --kz-text-md: 17px;
+  --kz-text-lg: 20px;
+  --kz-text-xl: 24px;
+  --kz-text-2xl: 30px;
+  --kz-text-3xl: 38px;
+  --kz-text-4xl: 48px;
+  --kz-text-display: 64px;
+
+  /* ── Spacing scale ────────────────────────────────────────── */
+  --kz-s-1: 4px;
+  --kz-s-2: 8px;
+  --kz-s-3: 12px;
+  --kz-s-4: 16px;
+  --kz-s-5: 20px;
+  --kz-s-6: 24px;
+  --kz-s-7: 32px;
+  --kz-s-8: 40px;
+  --kz-s-9: 56px;
+  --kz-s-10: 72px;
+
+  /* ── Radius ───────────────────────────────────────────────── */
+  --kz-r-1: 4px;
+  --kz-r-2: 8px;
+  --kz-r-3: 12px;
+  --kz-r-4: 16px;
+  --kz-r-pill: 999px;
+
+  /* ── Elevation — kept VERY restrained for civic feel ──────── */
+  --kz-e-0: none;
+  --kz-e-1: 0 1px 2px rgba(20, 24, 32, 0.06), 0 0 0 1px rgba(20, 24, 32, 0.05);
+  --kz-e-2: 0 4px 12px rgba(20, 24, 32, 0.07), 0 0 0 1px rgba(20, 24, 32, 0.05);
+  --kz-e-3: 0 12px 32px rgba(20, 24, 32, 0.12);
+
+  /* Min tap target */
+  --kz-tap: 48px;
+
+  /* ── Motion — restrained durations + standard easings ────── */
+  --kz-d-instant: 80ms;
+  --kz-d-fast: 140ms;
+  --kz-d-base: 200ms;
+  --kz-d-slow: 320ms;
+  --kz-ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --kz-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --kz-ease-emphasised: cubic-bezier(0.2, 0.0, 0, 1);
+
+  /* ── Focus ring — 2 px ring offset by 2 px for AA + AAA ─── */
+  --kz-focus-width: 2px;
+  --kz-focus-offset: 2px;
+
+  /* ── Breakpoints (for web Tailwind config bridge) ────────── */
+  --kz-bp-sm: 640px;
+  --kz-bp-md: 768px;
+  --kz-bp-lg: 1024px;
+  --kz-bp-xl: 1280px;
+  --kz-bp-2xl: 1536px;
+
+  /* ── Line-heights (paired with type scale above) ─────────── */
+  --kz-lh-tight: 1.05;      /* display */
+  --kz-lh-snug: 1.15;       /* title */
+  --kz-lh-normal: 1.45;     /* body — bumped from 1.4 because Kiswahili runs long */
+  --kz-lh-relaxed: 1.6;     /* long-form body */
+}
+
+/* Honour reduced-motion preference globally — motion tokens collapse to 0. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --kz-d-instant: 0ms;
+    --kz-d-fast: 0ms;
+    --kz-d-base: 0ms;
+    --kz-d-slow: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Focus visible — applied across the system to every focusable target.
+   Always uses the brand's accent color (terracotta on Ramani) on a
+   2 px outline offset 2 px so the ring sits clear of the element edge. */
+:focus-visible {
+  outline: var(--kz-focus-width) solid var(--kz-accent);
+  outline-offset: var(--kz-focus-offset);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   BRAND DIRECTION A — Karatasi (RECOMMENDED)
+   "Paper-civic": warm paper-white background, deep slate ink,
+   single petrol-teal accent. Reads as official document, not SaaS.
+   ============================================================ */
+[data-brand="karatasi"] {
+  /* Surfaces */
+  --kz-bg: oklch(98% 0.005 80);            /* warm paper */
+  --kz-bg-2: oklch(96% 0.008 80);          /* sunken / banded rows */
+  --kz-surface: oklch(99.5% 0.003 80);     /* card */
+  --kz-overlay: oklch(20% 0.01 240 / 0.55);
+
+  /* Ink */
+  --kz-ink: oklch(22% 0.02 250);           /* primary text — slate */
+  --kz-ink-2: oklch(42% 0.015 250);        /* secondary text */
+  --kz-ink-3: oklch(58% 0.012 250);        /* tertiary / icon */
+  --kz-line: oklch(88% 0.008 250);         /* borders / hairlines */
+  --kz-line-strong: oklch(78% 0.01 250);
+
+  /* Accent — single. petrol teal, distinct from all party palettes */
+  --kz-accent: oklch(48% 0.09 200);        /* primary actions */
+  --kz-accent-ink: oklch(98% 0.01 200);    /* text on accent */
+  --kz-accent-soft: oklch(94% 0.025 200);
+  --kz-accent-hover: oklch(42% 0.09 200);
+
+  /* Semantic — chosen to read as utilitarian, not partisan */
+  --kz-success: oklch(48% 0.08 155);       /* sage — not bright kelly green */
+  --kz-success-soft: oklch(94% 0.025 155);
+  --kz-warn: oklch(58% 0.11 65);           /* ochre — not pure yellow */
+  --kz-warn-soft: oklch(94% 0.04 65);
+  --kz-danger: oklch(50% 0.14 25);         /* brick — not party-red */
+  --kz-danger-soft: oklch(94% 0.03 25);
+  --kz-info: oklch(48% 0.07 240);
+  --kz-info-soft: oklch(94% 0.02 240);
+
+  /* Verification-state palette (unique to KuraZetu) */
+  --kz-v-unverified: oklch(60% 0.01 250);  /* neutral gray-blue */
+  --kz-v-community: oklch(48% 0.09 200);   /* accent teal */
+  --kz-v-disputed: oklch(58% 0.11 65);     /* ochre */
+  --kz-v-flagged: oklch(50% 0.14 25);      /* brick */
+}
+
+[data-brand="karatasi"][data-mode="dark"] {
+  --kz-bg: oklch(16% 0.01 250);
+  --kz-bg-2: oklch(20% 0.012 250);
+  --kz-surface: oklch(22% 0.012 250);
+  --kz-overlay: oklch(8% 0.005 250 / 0.7);
+
+  --kz-ink: oklch(96% 0.005 80);
+  --kz-ink-2: oklch(78% 0.008 80);
+  --kz-ink-3: oklch(60% 0.008 80);
+  --kz-line: oklch(28% 0.012 250);
+  --kz-line-strong: oklch(36% 0.014 250);
+
+  --kz-accent: oklch(70% 0.1 200);
+  --kz-accent-ink: oklch(15% 0.02 200);
+  --kz-accent-soft: oklch(28% 0.04 200);
+  --kz-accent-hover: oklch(76% 0.1 200);
+
+  --kz-success-soft: oklch(28% 0.04 155);
+  --kz-warn-soft: oklch(30% 0.05 65);
+  --kz-danger-soft: oklch(28% 0.05 25);
+  --kz-info-soft: oklch(28% 0.03 240);
+}
+
+/* ============================================================
+   BRAND DIRECTION B — Mwanga
+   "Light/dawn": warm sand background, charcoal ink, ochre + sage
+   two-accent system. More Kenyan landscape-coded; warmer.
+   ============================================================ */
+[data-brand="mwanga"] {
+  --kz-bg: oklch(96% 0.018 75);
+  --kz-bg-2: oklch(93% 0.025 70);
+  --kz-surface: oklch(98% 0.012 75);
+  --kz-overlay: oklch(20% 0.02 30 / 0.55);
+
+  --kz-ink: oklch(20% 0.015 50);
+  --kz-ink-2: oklch(40% 0.018 50);
+  --kz-ink-3: oklch(56% 0.018 50);
+  --kz-line: oklch(85% 0.018 60);
+  --kz-line-strong: oklch(72% 0.022 60);
+
+  --kz-accent: oklch(46% 0.08 145);        /* eucalyptus sage */
+  --kz-accent-ink: oklch(98% 0.005 145);
+  --kz-accent-soft: oklch(92% 0.03 145);
+  --kz-accent-hover: oklch(40% 0.08 145);
+
+  --kz-success: oklch(46% 0.08 145);
+  --kz-success-soft: oklch(92% 0.03 145);
+  --kz-warn: oklch(58% 0.13 55);           /* terracotta-leaning ochre */
+  --kz-warn-soft: oklch(92% 0.05 55);
+  --kz-danger: oklch(48% 0.14 20);
+  --kz-danger-soft: oklch(92% 0.04 20);
+  --kz-info: oklch(50% 0.08 230);
+  --kz-info-soft: oklch(92% 0.025 230);
+
+  --kz-v-unverified: oklch(62% 0.015 60);
+  --kz-v-community: oklch(46% 0.08 145);
+  --kz-v-disputed: oklch(58% 0.13 55);
+  --kz-v-flagged: oklch(48% 0.14 20);
+}
+
+/* ============================================================
+   BRAND DIRECTION D — Pesa
+   Fintech/Cash-App energy. Pure black, big cream type, single hot
+   magenta-pink accent. Big numbers, tactile cards, soft shadows.
+   Reads as "your vote like your money."
+   ============================================================ */
+[data-brand="pesa"] {
+  --kz-bg: #0a0a0c;                        /* near-black */
+  --kz-bg-2: #15151a;
+  --kz-surface: #1a1a20;
+  --kz-overlay: rgba(0, 0, 0, 0.7);
+
+  --kz-ink: #f4ede0;                       /* warm cream */
+  --kz-ink-2: #a8a39a;
+  --kz-ink-3: #6f6b65;
+  --kz-line: #25252c;
+  --kz-line-strong: #3a3a45;
+
+  /* Hot magenta-pink. Not on any Kenyan party flag, max signal. */
+  --kz-accent: #ff2e74;
+  --kz-accent-ink: #0a0a0c;
+  --kz-accent-soft: #2a1320;
+  --kz-accent-hover: #ff5a91;
+
+  --kz-success: #4ade80;
+  --kz-success-soft: #122016;
+  --kz-warn: #fbbf24;
+  --kz-warn-soft: #2a1d04;
+  --kz-danger: #f87171;
+  --kz-danger-soft: #2a1010;
+  --kz-info: #60a5fa;
+  --kz-info-soft: #0e1a2a;
+
+  --kz-v-unverified: #6f6b65;
+  --kz-v-community: #ff2e74;
+  --kz-v-disputed: #fbbf24;
+  --kz-v-flagged: #f87171;
+
+  --kz-radius: 18px;                       /* tactile, app-coded */
+  --kz-shadow: 0 12px 36px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+}
+
+/* ============================================================
+   BRAND DIRECTION — Ramani (CHOSEN · "map" in Kiswahili)
+   Map-first / spatial / data-viz energy. Deep forest green as
+   the primary surface, sand for highlight cards and callouts.
+   Three earth-tone candidate colors. The country IS the
+   navigation surface — hex grid, not list.
+
+   Dark-first by default so all components inherit clean ink-on-
+   dark. Sand surface available as --kz-surface-light when we
+   need a high-contrast callout (e.g. tooltips, focused cards).
+   ============================================================ */
+[data-brand="ramani"] {
+  /* Surfaces */
+  --kz-bg: #0d1c1f;                        /* forest-deep — app bg */
+  --kz-bg-2: #142529;                      /* lifted card */
+  --kz-surface: #142529;                   /* card default */
+  --kz-surface-2: #1a2e33;                 /* card hover / sunken */
+  --kz-surface-light: #f3ecd8;             /* sand callout (rare, deliberate) */
+  --kz-ink-on-light: #0d1c1f;              /* ink on sand callouts */
+  --kz-overlay: rgba(13, 28, 31, 0.78);
+
+  /* Ink — sand-on-forest by default */
+  --kz-ink: #f3ecd8;
+  --kz-ink-2: #a8b0b4;
+  --kz-ink-3: #6c8084;
+  --kz-line: #2a3c40;
+  --kz-line-strong: #4a6065;
+
+  /* Accent — terracotta. Primary actions echo cand-1 territory color.
+     Use forest-deep ink on terracotta for max contrast (~7:1). */
+  --kz-accent: #d97757;
+  --kz-accent-ink: #0d1c1f;
+  --kz-accent-soft: rgba(217, 119, 87, 0.16);
+  --kz-accent-hover: #e0876d;
+
+  /* Three-candidate TERRITORY palette — jewel tones, intentionally
+     distant from every Kenyan party color (no bright red / ODM orange /
+     UDA yellow / NARC green). Warm-rust + petrol-teal + aubergine gives
+     three visually distinct fills with personality. */
+  --kz-cand-1: #a04a30;                    /* deep rust */
+  --kz-cand-2: #1d6b78;                    /* petrol teal */
+  --kz-cand-3: #6a3f7a;                    /* aubergine plum */
+  --kz-cand-other: #4a5560;                /* slate */
+  --kz-no-data: #1f2a2e;
+
+  /* Semantic */
+  --kz-success: #4f8d76;
+  --kz-success-soft: rgba(79, 141, 118, 0.18);
+  --kz-warn: #c4a653;
+  --kz-warn-soft: rgba(196, 166, 83, 0.18);
+  --kz-danger: #d65454;
+  --kz-danger-soft: rgba(214, 84, 84, 0.18);
+  --kz-info: #6c8084;
+  --kz-info-soft: rgba(108, 128, 132, 0.18);
+
+  /* Verification states */
+  --kz-v-unverified: #6c8084;
+  --kz-v-community: #4f8d76;
+  --kz-v-disputed: #c4a653;
+  --kz-v-flagged: #d65454;
+}
+
+/* ── Ramani · outdoor / high-contrast mode ──────────────────
+   Activates when [data-mode="outdoor"] is set on the Ramani brand.
+   Inverts surface and ink so the UI reads cleanly in direct
+   Kenyan sunlight without losing the brand's earth-tone palette.
+   Apply to the whole document <html> or any subtree. */
+[data-brand="ramani"][data-mode="outdoor"] {
+  --kz-bg: #f3ecd8;                        /* sand — primary surface */
+  --kz-bg-2: #e8dfc4;                      /* lifted card */
+  --kz-surface: #fbf6e8;                   /* paper card */
+  --kz-surface-2: #ede2c8;
+  --kz-surface-light: #0d1c1f;             /* inverted: dark callouts */
+  --kz-ink-on-light: #f3ecd8;
+  --kz-overlay: rgba(13, 28, 31, 0.55);
+
+  --kz-ink: #0d1c1f;
+  --kz-ink-2: #3a4f53;
+  --kz-ink-3: #6c8084;
+  --kz-line: #d4cbb1;
+  --kz-line-strong: #b3a98a;
+
+  /* Accent stays terracotta but with sand ink for legibility on it */
+  --kz-accent: #b85f3e;                    /* darker terracotta for AA on sand */
+  --kz-accent-ink: #f3ecd8;
+  --kz-accent-soft: rgba(184, 95, 62, 0.14);
+  --kz-accent-hover: #a4533a;
+
+  /* Territory palette darkens for AA against sand */
+  --kz-cand-1: #7d3a25;
+  --kz-cand-2: #154e5a;
+  --kz-cand-3: #4d2a5c;
+  --kz-cand-other: #3a4248;
+  --kz-no-data: #d4cbb1;
+
+  --kz-success: #2f6b56;
+  --kz-success-soft: rgba(47, 107, 86, 0.14);
+  --kz-warn: #8a6f1f;
+  --kz-warn-soft: rgba(138, 111, 31, 0.14);
+  --kz-danger: #a13838;
+  --kz-danger-soft: rgba(161, 56, 56, 0.14);
+
+  --kz-v-unverified: #6c8084;
+  --kz-v-community: #2f6b56;
+  --kz-v-disputed: #8a6f1f;
+  --kz-v-flagged: #a13838;
+}
+
+/* ============================================================
+   Base utilities
+   ============================================================ */
+.kz {
+  font-family: var(--kz-font-sans);
+  color: var(--kz-ink);
+  background: var(--kz-bg);
+  font-feature-settings: "ss01", "cv05", "cv11", "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.kz * { box-sizing: border-box; }
+.kz-mono { font-family: var(--kz-font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.kz-tnum { font-variant-numeric: tabular-nums; }
+
+/* Buttons */
+.kz-btn {
+  height: var(--kz-tap);
+  padding: 0 var(--kz-s-5);
+  border-radius: var(--kz-r-2);
+  border: 1px solid transparent;
+  font-family: var(--kz-font-sans);
+  font-weight: 600;
+  font-size: var(--kz-text-base);
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kz-s-2);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.kz-btn--primary { background: var(--kz-ink); color: var(--kz-bg); }
+.kz-btn--primary:hover { background: var(--kz-ink-2); }
+.kz-btn--accent  { background: var(--kz-accent); color: var(--kz-accent-ink); }
+.kz-btn--accent:hover { background: var(--kz-accent-hover); }
+.kz-btn--ghost   { background: transparent; color: var(--kz-ink); border-color: var(--kz-line-strong); }
+.kz-btn--ghost:hover { background: var(--kz-bg-2); }
+.kz-btn--danger  { background: var(--kz-danger); color: #fff; }
+.kz-btn--block   { width: 100%; }
+
+/* Input */
+.kz-input {
+  height: var(--kz-tap);
+  padding: 0 var(--kz-s-4);
+  border-radius: var(--kz-r-2);
+  background: var(--kz-surface);
+  border: 1.5px solid var(--kz-line);
+  font-family: var(--kz-font-sans);
+  font-size: var(--kz-text-md);
+  color: var(--kz-ink);
+  width: 100%;
+}
+.kz-input:focus { outline: none; border-color: var(--kz-accent); }
+.kz-input.kz-mono { font-family: var(--kz-font-mono); }
+
+/* Make placeholders visible on dark surfaces too */
+.kz input::placeholder,
+[data-brand] input::placeholder,
+[data-brand] textarea::placeholder {
+  color: var(--kz-ink-3);
+  opacity: 1;
+}
+
+/* Cards */
+.kz-card {
+  background: var(--kz-surface);
+  border: 1px solid var(--kz-line);
+  border-radius: var(--kz-r-3);
+}
+
+/* Badges (verification states) — purely typographic.
+   All-caps mono in the state color. No fill, no border, no dot. */
+.kz-badge {
+  display: inline-flex; align-items: center;
+  font-family: var(--kz-font-mono);
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.kz-badge--unverified { color: var(--kz-v-unverified); }
+.kz-badge--community  { color: var(--kz-v-community); }
+.kz-badge--disputed   { color: var(--kz-v-disputed); }
+.kz-badge--flagged    { color: var(--kz-v-flagged); }
+
+/* Persistent disclaimer strip — screenshot-resilient */
+.kz-disclaimer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  font-family: var(--kz-font-mono);
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--kz-ink-2);
+  background: var(--kz-bg-2);
+  border-bottom: 1px solid var(--kz-line);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Number readout (vote tallies) */
+.kz-num {
+  font-family: var(--kz-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Hairline divider */
+.kz-hr { height: 1px; background: var(--kz-line); border: 0; margin: 0; }
+
+/* ============================================================
+   Screenshot-resilient watermark.
+   Tile a low-opacity diagonal "NOT IEBC · CITIZEN TALLY" repeat
+   *inside* result panels so cropping the disclaimer strip out of
+   a screenshot still leaves the disclaimer in the data area.
+   ============================================================ */
+.kz-watermark { position: relative; isolation: isolate; }
+.kz-watermark > * { position: relative; z-index: 1; }
+.kz-watermark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='440' height='220' viewBox='0 0 440 220'><g transform='rotate(-22 220 110)'><text x='-40' y='40' fill='%23f3ecd8' fill-opacity='0.07' font-family='IBM Plex Mono, monospace' font-size='13' font-weight='700' letter-spacing='2'>NOT IEBC \u00B7 CITIZEN TALLY \u00B7 NOT IEBC \u00B7 CITIZEN TALLY</text><text x='-40' y='100' fill='%23f3ecd8' fill-opacity='0.07' font-family='IBM Plex Mono, monospace' font-size='13' font-weight='700' letter-spacing='2'>NOT IEBC \u00B7 CITIZEN TALLY \u00B7 NOT IEBC \u00B7 CITIZEN TALLY</text><text x='-40' y='160' fill='%23f3ecd8' fill-opacity='0.07' font-family='IBM Plex Mono, monospace' font-size='13' font-weight='700' letter-spacing='2'>NOT IEBC \u00B7 CITIZEN TALLY \u00B7 NOT IEBC \u00B7 CITIZEN TALLY</text></g></svg>");
+  background-repeat: repeat;
+  background-size: 440px 220px;
+}
+/* Lighter ink watermark for sand-on-light surfaces */
+.kz-watermark--light::after {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='440' height='220' viewBox='0 0 440 220'><g transform='rotate(-22 220 110)'><text x='-40' y='40' fill='%230d1c1f' fill-opacity='0.09' font-family='IBM Plex Mono, monospace' font-size='13' font-weight='700' letter-spacing='2'>NOT IEBC \u00B7 CITIZEN TALLY \u00B7 NOT IEBC \u00B7 CITIZEN TALLY</text><text x='-40' y='100' fill='%230d1c1f' fill-opacity='0.09' font-family='IBM Plex Mono, monospace' font-size='13' font-weight='700' letter-spacing='2'>NOT IEBC \u00B7 CITIZEN TALLY \u00B7 NOT IEBC \u00B7 CITIZEN TALLY</text><text x='-40' y='160' fill='%230d1c1f' fill-opacity='0.09' font-family='IBM Plex Mono, monospace' font-size='13' font-weight='700' letter-spacing='2'>NOT IEBC \u00B7 CITIZEN TALLY \u00B7 NOT IEBC \u00B7 CITIZEN TALLY</text></g></svg>");
+}

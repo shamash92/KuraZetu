@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Kura Zetu — Audit, redesign &amp; punch list</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="src/tokens.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: #0d1c1f; color: #f3ecd8; font-family: "Public Sans", system-ui, sans-serif; }
+  body { padding: 0 20px 80px; max-width: 920px; margin: 0 auto; }
+  h1, h2, h3, h4, p, ul, li { margin: 0; padding: 0; }
+  ul { list-style: none; }
+
+  /* Top bar / disclaimer */
+  .top {
+    margin: 0 -20px;
+    padding: 6px 24px;
+    background: #142529;
+    border-bottom: 1px solid #2a3c40;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    color: #c4a653;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+  }
+  .top a { color: #a8b0b4; text-decoration: none; }
+
+  /* Title */
+  .title-block { padding: 64px 0 32px; border-bottom: 1px solid #2a3c40; margin-bottom: 32px; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #d97757; margin-bottom: 14px; }
+  h1.title { font-size: 64px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.0; }
+  h1.title em { font-style: normal; color: #d97757; }
+  .deck { font-size: 18px; color: #a8b0b4; line-height: 1.5; margin-top: 18px; max-width: 700px; }
+  .deck a { color: #d97757; }
+  .meta { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: #6c8084; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 26px; }
+
+  /* Section */
+  section { margin-top: 56px; }
+  h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; padding-bottom: 4px; border-bottom: 1px solid #2a3c40; }
+  h2 .num {
+    display: inline-block;
+    margin-right: 14px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 14px;
+    color: #6c8084;
+    vertical-align: super;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  h3 { font-size: 20px; font-weight: 700; letter-spacing: -0.2px; margin-top: 32px; line-height: 1.2; }
+  h3 .verdict {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    margin-right: 10px;
+    padding: 2px 8px;
+    vertical-align: middle;
+  }
+  .v-bad { background: rgba(214,84,84,0.15); color: #d65454; }
+  .v-mid { background: rgba(196,166,83,0.15); color: #c4a653; }
+  .v-keep { background: rgba(79,141,118,0.15); color: #4f8d76; }
+
+  p { font-size: 15.5px; line-height: 1.65; color: #d3ccba; margin-top: 14px; max-width: 720px; }
+  p b { color: #f3ecd8; font-weight: 700; }
+  p code, .mono { font-family: "IBM Plex Mono", monospace; color: #f3ecd8; background: #142529; padding: 1px 6px; border-radius: 3px; font-size: 13px; }
+
+  /* Issue list */
+  .issues { margin-top: 18px; max-width: 740px; }
+  .issue {
+    display: grid; grid-template-columns: 32px 1fr;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid #1f2e32;
+  }
+  .issue .n { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: #6c8084; font-weight: 700; letter-spacing: 0.06em; }
+  .issue h4 { font-size: 15px; font-weight: 700; color: #f3ecd8; }
+  .issue p { margin-top: 4px; font-size: 14px; line-height: 1.5; color: #a8b0b4; }
+
+  /* Screen grid */
+  .screens { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 920px; }
+  .screen { border-left: none; background: #142529; padding: 12px 14px; border-radius: 4px; }
+  .screen .name { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: #f3ecd8; }
+  .screen .verd {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-right: 8px;
+  }
+  .vb { color: #d65454; }
+  .vm { color: #c4a653; }
+  .vk { color: #4f8d76; }
+  .screen p { font-size: 12.5px; line-height: 1.45; margin-top: 4px; color: #a8b0b4; }
+
+  /* Punch list */
+  .punch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; max-width: 1000px; }
+  .punch .col {
+    background: #142529;
+    padding: 18px 18px;
+    border-radius: 8px;
+  }
+  .punch .label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #d97757;
+    margin-bottom: 12px;
+  }
+  .punch ul li {
+    padding: 7px 0;
+    font-size: 13px;
+    color: #d3ccba;
+    line-height: 1.4;
+    border-bottom: 1px solid #1f2e32;
+    display: flex;
+    gap: 8px;
+  }
+  .punch ul li:last-child { border-bottom: 0; }
+  .punch ul li::before {
+    content: "→";
+    color: #d97757;
+    flex: 0 0 auto;
+  }
+
+  /* Stack table */
+  .stack { margin-top: 18px; }
+  .stack-row {
+    display: grid;
+    grid-template-columns: 28px 200px 100px 1fr;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #1f2e32;
+    align-items: baseline;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .stack-row .verdict {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .stack-row .tech {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: #f3ecd8;
+  }
+  .stack-row p { font-size: 13px; margin: 0; color: #a8b0b4; }
+
+  /* Quote / pull */
+  .pull {
+    margin: 32px 0;
+    padding: 22px 24px;
+    background: #142529;
+    border-radius: 10px;
+    font-size: 17px;
+    line-height: 1.5;
+    color: #f3ecd8;
+  }
+  .pull b { color: #d97757; }
+
+  /* Footer */
+  footer {
+    margin-top: 56px;
+    padding: 24px 0;
+    border-top: 1px solid #2a3c40;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: #6c8084;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Print tweaks */
+  @media print {
+    html, body { background: #fff; color: #0d1c1f; }
+    body { max-width: none; padding: 0 14mm; }
+    .top { display: none; }
+    h2, h3 { color: #0d1c1f; }
+    p, .deck { color: #3a4f53; }
+    .issue, .stack-row, .punch ul li, .punch .col { background: #f3ecd8 !important; color: #0d1c1f !important; }
+    .punch ul li, .issue { border-color: #d4cbb1; }
+    .punch .col { box-shadow: none; }
+    .screen { background: #f3ecd8; color: #0d1c1f; }
+    .screen .name { color: #0d1c1f; }
+    .screen p { color: #3a4f53; }
+    section { page-break-inside: avoid; }
+    h2 { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span>Citizen tally · Not IEBC · Audit doc</span>
+  <a href="redesign.html">← Back to canvas</a>
+</div>
+
+<div class="title-block">
+  <div class="eyebrow">Audit · Redesign brief · Punch list</div>
+  <h1 class="title">
+    Kura Zetu, candidly.<br/>
+    <em>What's working, what's not, and what to ship first.</em>
+  </h1>
+  <p class="deck">
+    Companion doc to <a href="redesign.html">redesign.html</a>. Skip the praise. The product is doing the right thing — the design just hasn't caught up. Below is the audit, prioritized, with what to ship in week 1 vs month 1 vs later.
+  </p>
+  <div class="meta">
+    Author · Designer · For the team · May 2026
+  </div>
+</div>
+
+<!-- ────────────── 01 · TRUST POSTURE ────────────── -->
+<section>
+  <h2><span class="num">01</span>Trust posture</h2>
+  <p>This is the hill the product lives or dies on. Citizens need to read the screen and know — in two seconds — that this is <b>parallel data</b>, not the IEBC. The current build is mostly there, but five things actively work against that read.</p>
+
+  <div class="issues">
+    <div class="issue"><div class="n">01</div><div>
+      <h4>The word <span class="mono">Dummy</span> is in production copy.</h4>
+      <p>"Presidential (Dummy) Results" is on the live dashboard. On election night, a journalist screenshots this. We do not recover. <b>Remove this string before anything else on this list.</b></p>
+    </div></div>
+    <div class="issue"><div class="n">02</div><div>
+      <h4>Debug variables are leaking to users.</h4>
+      <p><span class="mono">registrationErrorLogin:"", Must use physical device for push notifications</span> is showing up as a modal on the login screen. That string belongs in a developer console, not in front of a stressed rural user at 9pm.</p>
+    </div></div>
+    <div class="issue"><div class="n">03</div><div>
+      <h4>The disclaimer is buried inside a phone mockup on the marketing site.</h4>
+      <p>The "Important Disclaimer — This is not an official IEBC tallying system" chip is the most important piece of copy on the entire page, and it's stamped onto a stock phone illustration. It should be a <b>persistent, screenshot-resilient band</b> at the top of every results view, mobile and web (see <span class="mono">redesign.html</span> → System → Disclaimer).</p>
+    </div></div>
+    <div class="issue"><div class="n">04</div><div>
+      <h4>Red + yellow is the wrong palette for a non-partisan civic tool in Kenya.</h4>
+      <p>The current mobile primary (red Sign-In button) and the wordmark's yellow underline read close to <b>Jubilee + UDA</b>. This is not what you want anyone to feel when they open the app. The Ramani palette in the canvas — forest + sand + terracotta + eucalyptus + savanna gold — avoids every Kenyan party flag while still feeling rooted to place.</p>
+    </div></div>
+    <div class="issue"><div class="n">05</div><div>
+      <h4>"Things are boiling nicely…" is the wrong tone for civic infrastructure.</h4>
+      <p>It's a charming stock Lottie that reads as a banking app. On election night a user does not want to be told things are boiling. They want a textual progress indicator with a number ("loading 23,142 polling stations…") and an estimate.</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ────────────── 02 · WEB ↔ MOBILE CONSISTENCY ────────────── -->
+<section>
+  <h2><span class="num">02</span>Consistency between web and mobile</h2>
+  <p>The web and mobile apps were clearly built by different hands at different times. They share the wordmark and not much else.</p>
+
+  <div class="issues">
+    <div class="issue"><div class="n">01</div><div>
+      <h4>Two different visual languages.</h4>
+      <p>Web uses Bootstrap-y blue + green pill buttons; mobile uses near-Material red + maroon. There is no shared token system, so a single brand change requires two diffs. <b>Ramani's <span class="mono">tokens.css</span> + a mirrored RN JSON</b> fixes this — same hex values, same names, two files.</p>
+    </div></div>
+    <div class="issue"><div class="n">02</div><div>
+      <h4>Different icon sets across surfaces.</h4>
+      <p>Mobile already uses Lucide (per the package.json). Web uses Font Awesome 5 and inline SVG. Pick one — <b>Lucide on both</b>. Lucide is free, tree-shakable, and the icon vocabulary already matches the mobile build.</p>
+    </div></div>
+    <div class="issue"><div class="n">03</div><div>
+      <h4>Auth experience diverges.</h4>
+      <p>Web asks for phone + password on a split-screen; mobile asks for phone + password + biometric. Worse — web is heavier (Bootstrap, big assets, slower on 3G). Both should be <b>phone-only OTP, no password</b>. Most Kenyans don't have or remember a password for civic-tech apps; OTP every time, biometric local-unlock for repeat users on mobile only.</p>
+    </div></div>
+    <div class="issue"><div class="n">04</div><div>
+      <h4>Web "Project Timeline" Kanban does not belong on a public landing page.</h4>
+      <p>The launch board (Initial Requirements · Bootstrap Web Platform · PinVerify254 Game · Launch Mobile App) belongs in <span class="mono">docs/</span> or a contributor portal, not on the homepage. It reads as "this is in beta, do not trust it."</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ────────────── 03 · ACCESSIBILITY ────────────── -->
+<section>
+  <h2><span class="num">03</span>Accessibility</h2>
+  <p>WCAG 2.2 AA is the floor. The stress / sun / cheap-Android / multi-lingual context demands AAA where feasible. The current build fails AA in several places.</p>
+
+  <div class="issues">
+    <div class="issue"><div class="n">01</div><div>
+      <h4>Color-only signaling on the bar chart.</h4>
+      <p>The dashboard "Governor Results" chart uses teal, terracotta, orange, navy, mint — five hues without labels at value-point. Colorblind users get nothing. Add the candidate name at the bar end + use shape-based icons for the four verification states (✓ ?  ! —), not just hue.</p>
+    </div></div>
+    <div class="issue"><div class="n">02</div><div>
+      <h4>Tap targets below 48dp on the pin-edit map.</h4>
+      <p>The Leaflet pin handles and +/− zoom buttons measure ~28×28 in the current build. On Android at 320dp width, that's about a thumb-tip's worth of forgiveness. Bump to 44×44 minimum.</p>
+    </div></div>
+    <div class="issue"><div class="n">03</div><div>
+      <h4>Polling-station codes shown as the primary identifier.</h4>
+      <p>"031164082006901" is the IEBC identifier. It's not what a user calls their station. Lead with the name (Likii Primary School), demote the code to a mono caption, and <b>let users search by name, church, or landmark</b>. (See <span class="mono">redesign.html</span> → PinVerify A · Find station.)</p>
+    </div></div>
+    <div class="issue"><div class="n">04</div><div>
+      <h4>No language switcher.</h4>
+      <p>English-only on a country where Kiswahili is co-official and Sheng is the lingua franca of the urban under-35s. The onboarding flow in the canvas surfaces language as <b>zero-step</b> before any other choice. All copy needs to externalise to a JSON file; Kiswahili runs ~15-30% longer than English so re-test every screen at +30% width.</p>
+    </div></div>
+    <div class="issue"><div class="n">05</div><div>
+      <h4>Reduced-motion not respected.</h4>
+      <p>The "Things are boiling nicely" Lottie loops indefinitely; the map-load animation pulses. <span class="mono">prefers-reduced-motion</span> should kill both. Same applies to RN — check the user's <span class="mono">AccessibilityInfo.isReduceMotionEnabled</span>.</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ────────────── 04 · DENSITY & COGNITIVE LOAD ────────────── -->
+<section>
+  <h2><span class="num">04</span>Density &amp; cognitive load</h2>
+  <p>The IA correctly mirrors Kenya's electoral geography (county → constituency → ward → station). That's right. But every step is a full screen, every screen is a long list, and the user has to read the page from scratch each time.</p>
+
+  <div class="issues">
+    <div class="issue"><div class="n">01</div><div>
+      <h4>Five taps to drill from National to Station.</h4>
+      <p>Each tap is also a full-screen route change with a map reload. Replace with a <b>persistent map + sliding bottom-sheet</b> (Ramani country → drill in place) so the user keeps geographic context between steps.</p>
+    </div></div>
+    <div class="issue"><div class="n">02</div><div>
+      <h4>"No Form 34A image available" empty state is the same shape as a result.</h4>
+      <p>The user has to scroll to the bottom of an apparently-empty page to find the floating + button. Move the empty state to <b>centre with a clear CTA</b> ("Be the first to submit this station's Form 34A").</p>
+    </div></div>
+    <div class="issue"><div class="n">03</div><div>
+      <h4>Long single-column candidate lists.</h4>
+      <p>Ten candidates at 100% width, each on its own row, on a 360dp screen = vertical scroll. Group: top 3 prominent, rest collapsed under "+ 7 others." (See <span class="mono">redesign.html</span> → Results · Mobile.)</p>
+    </div></div>
+    <div class="issue"><div class="n">04</div><div>
+      <h4>Confusing dual-presence pins on PinVerify edit.</h4>
+      <p>The blue/red two-pin "139.5m" view is information-rich but unscannable. Replace with a <b>before/after toggle</b> + a single live pin + accuracy circle. (See <span class="mono">redesign.html</span> → PinVerify A · Walk to entrance.)</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ────────────── 05 · AI-TEMPLATE TROPES ────────────── -->
+<section>
+  <h2><span class="num">05</span>AI / template tropes to retire</h2>
+  <p>These all read as "I asked an LLM to give me an app." The product is real; the chrome around it shouldn't betray that.</p>
+  <div class="issues">
+    <div class="issue"><div class="n">01</div><div>
+      <h4>Purple-blue gradient + trophy emoji on PinVerify.</h4>
+      <p>Reads as Duolingo, not civic infrastructure. Keep the points (they work) — replace the background.</p>
+    </div></div>
+    <div class="issue"><div class="n">02</div><div>
+      <h4>Left-bar accent on every callout.</h4>
+      <p>"3px solid colored left border + soft tinted background" is the universal LLM banner. None in the redesign — color the icon, tone the bg, that's it.</p>
+    </div></div>
+    <div class="issue"><div class="n">03</div><div>
+      <h4>Pill badges with a dot.</h4>
+      <p>"● COMMUNITY-VERIFIED" inside a rounded fill is the same trope. The redesign uses mono small-caps in the state colour, no fill, no dot. Reads as a typographic tag, not a button.</p>
+    </div></div>
+    <div class="issue"><div class="n">04</div><div>
+      <h4>Stock Lottie animations.</h4>
+      <p>"Things are boiling nicely" + the dot-map "Loading Map Data" feel borrowed. A textual progress indicator with a real number is faster, cheaper, and more honest.</p>
+    </div></div>
+    <div class="issue"><div class="n">05</div><div>
+      <h4>Hand-pointing-at-tablet wordmark icon.</h4>
+      <p>The "FORM 3X" cartoon mark is clip-art. The redesign uses a 16×16 geometric ballot+check glyph with a single dot for the brand accent — civic, geometric, original, and printable at 12px.</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ────────────── 06 · COPY ────────────── -->
+<section>
+  <h2><span class="num">06</span>Copy</h2>
+  <p>Copy is doing the most quietly-bad work in the current build. A few changes alone will move the trust needle.</p>
+
+  <div class="issues">
+    <div class="issue"><div class="n">01</div><div>
+      <h4>Error copy is alarmist when the data state is normal.</h4>
+      <p>"Pin location not registered in database" in red, listed under every polling centre that hasn't been pinned yet, makes 80% of stations look broken. Replace with calm: "Needs a pin · ochre" + a clear CTA.</p>
+    </div></div>
+    <div class="issue"><div class="n">02</div><div>
+      <h4>"Click to Finish" appears on a touch device.</h4>
+      <p>Should be "Tap to confirm" or, better, an explicit verb: "Save this pin." Avoid mouse verbs on mobile.</p>
+    </div></div>
+    <div class="issue"><div class="n">03</div><div>
+      <h4>"FORM 3X" is in caps on the wordmark but body copy says "Kura Zetu."</h4>
+      <p>Pick one casing and one name. "Kura Zetu" is the brand. The icon should be a glyph, not the words "FORM 3X."</p>
+    </div></div>
+    <div class="issue"><div class="n">04</div><div>
+      <h4>"Welcome Back" is the most generic SaaS string on Earth.</h4>
+      <p>Replace with what the user actually came to do. "Your phone, your verified Form 34A." Or just the brand title.</p>
+    </div></div>
+    <div class="issue"><div class="n">05</div><div>
+      <h4>"Verify Polling Centers" then "Update Center Info" then "Map Missing Centers" — three actions for one mental model.</h4>
+      <p>Group these under "PinVerify" with a single entry point. Branching happens after the user understands the intent.</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ────────────── 07 · PER-SCREEN AUDIT ────────────── -->
+<section>
+  <h2><span class="num">07</span>Per-screen quickfire</h2>
+  <p>One-liners per screen, verdict-first. The full redesigned counterparts live in the canvas.</p>
+
+  <div class="screens">
+    <div class="screen"><div class="name"><span class="verd vb">SHIP-BLOCK</span>16 KB compatibility warning</div><p>Don't let users see this. Recompile with 16 KB page-size support.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Location permission</div><p>Explain WHY in-app first. Then ask the OS.</p></div>
+    <div class="screen"><div class="name"><span class="verd vb">SHIP-BLOCK</span>Debug error modal</div><p><span class="mono">registrationErrorLogin:""</span> cannot ship.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Welcome Back / login</div><p>Phone-only OTP, no password.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>"Loading Map Data" Lottie</div><p>Replace with textual progress + number.</p></div>
+    <div class="screen"><div class="name"><span class="verd vb">SHIP-BLOCK</span>"Things are boiling nicely"</div><p>Charming, wrong tone for elections. Cut.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>County picker — pink polygons</div><p>Use neutral hex grid. Avoid party colors.</p></div>
+    <div class="screen"><div class="name"><span class="verd vk">KEEP IA</span>Drill: County → Constituency → Ward</div><p>Mental model is right. Visual is wrong.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Polling centre list with red errors</div><p>"Not registered in database" in red = scary. Use ochre + CTA.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Pin confirm — Click to Finish</div><p>Verb is wrong. Use "Save this pin."</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Create Account form</div><p>Phone + OTP first; ask the rest later.</p></div>
+    <div class="screen"><div class="name"><span class="verd vk">KEEP</span>Forgot Password screen</div><p>Pattern fine; rename to "Recover account" once auth = OTP.</p></div>
+    <div class="screen"><div class="name"><span class="verd vb">SHIP-BLOCK</span>Dashboard "(Dummy) Results"</div><p>The word Dummy must never appear to users.</p></div>
+    <div class="screen"><div class="name"><span class="verd vk">KEEP STRUCT</span>Verify Polling Centers card hub</div><p>Good IA. Just retire the LLM-tinted-cards visual.</p></div>
+    <div class="screen"><div class="name"><span class="verd vk">KEEP</span>Polling station list (mobile)</div><p>Cleanest mobile screen in the current build.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>"No Form 34A image" empty state</div><p>Centre the CTA, don't hide it bottom-right.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Submit / Capture Form 34A</div><p>Add guides, blur/torch, brightness hint.</p></div>
+    <div class="screen"><div class="name"><span class="verd vk">KEEP</span>Profile / settings</div><p>Toggles in the right order. Dark mode visible.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Web login split-screen</div><p>Generic SaaS. Replace with phone-OTP centered card.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Web signup card</div><p>Old icon set. Lift onto the Ramani type/colour system.</p></div>
+    <div class="screen"><div class="name"><span class="verd vk">KEEP CORE</span>Web "What it IS / IS NOT" table</div><p>The single best UI in the product. Keep structure, modernize chrome.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>Web dashboard (broken donut)</div><p>Chart overlaps; "Play PinVerify254" interrupts. Replace with stacked bar + map + leaderboard.</p></div>
+    <div class="screen"><div class="name"><span class="verd vm">REWRITE</span>PinVerify254 page</div><p>Drop the purple-gradient + trophy emoji. Keep the points.</p></div>
+    <div class="screen"><div class="name"><span class="verd vk">KEEP IDEA</span>Pin edit two-pin distance UI</div><p>Info-rich, just unscannable. Convert to before/after.</p></div>
+  </div>
+</section>
+
+<!-- ────────────── 08 · TWO PINVERIFY DIRECTIONS ────────────── -->
+<section>
+  <h2><span class="num">08</span>Two PinVerify directions</h2>
+  <p>The brief asked for two distinct directions for the pin-on-map step. Both are in <span class="mono">redesign.html</span> as fully-drawn flows.</p>
+
+  <h3>Direction A · Snap-to-known + walk-to-confirm</h3>
+  <p>Search by school/landmark name (not code). GPS pre-fills the candidate location. The "confirm" button only unlocks when the user is physically within 20 m of the consensus. Long-press 2 s to commit (haptic). The consensus cloud appears <b>only on the receipt</b>, so the user's pin isn't anchored by prior data.</p>
+  <p><b>Best for:</b> first-time verifiers, election day, rural users on cheap phones.</p>
+
+  <h3>Direction B · Consensus-first pin cloud</h3>
+  <p>The user sees the cloud of all prior pins upfront, with the consensus centroid and a confidence number. They <b>agree</b>, <b>disagree</b> (drag + reason), or <b>skip</b>. Disagreements ≥ 50 m open a dispute that other verifiers can resolve.</p>
+  <p><b>Best for:</b> power verifiers, off-election windows, web users with bigger screens.</p>
+
+  <div class="pull">
+    <b>My recommendation: ship A first.</b> Add B in v2 as "Power mode" once you have a base of repeat users with track records to weight their disputes.
+  </div>
+</section>
+
+<!-- ────────────── 09 · PUNCH LIST ────────────── -->
+<section>
+  <h2><span class="num">09</span>What to ship first</h2>
+  <p>Ordered by trust-and-usability return per engineering day. Week 1 is the embarrassment-prevention list. Month 1 is the foundation. Later is the v2 horizon.</p>
+
+  <div class="punch">
+    <div class="col">
+      <div class="label">Week 1 · stop the bleeding</div>
+      <ul>
+        <li>Remove the string "Dummy" from every candidate display.</li>
+        <li>Catch the <span class="mono">registrationErrorLogin</span> debug leak before it renders.</li>
+        <li>Persistent "Not IEBC" band on every results page.</li>
+        <li>Replace the red Sign-In + yellow underline with the Ramani palette.</li>
+        <li>Replace the "Things are boiling nicely" splash with a textual loader + count.</li>
+        <li>Take the "Project Timeline" Kanban off the homepage.</li>
+        <li>Add station-name search alongside the polling-station code field.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="label">Month 1 · foundation</div>
+      <ul>
+        <li>Ship <span class="mono">tokens.css</span> + a mirrored RN token JSON. One change, both surfaces.</li>
+        <li>Adopt Public Sans + IBM Plex Mono. Drop Inter / Roboto.</li>
+        <li>Build PinVerify Direction A (search-by-name + walk-to-confirm).</li>
+        <li>Form 34A capture: glare / blur / brightness detection at capture, torch toggle, page count.</li>
+        <li>OCR review screen with confidence-tinted rows (low-confidence in ochre).</li>
+        <li>Web dashboard rebuild: stacked bar + hex map + leaderboard. No donut chart.</li>
+        <li>One icon set: Lucide on web and mobile. Decommission Font Awesome.</li>
+        <li>Phone-OTP-only auth, biometric local unlock optional on mobile.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="label">Later · v2 horizon</div>
+      <ul>
+        <li>Hex-grid country view as the primary results navigation.</li>
+        <li>Community Notes ranking + author privacy + anti-harassment surface.</li>
+        <li>PinVerify Direction B as opt-in "Power mode."</li>
+        <li>Offline-first sync with explicit queued-submission UX.</li>
+        <li>Mapbox / MapLibre offline tile bundles for rural Kenya.</li>
+        <li>System dark mode (already in Ramani — it's the default).</li>
+        <li>Screenshot-resilient chart watermarks on share.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────── 10 · STACK NOTES ────────────── -->
+<section>
+  <h2><span class="num">10</span>Stack — keep, swap, watch</h2>
+  <p>The bones are right. A few targeted swaps for design ergonomics.</p>
+
+  <div class="stack">
+    <div class="stack-row">
+      <span class="verdict v-keep">KEEP</span>
+      <span class="tech">Django + React + Tailwind</span>
+      <span></span>
+      <p>Right shape for a backend-heavy civic tool with a small frontend team. Tailwind reads the CSS-var token system natively — keep it.</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-keep">KEEP</span>
+      <span class="tech">Expo / React Native 0.79</span>
+      <span></span>
+      <p>Right choice for an Android-first deployment. The <span class="mono">expo-camera, expo-location, expo-haptics, expo-local-authentication</span> stack already covers the Form 34A flow primitives.</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-mid">SWAP</span>
+      <span class="tech">react-native-paper</span>
+      <span>~2–3 days</span>
+      <p>Paper's Material 3 doesn't share tokens with Tailwind cleanly. Move to NativeWind so the same <span class="mono">--kz-*</span> CSS vars drive both web and mobile. (gluestack is the alternative if you want Stitches-style runtime variants.)</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-mid">SWAP</span>
+      <span class="tech">react-native-gifted-charts</span>
+      <span>~1–2 days</span>
+      <p>Causes the donut-label collisions on the current dashboard. Move to <b>Victory Native XL</b> (better tabular-figure support, no SVG label overlap). Stacked horizontal bar is the default — donut should be optional and never the only view.</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-mid">CONSIDER</span>
+      <span class="tech">react-native-maps + Google → MapLibre + offline tiles</span>
+      <span>~5–7 days</span>
+      <p>Big win for rural-Kenya offline use: pre-bundle the country's vector tiles in the APK (~20 MB). Removes the per-MB cost of map loads on election day. Higher risk migration so v2-bound.</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-keep">KEEP</span>
+      <span class="tech">expo-secure-store + expo-local-authentication</span>
+      <span></span>
+      <p>Right pair for the biometric local-unlock pattern in the redesign. No change.</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-keep">KEEP</span>
+      <span class="tech">@react-native-community/netinfo</span>
+      <span></span>
+      <p>Powers the offline / stale-data state we lean on heavily. Already correct.</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-mid">ADD</span>
+      <span class="tech">expo-image-manipulator</span>
+      <span>~0.5 day</span>
+      <p>Resize Form 34A captures to <b>1024 px wide / JPEG q=0.85</b> (~400 KB) before queueing. Keeps the data-cost estimate (KES 1.20) accurate but drops the actual bytes ~6×. Critical for 2G/Edge rural uploads. Captured pages stay readable for OCR; the original full-res photo is retained on-device for 14 days for reverification appeals.</p>
+    </div>
+    <div class="stack-row">
+      <span class="verdict v-mid">WATCH</span>
+      <span class="tech">lottie-react-native</span>
+      <span></span>
+      <p>Not the library's fault — but every place it's used in the current build is a bad use. If after this audit no Lottie file survives, the dependency can come out entirely.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────── 11 · WHAT NOT TO CHANGE ────────────── -->
+<section>
+  <h2><span class="num">11</span>What I would <em>not</em> change</h2>
+  <p>The brief asked me to defend the parts that already work. Resist anyone's instinct to redesign these on a whim.</p>
+
+  <div class="issues">
+    <div class="issue"><div class="n">01</div><div>
+      <h4>Phone-number-first identity.</h4>
+      <p>Right call for Kenya. Email-first would have been a disaster — most users don't have or check an email account they'd trust with civic-tech. Sticking with phone OTP, with biometric local unlock on repeat, is exactly right.</p>
+    </div></div>
+    <div class="issue"><div class="n">02</div><div>
+      <h4>Form 34A as the source of truth.</h4>
+      <p>The legal final paper form is the only piece of state that everyone — citizens, parties, IEBC, courts — accepts. Building the whole platform around <b>photographing it at the polling station</b> is the correct anchor. Don't ever shift to digital-only entry.</p>
+    </div></div>
+    <div class="issue"><div class="n">03</div><div>
+      <h4>The "What it IS / IS NOT" table.</h4>
+      <p>The single most honest piece of UI in the product. The current visual treatment is dated, but the <b>structure</b> — five aspects, two columns, calm tone — is exactly right. I've redesigned it in <span class="mono">redesign.html</span> → Web · Landing without removing a row.</p>
+    </div></div>
+    <div class="issue"><div class="n">04</div><div>
+      <h4>The 5-level electoral geography.</h4>
+      <p>National → County → Constituency → Ward → Polling Station mirrors Kenyan electoral law. Don't flatten it for "simplicity." The complexity is the country.</p>
+    </div></div>
+    <div class="issue"><div class="n">05</div><div>
+      <h4>The PinVerify points system (+10 / +15 / +2).</h4>
+      <p>Incentives are calibrated correctly — confirming is worth less than correcting, skipping (admitting uncertainty) is rewarded above zero. Keep the numbers. Lose the gradient.</p>
+    </div></div>
+    <div class="issue"><div class="n">06</div><div>
+      <h4>"Powered by Kiongozi" lineage disclosure.</h4>
+      <p>Tucked under the wordmark in three places — exactly the right amount of disclosure. Keep it. It's quietly honest about the parent organization without putting them on the headline.</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ────────────── CLOSE ────────────── -->
+<section>
+  <h2><span class="num">12</span>One paragraph to end on</h2>
+  <p>Kura Zetu is doing the hardest thing in Kenyan civic-tech right now: standing next to the IEBC without standing against it. The product mission is sharp. The visual language has been catching up to a mission like that since 2017, when the IEBC's own results portal collapsed and Kenya learned what parallel tallies were for. Ship the week-one list before election day; ship the month-one foundation by the registration deadline. The rest can wait. <b>The point is not perfection. The point is a tally citizens can show each other and trust.</b></p>
+</section>
+
+<footer>
+  <span>Kura Zetu · audit doc · v1 · May 2026</span>
+  <a href="redesign.html" style="color: inherit; text-decoration: none;">redesign.html →</a>
+</footer>
+
+</body>
+</html>

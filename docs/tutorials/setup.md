@@ -220,10 +220,10 @@ sudo apt-get install binutils libproj-dev gdal-bin
 
 ### 3. Configure Environment Variables
 
-Copy the example `.env.local` file to `.env`:
+Copy the example `.env.example` file to `.env`:
 
 ```bash
-cp .env.local .env
+cp .env.example .env
 ```
 
 Edit the `.env` file to configure your environment-specific settings. e.g.

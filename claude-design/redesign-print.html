@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>KuraZetu — Redesign Canvas (print)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="src/tokens.css" />
+<style>
+  /* ─── Print paper ───────────────────────────────────────── */
+  @page { size: A3 landscape; margin: 0; }
+  @media print {
+    html, body { background: #f0eee9; }
+    *, *::before, *::after {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
+
+  html, body { margin: 0; padding: 0; background: #f0eee9; }
+  body { font-family: "Public Sans", system-ui, sans-serif; color: #1d2330; }
+
+  /* Section cover page — full bleed, centered title */
+  .print-section { display: block; }
+  .print-section:first-of-type .print-section-cover { page-break-before: avoid; }
+  .print-section-cover {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40mm 50mm;
+    box-sizing: border-box;
+    background: #0d1c1f;
+    color: #f3ecd8;
+    page-break-after: always;
+    page-break-before: always;
+    position: relative;
+  }
+  .print-section-cover .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13pt;
+    color: #d97757;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .print-section-cover h1 {
+    font-size: 92pt;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.0;
+    margin: 0;
+    max-width: 78%;
+  }
+  .print-section-cover p {
+    font-size: 18pt;
+    color: #a8b0b4;
+    margin-top: 28px;
+    max-width: 65%;
+    line-height: 1.5;
+  }
+  .print-section-cover .footer {
+    position: absolute;
+    bottom: 30mm;
+    left: 50mm;
+    right: 50mm;
+    display: flex;
+    justify-content: space-between;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10pt;
+    color: #6c8084;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* Artboard page — fixed page, artboard centered + scaled */
+  .print-page {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18mm 14mm 22mm;
+    box-sizing: border-box;
+    page-break-after: always;
+    page-break-before: always;
+    position: relative;
+    background: #f0eee9;
+  }
+  .print-page-label {
+    position: absolute;
+    top: 12mm;
+    left: 18mm;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9.5pt;
+    color: #6d7589;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .print-page-section {
+    position: absolute;
+    top: 12mm;
+    right: 18mm;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9.5pt;
+    color: #6d7589;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .print-page-footer {
+    position: absolute;
+    bottom: 8mm;
+    left: 18mm;
+    right: 18mm;
+    display: flex;
+    justify-content: space-between;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9pt;
+    color: #6d7589;
+    letter-spacing: 0.06em;
+  }
+  .print-artboard-wrap {
+    /* Fixed size matches the natural artboard. We scale the inner via transform. */
+    overflow: visible;
+  }
+  .print-artboard {
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    overflow: hidden;
+    transform-origin: center center;
+  }
+
+  /* Section cover · light mode (used when content is small enough that
+     we don't need the big dark hero) — currently unused but available. */
+  .print-section-cover.light {
+    background: #f6f3eb;
+    color: #1d2330;
+  }
+  .print-section-cover.light .eyebrow { color: #c96442; }
+  .print-section-cover.light p { color: #3f475c; }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+  integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+  crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+  integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+  crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+  integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+  crossorigin="anonymous"></script>
+
+<!-- ─── Print shims for DesignCanvas / DCSection / DCArtboard ───
+     Replace the interactive design-canvas exports BEFORE any section
+     file loads. Each <DCSection> becomes a section cover page; each
+     <DCArtboard> becomes a print page with the artboard scaled to fit.
+     <DCPostIt> is dropped from print. -->
+<script type="text/babel">
+  // A3 landscape minus 14mm side margins minus 18+22mm top/bottom margins
+  // (96dpi · 1mm ≈ 3.78px) → ~1497×987 usable area.
+  const PAGE_W = 1497;
+  const PAGE_H = 987;
+  let _sectionCounter = 0;
+  let _pageCounter = 0;
+  let _currentSection = "";
+  let _totalPages = 0;
+
+  function DesignCanvas({ children }) {
+    return <>{children}</>;
+  }
+
+  function DCSection({ id, title, subtitle, children }) {
+    _sectionCounter += 1;
+    const num = String(_sectionCounter).padStart(2, "0");
+    _currentSection = title;
+    return (
+      <section className="print-section">
+        <div className="print-section-cover">
+          <div className="eyebrow">Section {num}</div>
+          <h1>{title}</h1>
+          {subtitle && <p>{subtitle}</p>}
+          <div className="footer">
+            <span>Kura Zetu · Redesign canvas</span>
+            <span>{title}</span>
+          </div>
+        </div>
+        {children}
+      </section>
+    );
+  }
+
+  function DCArtboard({ id, label, width = 360, height = 640, children }) {
+    _pageCounter += 1;
+    const scale = Math.min(PAGE_W / width, PAGE_H / height, 1);
+    const renderedW = width * scale;
+    const renderedH = height * scale;
+    return (
+      <div className="print-page">
+        <div className="print-page-label">{label}</div>
+        <div className="print-page-section">{_currentSection}</div>
+        <div className="print-artboard-wrap"
+          style={{ width: renderedW, height: renderedH }}>
+          <div className="print-artboard"
+            style={{
+              width: width,
+              height: height,
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+              marginLeft: 0,
+              marginTop: 0,
+            }}>
+            {children}
+          </div>
+        </div>
+        <div className="print-page-footer">
+          <span>Kura Zetu · Redesign canvas · May 2026</span>
+          <span>{label}</span>
+        </div>
+      </div>
+    );
+  }
+
+  function DCPostIt() { return null; }
+
+  Object.assign(window, { DesignCanvas, DCSection, DCArtboard, DCPostIt });
+</script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Starter components -->
+<script type="text/babel" src="src/android-frame.jsx"></script>
+<script type="text/babel" src="src/browser-window.jsx"></script>
+
+<!-- Shared components -->
+<script type="text/babel" src="src/components.jsx"></script>
+
+<!-- Sections (each exports its own DCSection) -->
+<script type="text/babel" src="src/section-brand.jsx"></script>
+<script type="text/babel" src="src/section-system.jsx"></script>
+<script type="text/babel" src="src/section-onboarding.jsx"></script>
+<script type="text/babel" src="src/section-pinverify-a.jsx"></script>
+<script type="text/babel" src="src/section-pinverify-b.jsx"></script>
+<script type="text/babel" src="src/section-form34a.jsx"></script>
+<script type="text/babel" src="src/section-results.jsx"></script>
+<script type="text/babel" src="src/section-web-results.jsx"></script>
+<script type="text/babel" src="src/section-web-landing.jsx"></script>
+<script type="text/babel" src="src/section-web-pinverify.jsx"></script>
+
+<!-- Mount + auto-print -->
+<script type="text/babel" data-presets="env,react">
+  function PrintCover() {
+    return (
+      <section className="print-section">
+        <div className="print-section-cover">
+          <div className="eyebrow">Kura Zetu · 2027</div>
+          <h1>Redesign canvas.<br/>Ramani direction.</h1>
+          <p>Brand · design system · onboarding · PinVerify A &amp; B · Form 34A capture · Results dashboards mobile + web · landing &amp; PinVerify on web. Companion audit doc separately.</p>
+          <div className="footer">
+            <span>Citizen tally · Not IEBC</span>
+            <span>May 2026</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function PrintApp() {
+    return (
+      <>
+        <PrintCover />
+        <BrandSection />
+        <SystemSection />
+        <OnboardingSection />
+        <PinVerifyASection />
+        <PinVerifyBSection />
+        <Form34ASection />
+        <ResultsSection />
+        <WebResultsSection />
+        <WebLandingSection />
+        <WebPinVerifySection />
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<PrintApp />);
+
+  // Auto-print once fonts + render settle. ~500ms padding + fonts.ready
+  // ensures Public Sans / Plex Mono are subset-loaded before the dialog
+  // captures glyph metrics.
+  if (!window.__noAutoPrint) {
+    (async () => {
+      try { await document.fonts.ready; } catch {}
+      // Wait for React + JSX scripts to settle.
+      await new Promise(r => setTimeout(r, 700));
+      window.print();
+    })();
+  }
+</script>
+</body>
+</html>

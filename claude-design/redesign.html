@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>KuraZetu — Redesign Canvas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="src/tokens.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; }
+  /* The design canvas sets its own bg; this keeps default flash neutral. */
+  body { font-family: "Public Sans", system-ui, sans-serif; }
+  /* Brand wrapper — set on each artboard via data-brand so we can preview
+     directions side-by-side. Defaults applied when no [data-brand] set. */
+  [data-brand] { color: var(--kz-ink); background: var(--kz-bg); }
+
+  /* Reset list / paragraph defaults inside artboards so phone content
+     doesn't inherit browser defaults. */
+  .kz h1, .kz h2, .kz h3, .kz h4, .kz p, .kz ul, .kz ol { margin: 0; padding: 0; }
+  .kz ul, .kz ol { list-style: none; }
+  .kz button { font: inherit; color: inherit; }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+  integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+  crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+  integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+  crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+  integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+  crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Starter components -->
+<script type="text/babel" src="src/design-canvas.jsx"></script>
+<script type="text/babel" src="src/android-frame.jsx"></script>
+<script type="text/babel" src="src/browser-window.jsx"></script>
+
+<!-- Shared components -->
+<script type="text/babel" src="src/components.jsx"></script>
+
+<!-- Sections (each exports its own DCSection) -->
+<script type="text/babel" src="src/section-brand.jsx"></script>
+<script type="text/babel" src="src/section-system.jsx"></script>
+<script type="text/babel" src="src/section-onboarding.jsx"></script>
+<script type="text/babel" src="src/section-pinverify-a.jsx"></script>
+<script type="text/babel" src="src/section-pinverify-b.jsx"></script>
+<script type="text/babel" src="src/section-form34a.jsx"></script>
+<script type="text/babel" src="src/section-results.jsx"></script>
+<script type="text/babel" src="src/section-web-results.jsx"></script>
+<script type="text/babel" src="src/section-web-landing.jsx"></script>
+<script type="text/babel" src="src/section-web-pinverify.jsx"></script>
+<script type="text/babel" src="src/section-edge-states.jsx"></script>
+
+<!-- Mount -->
+<script type="text/babel" data-presets="env,react">
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="00-intro" title="KuraZetu redesign canvas"
+          subtitle="11 sections · click any artboard to focus · ←/→/Esc to navigate · drag to reorder">
+          <DCArtboard id="readme" label="Read me first" width={560} height={420}>
+            <div style={{ padding: "32px 36px", fontFamily: "Public Sans, system-ui", lineHeight: 1.55, color: "#1d2330" }}>
+              <div style={{ fontSize: 11, letterSpacing: 0.12, color: "#6d7589", textTransform: "uppercase", fontWeight: 600 }}>
+                Companion doc
+              </div>
+              <h2 style={{ fontSize: 28, margin: "8px 0 14px", letterSpacing: -0.5, fontWeight: 700 }}>
+                Audit, punch list & rationale &nbsp;→
+              </h2>
+              <p style={{ fontSize: 14.5, color: "#3f475c", margin: "0 0 18px" }}>
+                Everything I'd say out loud about each screen lives in the
+                audit doc. Open it side-by-side with this canvas.
+              </p>
+              <a href="audit.html" target="_blank" rel="noopener"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 10,
+                  background: "#1d2330", color: "#f4f1ea",
+                  padding: "13px 18px", borderRadius: 6, fontSize: 14,
+                  fontWeight: 600, textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}>
+                Open audit.html
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M7 17L17 7M9 7h8v8" /></svg>
+              </a>
+              <div style={{ marginTop: 30, fontSize: 12.5, color: "#6d7589", lineHeight: 1.6 }}>
+                Canvas controls: scroll/trackpad to pan · pinch or cmd+scroll to zoom · click an artboard label to rename · grip to reorder · ⋯ to export PNG.
+              </div>
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <BrandSection />
+        <SystemSection />
+        <OnboardingSection />
+        <PinVerifyASection />
+        <PinVerifyBSection />
+        <Form34ASection />
+        <ResultsSection />
+        <WebResultsSection />
+        <WebLandingSection />
+        <WebPinVerifySection />
+        <EdgeStatesSection />
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

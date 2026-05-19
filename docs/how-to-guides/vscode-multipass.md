@@ -22,24 +22,24 @@ You can press Enter to accept the default file name and leave the passphrase emp
 ``` {terminal}
 
 Generating public/private rsa key pair.
-Enter file in which to save the key (/Users/shamash/.ssh/id_rsa): kurazetu_key
+Enter file in which to save the key (/Users/your-user/.ssh/id_rsa): kurazetu_key
 Enter passphrase for "kurazetu_key" (empty for no passphrase): 
 Enter same passphrase again: 
 Your identification has been saved in kurazetu_key
 Your public key has been saved in kurazetu_key.pub
 The key fingerprint is:
-SHA256:ivX6ESsNNNXUMmyHN/RJ+a8KQDhF75FvtGFCghcBKRE shamash@Shamash.local
+SHA256:<fingerprint> your-user@workstation.local
 The key's randomart image is:
 +---[RSA 3072]----+
-|    Eo.=B*o+. .. |
-|    . o+.+B.=o.. |
-|     .=...==+.o. |
-|     . + . * o  .|
-|      o S . +   .|
-|     o = + .    .|
-|    . o = .    . |
-|       o . .  .  |
-|      ...   ..   |
+|   <randomart>    |
+|   <randomart>    |
+|   <randomart>    |
+|   <randomart>    |
+|   <randomart>    |
+|   <randomart>    |
+|   <randomart>    |
+|   <randomart>    |
+|   <randomart>    |
 +----[SHA256]-----+
 ```
 
@@ -141,7 +141,7 @@ To connect to your Multipass instance using VS Code, follow these steps:
         Host <your-vm-ip>
         HostName <your-vm-ip>
         User ubuntu
-        IdentityFile < your full provate key path e.g. /Users/shamash/xxx/KuraZetu/kurazetu_key>
+        IdentityFile <your full private key path, e.g. /Users/your-user/path/to/KuraZetu/kurazetu_key>
     ```
 
 5. There are a few ways to connect to the Multipass instance:
