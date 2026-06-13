@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+{% load tailwind_cli %}
 <html lang="en">
     <head>
         {% block title %}
@@ -34,7 +35,7 @@
             <meta name="twitter:site" content="@shamash92_" />
         {% endblock %}
 
-        <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
+        {% tailwind_css %}
     </head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-09WKQEW8RW"></script>
