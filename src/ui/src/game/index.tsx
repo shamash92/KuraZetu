@@ -2,25 +2,30 @@ import GameMap from "./GameMap";
 import GameStart from "./GameStart";
 import {Helmet} from "react-helmet-async";
 import {TLevel} from "./types";
-import {useState} from "react";
+import {useSearchParams} from "react-router-dom";
+
+// Levels we accept from the ?level= query param. "random" is the global,
+// no-login track; ward/constituency/county are the logged-in tracks.
+const VALID_LEVELS = ["random", "ward", "constituency", "county"] as const;
+type TParamLevel = (typeof VALID_LEVELS)[number];
 
 export default function GameLandingPage() {
-    const [gameStarted, setGameStarted] = useState(false);
-    const [score, setScore] = useState(0);
-    const [level, setLevel] = useState<TLevel | null>(null);
+    // URL param drives the screen so history + reload land back on the same
+    // track (e.g. /ui/game/?level=ward).
+    const [searchParams, setSearchParams] = useSearchParams();
+    const rawLevel = searchParams.get("level");
+    const level = VALID_LEVELS.includes(rawLevel as TParamLevel)
+        ? (rawLevel as TParamLevel)
+        : null;
 
-    const startGame = (level: TLevel | null) => {
-        if (level !== null) {
-            setLevel(level);
-        }
-        setGameStarted(true);
+    const startGame = (chosen: TParamLevel) => {
+        setSearchParams({level: chosen});
     };
 
-    const addPoints = (points: number) => {
-        setScore((prev) => prev + points);
-    };
+    // "random" maps to a null admin-level for the existing GameMap/API contract.
+    const mapLevel: TLevel | null = level === "random" || level === null ? null : level;
 
-    if (!gameStarted) {
+    if (level === null) {
         return (
             <>
                 <Helmet>
@@ -81,7 +86,7 @@ export default function GameLandingPage() {
 
     return (
         <>
-            <GameMap score={score} level={level} onAddPoints={addPoints} />
+            <GameMap level={mapLevel} />
         </>
     );
 }

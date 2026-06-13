@@ -79,7 +79,15 @@ function App() {
             <HelmetProvider context={helmetContext}>
                 <AuthProvider>
                     <UserProvider>
-                        <Toaster />
+                        <Toaster
+                            icons={{
+                                success: null,
+                                info: null,
+                                warning: null,
+                                error: null,
+                                loading: null,
+                            }}
+                        />
                         <RoutesApp />
                     </UserProvider>
                 </AuthProvider>

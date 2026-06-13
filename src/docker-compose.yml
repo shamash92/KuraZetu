@@ -32,12 +32,11 @@ services:
 
   web:
     build: .
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py tailwind build && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./:/app
-      - tailwind_static_volume:/app/staticfiles
       - react_static_volume:/app/staticfiles/ui
-    
+
     ports:
       - "8000:8000"
     depends_on:
@@ -52,24 +51,8 @@ services:
       - POSTGRES_HOST=${DATABASE_HOST}
 
 
-  tailwind:
-    build:
-      context: .
-      dockerfile: Dockerfile.tailwind
-    depends_on:
-      - webpack
-    volumes:
-      - ./tailwind:/app
-      - tailwind_static_volume:/app/css
-    working_dir: /app
-    command: yarn run dev
-    restart: "unless-stopped"
-    tty: true
-
-
 
 volumes:
   postgres_data:
-  tailwind_static_volume:
   react_static_volume:
 

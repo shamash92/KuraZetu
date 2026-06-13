@@ -46,9 +46,10 @@ THIRD_PARTY_APPS = [
     "admin_honeypot",
     "django_otp",
     "django_otp.plugins.otp_totp",
+    "django_tailwind_cli",
 ]
 
-MY_APPS = ["accounts", "stations", "ui", "results", "tailwind","historical"]
+MY_APPS = ["accounts", "stations", "ui", "results", "historical"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 
@@ -239,3 +240,16 @@ LEAFLET_CONFIG = {
     # ],
     "ATTRIBUTION_PREFIX": "&copy; <a href='https://kurazetu.readthedocs.io/'>Kura Zetu</a>",
 }
+
+# ── Polling center verification ─────────────────────────────────────────
+# Location search: Nominatim is the default (free, no key). Google Places is
+# used automatically when GOOGLE_MAPS_API_KEY is set.
+GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
+NOMINATIM_USER_AGENT = config(
+    "NOMINATIM_USER_AGENT", default="KuraZetu/1.0 (+https://kurazetu.com)"
+)
+
+# Consensus: a center auto-verifies once this many in-ward, in-cluster
+# suggestions agree within CONSENSUS_RADIUS_M metres of the cluster centroid.
+CONSENSUS_THRESHOLD = config("CONSENSUS_THRESHOLD", default=3, cast=int)
+CONSENSUS_RADIUS_M = config("CONSENSUS_RADIUS_M", default=150, cast=int)
