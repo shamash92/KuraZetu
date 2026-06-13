@@ -1,0 +1,64 @@
+{% extends "drf_spectacular/swagger_ui.html" %}
+
+{% block extra_head %}
+{{ block.super }}
+<meta name="description" content="Interactive API documentation for Kura Zetu - Access comprehensive Kenyan election data including presidential, parliamentary, and local government results.">
+<meta name="keywords" content="Kenya elections, election results, API, election data, presidential results, parliamentary results">
+<meta name="author" content="Kura Zetu Team">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:title" content="Kura Zetu API Documentation - Swagger UI">
+<meta property="og:description" content="Interactive API documentation for accessing Kenyan election data and results.">
+<meta property="og:image" content="https://kurazetu.com/static/images/logo.png">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+<meta property="twitter:title" content="Kura Zetu API Documentation">
+<meta property="twitter:description" content="Interactive API documentation for Kenyan election data.">
+<meta property="twitter:image" content="https://kurazetu.com/static/images/logo.png">
+
+<!-- Canonical URL -->
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+<!-- Structured Data for API -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebAPI",
+  "name": "Kura Zetu API",
+  "description": "Comprehensive API for Kenyan election data and results",
+  "url": "https://kurazetu.com/api/schema/swagger/",
+  "provider": {
+    "@type": "Organization",
+    "name": "Kura Zetu",
+    "url": "https://kurazetu.com"
+  },
+  "documentation": {
+    "@type": "TechArticle",
+    "name": "Kura Zetu API Documentation",
+    "url": "https://kurazetu.com/api/schema/swagger/"
+  },
+  "endpoint": [
+    {
+      "@type": "APIEndpoint",
+      "url": "https://kurazetu.com/api/stations/",
+      "description": "Geographic location data for counties, constituencies, and wards"
+    },
+    {
+      "@type": "APIEndpoint",
+      "url": "https://kurazetu.com/api/results/",
+      "description": "Election results and party information"
+    },
+    {
+      "@type": "APIEndpoint",
+      "url": "https://kurazetu.com/api/historical/",
+      "description": "Historical election data and archives"
+    }
+  ]
+}
+</script>
+{% endblock %}

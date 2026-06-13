@@ -1,4 +1,15 @@
 User-agent: *
 Allow: /
 
+# Allow documentation
+Allow: /api/schema/
+Allow: /api/schema/swagger/
+Allow: /api/schema/redoc/
+
+# Disallow actual API data endpoints to prevent overloading
+Disallow: /api/stations/
+Disallow: /api/accounts/
+Disallow: /api/results/
+Disallow: /api/historical/
+
 Sitemap: https://kurazetu.com/sitemap.xml
