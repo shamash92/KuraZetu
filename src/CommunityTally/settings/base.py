@@ -46,9 +46,10 @@ THIRD_PARTY_APPS = [
     "admin_honeypot",
     "django_otp",
     "django_otp.plugins.otp_totp",
+    "django_tailwind_cli",
 ]
 
-MY_APPS = ["accounts", "stations", "ui", "results", "tailwind","historical"]
+MY_APPS = ["accounts", "stations", "ui", "results", "historical"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 
