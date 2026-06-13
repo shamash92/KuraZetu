@@ -1,0 +1,664 @@
+/* Auth flow — perk aesthetic, ported from claude-design/src/signup-perk.css.
+   Reuses global :root tokens + fonts from landing.css. Every selector is scoped
+   under .kz-auth so the generic class names can't collide with the rest of the
+   app. Import BOTH landing.css and this file in the signup flow components. */
+
+/* Tokens used by the perk signup design but not defined in landing.css. */
+.kz-auth {
+  --display: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mute-2: #9a9da3;
+  --paper-vivid: #e9e8e2;
+  --ink-soft: #1a1a1a;
+}
+
+.kz-auth {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--sans);
+  background: var(--paper);
+}
+
+.kz-auth,
+.kz-auth * {
+  box-sizing: border-box;
+}
+
+.kz-auth .eyebrow {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--copper);
+}
+
+/* ── STEP 1 · Welcome / choice ─────────────────────────────────────── */
+.kz-auth .welcome {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 76px 32px 84px;
+  text-align: center;
+  background:
+    repeating-linear-gradient(0deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+    repeating-linear-gradient(90deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+    radial-gradient(ellipse 72% 56% at 50% 4%, #fbfaf7 0%, #f4f3ee 100%);
+}
+.kz-auth .welcome .eyebrow {
+  margin-bottom: 18px;
+}
+.kz-auth .welcome h2 {
+  margin: 0;
+  max-width: 13ch;
+  font-family: var(--display);
+  font-size: clamp(40px, 4.6vw, 62px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.96;
+}
+.kz-auth .welcome h2 .accent {
+  position: relative;
+  white-space: nowrap;
+}
+.kz-auth .welcome h2 .accent::after {
+  content: "";
+  position: absolute;
+  right: -0.04em;
+  bottom: -0.06em;
+  left: -0.04em;
+  height: 0.2em;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'><path d='M2 7 C 40 1, 80 11, 120 5 S 196 9, 198 5' fill='none' stroke='%2316a35a' stroke-width='5' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+.kz-auth .welcome .lede {
+  max-width: 52ch;
+  margin: 22px 0 0;
+  color: var(--mute);
+  font-size: 16.5px;
+  line-height: 1.6;
+}
+
+.kz-auth .path-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 18px;
+  width: 100%;
+  max-width: 800px;
+  margin-top: 46px;
+  text-align: left;
+}
+.kz-auth .path-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 32px 32px 30px;
+  border: 1px solid var(--rule-08);
+  border-radius: 24px;
+  background: var(--card);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(13, 13, 13, 0.05);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+.kz-auth .path-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(13, 13, 13, 0.09);
+}
+.kz-auth .path-tile .tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-auth .path-tile h3 {
+  margin: 6px 0 0;
+  font-family: var(--display);
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+.kz-auth .path-tile p {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--mute);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.kz-auth .path-tile .go {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 13px 22px;
+  border: 1px solid var(--rule-16);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+.kz-auth .path-tile .go svg {
+  width: 16px;
+  height: 16px;
+}
+.kz-auth .path-tile.primary .tag {
+  color: var(--green-deep);
+}
+.kz-auth .path-tile.primary .go {
+  border-color: var(--lime);
+  background: var(--lime);
+  color: var(--lime-ink);
+}
+
+/* ── STEP 2–5 · Geographic selection (list + map) ──────────────────── */
+.kz-auth .geo {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  height: 100vh;
+}
+.kz-auth .geo-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--rule-08);
+  background:
+    repeating-linear-gradient(0deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+    repeating-linear-gradient(90deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+    var(--paper);
+}
+.kz-auth .geo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 24px 16px;
+}
+.kz-auth .geo-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.kz-auth .geo-head h2 .what {
+  color: var(--green);
+}
+.kz-auth .geo-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border: 1px solid var(--rule-16);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+.kz-auth .geo-back:hover {
+  border-color: var(--ink);
+}
+.kz-auth .geo-back svg {
+  width: 14px;
+  height: 14px;
+}
+.kz-auth .geo-progress {
+  display: flex;
+  gap: 6px;
+  padding: 0 24px 14px;
+}
+.kz-auth .geo-progress span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rule-08);
+}
+.kz-auth .geo-progress span.done {
+  background: var(--green);
+}
+.kz-auth .geo-progress span.now {
+  background: var(--ink);
+}
+
+.kz-auth .geo-scroll {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 18px 22px;
+}
+.kz-auth .geo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  border: 1px solid var(--rule-08);
+  border-radius: 14px;
+  background: var(--card);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+.kz-auth .geo-item:hover {
+  border-color: var(--rule-16);
+  transform: translateX(2px);
+}
+.kz-auth .geo-item .name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.kz-auth .geo-item.is-poll .name {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.kz-auth .geo-item.selected {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+.kz-auth .geo-select {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.kz-auth .geo-select svg {
+  width: 14px;
+  height: 14px;
+}
+.kz-auth .geo-item.selected .geo-select {
+  display: inline-flex;
+}
+
+/* Map column — hosts the real Leaflet map. */
+.kz-auth .geo-map {
+  position: relative;
+  overflow: hidden;
+  background: #0e2024;
+}
+.kz-auth .geo-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+.kz-auth .geo-map-loading {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+}
+.kz-auth .geo-toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 80%;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+/* ── STEP 6 · Almost done (summary) ────────────────────────────────── */
+.kz-auth .summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 74px 32px 80px;
+  text-align: center;
+  background:
+    repeating-linear-gradient(0deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+    repeating-linear-gradient(90deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+    radial-gradient(ellipse 72% 56% at 50% 4%, #fbfaf7 0%, #f4f3ee 100%);
+}
+.kz-auth .summary .eyebrow {
+  margin-bottom: 14px;
+}
+.kz-auth .summary h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(36px, 4.2vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+.kz-auth .summary-card {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 34px;
+  padding: 10px 28px;
+  border: 1px solid var(--rule-08);
+  border-radius: 20px;
+  background: var(--card);
+  text-align: left;
+  box-shadow: 0 12px 30px rgba(13, 13, 13, 0.06);
+}
+.kz-auth .summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--rule-08);
+}
+.kz-auth .summary-row:last-child {
+  border-bottom: 0;
+}
+.kz-auth .summary-row .k {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-auth .summary-row .v {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-align: right;
+  color: var(--ink);
+}
+.kz-auth .summary .note {
+  margin: 26px 0 18px;
+  color: var(--mute);
+  font-size: 14px;
+}
+.kz-auth .summary .cta-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.kz-auth .summary .submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 26px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.kz-auth .summary .submit svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── STEP 7 · Register form ────────────────────────────────────────── */
+.kz-auth .register {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 56px 40px 52px;
+}
+.kz-auth .register .eyebrow {
+  display: block;
+  text-align: center;
+}
+.kz-auth .register h2 {
+  margin: 10px 0 6px;
+  font-family: var(--display);
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  text-align: center;
+}
+.kz-auth .register .lede {
+  margin: 0 0 32px;
+  color: var(--mute);
+  font-size: 14.5px;
+  text-align: center;
+}
+.kz-auth .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.kz-auth .field .label {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-auth .field .help {
+  margin-top: -2px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--mute-2);
+}
+.kz-auth .field-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.kz-auth .inp,
+.kz-auth .sel {
+  appearance: none;
+  width: 100%;
+  padding: 14px;
+  border: 1.5px solid var(--rule-16);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+}
+.kz-auth .inp::placeholder {
+  color: var(--mute-2);
+}
+.kz-auth .inp:focus,
+.kz-auth .sel:focus {
+  border-color: var(--ink);
+}
+.kz-auth .sel-wrap {
+  position: relative;
+}
+.kz-auth .sel-wrap svg {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 15px;
+  height: 15px;
+  transform: translateY(-50%);
+  color: var(--mute);
+  pointer-events: none;
+}
+.kz-auth .sel {
+  padding-right: 38px;
+}
+.kz-auth .phone-input {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+}
+.kz-auth .phone-input .prefix {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  border-right: 1px solid var(--rule-08);
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.kz-auth .phone-input .flag {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 13px;
+  border-radius: 2px;
+  /* Kenya flag: black / white / red / white / green */
+  background: linear-gradient(
+    180deg,
+    #000 0 32%,
+    #fff 32% 36%,
+    #be0027 36% 64%,
+    #fff 64% 68%,
+    #007a3d 68% 100%
+  );
+}
+.kz-auth .phone-input input {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  padding: 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+}
+.kz-auth .note-box {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--coral);
+  color: var(--coral-deep);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+}
+.kz-auth .note-box b {
+  font-weight: 800;
+}
+.kz-auth .register .submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 8px;
+  padding: 16px 22px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.kz-auth .register .submit:disabled {
+  background: var(--surface);
+  color: var(--mute-2);
+  cursor: not-allowed;
+}
+.kz-auth .register .submit svg {
+  width: 16px;
+  height: 16px;
+}
+.kz-auth .register .terms {
+  margin: 18px 0 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--mute);
+}
+.kz-auth .register .terms a {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.kz-auth .register .alert {
+  margin-bottom: 22px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--red);
+  color: #fff;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .kz-auth .geo {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+  .kz-auth .geo-list {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-08);
+  }
+  .kz-auth .geo-scroll {
+    max-height: 50vh;
+  }
+  .kz-auth .geo-map {
+    min-height: 45vh;
+  }
+  .kz-auth .path-grid {
+    grid-template-columns: 1fr;
+  }
+  .kz-auth .register {
+    padding: 40px 22px 44px;
+  }
+}
