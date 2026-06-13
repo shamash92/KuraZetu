@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load crispy_forms_tags %}
 
 {% block title %}
     <title>Kura Zetu - Login</title>
@@ -15,48 +14,179 @@
     <meta name="keywords" content="Kura Zetu, GenZ , voting, elections, transparency, secure voting, civic engagement, Kenya, democracy" />
     <meta name="author" content="@shamash92_" />
 
-    <!-- Open Graph / Facebook -->
     <meta property="og:title" content="Kura Zetu – Protecting the Integrity of the Kenyan Vote" />
     <meta property="og:description" content="Login to join thousands of virtual agents across Kenya tracking and verifying results directly from polling stations." />
     <meta property="og:image" content="https://kurazetu.s3.eu-west-1.amazonaws.com/static/images/logo/icon.png" />
-
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://kurazetu.com/" />
-    <meta property="og:image" content="https://kurazetu.s3.eu-west-1.amazonaws.com/static/images/logo/icon.png" />
 
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Kura Zetu – Protect the Kenyan Vote" />
     <meta name="twitter:description" content="Become a virtual agent and help tally polling station results. Transparent. Community-led. Decentralized." />
     <meta name="twitter:image" content="https://kurazetu.s3.eu-west-1.amazonaws.com/static/images/logo/icon.png" />
     <meta name="twitter:site" content="@shamash92_" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <style>
+      .kz-login {
+        --lime: #c4ff5e; --lime-deep: #a8e63a; --lime-ink: #0a0a0a;
+        --green: #16a35a; --green-deep: #0f7a40;
+        --coral: #ffd0c0; --coral-deep: #a8442a; --red: #c44539;
+        --copper: #c97b3e;
+        --paper: #f7f6f3; --card: #ffffff; --surface: #f1f0eb;
+        --ink: #0d0d0d; --mute: #6b6d72; --mute-2: #9a9da3;
+        --rule-08: rgba(13,13,13,0.07); --rule-16: rgba(13,13,13,0.14);
+        --mesh-grid: rgba(40,50,60,0.04);
+        --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+        position: fixed; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        padding: 32px 20px;
+        font-family: var(--sans);
+        color: var(--ink);
+        background:
+          repeating-linear-gradient(0deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+          repeating-linear-gradient(90deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 38px),
+          radial-gradient(ellipse 72% 56% at 50% 4%, #fbfaf7 0%, #f4f3ee 100%);
+        overflow: auto;
+      }
+      .kz-login * { box-sizing: border-box; }
+
+      .kz-login-card {
+        width: 100%; max-width: 460px;
+        background: var(--card);
+        border: 1px solid var(--rule-08);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(13,13,13,0.10);
+      }
+
+      .kz-login-main { padding: 48px 44px; }
+      .kz-login-main h1 { margin: 0; font-size: 34px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.0; }
+      .kz-login-main .lede { margin: 10px 0 28px; font-size: 14.5px; color: var(--mute); }
+
+      .kz-login .kz-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+      .kz-login .kz-field label {
+        font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+        letter-spacing: 0.22em; text-transform: uppercase; color: var(--mute);
+      }
+      .kz-login .kz-field input,
+      .kz-login .kz-field select {
+        appearance: none; width: 100%;
+        padding: 14px;
+        border: 1.5px solid var(--rule-16); border-radius: 12px;
+        background: var(--card); color: var(--ink);
+        font-family: var(--sans); font-size: 16px; font-weight: 600;
+        outline: none;
+      }
+      .kz-login .kz-field input::placeholder { color: var(--mute-2); }
+      .kz-login .kz-field input:focus,
+      .kz-login .kz-field select:focus { border-color: var(--ink); }
+      /* phonenumber_field region select + input render inline — keep them tidy */
+      .kz-login .kz-field select { margin-bottom: 8px; }
+      .kz-login .kz-help { font-family: var(--mono); font-size: 11px; color: var(--mute-2); letter-spacing: 0.02em; }
+      .kz-login .kz-err { margin: 0; font-size: 12.5px; color: var(--red); font-weight: 600; }
+
+      .kz-login .kz-nonfield {
+        margin-bottom: 20px; padding: 13px 16px;
+        background: var(--coral); color: var(--coral-deep);
+        border-radius: 12px; font-size: 13px; line-height: 1.5;
+      }
+
+      .kz-login .kz-submit {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; margin-top: 8px; padding: 16px 22px;
+        border: 0; border-radius: 14px;
+        background: var(--lime); color: var(--lime-ink);
+        font-family: var(--sans); font-size: 15px; font-weight: 800;
+        cursor: pointer;
+      }
+      .kz-login .kz-submit:hover { background: var(--lime-deep); }
+      .kz-login .kz-submit svg { width: 16px; height: 16px; }
+
+      .kz-login .kz-links { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--mute); }
+      .kz-login .kz-links a { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+      .kz-login .kz-back {
+        display: inline-block; margin-top: 14px;
+        font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+        color: var(--mute); text-decoration: none;
+      }
+      .kz-login .kz-back:hover { color: var(--ink); }
+
+      @media (max-width: 720px) {
+        .kz-login-main { padding: 40px 28px; }
+      }
+    </style>
 {% endblock %}
 
 {% block content %}
-    <div class="flex flex-col items-center justify-start min-h-screen bg-gray-100 md:flex-row md:justify-center">
-        <div class="flex flex-col justify-start w-full max-w-4xl overflow-hidden bg-white rounded-lg shadow-lg md:flex-row">
-            <!-- Left Section: Image (not included for now) and Info -->
-            <div class="flex-col items-center justify-center hidden w-1/2 p-8 text-white bg-blue-500 md:flex">
-                <h1 class="text-2xl font-bold text-center">Kura Zetu Portal</h1>
-                <p class="mt-4 text-sm text-center">Gain access to your personalized dashboard, track your vote counts across the various levels.</p>
-            </div>
-            <!-- Right Section: Login Form -->
-            <div class="flex flex-col items-center justify-center w-full h-screen p-8 md:h-auto md:w-1/2">
-                <h1 class="text-2xl font-bold text-gray-800">Welcome Back!</h1>
-                <p class="mt-2 text-sm text-gray-600">Please login to access your account</p>
-                <form method="post" class="w-full mt-6">
+    <div class="kz-login">
+        <div class="kz-login-card">
+            <main class="kz-login-main">
+                <h1>Welcome back!</h1>
+                <p class="lede">Log in with the phone number on your account.</p>
+
+                <form method="post" novalidate>
                     {% csrf_token %}
-                    {{ form|crispy }}
-                    <button type="submit" class="w-full py-3 mt-4 text-white transition bg-blue-500 rounded-lg hover:bg-blue-600">Log in</button>
+
+                    {% if form.non_field_errors %}
+                        <div class="kz-nonfield">{{ form.non_field_errors|join:", " }}</div>
+                    {% endif %}
+
+                    <div class="kz-field">
+                        <label for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.help_text %}
+                            <span class="kz-help">{{ form.phone_number.help_text }}</span>
+                        {% endif %}
+                        {% if form.phone_number.errors %}
+                            <p class="kz-err">{{ form.phone_number.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="kz-field">
+                        <label for="{{ form.password.id_for_label }}">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <p class="kz-err">{{ form.password.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="kz-submit">
+                        Log in
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    </button>
                 </form>
-                <a href="/" class="w-full py-3 mt-4 text-center text-gray-800 transition bg-gray-200 rounded-lg hover:bg-gray-300">Back to homepage</a>
-                <p class="mt-6 text-sm text-gray-600">
-                    Forgot Password? <a href="{% url 'password_reset' %}" class="text-blue-500 hover:underline">Reset Password</a>
-                </p>
-                <p class="mt-2 text-sm text-gray-600">
-                    Don't have an account? <a href="/ui/signup/" class="text-blue-500 hover:underline">Register</a>
-                </p>
-            </div>
+
+                <div class="kz-links">
+                    <span>Forgot password? <a href="{% url 'password_reset' %}">Reset it</a></span>
+                    <span>Don't have an account? <a href="/ui/signup/">Register</a></span>
+                </div>
+                <a class="kz-back" href="/">← Back to homepage</a>
+            </main>
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var phone = document.getElementById("id_phone_number");
+            if (!phone) return;
+            var toEnd = function () {
+                var len = phone.value.length;
+                phone.setSelectionRange(len, len);
+            };
+            phone.addEventListener("focus", toEnd);
+            // mouseup fires after focus and would reset the caret, so override it
+            phone.addEventListener("mouseup", function (e) {
+                e.preventDefault();
+                toEnd();
+            });
+        });
+    </script>
 {% endblock %}

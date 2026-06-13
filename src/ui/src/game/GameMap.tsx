@@ -1,42 +1,30 @@
-import {AnimatePresence, motion} from "framer-motion";
 import {
     CheckCircle,
     Edit,
+    FastForward,
     HelpCircle,
-    Home,
     MapPin,
+    Save,
+    Sparkles,
     ThumbsUp,
-    Trophy,
+    X,
 } from "lucide-react";
 import {useEffect, useState} from "react";
-import {Alert, AlertDescription} from "../@/components/ui/alert";
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "../@/components/ui/drawer";
-import {IPollingCenterFeature, TLevel} from "./types";
+import {IConsensus, IPollingCenterFeature, TLevel} from "./types";
 
 import cookie from "react-cookies";
 import {toast} from "sonner";
-import {Badge} from "../@/components/ui/badge";
-import {Button} from "../@/components/ui/button";
 import MapComponent from "./Map";
-import PinEditComponent from "./PinEditComponent";
-import {set} from "react-hook-form";
 import {useAuth} from "../App";
+import "./game-active.css";
 
 interface GameMapProps {
-    score: number;
     level: TLevel | null;
-    onAddPoints: (points: number) => void;
 }
 
-export default function GameMap({score, level, onAddPoints}: GameMapProps) {
+type DraftPosition = {lat: number; lng: number};
+
+export default function GameMap({level}: GameMapProps) {
     const [currentLocation, setCurrentLocation] =
         useState<IPollingCenterFeature | null>(null);
 
@@ -47,15 +35,9 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
     const [totalStationsCount, setTotalStationsCount] = useState<number>(0);
     const [verifiedStationsCount, setVerifiedStationsCount] = useState<number>(0);
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [showConfirmDrawer, setShowConfirmDrawer] = useState(false);
-    const [newPosition, setNewPosition] = useState<{lat: number; lng: number} | null>(
-        null,
-    );
-    const [showAlert, setShowAlert] = useState(false);
-    const [isVerifying, setIsVerifying] = useState(false);
-
     const [reload, setReload] = useState(false);
+
+    const [consensus, setConsensus] = useState<IConsensus | null>(null);
 
     const [suggestedLocation, setSuggestedLocation] =
         useState<IPollingCenterFeature | null>(null);
@@ -63,25 +45,42 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
     const [alreadyVerifiedByUser, setAlreadyVerifiedByUser] = useState(false);
     const [alreadyVerifiedData, setAlreadyVerifiedData] =
         useState<IPollingCenterFeature | null>(null);
+    const [alreadyVerifiedSuggestion, setAlreadyVerifiedSuggestion] =
+        useState<IPollingCenterFeature | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [draftPosition, setDraftPosition] = useState<DraftPosition | null>(null);
+    const [draftInsideWard, setDraftInsideWard] = useState(true);
+    const [isSavingPin, setIsSavingPin] = useState(false);
 
     const toggleReload = () => {
         setReload((prev) => !prev);
     };
 
-    const [isDrawerOpen, setDrawerOpen] = useState(false);
-
     const csrfToken = cookie.load("csrftoken");
 
     const isAuthenticated = useAuth();
 
-    const handleCloseDrawer = () => setDrawerOpen(false);
-
-    const handleAlreadyVerified = (data: IPollingCenterFeature) => {
+    const handleAlreadyVerified = (
+        data: IPollingCenterFeature,
+        suggestion: IPollingCenterFeature | null,
+    ) => {
         setAlreadyVerifiedByUser(true);
         setAlreadyVerifiedData(data);
+        setAlreadyVerifiedSuggestion(
+            suggestion?.properties.is_upvote ? null : suggestion,
+        );
     };
 
+    const isUnlocated = currentLocation?.properties.is_unlocated === true;
+
     useEffect(() => {
+        setConsensus(null);
+        setIsEditing(false);
+        setDraftPosition(null);
+        setDraftInsideWard(true);
+        setAlreadyVerifiedByUser(false);
+        setAlreadyVerifiedData(null);
+        setAlreadyVerifiedSuggestion(null);
         fetch(`/api/stations/polling-centers/unverified/random/${level}/`, {
             method: "GET",
             headers: {
@@ -94,20 +93,17 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
             .then((data) => {
                 if (data["error"] === "You have already verified this polling center") {
                     toast.error("You have already verified this polling center");
-
-                    handleAlreadyVerified(data["data"]);
+                    handleAlreadyVerified(
+                        data["data"],
+                        data["user_verification"] ?? null,
+                    );
                 }
                 let unverifiedPollingCenter = data["data"];
-                console.log(unverifiedPollingCenter, "unverified data");
-                console.log(data["total_stations_count"], "total_stations_count");
-                console.log(data["verified_stations_count"], "verified_stations_count");
 
                 setTotalStationsCount(data["total_stations_count"]);
                 setVerifiedStationsCount(data["verified_stations_count"]);
 
                 let partiallyVerifiedPollingCenters = data["partially_verified"];
-
-                console.log(partiallyVerifiedPollingCenters, "partially verified data");
 
                 if (
                     partiallyVerifiedPollingCenters !== undefined &&
@@ -116,6 +112,8 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
                     setPartiallyVerifiedLocations(
                         partiallyVerifiedPollingCenters.features,
                     );
+                } else {
+                    setPartiallyVerifiedLocations(null);
                 }
                 if (unverifiedPollingCenter !== null) {
                     setCurrentLocation(unverifiedPollingCenter);
@@ -124,7 +122,7 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
             .catch((error) => {
                 console.error("Error fetching locations:", error);
             });
-    }, [reload]);
+    }, [reload, level]);
 
     const handlePinAPIPost = async (
         latitude: number,
@@ -132,33 +130,25 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
         pollingCenterDBId: number,
         isUpvote: boolean,
     ) => {
-        try {
-            const response = await fetch(`/api/stations/polling-centers/verify/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrfToken,
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    latitude: latitude,
-                    longitude: longitude,
-                    pollingCenterDBId: pollingCenterDBId,
-                    isUpvote: isUpvote,
-                }),
-            });
+        const response = await fetch(`/api/stations/polling-centers/verify/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken,
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                latitude: latitude,
+                longitude: longitude,
+                pollingCenterDBId: pollingCenterDBId,
+                isUpvote: isUpvote,
+            }),
+        });
 
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-
-            const data = await response.json();
-            console.log("Location verified:", data);
-            return data;
-        } catch (error) {
-            console.error("Error verifying location:", error);
-            throw error;
-        }
+        // The ward guard returns 400 with an {error} body — surface it instead
+        // of throwing a generic network error.
+        const data = await response.json();
+        return data;
     };
 
     const handleYes = async () => {
@@ -174,16 +164,14 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
             true,
         );
 
-        console.log(x, "this is x");
-
         if (x.error) {
             toast.error(x.error);
             return;
         }
         if (x.message === "Polling Center location upvoted successfully") {
-            toast.success("Pin location upvote successful!");
+            toast.success("Asante — your confirmation was recorded.");
             toggleReload();
-            setCurrentLocation(null); // Clear current location
+            setCurrentLocation(null);
         }
     };
 
@@ -211,10 +199,7 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
             }
 
             const data = await response.json();
-            console.log("Data get after upload", data);
-
             setSuggestedLocation(data["data"]);
-
             return data;
         } catch (error) {
             console.error("Error updating pin and boundary:", error);
@@ -223,371 +208,502 @@ export default function GameMap({score, level, onAddPoints}: GameMapProps) {
     };
 
     const handlePinUpdate = async (lat: number, lng: number) => {
-        setNewPosition({lat, lng});
-        handlePinAPIPost(
-            lat,
-            lng,
-            currentLocation?.id || 0, // Use 0 if id is not available
-            false,
-        ).then((data) => {
-            console.log(data, "data from pin update in secondary function");
-            // close drawer
-
-            onAddPoints(15);
-
+        setIsSavingPin(true);
+        try {
+            const data = await handlePinAPIPost(
+                lat,
+                lng,
+                currentLocation?.id || 0,
+                false,
+            );
             if (data.error) {
                 toast.error(data.error);
                 return;
             }
-            toast.success("Pin location updated successfully!");
 
-            // return data; // Return data if needed
-
-            handleCloseDrawer();
-
-            if (currentLocation) {
-                handleUpdatedPinAndBoundary(currentLocation.id);
+            if (data.consensus) {
+                setConsensus(data.consensus as IConsensus);
+            }
+            if (data.consensus?.verified) {
+                toast.success("Asante — enough neighbours agreed. Center verified.");
+            } else {
+                toast.success("Asante — your pin was recorded.");
             }
 
-            // nextLocation(); // Uncomment if you have a function to go to the next location
-        });
-    };
+            setIsEditing(false);
+            setDraftPosition(null);
 
-    const handleNoEdit = () => {
-        setShowAlert(true);
-        setIsEditing(true);
-        setTimeout(() => setShowAlert(false), 3000);
-    };
-
-    const handleSkip = () => {
-        onAddPoints(0.1);
-        // nextLocation();
-        setCurrentLocation(null); // Clear current location
-
-        toggleReload(); // Trigger reload to fetch new location
-    };
-
-    const handlePinDrag = (lat: number, lng: number) => {
-        if (isEditing) {
-            setNewPosition({lat, lng});
-            setShowConfirmDrawer(true);
+            if (currentLocation) {
+                await handleUpdatedPinAndBoundary(currentLocation.id);
+            }
+        } finally {
+            setIsSavingPin(false);
         }
     };
 
-    return (
-        <div className="fixed inset-0 bg-gray-900">
-            {/* Header */}
-            <header className="absolute top-0 left-0 right-0 z-[1000] bg-white/95 shadow-md backdrop-blur-lg  ">
-                <div className="flex flex-col items-center justify-between px-6 py-3 mx-auto md:flex-row">
-                    <a
-                        href="/ui"
-                        className="flex items-center gap-2 font-semibold text-blue-700 transition-colors hover:text-blue-900"
-                        style={{
-                            fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
-                        }}
-                    >
-                        <Home className="w-4 h-4" />
-                        <span className="text-sm tracking-tight ">Go Home</span>
-                    </a>
+    const handleSkip = () => {
+        setCurrentLocation(null);
+        toggleReload();
+    };
 
+    const openMovePin = () => {
+        if (!currentLocation) return;
+        setDraftPosition(null);
+        setDraftInsideWard(true);
+        setIsEditing(true);
+    };
+
+    const cancelMovePin = () => {
+        setIsEditing(false);
+        setDraftPosition(null);
+        setDraftInsideWard(true);
+    };
+
+    const updateDraftPosition = (
+        position: DraftPosition,
+        isInsideWard: boolean,
+    ) => {
+        setDraftPosition(position);
+        setDraftInsideWard(isInsideWard);
+    };
+
+    const saveDraftPosition = async () => {
+        if (!draftPosition) {
+            toast.error("Pan the map and choose Put pin here before saving.");
+            return;
+        }
+        if (!draftInsideWard) {
+            toast.error(
+                `The pin must stay inside ${currentLocation?.properties.ward} ward.`,
+            );
+            return;
+        }
+        await handlePinUpdate(draftPosition.lat, draftPosition.lng);
+    };
+
+    useEffect(() => {
+        const handleShortcut = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (
+                target?.tagName === "INPUT" ||
+                target?.tagName === "TEXTAREA" ||
+                target?.isContentEditable
+            ) {
+                return;
+            }
+
+            if (
+                event.key.toLowerCase() === "y" &&
+                currentLocation &&
+                !isUnlocated &&
+                !isEditing
+            ) {
+                void handleYes();
+            }
+            if (
+                event.key.toLowerCase() === "m" &&
+                currentLocation &&
+                !isEditing
+            ) {
+                openMovePin();
+            }
+            if (event.key === "Escape" && isEditing) {
+                cancelMovePin();
+            }
+            if (event.key.toLowerCase() === "s" && currentLocation) {
+                if (isEditing) {
+                    void saveDraftPosition();
+                } else if (!isUnlocated) {
+                    handleSkip();
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleShortcut);
+        return () => window.removeEventListener("keydown", handleShortcut);
+    }, [
+        currentLocation,
+        draftInsideWard,
+        draftPosition,
+        isEditing,
+        isUnlocated,
+    ]);
+
+    const consensusView: IConsensus = consensus ?? {
+        verified: currentLocation?.properties.is_verified ?? false,
+        agree: Math.min(currentLocation?.properties.location_upvotes ?? 0, 3),
+        needed: 3,
+        outliers:
+            partiallyVerifiedLocations?.filter(
+                (location) => location.properties.is_outlier,
+            ).length ?? 0,
+    };
+
+    const nextLocation = () => {
+        setSuggestedLocation(null);
+        setAlreadyVerifiedByUser(false);
+        setAlreadyVerifiedData(null);
+        setAlreadyVerifiedSuggestion(null);
+        setCurrentLocation(null);
+        toggleReload();
+    };
+
+    const mapLocation = alreadyVerifiedByUser
+        ? alreadyVerifiedData
+        : currentLocation;
+
+    return (
+        <div className="pv-game">
+            <header className="pv-game-nav">
+                <a className="pv-game-brand" href="/ui/">
+                    <strong>KuraZetu</strong>
+                    <span>Powered by Kiongozi</span>
+                </a>
+
+                <nav className="pv-game-pills" aria-label="KuraZetu">
+                    <a href="/ui/dashboards/user/">Results</a>
+                    <a className="is-active" href="/ui/game/">
+                        PinVerify
+                    </a>
+                    <a href="/ui/#contribute">Contribute</a>
+                    <a href="/ui/#about">About</a>
+                </nav>
+
+                <div className="pv-game-nav-right">
                     {isAuthenticated && (
-                        <div className="flex flex-col items-center gap-2 md:flex-row">
-                            <span className="text-xs font-semibold text-gray-700 md:text-sm">
-                                Polling Centers in {level}: {totalStationsCount}
-                            </span>
-                            <span className="text-xs font-semibold text-gray-700 md:text-sm">
-                                Verified by you: {verifiedStationsCount}
-                            </span>
-                        </div>
+                        <span className="pv-game-track">
+                            {level || "Kenya"} · {totalStationsCount} centers
+                        </span>
                     )}
-                    <Badge
-                        variant="secondary"
-                        className="flex items-center gap-2 px-3 py-1 font-medium text-yellow-800 border border-yellow-200 rounded-full shadow-sm bg-yellow-50"
-                        style={{
-                            fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
-                        }}
-                    >
-                        <Trophy className="w-4 h-4 text-yellow-500" />
-                        <span className="text-base">{score.toFixed(1)} points</span>
-                    </Badge>
+                    <span className="pv-game-helped">
+                        {verifiedStationsCount} helped
+                    </span>
                 </div>
             </header>
 
-            {/* Alert for editing mode */}
-            <AnimatePresence>
-                {showAlert && (
-                    <motion.div
-                        initial={{opacity: 0, y: -50}}
-                        animate={{opacity: 1, y: 0}}
-                        exit={{opacity: 0, y: -50}}
-                        className="absolute top-[20vh] left-4 right-4 z-[1000]"
-                    >
-                        <Alert className="border-blue-200 bg-blue-50">
-                            <Edit className="w-4 h-4" />
-                            <AlertDescription>
-                                Drag the pin to the correct location, then confirm your
-                                edit.
-                            </AlertDescription>
-                        </Alert>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Map */}
-
-            <div className="absolute inset-0 pt-16">
-                {currentLocation && alreadyVerifiedByUser === false ? (
+            <main className="pv-game-workspace">
+                <section className="pv-game-map-shell" aria-label="Polling center map">
+                {mapLocation ? (
                     <MapComponent
-                        location={currentLocation}
-                        onPinDrag={handlePinDrag}
-                        isEditing={isEditing}
+                        location={mapLocation}
+                        wardNumber={mapLocation.properties.ward_number ?? null}
                         suggestedLocation={suggestedLocation ? suggestedLocation : null}
+                        highlightedSuggestion={
+                            alreadyVerifiedByUser
+                                ? alreadyVerifiedSuggestion
+                                : null
+                        }
+                        isReadOnly={alreadyVerifiedByUser}
+                        isEditing={isEditing}
+                        draftPosition={draftPosition}
+                        onDraftPositionChange={updateDraftPosition}
                         partiallyVerifiedLocations={
                             partiallyVerifiedLocations
                                 ? partiallyVerifiedLocations
                                 : null
                         }
                     />
-                ) : alreadyVerifiedByUser ? (
-                    <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-blue-50 to-blue-200">
-                        <div className="flex flex-col items-center gap-4 p-8 bg-white shadow-xl rounded-2xl">
-                            <CheckCircle className="w-16 h-16 mb-2 text-green-500" />
-                            <h2 className="text-2xl font-bold text-gray-800">
-                                Already Verified!
-                            </h2>
-                            <p className="text-lg text-center text-gray-600">
-                                You have already verified
-                                <span className="block mt-1 font-semibold text-blue-700">
-                                    {alreadyVerifiedData?.properties.name}
-                                </span>
-                            </p>
-                        </div>
-                    </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-gray-50 to-gray-200">
-                        <svg
-                            className="w-10 h-10 mb-4 text-blue-500 animate-spin"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            ></circle>
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            ></path>
-                        </svg>
-                        <p className="text-lg font-medium text-gray-700">
-                            Loading next pin location...
-                        </p>
+                    <div className="pv-game-loading">
+                        Loading the next polling center
                     </div>
                 )}
-            </div>
 
-            {/* Location Info */}
-            <AnimatePresence>
-                {currentLocation && (
-                    <motion.div
-                        initial={{opacity: 0, y: -20}}
-                        animate={{opacity: 1, y: 0}}
-                        exit={{opacity: 0, y: -20}}
-                        transition={{duration: 0.25}}
-                        className="absolute md:top-16 top-32 left-12 md:left-1/4 -translate-x-1/2 z-[1000] w-[75vw] md:w-[90vw] max-w-md bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-2 md:p-6"
-                    >
-                        <div className="flex items-center gap-3 mb-2">
-                            <MapPin className="w-5 h-5 text-blue-500" />
-                            <h3 className="text-sm font-bold text-gray-900 md:text-xl">
-                                {currentLocation.properties.name}
-                            </h3>
-                        </div>
-                        <div className="mb-2 space-y-1">
-                            <div className="flex items-center gap-2 text-xs text-gray-700 md:text-sm">
-                                <span className="font-medium">
-                                    {currentLocation.properties.ward}
+                    {currentLocation && isUnlocated && !isEditing && (
+                        <div className="pv-first-locate">
+                            <div className="pv-first-locate-card">
+                                <span className="pv-first-locate-icon">
+                                    <Sparkles size={22} />
                                 </span>
-                                <span className="text-gray-400">Ward</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-700 md:text-sm">
-                                <span className="font-medium">
-                                    {currentLocation.properties.constituency}
-                                </span>
-                                <span className="text-gray-400">Constituency</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-700 md:text-sm">
-                                <span className="font-bold">
-                                    {currentLocation.properties.county}
-                                </span>
+                                <h3>You're the first to locate this center.</h3>
+                                <p>
+                                    Search the school name, then place the first pin
+                                    inside {currentLocation.properties.ward} ward.
+                                </p>
+                                <button type="button" onClick={openMovePin}>
+                                    Place the first pin
+                                </button>
                             </div>
                         </div>
-                        {currentLocation.properties.pin_location_error ? (
-                            <div className="flex items-center gap-2 px-2 py-1 mt-2 text-sm text-red-600 rounded bg-red-50">
-                                <HelpCircle className="w-4 h-4" />
-                                <span>
-                                    Error:{" "}
-                                    {currentLocation.properties.pin_location_error}
-                                </span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2 px-2 py-1 mt-2 text-sm text-green-700 rounded bg-green-50">
-                                <CheckCircle className="w-4 h-4" />
-                                <span>No errors reported</span>
-                            </div>
-                        )}
-                        <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
-                            <span>
-                                <span className="font-semibold">Lat:</span>{" "}
-                                {currentLocation.properties.pin_location.coordinates[1].toFixed(
-                                    5,
-                                )}
+                    )}
+                </section>
+
+                <aside className="pv-game-panel">
+                    {suggestedLocation ? (
+                        <div className="pv-panel-state">
+                            <span className="pv-panel-state-icon">
+                                <CheckCircle size={24} />
                             </span>
-                            <span>
-                                <span className="font-semibold">Lng:</span>{" "}
-                                {currentLocation.properties.pin_location.coordinates[0].toFixed(
-                                    5,
-                                )}
-                            </span>
+                            <h2>Pin recorded</h2>
+                            <p>
+                                Asante. Your suggestion is now part of the community
+                                cluster and will count when neighbours agree.
+                            </p>
+                            <button type="button" onClick={nextLocation}>
+                                Next polling center
+                            </button>
                         </div>
-
-                        <div className="flex flex-row items-center gap-2 mt-4 text-gray-500">
-                            <ThumbsUp className="inline w-4 h-4 mr-2 text-green-500" />
-                            <span className="font-semibold">Upvotes:</span>{" "}
-                            {currentLocation.properties.location_upvotes}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Action Buttons */}
-
-            {suggestedLocation ? (
-                <div className="absolute bottom-8 left-0 w-[100vw]   z-[1000] ">
-                    <div className="flex items-center justify-center w-full gap-4 ">
-                        <Button
-                            onClick={() => {
-                                toggleReload();
-                                setSuggestedLocation(null);
-                                setCurrentLocation(null);
-                            }}
-                            className="w-full h-12 px-6 py-3 text-white bg-green-600 rounded-full shadow-lg md:w-1/4 hover:bg-green-700"
-                        >
-                            <MapPin className="w-10 h-10 text-white-500" />
-                            <span className="text-xl font-bold text-white-900 md:text-lg">
-                                Proceed
+                    ) : alreadyVerifiedByUser ? (
+                        <div className="pv-panel-state">
+                            <span className="pv-panel-state-icon">
+                                <CheckCircle size={24} />
                             </span>
-                        </Button>
-                    </div>
-                </div>
-            ) : alreadyVerifiedByUser ? (
-                <div className="absolute bottom-8 left-0 w-[100vw]   z-[1000] ">
-                    <div className="flex items-center justify-center w-full gap-4 ">
-                        <Button
-                            onClick={() => {
-                                toggleReload();
-                                setAlreadyVerifiedByUser(false);
-                                setCurrentLocation(null);
-                            }}
-                            className="w-full h-12 px-6 py-3 text-white bg-gray-400 rounded-full shadow-lg md:w-1/4 hover:bg-gray-500"
-                        >
-                            <CheckCircle className="w-10 h-10 text-white-500" />
-                            <span className="text-xl font-bold text-white-900 md:text-lg">
+                            <h2>Already verified</h2>
+                            <p>
+                                You have already{" "}
+                                {alreadyVerifiedSuggestion
+                                    ? "suggested a location for "
+                                    : "confirmed the original pin for "}
+                                <strong>{alreadyVerifiedData?.properties.name}</strong>.
+                            </p>
+                            <button type="button" onClick={nextLocation}>
                                 Load another
-                            </span>
-                        </Button>
-                    </div>
-                </div>
-            ) : (
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[1000]">
-                    <div className="flex gap-4">
-                        <motion.div whileHover={{scale: 1.05}} whileTap={{scale: 0.95}}>
-                            <Button
-                                onClick={handleYes}
-                                className="px-6 py-3 text-white bg-green-600 rounded-full shadow-lg hover:bg-green-700"
-                            >
-                                <ThumbsUp className="w-5 h-5" />
-                                Correct Pin{" "}
-                            </Button>
-                        </motion.div>
+                            </button>
+                        </div>
+                    ) : currentLocation ? (
+                        <>
+                            <h1>{currentLocation.properties.name}</h1>
+                            <div className="pv-station-tag">
+                                Station · {currentLocation.properties.code}
+                            </div>
 
-                        <Drawer open={isDrawerOpen} onOpenChange={setDrawerOpen}>
-                            <DrawerTrigger asChild>
-                                <Button
-                                    variant="destructive"
-                                    className="px-6 py-3 bg-gray-400 rounded-full shadow-lg"
-                                >
-                                    <Edit className="w-5 h-5 mr-2" />
-                                    EDIT (+15)
-                                </Button>
-                            </DrawerTrigger>
-                            <DrawerContent className="w-full h-[99vh] bg-gray-100">
-                                <div className="flex flex-col justify-start w-full mx-auto bg-white backdrop-blur-sm">
-                                    <DrawerHeader className="py-0 my-0 ">
-                                        <DrawerTitle>
-                                            Edit {currentLocation?.properties.name}
-                                        </DrawerTitle>
-                                    </DrawerHeader>
-                                    <div className="pb-0 md:p-4">
-                                        {currentLocation && (
-                                            <PinEditComponent
-                                                initialPosition={{
-                                                    lat: currentLocation.properties
-                                                        .pin_location.coordinates[1],
-                                                    lng: currentLocation.properties
-                                                        .pin_location.coordinates[0],
-                                                }}
-                                                onSave={async (
-                                                    lat: number,
-                                                    lng: number,
-                                                ) => {
-                                                    // Handle save logic here
-                                                    console.log(
-                                                        `New coordinates: ${lat}, ${lng}`,
-                                                    );
+                            <dl className="pv-station-meta">
+                                <dt>Ward</dt>
+                                <dd>{currentLocation.properties.ward}</dd>
+                                <dt>Const.</dt>
+                                <dd>{currentLocation.properties.constituency}</dd>
+                                <dt>County</dt>
+                                <dd>{currentLocation.properties.county}</dd>
+                                <dt>Source</dt>
+                                <dd>IEBC roster</dd>
+                            </dl>
 
-                                                    let y = await handlePinUpdate(
-                                                        lat,
-                                                        lng,
-                                                    );
-                                                    console.log(y, " yyyyyyyyy");
-                                                    return y;
-                                                }}
+                            {currentLocation.properties.pin_location_error ? (
+                                <div className="pv-ward-warning">
+                                    <HelpCircle size={14} />
+                                    {currentLocation.properties.pin_location_error}
+                                </div>
+                            ) : (
+                                <div className="pv-ward-ok">
+                                    <CheckCircle size={14} />
+                                    Pin is inside {currentLocation.properties.ward} ward
+                                </div>
+                            )}
+
+                            <div className="pv-consensus">
+                                <div className="pv-consensus-head">
+                                    <span>Consensus</span>
+                                    <strong>
+                                        {consensusView.agree} of {consensusView.needed}
+                                    </strong>
+                                </div>
+                                <div className="pv-consensus-pips">
+                                    {Array.from({length: consensusView.needed}).map(
+                                        (_, index) => (
+                                            <span
+                                                className={
+                                                    index < consensusView.agree
+                                                        ? "is-on"
+                                                        : ""
+                                                }
+                                                key={index}
                                             />
+                                        ),
+                                    )}
+                                </div>
+                                <p>
+                                    {consensusView.verified ? (
+                                        <strong>Verified by neighbour agreement.</strong>
+                                    ) : (
+                                        <>
+                                            <strong>
+                                                {Math.max(
+                                                    consensusView.needed -
+                                                        consensusView.agree,
+                                                    0,
+                                                )}{" "}
+                                                more matching pin
+                                                {consensusView.needed -
+                                                    consensusView.agree ===
+                                                1
+                                                    ? ""
+                                                    : "s"}
+                                            </strong>{" "}
+                                            auto-verifies this center.
+                                        </>
+                                    )}
+                                    {consensusView.outliers > 0 &&
+                                        ` ${consensusView.outliers} far from the cluster ignored.`}
+                                </p>
+                            </div>
+
+                            {isEditing ? (
+                                <div className="pv-inline-editor">
+                                    <div className="pv-inline-editor-heading">
+                                        <span className="pv-inline-editor-icon">
+                                            <Edit size={17} />
+                                        </span>
+                                        <div>
+                                            <strong>
+                                                {isUnlocated
+                                                    ? "Place the first pin"
+                                                    : "Move the pin"}
+                                            </strong>
+                                            <span>
+                                                Pan the map until the target is over the
+                                                building, then choose Put pin here.
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="pv-inline-editor-coords">
+                                        {draftPosition ? (
+                                            <>
+                                                <span>
+                                                    Lat{" "}
+                                                    <strong>
+                                                        {draftPosition.lat.toFixed(6)}
+                                                    </strong>
+                                                </span>
+                                                <span>
+                                                    Lng{" "}
+                                                    <strong>
+                                                        {draftPosition.lng.toFixed(6)}
+                                                    </strong>
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span>
+                                                No new location selected yet
+                                            </span>
                                         )}
                                     </div>
-                                    <DrawerFooter>
-                                        <DrawerClose asChild>
-                                            <Button
-                                                variant="outline"
-                                                className="text-white bg-gray-700 border-gray-300 hover:bg-black"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </DrawerClose>
-                                    </DrawerFooter>
-                                </div>
-                            </DrawerContent>
-                        </Drawer>
 
-                        <motion.div whileHover={{scale: 1.05}} whileTap={{scale: 0.95}}>
-                            <Button
-                                onClick={handleSkip}
-                                variant="destructive"
-                                className="z-auto px-6 py-3 text-white bg-red-500 rounded-full shadow-lg"
-                            >
-                                <HelpCircle className="w-5 h-5 mr-2" />
-                                SKIP (+2)
-                            </Button>
-                        </motion.div>
-                    </div>
-                </div>
-            )}
+                                    <div
+                                        className={`pv-inline-editor-status ${
+                                            !draftPosition
+                                                ? "is-awaiting"
+                                                : draftInsideWard
+                                                ? ""
+                                                : "is-outside"
+                                        }`}
+                                    >
+                                        {!draftPosition ? (
+                                            <MapPin size={14} />
+                                        ) : draftInsideWard ? (
+                                            <CheckCircle size={14} />
+                                        ) : (
+                                            <HelpCircle size={14} />
+                                        )}
+                                        {!draftPosition
+                                            ? "Pan or search, then choose Put pin here"
+                                            : draftInsideWard
+                                            ? `Pin stays inside ${currentLocation.properties.ward} ward`
+                                            : `Pan back inside ${currentLocation.properties.ward} ward`}
+                                    </div>
+
+                                    <div className="pv-inline-editor-actions">
+                                        <button
+                                            className="pv-inline-cancel"
+                                            type="button"
+                                            onClick={cancelMovePin}
+                                            disabled={isSavingPin}
+                                        >
+                                            <X size={15} />
+                                            Cancel
+                                        </button>
+                                        <button
+                                            className="pv-inline-save"
+                                            type="button"
+                                            onClick={() => void saveDraftPosition()}
+                                            disabled={
+                                                !draftPosition ||
+                                                !draftInsideWard ||
+                                                isSavingPin
+                                            }
+                                        >
+                                            <Save size={15} />
+                                            {isSavingPin
+                                                ? "Saving..."
+                                                : "Save this pin"}
+                                            <span>S</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                            <div className="pv-game-decision">
+                                <div className="pv-game-decision-label">Your call</div>
+                                {!isUnlocated && (
+                                    <button
+                                        className="pv-decision-button is-yes"
+                                        type="button"
+                                        onClick={handleYes}
+                                    >
+                                        <span className="pv-decision-icon">
+                                            <ThumbsUp size={16} />
+                                        </span>
+                                        <span className="pv-decision-copy">
+                                            Yes — this pin is right
+                                            <small>
+                                                Building lines up with the satellite
+                                                view
+                                            </small>
+                                        </span>
+                                        <span className="pv-decision-key">Y</span>
+                                    </button>
+                                )}
+
+                                <button
+                                    className="pv-decision-button is-move"
+                                    type="button"
+                                    onClick={openMovePin}
+                                >
+                                    <span className="pv-decision-icon">
+                                        <Edit size={16} />
+                                    </span>
+                                    <span className="pv-decision-copy">
+                                        {isUnlocated
+                                            ? "Place the first pin"
+                                            : "Move the pin"}
+                                        <small>
+                                            Pan the map and place the target on the building
+                                        </small>
+                                    </span>
+                                    <span className="pv-decision-key">M</span>
+                                </button>
+
+                                {!isUnlocated && (
+                                    <button
+                                        className="pv-decision-button is-skip"
+                                        type="button"
+                                        onClick={handleSkip}
+                                    >
+                                        <span className="pv-decision-icon">
+                                            <FastForward size={16} />
+                                        </span>
+                                        <span className="pv-decision-copy">
+                                            Skip
+                                            <small>
+                                                Not sure — pass to the next center
+                                            </small>
+                                        </span>
+                                        <span className="pv-decision-key">S</span>
+                                    </button>
+                                )}
+                            </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="pv-panel-state">
+                            <span className="pv-panel-state-icon">
+                                <MapPin size={24} />
+                            </span>
+                            <h2>Finding a center</h2>
+                            <p>Preparing the next location for review.</p>
+                        </div>
+                    )}
+                </aside>
+            </main>
         </div>
     );
 }
