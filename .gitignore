@@ -30,3 +30,6 @@ src/tallies/
 kurazetu_key
 kurazetu_key.pub
 vscode.yaml
+
+claude-design/
+prompts/
