@@ -95,10 +95,20 @@ class PollingCenterVerificationAdmin(LeafletGeoAdmin):
     list_display = (
         "polling_center",
         "verified_by",
+        "is_upvote",
+        "ai_suggestion",
+        "ai_model",
+        "nominatim",
         "date_modified",
     )
-    search_fields = ("polling_center__name",)
-    list_filter = ("polling_center__ward__constituency__county",)
+    search_fields = ("polling_center__name", "ai_model")
+    list_filter = (
+        "polling_center__ward__constituency__county",
+        "is_upvote",
+        "ai_suggestion",
+        "ai_model",
+        "nominatim",
+    )
     autocomplete_fields = [
         "polling_center",
     ]

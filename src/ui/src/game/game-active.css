@@ -330,6 +330,73 @@
   text-transform: uppercase;
 }
 
+.pv-map-legend {
+  position: absolute;
+  right: 16px;
+  bottom: 48px;
+  z-index: 500;
+  display: flex;
+  max-width: min(460px, calc(100% - 32px));
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.pv-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  background: rgba(14, 32, 36, 0.82);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pv-map-legend i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.pv-map-legend i.is-original {
+  color: #ff8a4c;
+  background: #ff8a4c;
+}
+
+.pv-map-legend i.is-suggestion {
+  color: #8b7cff;
+  background: #8b7cff;
+}
+
+.pv-map-legend i.is-target {
+  color: var(--pv-lime);
+  background: var(--pv-lime);
+}
+
+.pv-game-map .leaflet-tooltip.pv-map-role-label,
+.pv-game-map .leaflet-tooltip.pv-map-distance-label {
+  padding: 6px 9px;
+  color: #fff;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(14, 32, 36, 0.9);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.28);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.pv-game-map .leaflet-tooltip.pv-map-distance-label {
+  color: var(--pv-ink);
+  background: var(--pv-lime);
+}
+
 .pv-pin-icon {
   background: transparent;
   border: 0;
@@ -352,23 +419,17 @@
   height: 52px;
 }
 
-.pv-pin-marker.is-candidate::before {
-  position: absolute;
-  z-index: -1;
-  bottom: -32px;
-  left: 50%;
-  width: 104px;
-  height: 104px;
-  border: 1.5px solid rgba(46, 177, 254, 0.45);
-  border-radius: 50%;
-  background: rgba(46, 177, 254, 0.12);
-  content: "";
-  transform: translateX(-50%);
-}
-
 .pv-pin-marker.is-outlier {
   opacity: 0.58;
   transform: scale(0.82);
+}
+
+.pv-pin-marker.is-user {
+  width: 40px;
+  height: 52px;
+  filter:
+    drop-shadow(0 0 0.45rem rgba(196, 255, 94, 0.72))
+    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.42));
 }
 
 .pv-game-map .leaflet-popup-content-wrapper {
@@ -994,7 +1055,7 @@
   }
 
   .pv-map-provider,
-  .pv-map-ward-label {
+.pv-map-ward-label {
     display: none;
   }
 
@@ -1011,6 +1072,51 @@
     font-size: 25px;
   }
 
+}
+
+.pv-map-center-placement {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  transform: translate(-50%, -17px);
+}
+
+.pv-map-center-crosshair {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--pv-lime);
+  border-radius: 50%;
+  background: rgba(13, 13, 13, 0.68);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.42));
+}
+
+.pv-map-center-placement button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  color: var(--pv-ink);
+  border: 1px solid rgba(13, 13, 13, 0.18);
+  border-radius: 999px;
+  background: var(--pv-lime);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: auto;
+}
+
+.pv-map-center-placement button:hover {
+  background: var(--pv-lime-deep);
 }
 
 @media (prefers-reduced-motion: reduce) {

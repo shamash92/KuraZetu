@@ -13,6 +13,7 @@ export interface IPollingCenterFeature {
         ward_boundary?: any | null;
         constituency: string;
         county: string;
+        radius?: number;
         pin_location_error: null | string;
         is_verified: boolean;
         is_unlocated?: boolean;
@@ -29,6 +30,7 @@ export interface IPollingCenterFeature {
         ai_model?: string | null;
         nominatim?: boolean;
         is_outlier?: boolean;
+        is_upvote?: boolean;
     };
 }
 

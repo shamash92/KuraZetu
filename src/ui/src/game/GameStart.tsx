@@ -1,4 +1,4 @@
-import {ArrowRight, Check, LogIn, MapPin} from "lucide-react";
+import {ArrowRight, Building2, Check, LogIn, Map, MapPin} from "lucide-react";
 import type {CSSProperties} from "react";
 
 import {useAuth} from "../App";
@@ -60,11 +60,31 @@ const STEPS = [
     },
 ];
 
-const AREA_LEVELS: {level: TParamLevel; label: string}[] = [
-    {level: "ward", label: "My ward"},
-    {level: "constituency", label: "My constituency"},
-    {level: "county", label: "My county"},
-];
+const AREA_LEVELS = [
+    {
+        level: "ward",
+        label: "My ward",
+        description: "Start with the centers closest to home",
+        icon: MapPin,
+    },
+    {
+        level: "constituency",
+        label: "My constituency",
+        description: "Work through centers across your constituency",
+        icon: Building2,
+    },
+    {
+        level: "county",
+        label: "My county",
+        description: "Help verify centers across the whole county",
+        icon: Map,
+    },
+] satisfies {
+    level: TParamLevel;
+    label: string;
+    description: string;
+    icon: typeof MapPin;
+}[];
 
 function PinVerifyAtlas() {
     const data = window.KENYA_COUNTIES;
@@ -157,35 +177,64 @@ export default function GameStart({onStart}: GameStartProps) {
                     </ol>
 
                     <div className="pv-actions">
-                        <button
-                            className="pv-primary"
-                            type="button"
-                            onClick={() => onStart("random")}
-                        >
-                            Start with a random center
-                            <ArrowRight size={18} />
-                        </button>
-
                         {auth ? (
-                            <div className="pv-area-choice">
-                                <span>Or work close to home</span>
-                                <div>
-                                    {AREA_LEVELS.map(({level, label}) => (
-                                        <button
-                                            key={level}
-                                            type="button"
-                                            onClick={() => onStart(level)}
-                                        >
-                                            {label}
-                                        </button>
-                                    ))}
+                            <div className="pv-local-start">
+                                <div className="pv-local-start-heading">
+                                    <strong>Choose where to start</strong>
+                                    <span>
+                                        We will serve centers from your registered
+                                        area.
+                                    </span>
                                 </div>
+                                <div className="pv-area-options">
+                                    {AREA_LEVELS.map(
+                                        ({level, label, description, icon: Icon}) => (
+                                            <button
+                                                className={
+                                                    level === "ward"
+                                                        ? "pv-area-option is-recommended"
+                                                        : "pv-area-option"
+                                                }
+                                                key={level}
+                                                type="button"
+                                                onClick={() => onStart(level)}
+                                            >
+                                                <span className="pv-area-option-icon">
+                                                    <Icon size={17} />
+                                                </span>
+                                                <span className="pv-area-option-copy">
+                                                    <strong>{label}</strong>
+                                                    <small>{description}</small>
+                                                </span>
+                                                <ArrowRight size={16} />
+                                            </button>
+                                        ),
+                                    )}
+                                </div>
+                                <button
+                                    className="pv-random-link"
+                                    type="button"
+                                    onClick={() => onStart("random")}
+                                >
+                                    Or verify a random center anywhere in Kenya
+                                    <ArrowRight size={14} />
+                                </button>
                             </div>
                         ) : (
-                            <p className="pv-login-line">
-                                <a href="/accounts/login/">Log in</a> to start with
-                                centers in your own ward.
-                            </p>
+                            <>
+                                <button
+                                    className="pv-primary"
+                                    type="button"
+                                    onClick={() => onStart("random")}
+                                >
+                                    Start with a random center
+                                    <ArrowRight size={18} />
+                                </button>
+                                <p className="pv-login-line">
+                                    <a href="/accounts/login/">Log in</a> to start with
+                                    centers in your own ward.
+                                </p>
+                            </>
                         )}
                     </div>
 

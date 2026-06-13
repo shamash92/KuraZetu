@@ -45,6 +45,8 @@ export default function GameMap({level}: GameMapProps) {
     const [alreadyVerifiedByUser, setAlreadyVerifiedByUser] = useState(false);
     const [alreadyVerifiedData, setAlreadyVerifiedData] =
         useState<IPollingCenterFeature | null>(null);
+    const [alreadyVerifiedSuggestion, setAlreadyVerifiedSuggestion] =
+        useState<IPollingCenterFeature | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [draftPosition, setDraftPosition] = useState<DraftPosition | null>(null);
     const [draftInsideWard, setDraftInsideWard] = useState(true);
@@ -58,9 +60,15 @@ export default function GameMap({level}: GameMapProps) {
 
     const isAuthenticated = useAuth();
 
-    const handleAlreadyVerified = (data: IPollingCenterFeature) => {
+    const handleAlreadyVerified = (
+        data: IPollingCenterFeature,
+        suggestion: IPollingCenterFeature | null,
+    ) => {
         setAlreadyVerifiedByUser(true);
         setAlreadyVerifiedData(data);
+        setAlreadyVerifiedSuggestion(
+            suggestion?.properties.is_upvote ? null : suggestion,
+        );
     };
 
     const isUnlocated = currentLocation?.properties.is_unlocated === true;
@@ -70,6 +78,9 @@ export default function GameMap({level}: GameMapProps) {
         setIsEditing(false);
         setDraftPosition(null);
         setDraftInsideWard(true);
+        setAlreadyVerifiedByUser(false);
+        setAlreadyVerifiedData(null);
+        setAlreadyVerifiedSuggestion(null);
         fetch(`/api/stations/polling-centers/unverified/random/${level}/`, {
             method: "GET",
             headers: {
@@ -82,7 +93,10 @@ export default function GameMap({level}: GameMapProps) {
             .then((data) => {
                 if (data["error"] === "You have already verified this polling center") {
                     toast.error("You have already verified this polling center");
-                    handleAlreadyVerified(data["data"]);
+                    handleAlreadyVerified(
+                        data["data"],
+                        data["user_verification"] ?? null,
+                    );
                 }
                 let unverifiedPollingCenter = data["data"];
 
@@ -234,14 +248,7 @@ export default function GameMap({level}: GameMapProps) {
 
     const openMovePin = () => {
         if (!currentLocation) return;
-        setDraftPosition(
-            isUnlocated
-                ? null
-                : {
-                      lat: currentLocation.properties.pin_location.coordinates[1],
-                      lng: currentLocation.properties.pin_location.coordinates[0],
-                  },
-        );
+        setDraftPosition(null);
         setDraftInsideWard(true);
         setIsEditing(true);
     };
@@ -262,7 +269,7 @@ export default function GameMap({level}: GameMapProps) {
 
     const saveDraftPosition = async () => {
         if (!draftPosition) {
-            toast.error("Search for the center or drag the pin before saving.");
+            toast.error("Pan the map and choose Put pin here before saving.");
             return;
         }
         if (!draftInsideWard) {
@@ -335,9 +342,15 @@ export default function GameMap({level}: GameMapProps) {
     const nextLocation = () => {
         setSuggestedLocation(null);
         setAlreadyVerifiedByUser(false);
+        setAlreadyVerifiedData(null);
+        setAlreadyVerifiedSuggestion(null);
         setCurrentLocation(null);
         toggleReload();
     };
+
+    const mapLocation = alreadyVerifiedByUser
+        ? alreadyVerifiedData
+        : currentLocation;
 
     return (
         <div className="pv-game">
@@ -370,11 +383,17 @@ export default function GameMap({level}: GameMapProps) {
 
             <main className="pv-game-workspace">
                 <section className="pv-game-map-shell" aria-label="Polling center map">
-                {currentLocation && alreadyVerifiedByUser === false ? (
+                {mapLocation ? (
                     <MapComponent
-                        location={currentLocation}
-                        wardNumber={currentLocation.properties.ward_number ?? null}
+                        location={mapLocation}
+                        wardNumber={mapLocation.properties.ward_number ?? null}
                         suggestedLocation={suggestedLocation ? suggestedLocation : null}
+                        highlightedSuggestion={
+                            alreadyVerifiedByUser
+                                ? alreadyVerifiedSuggestion
+                                : null
+                        }
+                        isReadOnly={alreadyVerifiedByUser}
                         isEditing={isEditing}
                         draftPosition={draftPosition}
                         onDraftPositionChange={updateDraftPosition}
@@ -431,7 +450,10 @@ export default function GameMap({level}: GameMapProps) {
                             </span>
                             <h2>Already verified</h2>
                             <p>
-                                You have already helped with{" "}
+                                You have already{" "}
+                                {alreadyVerifiedSuggestion
+                                    ? "suggested a location for "
+                                    : "confirmed the original pin for "}
                                 <strong>{alreadyVerifiedData?.properties.name}</strong>.
                             </p>
                             <button type="button" onClick={nextLocation}>
@@ -528,8 +550,8 @@ export default function GameMap({level}: GameMapProps) {
                                                     : "Move the pin"}
                                             </strong>
                                             <span>
-                                                Drag the blue pin on the map or use
-                                                search to jump to the school.
+                                                Pan the map until the target is over the
+                                                building, then choose Put pin here.
                                             </span>
                                         </div>
                                     </div>
@@ -552,7 +574,7 @@ export default function GameMap({level}: GameMapProps) {
                                             </>
                                         ) : (
                                             <span>
-                                                Search for the center to place a pin
+                                                No new location selected yet
                                             </span>
                                         )}
                                     </div>
@@ -574,10 +596,10 @@ export default function GameMap({level}: GameMapProps) {
                                             <HelpCircle size={14} />
                                         )}
                                         {!draftPosition
-                                            ? "Choose a search result to seed the pin"
+                                            ? "Pan or search, then choose Put pin here"
                                             : draftInsideWard
                                             ? `Pin stays inside ${currentLocation.properties.ward} ward`
-                                            : `Move the pin back inside ${currentLocation.properties.ward} ward`}
+                                            : `Pan back inside ${currentLocation.properties.ward} ward`}
                                     </div>
 
                                     <div className="pv-inline-editor-actions">
@@ -644,7 +666,7 @@ export default function GameMap({level}: GameMapProps) {
                                             ? "Place the first pin"
                                             : "Move the pin"}
                                         <small>
-                                            Drag inside the ward to the right spot
+                                            Pan the map and place the target on the building
                                         </small>
                                     </span>
                                     <span className="pv-decision-key">M</span>

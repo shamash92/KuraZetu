@@ -1,9 +1,18 @@
 import {useEffect, useMemo, useRef, useState} from "react";
-import {Crosshair, MapPin, Search, ZoomIn, ZoomOut} from "lucide-react";
 import {
+    Crosshair,
+    LocateFixed,
+    MapPin,
+    Search,
+    ZoomIn,
+    ZoomOut,
+} from "lucide-react";
+import {
+    Circle,
     GeoJSON,
     MapContainer,
     Marker,
+    Polyline,
     Popup,
     TileLayer,
     Tooltip,
@@ -17,6 +26,8 @@ interface MapComponentProps {
     wardNumber?: number | null;
     suggestedLocation?: IPollingCenterFeature | null;
     partiallyVerifiedLocations?: IPollingCenterFeature[] | null;
+    highlightedSuggestion?: IPollingCenterFeature | null;
+    isReadOnly?: boolean;
     isEditing: boolean;
     draftPosition: LatLng | null;
     onDraftPositionChange: (position: LatLng, isInsideWard: boolean) => void;
@@ -26,18 +37,29 @@ type LatLng = {lat: number; lng: number};
 
 const SATELLITE_NATIVE_MAX_ZOOM = 20;
 const MAP_MAX_ZOOM = 24;
+const DEFAULT_PIN_RADIUS_KM = 0.05;
+const ORIGINAL_COLOR = "#ff8a4c";
+const SUGGESTION_COLOR = "#8b7cff";
+const TARGET_COLOR = "#c4ff5e";
 
-function pinIcon(kind: "current" | "suggestion" | "candidate" | "outlier") {
+function pinIcon(
+    kind: "current" | "suggestion" | "candidate" | "outlier" | "user",
+) {
     const color =
-        kind === "current" || kind === "candidate"
-            ? "#2eb1fe"
+        kind === "user"
+            ? TARGET_COLOR
+            : kind === "current"
+            ? ORIGINAL_COLOR
+            : kind === "candidate"
+            ? TARGET_COLOR
             : kind === "outlier"
             ? "#d9764f"
-            : "#7a8fb8";
+            : SUGGESTION_COLOR;
     const className = [
         "pv-pin-marker",
         kind === "candidate" ? "is-candidate" : "",
         kind === "outlier" ? "is-outlier" : "",
+        kind === "user" ? "is-user" : "",
     ]
         .filter(Boolean)
         .join(" ");
@@ -137,11 +159,41 @@ function ClusterFramer({
     return null;
 }
 
+function EditCenterTracker({
+    onCenterChange,
+}: {
+    onCenterChange: (position: LatLng) => void;
+}) {
+    const map = useMap();
+
+    useEffect(() => {
+        const updateCenter = () => {
+            const nextCenter = map.getCenter();
+            onCenterChange({lat: nextCenter.lat, lng: nextCenter.lng});
+        };
+
+        updateCenter();
+        map.on("move", updateCenter);
+        return () => {
+            map.off("move", updateCenter);
+        };
+    }, [map, onCenterChange]);
+
+    return null;
+}
+
+function formatDistance(meters: number): string {
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    return `${(meters / 1000).toFixed(meters < 10_000 ? 1 : 0)} km`;
+}
+
 export default function MapComponent({
     location,
     wardNumber,
     suggestedLocation,
     partiallyVerifiedLocations,
+    highlightedSuggestion,
+    isReadOnly = false,
     isEditing,
     draftPosition,
     onDraftPositionChange,
@@ -155,11 +207,17 @@ export default function MapComponent({
     const [searching, setSearching] = useState(false);
 
     const wardBoundary = location.properties.ward_boundary ?? null;
+    const pinRadiusMeters =
+        (location.properties.radius ?? DEFAULT_PIN_RADIUS_KM) * 1000;
 
     const center: [number, number] = [
         location.properties.pin_location.coordinates[1],
         location.properties.pin_location.coordinates[0],
     ];
+    const [editTarget, setEditTarget] = useState<LatLng>({
+        lat: center[0],
+        lng: center[1],
+    });
 
     // Collect candidate points (original + suggestions) for cluster framing.
     const inliers = useMemo(() => {
@@ -170,9 +228,15 @@ export default function MapComponent({
                 lng: loc.properties.pin_location.coordinates[0],
             });
         });
+        if (highlightedSuggestion) {
+            pts.push({
+                lat: highlightedSuggestion.properties.pin_location.coordinates[1],
+                lng: highlightedSuggestion.properties.pin_location.coordinates[0],
+            });
+        }
         return clusterInliers(pts);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.id, partiallyVerifiedLocations]);
+    }, [location.id, partiallyVerifiedLocations, highlightedSuggestion]);
 
     const [frameTrigger, setFrameTrigger] = useState(0);
     useEffect(() => {
@@ -189,6 +253,7 @@ export default function MapComponent({
         setCandidate(null);
         setQuery("");
         setResults([]);
+        setEditTarget({lat: center[0], lng: center[1]});
     }, [location.id]);
 
     // Debounced geocode search, biased to this ward.
@@ -222,13 +287,11 @@ export default function MapComponent({
             setResults([]);
             setQuery(r.name);
         }
-        setCandidate({lat: r.lat, lng: r.lng});
-        if (isEditing) {
-            onDraftPositionChange({lat: r.lat, lng: r.lng}, inside);
-        }
+        setCandidate(isEditing ? null : {lat: r.lat, lng: r.lng});
         setResults([]);
         setQuery(r.name);
-        mapRef.current?.setView([r.lat, r.lng], 18);
+        const currentZoom = mapRef.current?.getZoom() ?? 18;
+        mapRef.current?.setView([r.lat, r.lng], currentZoom);
     };
 
     const recenterToCluster = () => {
@@ -245,6 +308,24 @@ export default function MapComponent({
 
     const candidateOutsideWard =
         candidate && !pointInWard(candidate.lng, candidate.lat, wardBoundary);
+    const editTargetInsideWard = pointInWard(
+        editTarget.lng,
+        editTarget.lat,
+        wardBoundary,
+    );
+    const editDistanceMeters = L.latLng(center).distanceTo(
+        L.latLng(editTarget.lat, editTarget.lng),
+    );
+    const originalUpvotes = location.properties.location_upvotes ?? 0;
+
+    const placePinAtMapCenter = () => {
+        const mapCenter = mapRef.current?.getCenter();
+        if (!mapCenter) return;
+        onDraftPositionChange(
+            {lat: mapCenter.lat, lng: mapCenter.lng},
+            pointInWard(mapCenter.lng, mapCenter.lat, wardBoundary),
+        );
+    };
 
     return (
         <div className="pv-game-map">
@@ -268,6 +349,9 @@ export default function MapComponent({
                 />
 
                 <ClusterFramer inliers={inliers} trigger={frameTrigger} />
+                {isEditing && (
+                    <EditCenterTracker onCenterChange={setEditTarget} />
+                )}
 
                 {/* Ward boundary outline — you can't pin outside this (req #4) */}
                 {wardBoundary && (
@@ -292,11 +376,13 @@ export default function MapComponent({
                                 key={loc.id}
                                 data={loc}
                                 style={() => ({
-                                    fillColor: outlier ? "#d9764f" : "#7a8fb8",
-                                    fillOpacity: outlier ? 0.12 : 0.28,
-                                    color: outlier ? "#d9764f" : "#475569",
-                                    weight: 1,
-                                    dashArray: "4 4",
+                                    fillColor: outlier
+                                        ? "#d9764f"
+                                        : SUGGESTION_COLOR,
+                                    fillOpacity: outlier ? 0.12 : 0.22,
+                                    color: outlier ? "#d9764f" : SUGGESTION_COLOR,
+                                    weight: outlier ? 1 : 2,
+                                    dashArray: "7 5",
                                     opacity: outlier ? 0.5 : 1,
                                 })}
                             >
@@ -318,10 +404,15 @@ export default function MapComponent({
                             ]}
                             icon={pinIcon(outlier ? "outlier" : "suggestion")}
                         >
+                            <Tooltip direction="top" offset={[0, -40]}>
+                                {outlier
+                                    ? "Far from other suggestions"
+                                    : "Community suggestion"}
+                            </Tooltip>
                             <Popup>
                                 <div className="pv-pin-popup-tag">
                                     {outlier
-                                        ? "Far from cluster · ignored"
+                                        ? "Far from other suggestions"
                                         : "Existing suggestion"}
                                 </div>
                                 <div className="pv-pin-popup-name">
@@ -349,6 +440,8 @@ export default function MapComponent({
                                 >
                                     {loc.properties.ai_suggestion
                                         ? `AI · ${loc.properties.ai_model || "model"}`
+                                        : outlier
+                                        ? "Not counted toward agreement yet"
                                         : "Citizen · in ward"}
                                 </span>
                             </Popup>
@@ -380,46 +473,125 @@ export default function MapComponent({
                     key={location.id}
                     data={location}
                     style={() => ({
-                        fillColor: "gray",
-                        fillOpacity: 0.5,
-                        color: "black",
-                        weight: 1,
+                        fillColor: ORIGINAL_COLOR,
+                        fillOpacity: 0.2,
+                        color: ORIGINAL_COLOR,
+                        weight: 3,
                     })}
                 />
 
-                {/* Original pin remains visible as a reference while editing. */}
+                {/* Original center remains a distinct reference in every mode. */}
                 <Marker
                     position={center}
                     icon={pinIcon("current")}
-                    opacity={isEditing ? 0.46 : 1}
                 >
+                    <Tooltip
+                        permanent
+                        direction="top"
+                        offset={[0, -42]}
+                        className="pv-map-role-label is-original"
+                    >
+                        Original · {originalUpvotes} yes
+                    </Tooltip>
                     <Popup>
                         <strong>{location.properties.name}</strong>
                         <br />
                         {location.properties.code}
+                        <br />
+                        {originalUpvotes}{" "}
+                        {originalUpvotes === 1 ? "confirmation" : "confirmations"}
                     </Popup>
                 </Marker>
 
-                {/* Draggable candidate uses the same map and keeps all context visible. */}
-                {isEditing && draftPosition && (
-                    <Marker
-                        position={[draftPosition.lat, draftPosition.lng]}
-                        icon={pinIcon("candidate")}
-                        draggable
-                        eventHandlers={{
-                            dragend: (event) => {
-                                const {lat, lng} = event.target.getLatLng();
-                                onDraftPositionChange(
-                                    {lat, lng},
-                                    pointInWard(lng, lat, wardBoundary),
-                                );
-                            },
-                        }}
-                    >
-                        <Tooltip permanent direction="top" offset={[0, -48]}>
-                            Drag to the correct building
-                        </Tooltip>
-                    </Marker>
+                {highlightedSuggestion && (
+                    <>
+                        <Circle
+                            center={[
+                                highlightedSuggestion.properties.pin_location
+                                    .coordinates[1],
+                                highlightedSuggestion.properties.pin_location
+                                    .coordinates[0],
+                            ]}
+                            radius={
+                                (highlightedSuggestion.properties.radius ??
+                                    DEFAULT_PIN_RADIUS_KM) * 1000
+                            }
+                            pathOptions={{
+                                color: "#c4ff5e",
+                                fillColor: "#c4ff5e",
+                                fillOpacity: 0.24,
+                                opacity: 0.95,
+                                weight: 4,
+                            }}
+                        />
+                        <Marker
+                            position={[
+                                highlightedSuggestion.properties.pin_location
+                                    .coordinates[1],
+                                highlightedSuggestion.properties.pin_location
+                                    .coordinates[0],
+                            ]}
+                            icon={pinIcon("user")}
+                        >
+                            <Tooltip permanent direction="top" offset={[0, -44]}>
+                                Your suggestion
+                            </Tooltip>
+                        </Marker>
+                    </>
+                )}
+
+                {/* The map center is the only edit target; pan, then confirm placement. */}
+                {isEditing && (
+                    <>
+                        <Circle
+                            center={[editTarget.lat, editTarget.lng]}
+                            radius={pinRadiusMeters}
+                            pathOptions={{
+                                color: editTargetInsideWard
+                                    ? TARGET_COLOR
+                                    : "#ff785a",
+                                fillColor: editTargetInsideWard
+                                    ? TARGET_COLOR
+                                    : "#ff785a",
+                                fillOpacity: 0.16,
+                                opacity: 0.95,
+                                weight: 3,
+                            }}
+                        />
+                        {!location.properties.is_unlocated &&
+                            editDistanceMeters > 1 && (
+                                <Polyline
+                                    positions={[
+                                        center,
+                                        [editTarget.lat, editTarget.lng],
+                                    ]}
+                                    pathOptions={{
+                                        color: TARGET_COLOR,
+                                        weight: 3,
+                                        dashArray: "8 7",
+                                        opacity: 0.95,
+                                    }}
+                                >
+                                    <Tooltip
+                                        permanent
+                                        direction="top"
+                                        className="pv-map-distance-label"
+                                    >
+                                        {formatDistance(editDistanceMeters)} from original
+                                    </Tooltip>
+                                </Polyline>
+                            )}
+                        {draftPosition && (
+                            <Marker
+                                position={[draftPosition.lat, draftPosition.lng]}
+                                icon={pinIcon("candidate")}
+                            >
+                                <Tooltip direction="top" offset={[0, -46]}>
+                                    Selected location
+                                </Tooltip>
+                            </Marker>
+                        )}
+                    </>
                 )}
 
                 {!isEditing && candidate && (
@@ -437,40 +609,78 @@ export default function MapComponent({
             </MapContainer>
 
             {/* Search bar (req #1) */}
-            <div className="pv-map-search">
-                <div className="pv-map-search-box">
-                    <Search size={16} />
-                    <input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={`Search ${location.properties.ward} ward…`}
-                    />
-                    {provider && (
-                        <span className="pv-map-provider">
-                            {provider === "google" ? "Google" : "OSM · Nominatim"}
-                        </span>
+            {!isReadOnly && (
+                <div className="pv-map-search">
+                    <div className="pv-map-search-box">
+                        <Search size={16} />
+                        <input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={`Search ${location.properties.ward} ward…`}
+                        />
+                        {provider && (
+                            <span className="pv-map-provider">
+                                {provider === "google"
+                                    ? "Google"
+                                    : "OSM · Nominatim"}
+                            </span>
+                        )}
+                    </div>
+                    {(results.length > 0 || searching) && (
+                        <div className="pv-map-results">
+                            {searching && results.length === 0 && (
+                                <div className="pv-map-searching">
+                                    Searching...
+                                </div>
+                            )}
+                            {results.map((r, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => selectResult(r)}
+                                    className="pv-map-result"
+                                    type="button"
+                                >
+                                    <MapPin size={14} />
+                                    <strong>{r.name}</strong>
+                                    <span>{r.type}</span>
+                                </button>
+                            ))}
+                        </div>
                     )}
                 </div>
-                {(results.length > 0 || searching) && (
-                    <div className="pv-map-results">
-                        {searching && results.length === 0 && (
-                            <div className="pv-map-searching">
-                                Searching...
-                            </div>
-                        )}
-                        {results.map((r, i) => (
-                            <button
-                                key={i}
-                                onClick={() => selectResult(r)}
-                                className="pv-map-result"
-                                type="button"
-                            >
-                                <MapPin size={14} />
-                                <strong>{r.name}</strong>
-                                <span>{r.type}</span>
-                            </button>
-                        ))}
-                    </div>
+            )}
+
+            {isEditing && (
+                <div className="pv-map-center-placement">
+                    <span className="pv-map-center-crosshair" aria-hidden="true">
+                        <Crosshair size={24} />
+                    </span>
+                    <button type="button" onClick={placePinAtMapCenter}>
+                        <LocateFixed size={15} />
+                        Put pin here
+                    </button>
+                </div>
+            )}
+
+            <div className="pv-map-legend" aria-label="Map pin legend">
+                <span>
+                    <i className="is-original" />
+                    Original · {originalUpvotes} yes
+                </span>
+                {(partiallyVerifiedLocations?.length ?? 0) > 0 && (
+                    <span>
+                        <i className="is-suggestion" />
+                        Community suggestion
+                        {partiallyVerifiedLocations!.length === 1
+                            ? ""
+                            : `s · ${partiallyVerifiedLocations!.length}`}
+                    </span>
+                )}
+                {isEditing && (
+                    <span>
+                        <i className="is-target" />
+                        Placement target
+                    </span>
                 )}
             </div>
 
@@ -503,7 +713,9 @@ export default function MapComponent({
             </button>
 
             <div className="pv-map-ward-label">
-                {isEditing
+                {highlightedSuggestion
+                    ? `Your suggestion · ${location.properties.ward} ward`
+                    : isEditing
                     ? `Editing pin · ${location.properties.ward} ward`
                     : `Ward · ${location.properties.ward}`}
             </div>
