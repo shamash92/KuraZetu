@@ -86,12 +86,6 @@ export default {
                         "This app uses location to show your position on the map.",
                 },
             ],
-            [
-                "react-native-maps",
-                {
-                    androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-                },
-            ],
             "expo-secure-store",
             [
                 "expo-quick-actions",

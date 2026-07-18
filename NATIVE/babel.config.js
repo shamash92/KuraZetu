@@ -3,10 +3,9 @@ module.exports = (api) => {
     return {
         presets: ["babel-preset-expo"],
         plugins: [
-            // Required for expo-router
-
-            //NOTE: react-native-reanimated/plugin has to be listed last.
-            "react-native-reanimated/plugin",
+            // Reanimated 4 moved its Babel plugin to react-native-worklets.
+            // NOTE: this must be listed last.
+            "react-native-worklets/plugin",
         ],
     };
 };
