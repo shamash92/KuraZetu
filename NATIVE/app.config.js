@@ -109,6 +109,7 @@ export default {
                 },
             ],
             "./plugins/withIosBuildFixes",
+            "./plugins/withAndroidSliderFix",
         ],
         experiments: {
             typedRoutes: true,
