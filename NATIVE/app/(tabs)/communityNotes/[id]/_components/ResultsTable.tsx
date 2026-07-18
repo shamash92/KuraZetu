@@ -119,6 +119,8 @@ export function ResultsTable({results}: {results: IPollingStationPresResults[]})
     );
 }
 
+export default ResultsTable;
+
 const styles = StyleSheet.create({
     container: {
         backgroundColor: "#FFFFFF",

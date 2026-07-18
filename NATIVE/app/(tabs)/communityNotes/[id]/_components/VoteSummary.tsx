@@ -102,6 +102,8 @@ export function VoteSummary({
     );
 }
 
+export default VoteSummary;
+
 const styles = StyleSheet.create({
     container: {
         backgroundColor: "#FFFFFF",

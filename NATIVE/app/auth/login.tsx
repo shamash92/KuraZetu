@@ -2,26 +2,39 @@ import * as LocalAuthentication from "expo-local-authentication";
 
 import {
     Alert,
-    Image,
     Modal,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
-import {Eye, EyeOff, Fingerprint, Lock, Phone} from "lucide-react-native";
+import {ArrowRight, Eye, EyeOff, Fingerprint, Lock} from "lucide-react-native";
 import {Link, router} from "expo-router";
 import React, {useEffect, useState} from "react";
 import {windowHeight, windowWidth} from "../_utils/screenDimensions";
 
 import {ActivityIndicator} from "react-native-paper";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 import LottieComponent from "@/components/lottieLoading";
 import RegisterPushNotifications from "../_utils/registerPushNotifications";
 import UpdateCheckerModal from "../_utils/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
 import useAuthStore from "../_utils/authStore";
+import {
+    CARD,
+    COPPER,
+    COPPER_DEEP,
+    INK,
+    LIME,
+    LIME_INK,
+    MUTE,
+    MUTE_2,
+    RULE_16,
+    SURFACE,
+} from "../_utils/colors";
 
 export default function LoginScreen() {
     const [phoneNumber, setPhoneNumber] = useState("+254");
@@ -34,6 +47,8 @@ export default function LoginScreen() {
     const [shouldRedirect, setShouldRedirect] = useState(false);
 
     const {logIn, hasSavedUserToken, userToken, expoPushToken} = useAuthStore();
+
+    const insets = useSafeAreaInsets();
 
     const handleBiometricAuth = async (userTokenValue: string) => {
         if (Platform.OS === "web") {
@@ -68,14 +83,6 @@ export default function LoginScreen() {
             });
 
             console.log(result, "biometric auth result");
-
-            let x = {
-                error: "not_enrolled",
-                success: false,
-                warning: "KeyguardManager#isDeviceSecure() returned false",
-            };
-
-            let y = {success: true};
 
             if (result.success) {
                 // Navigate to tabs on successful authentication
@@ -175,22 +182,18 @@ export default function LoginScreen() {
             });
     };
 
-    const formatPhoneNumber = (text: string) => {
-        if (!text.startsWith("+254")) {
-            return "+254";
-        }
-        return text;
+    // National number digits only (without the +254 country code).
+    const nationalNumber = phoneNumber.replace(/^\+254/, "");
+    const handlePhoneChange = (text: string) => {
+        const digits = text.replace(/[^0-9]/g, "").slice(0, 9);
+        setPhoneNumber("+254" + digits);
     };
 
     useEffect(() => {}, [shouldRedirect]);
 
     if (isLoading && !shouldRedirect) {
         return (
-            <View
-                style={{
-                    flex: 1,
-                }}
-            >
+            <View style={{flex: 1}}>
                 <Modal
                     transparent
                     animationType="slide"
@@ -226,19 +229,12 @@ export default function LoginScreen() {
                             />
 
                             <View>
-                                <Text
-                                    style={{
-                                        fontSize: 14,
-                                        // fontWeight: "bold",
-                                        color: "#000",
-                                        // marginTop: 16,
-                                    }}
-                                >
+                                <Text style={{fontSize: 14, color: "#000"}}>
                                     Signing In ...
                                 </Text>
                                 <ActivityIndicator
                                     size="small"
-                                    color="#DC143C"
+                                    color={COPPER_DEEP}
                                     style={{marginTop: 8}}
                                 />
                             </View>
@@ -250,19 +246,7 @@ export default function LoginScreen() {
     }
 
     return (
-        <View
-            style={{
-                flex: 1,
-                flexDirection: "column",
-                justifyContent: "space-evenly",
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                paddingHorizontal: 24,
-                paddingTop: 30,
-                //borderWidth: 1,
-                borderColor: "red",
-                paddingBottom: 30,
-            }}
-        >
+        <View style={styles.screen}>
             <RegisterPushNotifications />
 
             <UpdateCheckerModal />
@@ -273,13 +257,7 @@ export default function LoginScreen() {
                 visible={shouldRedirect}
                 onRequestClose={() => {}}
             >
-                <View
-                    style={{
-                        flex: 1,
-                        justifyContent: "flex-end",
-                        // backgroundColor: "rgba(0,0,0,0.3)",
-                    }}
-                >
+                <View style={{flex: 1, justifyContent: "flex-end"}}>
                     <View
                         style={{
                             height: 0.5 * windowHeight,
@@ -303,395 +281,327 @@ export default function LoginScreen() {
                     </View>
                 </View>
             </Modal>
-            {/* image */}
-            <View
-                style={{
-                    alignItems: "center",
-                    justifyContent: "center",
-                    //borderWidth: 1,
-                    borderColor: "blue",
-                    flex: 1,
-                }}
-            >
-                <Image
-                    source={require("../../assets/images/icon.png")}
-                    style={{
-                        width: 0.3 * windowWidth,
-                        height: 80,
-                        // height: 0.2 * windowHeight,
-                    }}
-                    resizeMode="cover"
-                />
-            </View>
 
-            {/* Body */}
-            <View
-                style={{
-                    flex: 4,
-                    flexDirection: "column",
-                    justifyContent: "space-evenly",
-                    //borderWidth: 1,
-                    borderColor: "yellow",
-                }}
+            <ScrollView
+                contentContainerStyle={[
+                    styles.content,
+                    {
+                        paddingTop: insets.top + 24,
+                        paddingBottom: insets.bottom + 28,
+                    },
+                ]}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
-                <Text
-                    style={{
-                        fontSize: 24,
-                        fontWeight: "bold",
-                        color: "#000",
-                        // marginBottom: 32,
-                    }}
-                >
-                    Welcome Back
-                </Text>
-                {/* <Text
-                    style={{
-                        fontSize: 16,
-                        color: "#666",
-                        marginBottom: 12,
-                    }}
-                >
-                    Sign in to continue
-                </Text> */}
+                <Text style={styles.heading}>Karibu tena.{"\n"}Welcome back.</Text>
 
-                <View
-                    style={{
-                        marginBottom: 12,
-                    }}
-                >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            backgroundColor: "#F8F9FA",
-                            borderRadius: 12,
-                            paddingHorizontal: 16,
-                            paddingVertical: 8,
-                            marginBottom: 8,
-                            //borderWidth: 1,
-                            borderColor: "#E9ECEF",
-                        }}
-                    >
-                        <Phone size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Phone Number"
-                            placeholderTextColor="#666"
-                            value={phoneNumber}
-                            onChangeText={(text) =>
-                                setPhoneNumber(formatPhoneNumber(text))
-                            }
-                            keyboardType="phone-pad"
-                            maxLength={13}
-                            returnKeyType="next"
-                        />
+                <View style={styles.formBlock}>
+                    {/* Phone number */}
+                    <View style={styles.field}>
+                        <Text style={styles.label}>Phone number</Text>
+                        <View style={styles.phoneInput}>
+                            <View style={styles.prefix}>
+                                <Text style={styles.flag}>🇰🇪</Text>
+                                <Text style={styles.prefixText}>+254</Text>
+                            </View>
+                            <TextInput
+                                style={styles.phoneField}
+                                placeholder="712 345 678"
+                                placeholderTextColor={MUTE_2}
+                                value={nationalNumber}
+                                onChangeText={handlePhoneChange}
+                                keyboardType="phone-pad"
+                                maxLength={9}
+                                returnKeyType="next"
+                            />
+                        </View>
                     </View>
 
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            backgroundColor: "#F8F9FA",
-                            borderRadius: 12,
-                            paddingHorizontal: 16,
-                            paddingVertical: 8,
-                            marginBottom: 8,
-                            //borderWidth: 1,
-                            borderColor: "#E9ECEF",
-                        }}
-                    >
-                        <Lock size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={{
-                                flex: 1,
-                                fontSize: 16,
-                                color: "#000",
-                            }}
-                            placeholder="Password"
-                            placeholderTextColor="#666"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!showPassword}
-                            returnKeyType="send"
-                            returnKeyLabel="Submit"
-                        />
-                        <TouchableOpacity
-                            onPress={() => setShowPassword(!showPassword)}
-                            style={styles.eyeIcon}
-                        >
-                            {showPassword ? (
-                                <EyeOff size={20} color="#666" />
-                            ) : (
-                                <Eye size={20} color="#666" />
-                            )}
-                        </TouchableOpacity>
+                    {/* Password */}
+                    <View style={styles.field}>
+                        <Text style={styles.label}>Password</Text>
+                        <View style={styles.fieldShell}>
+                            <View style={styles.lead}>
+                                <Lock size={18} color={MUTE} strokeWidth={1.9} />
+                            </View>
+                            <TextInput
+                                style={styles.pwField}
+                                placeholder="••••••••"
+                                placeholderTextColor={MUTE_2}
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!showPassword}
+                                returnKeyType="send"
+                                returnKeyLabel="Submit"
+                            />
+                            <TouchableOpacity
+                                style={styles.trail}
+                                onPress={() => setShowPassword(!showPassword)}
+                                hitSlop={8}
+                            >
+                                {showPassword ? (
+                                    <EyeOff size={18} color={MUTE} strokeWidth={1.9} />
+                                ) : (
+                                    <Eye size={18} color={MUTE} strokeWidth={1.9} />
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
 
                 <Link href="/auth/forgot-password" asChild>
-                    <TouchableOpacity
-                        style={{
-                            alignSelf: "flex-end",
-                            marginBottom: 12,
-                        }}
-                    >
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                    <TouchableOpacity style={styles.forgotRow}>
+                        <Text style={styles.forgot}>Forgot password?</Text>
                     </TouchableOpacity>
                 </Link>
 
                 <TouchableOpacity
-                    style={[styles.loginButton, isLoading && styles.buttonDisabled]}
+                    style={[styles.primary, isLoading && styles.disabled]}
                     onPress={() => handleLogin()}
                     disabled={isLoading}
+                    activeOpacity={0.85}
                 >
-                    <Text style={styles.loginButtonText}>
-                        {isLoading ? "Signing In..." : "Sign In"}
+                    <Text style={styles.primaryText}>
+                        {isLoading ? "Signing in…" : "Sign in"}
                     </Text>
+                    <ArrowRight size={18} color={LIME_INK} strokeWidth={2.4} />
                 </TouchableOpacity>
 
-                {/* Biometrics */}
-                <View
-                    style={{
-                        // flex: 1,
-                        //borderWidth: 1,
-                        borderColor: "green",
-                    }}
-                >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginBottom: 8,
-                        }}
-                    >
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>OR</Text>
-                        <View style={styles.dividerLine} />
-                    </View>
-
-                    {hasSavedUserToken && userToken ? (
-                        <>
-                            <TouchableOpacity
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: "#F8F9FA",
-                                    borderRadius: 12,
-                                    paddingVertical: 12,
-                                    borderWidth: 1,
-                                    borderColor: "#DC143C",
-                                    marginTop: 24,
-                                }}
-                                onPress={() => handleBiometricAuth(userToken)}
-                            >
-                                <Fingerprint size={24} color="#DC143C" />
-                                <Text style={styles.biometricButtonText}>
-                                    Use Biometrics
-                                </Text>
-                            </TouchableOpacity>
-                        </>
-                    ) : (
-                        <>
-                            <Text
-                                style={{
-                                    fontSize: 14,
-                                    color: "#666",
-                                    marginBottom: 16,
-                                    textAlign: "center",
-                                }}
-                            >
-                                No saved biometric credentials found. Please login with
-                                your phone number and password first to enable
-                                biometrics.
-                            </Text>
-
-                            <TouchableOpacity
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: "#E9ECEF",
-                                    borderRadius: 12,
-                                    paddingVertical: 12,
-                                    borderWidth: 1,
-                                    borderColor: "#B0B0B0",
-                                    opacity: 0.6,
-                                }}
-                                disabled
-                            >
-                                <Fingerprint size={24} color="#B0B0B0" />
-                                <Text
-                                    style={[
-                                        styles.biometricButtonText,
-                                        {color: "#B0B0B0"},
-                                    ]}
-                                >
-                                    Biometrics Unavailable
-                                </Text>
-                            </TouchableOpacity>
-                        </>
-                    )}
+                <View style={styles.orDiv}>
+                    <View style={styles.orLine} />
+                    <Text style={styles.orText}>or</Text>
+                    <View style={styles.orLine} />
                 </View>
-            </View>
 
-            {/* Sign Up */}
-            <View
-                style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    //borderWidth: 1,
-                    borderColor: "purple",
-                }}
-            >
-                <Text style={styles.signupText}>Don&apos;t have an account? </Text>
-                <Link href="/auth/signUp" asChild>
-                    <TouchableOpacity>
-                        <Text style={styles.signupLink}>Create Account</Text>
+                {hasSavedUserToken && userToken ? (
+                    <TouchableOpacity
+                        style={styles.bioBtn}
+                        onPress={() => handleBiometricAuth(userToken)}
+                        activeOpacity={0.85}
+                    >
+                        <Fingerprint size={19} color={COPPER_DEEP} strokeWidth={1.8} />
+                        <Text style={styles.bioText}>Use biometrics</Text>
                     </TouchableOpacity>
-                </Link>
-            </View>
+                ) : (
+                    <>
+                        <Text style={styles.bioHint}>
+                            No saved biometric credentials yet. Sign in with your phone
+                            number and password first to enable biometrics.
+                        </Text>
+
+                        <TouchableOpacity
+                            style={[styles.bioBtn, styles.bioBtnDisabled]}
+                            disabled
+                        >
+                            <Fingerprint size={19} color={MUTE_2} strokeWidth={1.8} />
+                            <Text style={[styles.bioText, {color: MUTE_2}]}>
+                                Biometrics unavailable
+                            </Text>
+                        </TouchableOpacity>
+                    </>
+                )}
+
+                <View style={styles.foot}>
+                    <Text style={styles.footText}>Don&apos;t have an account? </Text>
+                    <Link href="/auth/signUp" asChild>
+                        <TouchableOpacity>
+                            <Text style={styles.footLink}>Create account</Text>
+                        </TouchableOpacity>
+                    </Link>
+                </View>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    screen: {
         flex: 1,
+        backgroundColor: CARD,
     },
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
+    content: {
+        flexGrow: 1,
         paddingHorizontal: 24,
-        paddingTop: 30,
     },
-    logoContainer: {
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-        height: 0.15 * windowHeight,
+    heading: {
+        fontSize: 30,
+        fontWeight: "900",
+        letterSpacing: -0.7,
+        lineHeight: 38,
+        color: INK,
     },
-    logo: {
-        width: 0.3 * windowWidth,
-        height: 0.2 * windowHeight,
+    formBlock: {
+        marginTop: 40,
+        gap: 24,
     },
-    appName: {
-        fontSize: 28,
-        fontWeight: "bold",
-        color: "#DC143C",
+    field: {
+        gap: 10,
     },
-    formContainer: {
-        flex: 1,
-        borderWidth: 1,
+    label: {
+        fontSize: 10.5,
+        fontWeight: "700",
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        color: COPPER,
     },
-    title: {
-        fontSize: 32,
-        fontWeight: "bold",
-        color: "#000",
-        marginBottom: 8,
+    phoneInput: {
+        flexDirection: "row",
+        alignItems: "stretch",
+        backgroundColor: CARD,
+        borderWidth: 1.5,
+        borderColor: INK,
+        borderRadius: 14,
+        overflow: "hidden",
     },
-    subtitle: {
-        fontSize: 16,
-        color: "#666",
-        marginBottom: 32,
-    },
-    inputContainer: {
-        marginBottom: 24,
-    },
-    inputWrapper: {
+    prefix: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#F8F9FA",
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#E9ECEF",
+        gap: 6,
+        paddingHorizontal: 14,
+        backgroundColor: SURFACE,
+        borderRightWidth: 1,
+        borderRightColor: RULE_16,
     },
-    inputIcon: {
-        marginRight: 12,
-    },
-    input: {
-        flex: 1,
+    flag: {
         fontSize: 16,
-        color: "#000",
     },
-    eyeIcon: {
-        padding: 4,
-    },
-    forgotPassword: {
-        alignSelf: "flex-end",
-        marginBottom: 32,
-    },
-    forgotPasswordText: {
-        color: "#DC143C",
+    prefixText: {
         fontSize: 14,
-        fontWeight: "600",
+        fontWeight: "700",
+        color: INK,
+        letterSpacing: 0.5,
     },
-    loginButton: {
-        backgroundColor: "#DC143C",
-        borderRadius: 12,
+    phoneField: {
+        flex: 1,
+        minWidth: 0,
+        paddingHorizontal: 14,
         paddingVertical: 16,
-        alignItems: "center",
-        // marginBottom: 8,
+        fontSize: 16,
+        fontWeight: "600",
+        color: INK,
+        letterSpacing: 0.3,
     },
-    buttonDisabled: {
+    fieldShell: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: CARD,
+        borderWidth: 1.5,
+        borderColor: INK,
+        borderRadius: 14,
+        overflow: "hidden",
+    },
+    lead: {
+        paddingLeft: 14,
+        paddingRight: 10,
+    },
+    pwField: {
+        flex: 1,
+        minWidth: 0,
+        paddingVertical: 16,
+        paddingRight: 14,
+        fontSize: 16,
+        fontWeight: "600",
+        color: INK,
+        letterSpacing: 0.3,
+    },
+    trail: {
+        paddingLeft: 8,
+        paddingRight: 14,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    forgotRow: {
+        alignSelf: "flex-end",
+        marginTop: 18,
+    },
+    forgot: {
+        fontSize: 13,
+        fontWeight: "800",
+        color: COPPER_DEEP,
+    },
+    primary: {
+        marginTop: 30,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        backgroundColor: LIME,
+        borderRadius: 14,
+        paddingVertical: 16,
+        paddingHorizontal: 22,
+    },
+    disabled: {
         opacity: 0.6,
     },
-    loginButtonText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "bold",
+    primaryText: {
+        fontSize: 15,
+        fontWeight: "800",
+        color: LIME_INK,
     },
-    divider: {
+    orDiv: {
         flexDirection: "row",
         alignItems: "center",
+        gap: 12,
+        marginTop: 28,
         marginBottom: 24,
     },
-    dividerLine: {
+    orLine: {
         flex: 1,
         height: 1,
-        backgroundColor: "#E9ECEF",
+        backgroundColor: RULE_16,
     },
-    dividerText: {
-        marginHorizontal: 16,
-        color: "#666",
-        fontSize: 14,
+    orText: {
+        fontSize: 10.5,
+        fontWeight: "700",
+        letterSpacing: 2.4,
+        textTransform: "uppercase",
+        color: MUTE_2,
     },
-    biometricButton: {
+    bioBtn: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#F8F9FA",
+        gap: 9,
+        backgroundColor: CARD,
+        borderWidth: 1.5,
+        borderColor: INK,
         borderRadius: 12,
-        paddingVertical: 16,
-        borderWidth: 1,
-        borderColor: "#DC143C",
-        marginBottom: 32,
+        paddingVertical: 13,
+        paddingHorizontal: 18,
     },
-    biometricButtonText: {
-        color: "#DC143C",
-        fontSize: 16,
-        fontWeight: "600",
-        marginLeft: 8,
+    bioBtnDisabled: {
+        borderColor: RULE_16,
+        opacity: 0.7,
     },
-    signupContainer: {
+    bioText: {
+        fontSize: 13.5,
+        fontWeight: "800",
+        color: INK,
+    },
+    bioHint: {
+        fontSize: 12.5,
+        color: MUTE,
+        lineHeight: 18,
+        textAlign: "center",
+        marginBottom: 12,
+    },
+    foot: {
+        marginTop: "auto",
+        paddingTop: 22,
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        marginTop: "auto",
-        paddingBottom: 32,
     },
-    signupText: {
-        color: "#666",
-        fontSize: 16,
+    footText: {
+        fontSize: 13,
+        color: MUTE,
     },
-    signupLink: {
-        color: "#DC143C",
-        fontSize: 16,
-        fontWeight: "bold",
+    footLink: {
+        fontSize: 13,
+        fontWeight: "800",
+        color: INK,
+        borderBottomWidth: 2,
+        borderBottomColor: LIME,
+        paddingBottom: 1,
     },
 });

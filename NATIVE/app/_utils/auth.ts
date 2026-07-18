@@ -7,3 +7,7 @@ export async function handleLogout() {
 
     router.replace("/auth");
 }
+
+export default function AuthUtilityRoute() {
+    return null;
+}

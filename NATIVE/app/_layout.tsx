@@ -4,16 +4,14 @@ import "react-native-reanimated";
 import * as QuickActions from "expo-quick-actions";
 import * as SplashScreen from "expo-splash-screen";
 
-import {Image, PermissionsAndroid, Platform, Text, View} from "react-native";
+import {Image, PermissionsAndroid, Platform, StyleSheet, Text, View} from "react-native";
 import React, {useEffect} from "react";
-import {windowHeight, windowWidth} from "./_utils/screenDimensions";
+import {windowWidth} from "./_utils/screenDimensions";
 
-import Animated from "react-native-reanimated";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import LottieComponent from "@/components/lottieLoading";
 import {Stack} from "expo-router";
 import {StatusBar} from "expo-status-bar";
-import {blueColor} from "./_utils/colors";
 import {useAuthStore} from "./_utils/authStore";
 import {useFonts} from "expo-font";
 import {useQuickActionRouting} from "expo-quick-actions/router";
@@ -50,6 +48,7 @@ export default function AuthenticatedLayout() {
     const [loading, setLoading] = React.useState(false);
 
     const [fontsLoaded, fontError] = useFonts({
+        "SpaceMono-Regular": require("../assets/fonts/SpaceMono-Regular.ttf"),
         "Inter-Black": require("../assets/fonts/Inter-Regular.ttf"),
         "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
         "Sora-Regular": require("../assets/fonts/Sora-Regular.ttf"),
@@ -105,84 +104,33 @@ export default function AuthenticatedLayout() {
 
     if (loading) {
         return (
-            <View
-                style={{
-                    flex: 1,
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    width: "100%",
-                    backgroundColor: "#fefefe",
-                }}
-            >
-                <View
-                    style={{
-                        flex: 8,
-                        // borderWidth: 4,
-                        // borderColor: "red",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                    }}
-                >
-                    <View
-                        style={{
-                            flex: 8,
-                            // borderWidth: 4,
-                            // borderColor: "blue",
-                            flexDirection: "column",
-                            justifyContent: "flex-end",
-                        }}
-                    >
-                        <LottieComponent
-                            name="wave"
-                            backgroundColor={"transparent"}
-                            width={1.6 * windowWidth}
-                        />
-                    </View>
-                    <View
-                        style={{
-                            flex: 2,
-                            // borderWidth: 4,
-                            // borderColor: "blue",
-                            flexDirection: "column",
-                            justifyContent: "flex-start",
-                            paddingRight: 20,
-                        }}
-                    >
-                        <LottieComponent
-                            name="tea"
-                            backgroundColor={"transparent"}
-                            width={0.25 * windowWidth}
-                        />
-
-                        <Animated.Text
-                            style={{
-                                fontSize: 20,
-                                color: blueColor,
-                                fontFamily: "Sora-Regular",
-                                textAlign: "center",
-                            }}
-                        >
-                            Things are boiling nicely ...
-                        </Animated.Text>
-                    </View>
+            <View style={styles.splash}>
+                <View style={styles.splashAroma} pointerEvents="none">
+                    <LottieComponent
+                        name="wave"
+                        backgroundColor="transparent"
+                        width={1.45 * windowWidth}
+                    />
                 </View>
 
-                <View
-                    style={{
-                        flex: 2,
-                        flexDirection: "column",
-                        justifyContent: "center",
-                    }}
-                >
+                <View style={styles.splashContent}>
+                    <LottieComponent
+                        name="tea"
+                        backgroundColor="transparent"
+                        width={0.36 * windowWidth}
+                    />
+                    <Text style={styles.splashCaption}>Things are boiling nicely …</Text>
+                </View>
+
+                <View style={styles.splashBrand}>
                     <Image
                         source={require("../assets/images/icon.png")}
-                        style={{
-                            width: 0.3 * windowWidth,
-                            height: 0.2 * windowHeight,
-                            marginTop: 20,
-                        }}
+                        style={styles.splashLogo}
                     />
+                    <View>
+                        <Text style={styles.splashBrandName}>KURAZETU</Text>
+                        <Text style={styles.splashTagline}>TUZILINDE</Text>
+                    </View>
                 </View>
             </View>
         );
@@ -197,3 +145,62 @@ export default function AuthenticatedLayout() {
         </GestureHandlerRootView>
     );
 }
+
+const styles = StyleSheet.create({
+    splash: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "flex-end",
+        overflow: "hidden",
+        backgroundColor: "#ffffff",
+        paddingHorizontal: 22,
+        paddingBottom: 46,
+    },
+    splashAroma: {
+        position: "absolute",
+        top: -104,
+        width: 1.45 * windowWidth,
+        alignItems: "center",
+        opacity: 0.98,
+    },
+    splashContent: {
+        position: "absolute",
+        top: "59%",
+        width: "100%",
+        alignItems: "center",
+        transform: [{translateX: -0.05 * windowWidth}],
+    },
+    splashCaption: {
+        marginTop: 0,
+        fontSize: 15,
+        fontWeight: "600",
+        fontStyle: "italic",
+        color: "#8a4a25",
+        letterSpacing: 0.15,
+    },
+    splashBrand: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+    },
+    splashLogo: {
+        width: 54,
+        height: 54,
+        borderRadius: 15,
+    },
+    splashBrandName: {
+        fontSize: 23,
+        lineHeight: 25,
+        fontWeight: "900",
+        letterSpacing: 1.1,
+        color: "#2532a8",
+    },
+    splashTagline: {
+        marginTop: 3,
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 10,
+        fontWeight: "700",
+        letterSpacing: 3.1,
+        color: "#8a4a25",
+    },
+});
