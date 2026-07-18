@@ -1,13 +1,8 @@
-import {Dimensions, FlatList, StyleSheet, Text, View} from "react-native";
+import {FlatList, StyleSheet, Text, View, useWindowDimensions} from "react-native";
 import React, {useState} from "react";
 import {SceneMap, TabBar, TabView} from "react-native-tab-view";
-import {windowHeight, windowWidth} from "../(utils)/screenDimensions";
 
 import {BarChart} from "react-native-gifted-charts";
-
-const screenWidth = Dimensions.get("window").width;
-
-const initialLayout = {width: screenWidth};
 
 //TODO: Pull the data from the API
 const presidentialData = [
@@ -48,8 +43,10 @@ const MCAData = [
     {value: 10000, label: "Candidate 3", frontColor: "#f4a261"},
 ];
 
-const GovernorRoute = () => {
-    return (
+export default function ResultsLandingPage() {
+    const {width: screenWidth, height: screenHeight} = useWindowDimensions();
+
+    const GovernorRoute = () => (
         <View
             style={{
                 flexDirection: "column",
@@ -63,7 +60,6 @@ const GovernorRoute = () => {
                     style={{
                         fontSize: 20,
                         marginVertical: 10,
-                        // fontWeight: "600",
                     }}
                 >
                     Governor Results
@@ -73,12 +69,10 @@ const GovernorRoute = () => {
                 data={GovernorData}
                 isAnimated
                 rotateLabel
-                // horizontal
                 animationDuration={500}
-                yAxisLabelWidth={0.15 * windowWidth}
-                width={0.7 * windowWidth}
-                height={0.3 * windowHeight}
-                // adjustToWidth
+                yAxisLabelWidth={40}
+                width={screenWidth - 80}
+                adjustToWidth
                 xAxisLabelTextStyle={{
                     fontSize: 8,
                     color: "#264653",
@@ -86,10 +80,8 @@ const GovernorRoute = () => {
             />
         </View>
     );
-};
 
-const SenatorRoute = () => {
-    return (
+    const SenatorRoute = () => (
         <View
             style={{
                 flexDirection: "column",
@@ -103,7 +95,6 @@ const SenatorRoute = () => {
                     style={{
                         fontSize: 28,
                         marginVertical: 10,
-                        // fontWeight: "600",
                     }}
                 >
                     Senator Results
@@ -113,24 +104,20 @@ const SenatorRoute = () => {
                 data={SenatorData}
                 isAnimated
                 rotateLabel
-                // horizontal
                 animationDuration={500}
-                yAxisLabelWidth={0.15 * windowWidth}
-                width={0.7 * windowWidth}
-                height={0.3 * windowHeight}
-                // adjustToWidth
+                yAxisLabelWidth={40}
+                width={screenWidth - 80}
+                adjustToWidth
                 xAxisLabelTextStyle={{
                     fontSize: 12,
-                    // fontWeight: "bold",
                     color: "#264653",
                 }}
                 xAxisLabelsAtBottom={false}
             />
         </View>
     );
-};
-const WomanRepRoute = () => {
-    return (
+
+    const WomanRepRoute = () => (
         <View
             style={{
                 flexDirection: "column",
@@ -144,7 +131,6 @@ const WomanRepRoute = () => {
                     style={{
                         fontSize: 28,
                         marginVertical: 10,
-                        // fontWeight: "600",
                     }}
                 >
                     Woman Rep Results
@@ -154,25 +140,20 @@ const WomanRepRoute = () => {
                 data={WomanRepData}
                 isAnimated
                 rotateLabel
-                // horizontal
                 animationDuration={500}
-                yAxisLabelWidth={0.15 * windowWidth}
-                width={0.7 * windowWidth}
-                height={0.3 * windowHeight}
-                // adjustToWidth
+                yAxisLabelWidth={40}
+                width={screenWidth - 80}
+                adjustToWidth
                 xAxisLabelTextStyle={{
                     fontSize: 12,
-                    // fontWeight: "bold",
                     color: "#264653",
                 }}
                 xAxisLabelsAtBottom={false}
             />
         </View>
     );
-};
 
-const MpRoute = () => {
-    return (
+    const MpRoute = () => (
         <View
             style={{
                 flexDirection: "column",
@@ -186,7 +167,6 @@ const MpRoute = () => {
                     style={{
                         fontSize: 28,
                         marginVertical: 10,
-                        // fontWeight: "600",
                     }}
                 >
                     MP Results
@@ -196,25 +176,20 @@ const MpRoute = () => {
                 data={MpData}
                 isAnimated
                 rotateLabel
-                // horizontal
                 animationDuration={500}
-                yAxisLabelWidth={0.15 * windowWidth}
-                width={0.7 * windowWidth}
-                height={0.3 * windowHeight}
-                // adjustToWidth
+                yAxisLabelWidth={40}
+                width={screenWidth - 80}
+                adjustToWidth
                 xAxisLabelTextStyle={{
                     fontSize: 12,
-                    // fontWeight: "bold",
                     color: "#264653",
                 }}
                 xAxisLabelsAtBottom={false}
             />
         </View>
     );
-};
 
-const MCARoute = () => {
-    return (
+    const MCARoute = () => (
         <View
             style={{
                 flexDirection: "column",
@@ -228,7 +203,6 @@ const MCARoute = () => {
                     style={{
                         fontSize: 28,
                         marginVertical: 10,
-                        // fontWeight: "600",
                     }}
                 >
                     MCA Results
@@ -238,23 +212,19 @@ const MCARoute = () => {
                 data={MCAData}
                 isAnimated
                 rotateLabel
-                // horizontal
                 animationDuration={500}
-                yAxisLabelWidth={0.15 * windowWidth}
-                width={0.7 * windowWidth}
-                height={0.3 * windowHeight}
-                // adjustToWidth
+                yAxisLabelWidth={40}
+                width={screenWidth - 80}
+                adjustToWidth
                 xAxisLabelTextStyle={{
                     fontSize: 12,
-                    // fontWeight: "bold",
                     color: "#264653",
                 }}
                 xAxisLabelsAtBottom={false}
             />
         </View>
     );
-};
-export default function ResultsLandingPage() {
+
     const [index, setIndex] = useState<number>(0);
     const [routes] = useState([
         {key: "governor", title: "Governor"},
@@ -291,7 +261,7 @@ export default function ResultsLandingPage() {
                                     styles.bar,
                                     {
                                         backgroundColor: item.color,
-                                        width: `${item.votes / 100000}%`,
+                                        width: `${Math.min((item.votes / 100000) * 100, 100)}%`,
                                     },
                                 ]}
                             />
@@ -307,7 +277,7 @@ export default function ResultsLandingPage() {
                     navigationState={{index, routes}}
                     renderScene={renderScene}
                     onIndexChange={setIndex}
-                    initialLayout={initialLayout}
+                    initialLayout={{width: screenWidth}}
                     renderTabBar={(props) => (
                         <TabBar {...props} style={{backgroundColor: "#264653"}} />
                     )}

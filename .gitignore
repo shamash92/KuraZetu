@@ -31,4 +31,5 @@ kurazetu_key
 kurazetu_key.pub
 vscode.yaml
 
-server_setup.md
+claude-design/
+prompts/

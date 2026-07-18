@@ -205,12 +205,26 @@ class PollingCenterVerification(gis_models.Model):
     boundary = gis_models.PolygonField(blank=True, null=True)
 
     anonymous_verification = models.BooleanField(default=False)
+    is_upvote = models.BooleanField(default=False)
     verified_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
+
+    ai_suggestion = models.BooleanField(default=False)
+    ai_model = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Name of the AI model used, e.g., 'claude-4.7-xhigh', 'gemini-3.5-flash'.",
+    )
+    nominatim = models.BooleanField(default=False)
+
+    # Set when the suggestion falls far from the dominant cluster (or outside
+    # the ward). Stored for transparency but ignored by consensus.
+    is_outlier = models.BooleanField(default=False)
 
     date_modified = models.DateTimeField(auto_now=True)
 

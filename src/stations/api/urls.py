@@ -8,9 +8,11 @@ from stations.api.views import (
     WardPollingCenterListAPIView,
     RandomUnverifiedPollingCenterAPIView,
     VerificationPollingCenterAPIView,
+    AIPollingCenterVerificationAPIView,
     PartiallyVerifiedPollingCenterAPIView,
     CommunityNotesPollingCenterDetailsAPIView,
     PollingStationInfoAPIView,
+    GeocodeAPIView,
 )
 
 urlpatterns = [
@@ -50,6 +52,11 @@ urlpatterns = [
         name="polling_centers_verification_api",
     ),
     path(
+        "polling-centers/verify-ai/",
+        AIPollingCenterVerificationAPIView.as_view(),
+        name="polling_centers_verify_ai_api",
+    ),
+    path(
         "polling-centers/partially-verified/",
         PartiallyVerifiedPollingCenterAPIView.as_view(),
         name="polling_centers_partially_verified_api",
@@ -63,5 +70,10 @@ urlpatterns = [
         "community-notes/polling-stations/<str:polling_station_code>/info/",
         PollingStationInfoAPIView.as_view(),
         name="polling_station_info_api",
+    ),
+    path(
+        "geocode/",
+        GeocodeAPIView.as_view(),
+        name="geocode_api",
     ),
 ]

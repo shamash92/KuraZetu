@@ -399,21 +399,14 @@ Go back to the urls file and un-comment the lines you commented out earlier. Thi
 
 ## 3. Setup Tailwind CSS
 
-In a new terminal, run the following commands to set up Tailwind CSS for styling.
-
-```{important}
-This is only needed for the first time you run the project. After that, you can skip this step.
-```
+In a new terminal, run the following command to watch for CSS changes during development. No Node or yarn needed — the first run will automatically download the standalone Tailwind CLI binary into `src/.django_tailwind_cli/`.
 
 ```bash
-cd src/tailwind
-yarn install
-
-yarn run dev
+python manage.py tailwind watch
 ```
 
-The following command will start the tailwind server and watch for changes in the CSS files. This is needed for development purposes. Note that this command will not open any ports. It will only watch for changes in the CSS files and rebuild the CSS bundle.
+Alternatively, to run the dev server and Tailwind watcher together:
 
 ```bash
-python manage.py tailwind start
+python manage.py tailwind runserver
 ```

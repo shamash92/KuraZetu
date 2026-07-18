@@ -4,6 +4,25 @@ from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
 
+def mask_phone_number(phone_number):
+    """
+    Mask the last three digits of a phone number for privacy.
+
+    Args:
+        phone_number: A PhoneNumberField or string representation of a phone number
+
+    Returns:
+        String with last three digits replaced by 'XXX'
+
+    Example:
+        +254712345678 -> +254712345XXX
+    """
+    phone_str = str(phone_number)
+    if len(phone_str) >= 4:
+        return phone_str[:-3] + "XXX"
+    return phone_str
+
+
 class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None):
         """
@@ -97,9 +116,7 @@ class User(AbstractBaseUser):
         elif self.last_name and not self.first_name:
             return f"{self.last_name}"
         else:
-            return str(
-                self.phone_number
-            )  # TODO: Format to replace last three digits with "XXX"
+            return mask_phone_number(self.phone_number)
 
     def get_short_name(self):
         # The user is identified by their phone_number
@@ -110,9 +127,7 @@ class User(AbstractBaseUser):
         elif self.last_name and not self.first_name:
             return f"{self.last_name}"
         else:
-            return str(
-                self.phone_number
-            )  # TODO: Format to replace last three digits with "XXX"
+            return mask_phone_number(self.phone_number)
 
     def __str__(self):
         return str(self.phone_number)

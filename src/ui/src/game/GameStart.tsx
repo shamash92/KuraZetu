@@ -1,132 +1,249 @@
-import {MapPin, Target, Trophy} from "lucide-react";
+import {ArrowRight, Building2, Check, LogIn, Map, MapPin} from "lucide-react";
+import type {CSSProperties} from "react";
 
-import {Button} from "../@/components/ui/button";
-import {TLevel} from "./types";
-import {motion} from "framer-motion";
 import {useAuth} from "../App";
+import "../landing-pages/kenya-counties";
+import "./game-start.css";
+
+type TParamLevel = "random" | "ward" | "constituency" | "county";
 
 interface GameStartProps {
-    onStart: (level: TLevel | null) => void;
+    onStart: (level: TParamLevel) => void;
+}
+
+type County = {
+    id: string;
+    name: string;
+    d: string;
+    bb: [number, number, number, number];
+};
+
+type CountyData = {
+    w: number;
+    h: number;
+    counties: County[];
+};
+
+declare global {
+    interface Window {
+        KENYA_COUNTIES?: CountyData;
+    }
+}
+
+const VERIFIED_COUNTIES = new Set([
+    "Nairobi",
+    "Mombasa",
+    "Kisumu",
+    "Nakuru",
+    "Uasin Gishu",
+    "Garissa",
+    "Nyeri",
+    "Kakamega",
+    "Kilifi",
+]);
+
+const STEPS = [
+    {
+        n: "01",
+        title: "Search",
+        text: "Find the school by name. Results stay biased to its ward.",
+    },
+    {
+        n: "02",
+        title: "Place",
+        text: "Drop the pin inside the ward boundary where the center really sits.",
+    },
+    {
+        n: "03",
+        title: "Agree",
+        text: "Three matching citizen pins verify the polling center.",
+    },
+];
+
+const AREA_LEVELS = [
+    {
+        level: "ward",
+        label: "My ward",
+        description: "Start with the centers closest to home",
+        icon: MapPin,
+    },
+    {
+        level: "constituency",
+        label: "My constituency",
+        description: "Work through centers across your constituency",
+        icon: Building2,
+    },
+    {
+        level: "county",
+        label: "My county",
+        description: "Help verify centers across the whole county",
+        icon: Map,
+    },
+] satisfies {
+    level: TParamLevel;
+    label: string;
+    description: string;
+    icon: typeof MapPin;
+}[];
+
+function PinVerifyAtlas() {
+    const data = window.KENYA_COUNTIES;
+    if (!data) return null;
+
+    return (
+        <div className="pv-atlas" aria-hidden="true">
+            <div className="pv-atlas-label">
+                <span>Community map</span>
+                <strong>47 counties</strong>
+            </div>
+            <svg viewBox={`0 0 ${data.w} ${data.h}`} preserveAspectRatio="xMidYMid meet">
+                {data.counties.map((county) => {
+                    const verified = VERIFIED_COUNTIES.has(county.name);
+                    return (
+                        <path
+                            className={`pv-county ${verified ? "is-verified" : ""}`}
+                            d={county.d}
+                            key={county.id}
+                        />
+                    );
+                })}
+                {data.counties
+                    .filter((county) => VERIFIED_COUNTIES.has(county.name))
+                    .map((county, index) => {
+                        const [x, y, width, height] = county.bb;
+                        const cx = x + width / 2;
+                        const cy = y + height / 2;
+                        return (
+                            <g
+                                className="pv-atlas-pin"
+                                key={`${county.id}-pin`}
+                                style={{"--pin-delay": `${index * 260}ms`} as CSSProperties}
+                            >
+                                <circle className="pv-atlas-ring" cx={cx} cy={cy} r="4" />
+                                <circle className="pv-atlas-dot" cx={cx} cy={cy} r="3" />
+                            </g>
+                        );
+                    })}
+            </svg>
+            <div className="pv-atlas-key">
+                <span>Citizen-confirmed activity</span>
+                <b>Pin locations become stronger through agreement.</b>
+            </div>
+        </div>
+    );
 }
 
 export default function GameStart({onStart}: GameStartProps) {
-    let auth = useAuth();
-
-    console.log(auth, "auth from game start");
+    const auth = useAuth();
 
     return (
-        <div className="flex items-center justify-center w-full min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-            <motion.div
-                initial={{opacity: 0, scale: 0.8}}
-                animate={{opacity: 1, scale: 1}}
-                transition={{duration: 0.6}}
-                className="max-w-lg p-8 mx-auto text-center text-white"
-            >
-                <motion.div
-                    initial={{y: -20}}
-                    animate={{y: 0}}
-                    transition={{delay: 0.2, duration: 0.5}}
-                    className="mb-8"
-                >
-                    <div className="flex justify-center w-full mb-4 ">
-                        <div className="relative">
-                            <MapPin className="w-16 h-16 text-blue-400" />
-                            <motion.div
-                                animate={{scale: [1, 1.2, 1]}}
-                                transition={{
-                                    repeat: Number.POSITIVE_INFINITY,
-                                    duration: 2,
-                                }}
-                                className="absolute -top-1 -right-1"
-                            >
-                                <Target className="w-6 h-6 text-yellow-400" />
-                            </motion.div>
-                        </div>
-                    </div>
-                    <h1 className="mb-4 text-4xl font-bold">KuraZetu: PinVerify254</h1>
-                    <p className="mb-8 text-xl text-blue-200">
-                        Help verify the locations of polling centers across Kenya and
-                        support transparent elections!
+        <main className="pv-start">
+            <PinVerifyAtlas />
+
+            <header className="pv-topbar">
+                <a className="pv-wordmark" href="/ui/">
+                    <span><MapPin size={14} /></span>
+                    PinVerify254
+                </a>
+                {auth ? (
+                    <a className="pv-toplink" href="/ui/">
+                        Back to KuraZetu
+                    </a>
+                ) : (
+                    <a className="pv-toplink" href="/accounts/login/">
+                        <LogIn size={14} />
+                        Log in
+                    </a>
+                )}
+            </header>
+
+            <section className="pv-hero">
+                <div className="pv-copy">
+                    <h1>
+                        Put every polling center on the map. <em>Together.</em>
+                    </h1>
+                    <p className="pv-lede">
+                        Help establish a trustworthy public map of Kenya's polling
+                        centers, one independent confirmation at a time.
                     </p>
-                </motion.div>
 
-                <motion.div
-                    initial={{y: 20, opacity: 0}}
-                    animate={{y: 0, opacity: 1}}
-                    transition={{delay: 0.4, duration: 0.5}}
-                    className="space-y-4"
-                >
-                    <div className="p-6 mb-6 rounded-lg bg-white/10 backdrop-blur-sm">
-                        <h3 className="flex items-center gap-2 mb-3 text-lg font-semibold">
-                            <Trophy className="w-5 h-5 text-yellow-400" />
-                            How to Participate
-                        </h3>
-                        <ul className="space-y-2 text-sm text-left text-blue-100">
-                            <li>
-                                • Review the pin location for a polling center on the
-                                map
+                    <ol className="pv-steps">
+                        {STEPS.map((step) => (
+                            <li key={step.n}>
+                                <span>{step.n}</span>
+                                <p><strong>{step.title}</strong> {step.text}</p>
                             </li>
-                            <li>
-                                • Select YES if the polling center is correctly placed
-                                (+10 points)
-                            </li>
-                            <li>
-                                • Select NO/EDIT to move the pin to the correct location
-                                (+15 points)
-                            </li>
-                            <li>• Select SKIP if you are unsure (+2 points)</li>
-                        </ul>
+                        ))}
+                    </ol>
+
+                    <div className="pv-actions">
+                        {auth ? (
+                            <div className="pv-local-start">
+                                <div className="pv-local-start-heading">
+                                    <strong>Choose where to start</strong>
+                                    <span>
+                                        We will serve centers from your registered
+                                        area.
+                                    </span>
+                                </div>
+                                <div className="pv-area-options">
+                                    {AREA_LEVELS.map(
+                                        ({level, label, description, icon: Icon}) => (
+                                            <button
+                                                className={
+                                                    level === "ward"
+                                                        ? "pv-area-option is-recommended"
+                                                        : "pv-area-option"
+                                                }
+                                                key={level}
+                                                type="button"
+                                                onClick={() => onStart(level)}
+                                            >
+                                                <span className="pv-area-option-icon">
+                                                    <Icon size={17} />
+                                                </span>
+                                                <span className="pv-area-option-copy">
+                                                    <strong>{label}</strong>
+                                                    <small>{description}</small>
+                                                </span>
+                                                <ArrowRight size={16} />
+                                            </button>
+                                        ),
+                                    )}
+                                </div>
+                                <button
+                                    className="pv-random-link"
+                                    type="button"
+                                    onClick={() => onStart("random")}
+                                >
+                                    Or verify a random center anywhere in Kenya
+                                    <ArrowRight size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    className="pv-primary"
+                                    type="button"
+                                    onClick={() => onStart("random")}
+                                >
+                                    Start with a random center
+                                    <ArrowRight size={18} />
+                                </button>
+                                <p className="pv-login-line">
+                                    <a href="/accounts/login/">Log in</a> to start with
+                                    centers in your own ward.
+                                </p>
+                            </>
+                        )}
                     </div>
 
-                    <div>
-                        <p>
-                            You can{" "}
-                            <a
-                                className="text-blue-400 underline"
-                                href="/accounts/login/"
-                            >
-                                login
-                            </a>{" "}
-                            to start with centers in your ward
-                        </p>
-                    </div>
-
-                    <Button
-                        onClick={() => onStart(null)}
-                        size="lg"
-                        className="w-full py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                    >
-                        Start with Random Polling Centers
-                    </Button>
-
-                    {auth && (
-                        <>
-                            <h2 className="mb-4">OR</h2>
-                            <Button
-                                onClick={() => onStart("ward")}
-                                size="lg"
-                                className="w-full py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                Start with your Ward
-                            </Button>
-                            <Button
-                                onClick={() => onStart("constituency")}
-                                size="lg"
-                                className="w-full py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                Start with your Constituency
-                            </Button>{" "}
-                            <Button
-                                onClick={() => onStart("county")}
-                                size="lg"
-                                className="w-full py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                Start with your County
-                            </Button>
-                        </>
-                    )}
-                </motion.div>
-            </motion.div>
-        </div>
+                    <p className="pv-note">
+                        <Check size={13} />
+                        No rankings. No scores. Every contribution counts the same.
+                    </p>
+                </div>
+            </section>
+        </main>
     );
 }
