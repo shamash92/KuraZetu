@@ -1,5 +1,8 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {
+    Animated,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
     ScrollView,
     StyleSheet,
     Text,
@@ -9,6 +12,7 @@ import {
 } from "react-native";
 
 import {BarChart} from "react-native-gifted-charts";
+import {ChevronDown} from "lucide-react-native";
 import {perk} from "@/app/_utils/colors";
 
 //TODO: Pull the data from the API
@@ -55,7 +59,7 @@ const offices = [
             {value: 8000, label: "Candidate 3", frontColor: perk.periwinkleDeep},
         ],
     },
-      {
+    {
         key: "mp",
         tab: "MP",
         title: "MP results",
@@ -82,108 +86,166 @@ const offices = [
 export default function ResultsLandingPage() {
     const {width: screenWidth} = useWindowDimensions();
     const [officeIndex, setOfficeIndex] = useState<number>(0);
+    const [showHint, setShowHint] = useState(true);
+    const [bob] = useState(() => new Animated.Value(0));
 
     const totalPresVotes = presidentialData.reduce((sum, c) => sum + c.votes, 0);
     const maxPresVotes = Math.max(...presidentialData.map((c) => c.votes));
 
     const activeOffice = offices[officeIndex];
 
+    useEffect(() => {
+        const loop = Animated.loop(
+            Animated.sequence([
+                Animated.timing(bob, {
+                    toValue: 1,
+                    duration: 750,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(bob, {
+                    toValue: 0,
+                    duration: 750,
+                    useNativeDriver: true,
+                }),
+            ]),
+        );
+        loop.start();
+        return () => loop.stop();
+    }, [bob]);
+
+    const onPresScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const {contentOffset, contentSize, layoutMeasurement} = e.nativeEvent;
+        const atBottom =
+            contentOffset.y + layoutMeasurement.height >= contentSize.height - 8;
+        setShowHint(!atBottom);
+    };
+
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* Brand row */}
-            <View style={styles.brandRow}>
-                <View>
-                    <Text style={styles.brandName}>KuraZetu</Text>
-                    <Text style={styles.brandTag}>2027 ELECTION COVERAGE</Text>
-                </View>
-                <View style={styles.updatedCol}>
-                    <Text style={styles.updated}>2 MIN AGO</Text>
-                    <View style={styles.coverage}>
-                        <Text style={styles.coverageLabel}>87% IN</Text>
-                        <View style={styles.coverageBar}>
-                            <View style={[styles.coverageFill, {width: "87%"}]} />
+        <View style={styles.container}>
+            <View style={styles.content}>
+                {/* Brand row */}
+                <View style={styles.brandRow}>
+                    <View>
+                        <Text style={styles.brandName}>KuraZetu</Text>
+                        <Text style={styles.brandTag}>2027 ELECTION COVERAGE</Text>
+                    </View>
+                    <View style={styles.updatedCol}>
+                        <Text style={styles.updated}>2 MIN AGO</Text>
+                        <View style={styles.coverage}>
+                            <Text style={styles.coverageLabel}>87% IN</Text>
+                            <View style={styles.coverageBar}>
+                                <View style={[styles.coverageFill, {width: "87%"}]} />
+                            </View>
                         </View>
                     </View>
                 </View>
-            </View>
 
-            {/* Presidential results */}
-            <Text style={styles.sectionLabel}>PRESIDENTIAL RESULTS</Text>
-            {presidentialData.map((candidate) => {
-                const pct = ((candidate.votes / totalPresVotes) * 100).toFixed(1);
-                const barPct = (candidate.votes / maxPresVotes) * 100;
-                return (
-                    <View key={candidate.name} style={styles.presCard}>
-                        <Text style={styles.presPct}>{pct}%</Text>
-                        <Text style={styles.presName}>
-                            {candidate.name} · {candidate.party}
-                        </Text>
-                        <Text style={styles.presVotes}>
-                            {candidate.votes.toLocaleString()} VOTES
-                        </Text>
-                        <View style={styles.presBarTrack}>
-                            <View
-                                style={[
-                                    styles.presBarFill,
-                                    {
-                                        width: `${barPct}%`,
-                                        backgroundColor: candidate.color,
-                                    },
-                                ]}
-                            />
-                        </View>
-                    </View>
-                );
-            })}
-
-            {/* Office tabs */}
-            <View style={styles.officeTabs}>
-                {offices.map((office, idx) => {
-                    const on = idx === officeIndex;
-                    return (
-                        <TouchableOpacity
-                            key={office.key}
-                            style={[styles.officeTab, on && styles.officeTabOn]}
-                            onPress={() => setOfficeIndex(idx)}
-                            activeOpacity={0.8}
+                {/* Presidential results */}
+                <Text style={styles.sectionLabel}>PRESIDENTIAL RESULTS</Text>
+                <View style={styles.presScrollWrap}>
+                    <ScrollView
+                        style={styles.presScroll}
+                        showsVerticalScrollIndicator={false}
+                        onScroll={onPresScroll}
+                        scrollEventThrottle={16}
+                    >
+                        {presidentialData.map((candidate) => {
+                            const pct = (
+                                (candidate.votes / totalPresVotes) *
+                                100
+                            ).toFixed(1);
+                            const barPct = (candidate.votes / maxPresVotes) * 100;
+                            return (
+                                <View key={candidate.name} style={styles.presCard}>
+                                    <Text style={styles.presPct}>{pct}%</Text>
+                                    <Text style={styles.presName}>
+                                        {candidate.name} · {candidate.party}
+                                    </Text>
+                                    <Text style={styles.presVotes}>
+                                        {candidate.votes.toLocaleString()} VOTES
+                                    </Text>
+                                    <View style={styles.presBarTrack}>
+                                        <View
+                                            style={[
+                                                styles.presBarFill,
+                                                {
+                                                    width: `${barPct}%`,
+                                                    backgroundColor: candidate.color,
+                                                },
+                                            ]}
+                                        />
+                                    </View>
+                                </View>
+                            );
+                        })}
+                    </ScrollView>
+                    {showHint && (
+                        <Animated.View
+                            pointerEvents="none"
+                            style={[
+                                styles.scrollHint,
+                                {
+                                    transform: [
+                                        {
+                                            translateY: bob.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [0, 4],
+                                            }),
+                                        },
+                                    ],
+                                },
+                            ]}
                         >
-                            <Text
-                                style={[
-                                    styles.officeTabText,
-                                    on && styles.officeTabTextOn,
-                                ]}
-                            >
-                                {office.tab}
-                            </Text>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
+                            <ChevronDown size={14} color={perk.limeInk} />
+                        </Animated.View>
+                    )}
+                </View>
 
-            {/* Chart */}
-            <Text style={styles.chartTitle}>
-                {activeOffice.title}{" "}
-                <Text style={styles.chartGeo}>· {activeOffice.geo}</Text>
-            </Text>
-            <BarChart
-                data={activeOffice.data}
-                isAnimated
-                rotateLabel
-                animationDuration={500}
-                yAxisLabelWidth={40}
-                width={screenWidth - 80}
-                adjustToWidth
-                barBorderTopLeftRadius={4}
-                barBorderTopRightRadius={4}
-                showValuesAsTopLabel
-                topLabelTextStyle={styles.chartTopLabel}
-                xAxisLabelTextStyle={styles.chartXLabel}
-            />
-        </ScrollView>
+                {/* Office tabs */}
+                <View style={styles.officeTabs}>
+                    {offices.map((office, idx) => {
+                        const on = idx === officeIndex;
+                        return (
+                            <TouchableOpacity
+                                key={office.key}
+                                style={[styles.officeTab, on && styles.officeTabOn]}
+                                onPress={() => setOfficeIndex(idx)}
+                                activeOpacity={0.8}
+                            >
+                                <Text
+                                    style={[
+                                        styles.officeTabText,
+                                        on && styles.officeTabTextOn,
+                                    ]}
+                                >
+                                    {office.tab}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+
+                {/* Chart */}
+                <Text style={styles.chartTitle}>
+                    {activeOffice.title}{" "}
+                    <Text style={styles.chartGeo}>· {activeOffice.geo}</Text>
+                </Text>
+                <BarChart
+                    data={activeOffice.data}
+                    isAnimated
+                    rotateLabel
+                    animationDuration={500}
+                    yAxisLabelWidth={40}
+                    width={screenWidth - 80}
+                    adjustToWidth
+                    barBorderTopLeftRadius={4}
+                    barBorderTopRightRadius={4}
+                    showValuesAsTopLabel
+                    topLabelTextStyle={styles.chartTopLabel}
+                    xAxisLabelTextStyle={styles.chartXLabel}
+                />
+            </View>
+        </View>
     );
 }
 
@@ -258,6 +320,29 @@ const styles = StyleSheet.create({
         color: perk.ink,
         marginTop: 18,
         marginBottom: 10,
+    },
+    presScrollWrap: {
+        position: "relative",
+        maxHeight: 220,
+    },
+    presScroll: {
+        paddingRight: 28,
+    },
+    scrollHint: {
+        position: "absolute",
+        right: -8,
+        bottom: 4,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: perk.lime,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: perk.ink,
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.14,
+        shadowRadius: 4,
+        elevation: 3,
     },
     presCard: {
         backgroundColor: perk.surface,
