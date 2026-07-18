@@ -1,13 +1,4 @@
-import React from "react";
-
-export const orangeColor = "#BB8700";
-
-export const blueColor = "#334586";
-
-export const purpleColor = "#5a3a7d";
-
-export const blurHash =
-    "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
+// Numbered color scales (50–900).
 
 // Primary colors
 export const PRIMARY = {
@@ -88,27 +79,3 @@ export const ERROR = {
     500: "#EF4444",
     700: "#B91C1C",
 };
-
-// Party colors
-export const PARTY_COLORS = {
-    democratic: DEMOCRATIC[500],
-    republican: REPUBLICAN[500],
-    independent: "#A78BFA",
-    libertarian: "#FBBF24",
-    green: "#34D399",
-    other: NEUTRAL[400],
-};
-
-// Status colors
-export const STATUS_COLORS = {
-    live: SUCCESS[500],
-    upcoming: WARNING[500],
-    completed: NEUTRAL[500],
-};
-
-// This file does not export a React component by default.
-// To satisfy the requirement, export a dummy React component as default.
-
-const ColorsComponent: React.FC = () => null;
-
-export default ColorsComponent;
