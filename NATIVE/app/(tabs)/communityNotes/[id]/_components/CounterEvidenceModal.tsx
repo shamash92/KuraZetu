@@ -361,6 +361,8 @@ export function CounterEvidenceModal({
     );
 }
 
+export default CounterEvidenceModal;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,

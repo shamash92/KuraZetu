@@ -76,3 +76,7 @@ export const perk = {
     rule16: RULE_16,
     glass: GLASS,
 } as const;
+
+export default function PerkColorsRoute() {
+    return null;
+}

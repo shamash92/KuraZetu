@@ -50,6 +50,7 @@ export default function AuthenticatedLayout() {
     const [loading, setLoading] = React.useState(false);
 
     const [fontsLoaded, fontError] = useFonts({
+        "SpaceMono-Regular": require("../assets/fonts/SpaceMono-Regular.ttf"),
         "Inter-Black": require("../assets/fonts/Inter-Regular.ttf"),
         "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
         "Sora-Regular": require("../assets/fonts/Sora-Regular.ttf"),

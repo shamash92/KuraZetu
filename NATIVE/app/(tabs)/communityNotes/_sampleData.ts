@@ -56,3 +56,7 @@ export const sampleElectionData = {
     declarationDate: "26/10/17",
     declarationTime: "Process was successful",
 };
+
+export default function CommunityNotesSampleDataRoute() {
+    return null;
+}

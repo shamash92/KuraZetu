@@ -469,6 +469,8 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
     );
 }
 
+export default AddFormModal;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,

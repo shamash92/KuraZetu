@@ -18,3 +18,7 @@ export const STATUS_COLORS = {
     upcoming: WARNING[500],
     completed: NEUTRAL[500],
 };
+
+export default function SemanticColorsRoute() {
+    return null;
+}

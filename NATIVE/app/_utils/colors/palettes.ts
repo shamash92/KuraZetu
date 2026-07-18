@@ -79,3 +79,7 @@ export const ERROR = {
     500: "#EF4444",
     700: "#B91C1C",
 };
+
+export default function PaletteRoute() {
+    return null;
+}

@@ -114,6 +114,8 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
     );
 }
 
+export default ZoomableImage;
+
 const styles = StyleSheet.create({
     imageContainer: {
         flex: 1,
