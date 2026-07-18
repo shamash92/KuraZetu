@@ -60,6 +60,7 @@ export default {
             "expo-router",
             "expo-image",
             "expo-web-browser",
+            "expo-status-bar",
             [
                 "expo-splash-screen",
                 {
