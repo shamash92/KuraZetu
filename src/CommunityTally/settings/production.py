@@ -7,6 +7,18 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 DEBUG = config("DEBUG", default=False, cast=bool)
 
+DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": config("DATABASE_NAME"),
+        "USER": config("DATABASE_USER"),
+        "PASSWORD": config("DATABASE_PASSWORD"),
+        "HOST": config("DATABASE_HOST"),
+        "PORT": "5432",
+    }
+}
+
+
 TIME_ZONE = "UTC"
 USE_TZ = True
 
@@ -31,7 +43,7 @@ SECURE_HSTS_PRELOAD = True
 SECURE_FRAME_DENY = True
 
 # AWS settings
-# from CommunityTally.aws.conf import *
+from CommunityTally.aws.conf import *
 
 IS_PROD = True
 AWS_QUERYSTRING_AUTH = False
