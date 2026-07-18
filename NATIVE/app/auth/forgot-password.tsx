@@ -1,19 +1,40 @@
-import {Alert, StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
-import {ArrowLeft, Mail, Phone} from "lucide-react-native";
+import {
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import {ArrowLeft, ArrowRight, Mail} from "lucide-react-native";
 import React, {useState} from "react";
 
-import {LinearGradient} from "expo-linear-gradient";
 import {router} from "expo-router";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {
+    CARD,
+    COPPER,
+    COPPER_DEEP,
+    INK,
+    LIME,
+    LIME_INK,
+    MUTE,
+    MUTE_2,
+    RULE_16,
+    SURFACE,
+} from "../_utils/colors";
 
 export default function ForgotPasswordScreen() {
     const [phoneNumber, setPhoneNumber] = useState("+254");
-    const [isLoading, setIsLoading] = useState(false);
 
-    const formatPhoneNumber = (text: string) => {
-        if (!text.startsWith("+254")) {
-            return "+254";
-        }
-        return text;
+    const insets = useSafeAreaInsets();
+
+    // National number digits only (without the +254 country code).
+    const nationalNumber = phoneNumber.replace(/^\+254/, "");
+    const handlePhoneChange = (text: string) => {
+        const digits = text.replace(/[^0-9]/g, "").slice(0, 9);
+        setPhoneNumber("+254" + digits);
     };
 
     const handleResetPassword = () => {
@@ -22,178 +43,197 @@ export default function ForgotPasswordScreen() {
             "Please check back later for updates.",
             [{text: "OK", onPress: () => router.back()}],
         );
-        return;
-
-        // if (!phoneNumber || phoneNumber === "+254") {
-        //     Alert.alert("Error", "Please enter your phone number");
-        //     return;
-        // }
-
-        // setIsLoading(true);
-        // // Simulate password reset process
-        // setTimeout(() => {
-        //     setIsLoading(false);
-        //     Alert.alert(
-        //         "Success",
-        //         "Password reset instructions have been sent to your phone number.",
-        //         [{text: "OK", onPress: () => router.back()}],
-        //     );
-        // }, 2000);
     };
 
     return (
-        <LinearGradient
-            colors={["#DC143C", "#006B3C", "#1E40AF"]}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
-            style={styles.container}
-        >
-            <View style={styles.overlay}>
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        style={styles.backButton}
-                    >
-                        <ArrowLeft size={24} color="#DC143C" />
-                    </TouchableOpacity>
-                </View>
+        <View style={styles.screen}>
+            <ScrollView
+                contentContainerStyle={[
+                    styles.content,
+                    {
+                        paddingTop: insets.top + 12,
+                        paddingBottom: insets.bottom + 28,
+                    },
+                ]}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <TouchableOpacity
+                    style={styles.back}
+                    onPress={() => router.back()}
+                    hitSlop={8}
+                >
+                    <ArrowLeft size={22} color={INK} strokeWidth={2.2} />
+                </TouchableOpacity>
 
-                <View style={styles.content}>
-                    <View style={styles.iconContainer}>
-                        <Mail size={64} color="#DC143C" />
+                <View style={styles.hero}>
+                    <View style={styles.iconCircle}>
+                        <Mail size={34} color={COPPER_DEEP} strokeWidth={1.8} />
                     </View>
 
-                    <Text style={styles.title}>Forgot Password?</Text>
+                    <Text style={styles.heading}>Forgot password?</Text>
                     <Text style={styles.subtitle}>
-                        {
-                            "Don't worry! Enter your phone number and we'll send you instructions to reset your password."
-                        }
+                        Don&apos;t worry — enter your phone number and we&apos;ll send
+                        you instructions to reset your password.
                     </Text>
+                </View>
 
-                    <View style={styles.inputWrapper}>
-                        <Phone size={20} color="#666" style={styles.inputIcon} />
+                <View style={styles.field}>
+                    <Text style={styles.label}>Phone number</Text>
+                    <View style={styles.phoneInput}>
+                        <View style={styles.prefix}>
+                            <Text style={styles.flag}>🇰🇪</Text>
+                            <Text style={styles.prefixText}>+254</Text>
+                        </View>
                         <TextInput
-                            style={styles.input}
-                            placeholder="Phone Number"
-                            placeholderTextColor="#666"
-                            value={phoneNumber}
-                            onChangeText={(text) =>
-                                setPhoneNumber(formatPhoneNumber(text))
-                            }
+                            style={styles.phoneField}
+                            placeholder="712 345 678"
+                            placeholderTextColor={MUTE_2}
+                            value={nationalNumber}
+                            onChangeText={handlePhoneChange}
                             keyboardType="phone-pad"
-                            maxLength={13}
+                            maxLength={9}
+                            returnKeyType="send"
                         />
                     </View>
-
-                    <TouchableOpacity
-                        style={[styles.resetButton, isLoading && styles.buttonDisabled]}
-                        onPress={handleResetPassword}
-                        disabled={isLoading}
-                    >
-                        <Text style={styles.resetButtonText}>
-                            {isLoading ? "Sending..." : "Send Reset Instructions"}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.backToLoginButton}
-                        onPress={() => router.back()}
-                    >
-                        <Text style={styles.backToLoginText}>Back to Sign In</Text>
-                    </TouchableOpacity>
                 </View>
-            </View>
-        </LinearGradient>
+
+                <TouchableOpacity
+                    style={styles.primary}
+                    onPress={handleResetPassword}
+                    activeOpacity={0.85}
+                >
+                    <Text style={styles.primaryText}>Send reset instructions</Text>
+                    <ArrowRight size={18} color={LIME_INK} strokeWidth={2.4} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.backLink}
+                    onPress={() => router.back()}
+                >
+                    <Text style={styles.backLinkText}>Back to sign in</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    screen: {
         flex: 1,
-    },
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
-    },
-    header: {
-        paddingHorizontal: 24,
-        paddingTop: 60,
-    },
-    backButton: {
-        alignSelf: "flex-start",
-        padding: 8,
+        backgroundColor: CARD,
     },
     content: {
-        flex: 1,
+        flexGrow: 1,
         paddingHorizontal: 24,
-        justifyContent: "center",
-        alignItems: "center",
     },
-    iconContainer: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: "#F8F9FA",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 32,
+    back: {
+        alignSelf: "flex-start",
+        marginLeft: -4,
+        padding: 4,
     },
-    title: {
+    hero: {
+        alignItems: "center",
+        marginTop: 40,
+    },
+    iconCircle: {
+        width: 84,
+        height: 84,
+        borderRadius: 42,
+        backgroundColor: SURFACE,
+        borderWidth: 1,
+        borderColor: RULE_16,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 26,
+    },
+    heading: {
         fontSize: 28,
-        fontWeight: "bold",
-        color: "#000",
-        marginBottom: 16,
+        fontWeight: "900",
+        letterSpacing: -0.6,
+        color: INK,
         textAlign: "center",
     },
     subtitle: {
-        fontSize: 16,
-        color: "#666",
+        marginTop: 12,
+        fontSize: 14,
+        lineHeight: 21,
+        color: MUTE,
         textAlign: "center",
-        lineHeight: 24,
-        marginBottom: 32,
+        paddingHorizontal: 6,
     },
-    inputWrapper: {
+    field: {
+        marginTop: 40,
+        gap: 10,
+    },
+    label: {
+        fontSize: 10.5,
+        fontWeight: "700",
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        color: COPPER,
+    },
+    phoneInput: {
+        flexDirection: "row",
+        alignItems: "stretch",
+        backgroundColor: CARD,
+        borderWidth: 1.5,
+        borderColor: INK,
+        borderRadius: 14,
+        overflow: "hidden",
+    },
+    prefix: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#F8F9FA",
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        marginBottom: 24,
-        borderWidth: 1,
-        borderColor: "#E9ECEF",
-        width: "100%",
+        gap: 6,
+        paddingHorizontal: 14,
+        backgroundColor: SURFACE,
+        borderRightWidth: 1,
+        borderRightColor: RULE_16,
     },
-    inputIcon: {
-        marginRight: 12,
+    flag: {
+        fontSize: 16,
     },
-    input: {
+    prefixText: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: INK,
+        letterSpacing: 0.5,
+    },
+    phoneField: {
         flex: 1,
-        fontSize: 16,
-        color: "#000",
-    },
-    resetButton: {
-        backgroundColor: "#DC143C",
-        borderRadius: 12,
+        minWidth: 0,
+        paddingHorizontal: 14,
         paddingVertical: 16,
-        alignItems: "center",
-        width: "100%",
-        marginBottom: 16,
-    },
-    buttonDisabled: {
-        opacity: 0.6,
-    },
-    resetButtonText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    backToLoginButton: {
-        paddingVertical: 12,
-    },
-    backToLoginText: {
-        color: "#DC143C",
         fontSize: 16,
         fontWeight: "600",
+        color: INK,
+        letterSpacing: 0.3,
+    },
+    primary: {
+        marginTop: 28,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        backgroundColor: LIME,
+        borderRadius: 14,
+        paddingVertical: 16,
+        paddingHorizontal: 22,
+    },
+    primaryText: {
+        fontSize: 15,
+        fontWeight: "800",
+        color: LIME_INK,
+    },
+    backLink: {
+        marginTop: 22,
+        alignSelf: "center",
+        paddingVertical: 6,
+    },
+    backLinkText: {
+        fontSize: 13,
+        fontWeight: "800",
+        color: COPPER_DEEP,
     },
 });
