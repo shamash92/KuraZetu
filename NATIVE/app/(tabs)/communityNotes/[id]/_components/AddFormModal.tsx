@@ -11,12 +11,15 @@ import {
 } from "react-native";
 import {Camera, Check, X} from "lucide-react-native";
 import {CameraView, useCameraPermissions} from "expo-camera";
+import {fetch} from "expo/fetch";
+import {File} from "expo-file-system";
 import React, {useEffect, useRef, useState} from "react";
 
 import {SafeAreaView} from "react-native-safe-area-context";
 import {StatusBar} from "expo-status-bar";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {perk} from "@/app/_utils/colors";
 import useAuthStore from "@/app/_utils/authStore";
 import {useLocalSearchParams} from "expo-router";
 
@@ -171,11 +174,10 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                             }),
                         );
 
-                        formData.append("image", {
-                            uri: capturedImage,
-                            type: "image/jpeg",
-                            name: "form34a.jpg",
-                        });
+                        // Expo's current FormData implementation accepts Blob-compatible
+                        // values. The legacy React Native {uri, type, name} object causes
+                        // "Unsupported FormDataPart implementation" on the simulator.
+                        formData.append("image", new File(capturedImage));
 
                         console.log(formData, "formData in AddFormModal");
 
@@ -184,7 +186,6 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                             {
                                 method: "POST",
                                 headers: {
-                                    "Content-Type": "multipart/form-data",
                                     Authorization: `Token ${userToken}`,
 
                                     Accept: "application/json",
@@ -288,9 +289,9 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
             <StatusBar style="dark" />
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Submit Results</Text>
+                    <Text style={styles.title}>Submit results</Text>
                     <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                        <X size={24} color="#000000" />
+                        <X size={16} color={perk.ink} />
                     </TouchableOpacity>
                 </View>
 
@@ -306,163 +307,193 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                                 style={styles.captureButton}
                                 onPress={takePicture}
                             >
-                                <Camera size={32} color="#FFFFFF" />
+                                <Camera size={32} color={perk.limeInk} />
                             </TouchableOpacity>
                         </View>
                     </View>
                 ) : (
-                    <ScrollView style={styles.content}>
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Capture Form 34A</Text>
-                            {capturedImage ? (
-                                <View style={styles.capturedImageContainer}>
-                                    <Text style={styles.capturedText}>
-                                        ✓ Form 34A Captured
-                                    </Text>
+                    <View style={styles.body}>
+                        <ScrollView
+                            style={styles.content}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            <View style={styles.section}>
+                                <Text style={styles.sectionLabel}>
+                                    CAPTURE FORM 34A
+                                </Text>
+                                {capturedImage ? (
+                                    <View style={styles.capturedImageContainer}>
+                                        <Text style={styles.capturedText}>
+                                            ✓ Form 34A Captured
+                                        </Text>
+                                        <TouchableOpacity
+                                            style={styles.recaptureButton}
+                                            onPress={() => setShowCamera(true)}
+                                        >
+                                            <Text style={styles.recaptureText}>
+                                                Retake Photo
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
                                     <TouchableOpacity
-                                        style={styles.recaptureButton}
+                                        style={styles.cameraButton}
                                         onPress={() => setShowCamera(true)}
                                     >
-                                        <Text style={styles.recaptureText}>
-                                            Retake Photo
+                                        <Camera size={16} color={perk.lime} />
+                                        <Text style={styles.cameraButtonText}>
+                                            Capture Form 34A
                                         </Text>
                                     </TouchableOpacity>
-                                </View>
-                            ) : (
-                                <TouchableOpacity
-                                    style={styles.cameraButton}
-                                    onPress={() => setShowCamera(true)}
-                                >
-                                    <Camera size={24} color="#FFFFFF" />
-                                    <Text style={styles.cameraButtonText}>
-                                        Capture Form 34A
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                                )}
+                            </View>
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Enter Vote data</Text>
+                            <View style={styles.section}>
+                                <Text style={styles.sectionLabel}>ENTER VOTE DATA</Text>
 
-                            {candidates.map((candidate) => {
-                                const voteValue = getVoteValue(candidate.id);
-                                return (
-                                    <View
-                                        key={candidate.id}
-                                        style={styles.candidateRow}
-                                    >
-                                        <View style={styles.candidateInfo}>
-                                            <Text style={styles.candidateName}>
-                                                {candidate.first_name}{" "}
-                                                {candidate.last_name}
-                                            </Text>
-                                            <Text style={styles.candidateParty}>
-                                                {candidate.party}
-                                            </Text>
+                                {candidates.map((candidate) => {
+                                    const voteValue = getVoteValue(candidate.id);
+                                    return (
+                                        <View key={candidate.id} style={styles.voteRow}>
+                                            <View style={styles.candidateInfo}>
+                                                <Text style={styles.candidateName}>
+                                                    {candidate.first_name}{" "}
+                                                    {candidate.last_name}
+                                                </Text>
+                                                <Text style={styles.candidateParty}>
+                                                    {candidate.party}
+                                                </Text>
+                                            </View>
+                                            <TextInput
+                                                style={[
+                                                    styles.vbox,
+                                                    voteValue > 0 && styles.vboxSet,
+                                                ]}
+                                                value={
+                                                    voteValue === 0
+                                                        ? ""
+                                                        : String(voteValue)
+                                                }
+                                                onChangeText={(text) => {
+                                                    const cleanText = text.replace(
+                                                        /[^0-9]/g,
+                                                        "",
+                                                    );
+                                                    const numValue =
+                                                        cleanText === ""
+                                                            ? 0
+                                                            : Number(cleanText);
+                                                    updateCandidateVotes(
+                                                        candidate.id,
+                                                        numValue,
+                                                    );
+                                                }}
+                                                placeholder="0"
+                                                placeholderTextColor={perk.mute2}
+                                                keyboardType="numeric"
+                                            />
                                         </View>
-                                        <TextInput
-                                            style={styles.voteInput}
-                                            value={
-                                                voteValue === 0 ? "" : String(voteValue)
-                                            }
-                                            onChangeText={(text) => {
-                                                const cleanText = text.replace(
-                                                    /[^0-9]/g,
-                                                    "",
-                                                );
-                                                const numValue =
-                                                    cleanText === ""
-                                                        ? 0
-                                                        : Number(cleanText);
-                                                updateCandidateVotes(
-                                                    candidate.id,
-                                                    numValue,
-                                                );
-                                            }}
-                                            placeholder="0"
-                                            keyboardType="numeric"
-                                        />
+                                    );
+                                })}
+
+                                <View style={styles.voteRow}>
+                                    <View style={styles.candidateInfo}>
+                                        <Text style={styles.candidateName}>
+                                            Rejected votes
+                                        </Text>
                                     </View>
-                                );
-                            })}
-
-                            <View style={styles.candidateRow}>
-                                <View style={styles.candidateInfo}>
-                                    <Text style={styles.candidateName}>
-                                        Rejected Votes
-                                    </Text>
+                                    <TextInput
+                                        style={[
+                                            styles.vbox,
+                                            rejectedVotes > 0 && styles.vboxSet,
+                                        ]}
+                                        value={
+                                            rejectedVotes === 0
+                                                ? ""
+                                                : String(rejectedVotes)
+                                        }
+                                        onChangeText={(text) => {
+                                            const cleanText = text.replace(
+                                                /[^0-9]/g,
+                                                "",
+                                            );
+                                            const numValue =
+                                                cleanText === ""
+                                                    ? 0
+                                                    : Number(cleanText);
+                                            setRejectedVotes(numValue);
+                                        }}
+                                        placeholder="0"
+                                        placeholderTextColor={perk.mute2}
+                                        keyboardType="numeric"
+                                    />
                                 </View>
-                                <TextInput
-                                    style={styles.voteInput}
-                                    value={
-                                        rejectedVotes === 0 ? "" : String(rejectedVotes)
-                                    }
-                                    onChangeText={(text) => {
-                                        const cleanText = text.replace(/[^0-9]/g, "");
-                                        const numValue =
-                                            cleanText === "" ? 0 : Number(cleanText);
-                                        setRejectedVotes(numValue);
-                                    }}
-                                    placeholder="0"
-                                    keyboardType="numeric"
-                                />
-                            </View>
 
-                            <View style={styles.candidateRow}>
-                                <View style={styles.candidateInfo}>
-                                    <Text style={styles.candidateName}>
-                                        Disputed Votes
-                                    </Text>
+                                <View style={styles.voteRow}>
+                                    <View style={styles.candidateInfo}>
+                                        <Text style={styles.candidateName}>
+                                            Disputed votes
+                                        </Text>
+                                    </View>
+                                    <TextInput
+                                        style={[
+                                            styles.vbox,
+                                            disputedVotes > 0 && styles.vboxSet,
+                                        ]}
+                                        value={
+                                            disputedVotes === 0
+                                                ? ""
+                                                : String(disputedVotes)
+                                        }
+                                        onChangeText={(text) => {
+                                            const cleanText = text.replace(
+                                                /[^0-9]/g,
+                                                "",
+                                            );
+                                            const numValue =
+                                                cleanText === ""
+                                                    ? 0
+                                                    : Number(cleanText);
+                                            setDisputedVotes(numValue);
+                                        }}
+                                        placeholder="0"
+                                        placeholderTextColor={perk.mute2}
+                                        keyboardType="numeric"
+                                    />
                                 </View>
-                                <TextInput
-                                    style={styles.voteInput}
-                                    value={
-                                        disputedVotes === 0 ? "" : String(disputedVotes)
-                                    }
-                                    onChangeText={(text) => {
-                                        const cleanText = text.replace(/[^0-9]/g, "");
-                                        const numValue =
-                                            cleanText === "" ? 0 : Number(cleanText);
-                                        setDisputedVotes(numValue);
-                                    }}
-                                    placeholder="0"
-                                    keyboardType="numeric"
-                                />
                             </View>
+                        </ScrollView>
 
+                        <View style={styles.stickyFooter}>
                             <View style={styles.totalRow}>
-                                <Text style={styles.totalLabel}>Total Votes:</Text>
+                                <Text style={styles.totalLabel}>Total votes</Text>
                                 <Text style={styles.totalValue}>
                                     {calculateTotal().toLocaleString()}
                                 </Text>
                             </View>
-                        </View>
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity
+                                    style={styles.cancelButton}
+                                    onPress={onClose}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
 
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={onClose}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.submitButton,
-                                    (!capturedImage || !hasVotesValidate()) &&
-                                        styles.disabledButton,
-                                ]}
-                                onPress={handleSubmit}
-                                disabled={!capturedImage || !hasVotesValidate()}
-                            >
-                                <Check size={20} color="#FFFFFF" />
-                                <Text style={styles.submitButtonText}>
-                                    Submit{" "}
-                                    {hasVotesValidate() && capturedImage ? "✓" : "✗"}
-                                </Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.submitButton,
+                                        (!capturedImage || !hasVotesValidate()) &&
+                                            styles.disabledButton,
+                                    ]}
+                                    onPress={handleSubmit}
+                                    disabled={!capturedImage || !hasVotesValidate()}
+                                >
+                                    <Check size={18} color={perk.limeInk} />
+                                    <Text style={styles.submitButtonText}>Submit</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </ScrollView>
+                    </View>
                 )}
             </SafeAreaView>
         </Modal>
@@ -474,16 +505,16 @@ export default AddFormModal;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: perk.card,
     },
-    // Permission modal styles - Fixed for Android
+    // Permission modal styles
     permissionOverlay: {
         position: "absolute",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(0,0,255,0.85)",
+        backgroundColor: "rgba(13,13,13,0.85)",
     },
     permissionSafeArea: {
         flex: 1,
@@ -497,7 +528,7 @@ const styles = StyleSheet.create({
     permissionCard: {
         width: "100%",
         maxWidth: 400,
-        backgroundColor: "#fff",
+        backgroundColor: perk.card,
         borderRadius: 16,
         padding: 24,
         alignItems: "center",
@@ -509,50 +540,55 @@ const styles = StyleSheet.create({
     },
     permissionText: {
         fontSize: 18,
-        color: "#000000",
+        color: perk.ink,
         textAlign: "center",
         marginBottom: 24,
         lineHeight: 24,
     },
     permissionButton: {
-        backgroundColor: "#DC143C",
+        backgroundColor: perk.lime,
         paddingVertical: 16,
         paddingHorizontal: 32,
-        borderRadius: 8,
+        borderRadius: 12,
         marginBottom: 16,
         width: "100%",
         alignItems: "center",
     },
     permissionButtonText: {
-        color: "#FFFFFF",
+        color: perk.limeInk,
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "800",
     },
     permissionCancelButton: {
         paddingVertical: 16,
         paddingHorizontal: 16,
-        borderRadius: 8,
-        backgroundColor: "#F5F5F5",
+        borderRadius: 12,
+        backgroundColor: perk.surface,
         alignItems: "center",
         width: "100%",
     },
-    // Rest of the existing styles
+    // Sheet
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#E0E0E0",
-        backgroundColor: "#FFFFFF",
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: perk.card,
     },
     title: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#000000",
+        fontSize: 19,
+        fontWeight: "900",
+        letterSpacing: -0.4,
+        color: perk.ink,
     },
     closeButton: {
-        padding: 8,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: perk.surface,
+        alignItems: "center",
+        justifyContent: "center",
     },
     cameraContainer: {
         flex: 1,
@@ -571,141 +607,164 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: "#DC143C",
+        backgroundColor: perk.lime,
         justifyContent: "center",
         alignItems: "center",
+    },
+    body: {
+        flex: 1,
     },
     content: {
         flex: 1,
     },
     section: {
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#E0E0E0",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#000000",
-        marginBottom: 16,
+    sectionLabel: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 10,
+        fontWeight: "700",
+        letterSpacing: 1.8,
+        color: perk.mute,
+        marginBottom: 10,
     },
     cameraButton: {
         flexDirection: "row",
-        backgroundColor: "#DC143C",
-        paddingVertical: 16,
+        backgroundColor: perk.ink,
+        paddingVertical: 13,
         paddingHorizontal: 24,
-        borderRadius: 8,
+        borderRadius: 12,
         justifyContent: "center",
         alignItems: "center",
         gap: 8,
     },
     cameraButtonText: {
-        color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "600",
+        color: perk.lime,
+        fontSize: 13,
+        fontWeight: "800",
     },
     capturedImageContainer: {
         alignItems: "center",
         gap: 8,
     },
     capturedText: {
-        fontSize: 16,
-        color: "#006600",
-        fontWeight: "600",
+        fontSize: 14,
+        color: perk.greenDeep,
+        fontWeight: "700",
     },
     recaptureButton: {
         paddingVertical: 8,
         paddingHorizontal: 16,
     },
     recaptureText: {
-        color: "#DC143C",
-        fontSize: 14,
+        color: perk.copperDeep,
+        fontSize: 13,
         textDecorationLine: "underline",
     },
-    candidateRow: {
+    voteRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#F0F0F0",
+        paddingVertical: 8,
+        borderTopWidth: 1,
+        borderTopColor: perk.rule08,
     },
     candidateInfo: {
         flex: 1,
     },
     candidateName: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#000000",
+        fontSize: 12,
+        fontWeight: "800",
+        color: perk.ink,
     },
     candidateParty: {
-        fontSize: 14,
-        color: "#666666",
-        marginTop: 2,
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 9,
+        color: perk.mute,
+        letterSpacing: 0.6,
+        marginTop: 1,
+        textTransform: "uppercase",
     },
-    voteInput: {
-        width: 80,
-        height: 40,
-        borderWidth: 1,
-        borderColor: "#E0E0E0",
-        borderRadius: 6,
-        paddingHorizontal: 12,
-        fontSize: 16,
+    vbox: {
+        width: 50,
+        height: 34,
+        borderWidth: 1.5,
+        borderColor: perk.rule16,
+        borderRadius: 9,
+        paddingHorizontal: 4,
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 12,
+        fontWeight: "700",
         textAlign: "center",
-        backgroundColor: "#FFFFFF",
+        color: perk.mute2,
+        backgroundColor: perk.card,
+    },
+    vboxSet: {
+        borderColor: perk.ink,
+        color: perk.ink,
+    },
+    stickyFooter: {
+        backgroundColor: perk.card,
+        borderTopWidth: 1.5,
+        borderTopColor: perk.ink,
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 14,
+        shadowColor: "#000",
+        shadowOffset: {width: 0, height: -8},
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 8,
     },
     totalRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingTop: 16,
-        marginTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: "#E0E0E0",
     },
     totalLabel: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#000000",
+        fontSize: 14,
+        fontWeight: "800",
+        color: perk.ink,
     },
     totalValue: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#DC143C",
+        fontSize: 20,
+        fontWeight: "900",
+        color: perk.coralDeep,
     },
     buttonContainer: {
         flexDirection: "row",
-        padding: 16,
-        gap: 12,
+        gap: 8,
+        marginTop: 12,
     },
     cancelButton: {
-        flex: 1,
-        paddingVertical: 16,
-        borderRadius: 8,
-        backgroundColor: "#F5F5F5",
+        flex: 0.7,
+        paddingVertical: 13,
+        borderRadius: 12,
+        backgroundColor: perk.surface,
         alignItems: "center",
     },
     cancelButtonText: {
-        color: "#666666",
-        fontSize: 16,
-        fontWeight: "600",
+        color: perk.ink,
+        fontSize: 13,
+        fontWeight: "800",
     },
     submitButton: {
-        flex: 2,
+        flex: 1.3,
         flexDirection: "row",
-        paddingVertical: 16,
-        borderRadius: 8,
-        backgroundColor: "#006600",
+        paddingVertical: 13,
+        borderRadius: 12,
+        backgroundColor: perk.lime,
         justifyContent: "center",
         alignItems: "center",
         gap: 8,
     },
     submitButtonText: {
-        color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "600",
+        color: perk.limeInk,
+        fontSize: 13,
+        fontWeight: "800",
     },
     disabledButton: {
-        backgroundColor: "#CCCCCC",
+        backgroundColor: perk.paperDeep,
     },
 });

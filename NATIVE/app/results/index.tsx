@@ -235,9 +235,14 @@ export default function ResultsLandingPage() {
                     isAnimated
                     rotateLabel
                     animationDuration={500}
-                    yAxisLabelWidth={40}
-                    width={screenWidth - 80}
+                    width={screenWidth - 40}
                     adjustToWidth
+                    hideYAxisText
+                    yAxisLabelWidth={0}
+                    yAxisThickness={0}
+                    hideRules
+                    xAxisColor={perk.ink}
+                    xAxisThickness={1.5}
                     barBorderTopLeftRadius={4}
                     barBorderTopRightRadius={4}
                     showValuesAsTopLabel
