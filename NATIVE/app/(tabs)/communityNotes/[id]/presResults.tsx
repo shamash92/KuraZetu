@@ -9,16 +9,16 @@ import {
 import {MessageCircle, PlusCircleIcon, ThumbsUp} from "lucide-react-native";
 import React, {useEffect, useState} from "react";
 
-import {AddFormModal} from "./components/AddFormModal";
-import {CounterEvidenceModal} from "./components/CounterEvidenceModal";
+import {AddFormModal} from "./_components/AddFormModal";
+import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
 import {IPollingStationPresResults} from "@/app/types";
-import {ResultsTable} from "./components/ResultsTable";
-import {VoteSummary} from "./components/VoteSummary";
-import {ZoomableImage} from "./components/ZoomableImage";
-import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
-import {sampleElectionData} from "../sampleData";
-import useAuthStore from "@/app/(utils)/authStore";
-import useCurrentPollingStationStore from "@/app/(utils)/curentStationStore";
+import {ResultsTable} from "./_components/ResultsTable";
+import {VoteSummary} from "./_components/VoteSummary";
+import {ZoomableImage} from "./_components/ZoomableImage";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {sampleElectionData} from "../_sampleData";
+import useAuthStore from "@/app/_utils/authStore";
+import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 
 const windowHeight = Dimensions.get("window").height;
 

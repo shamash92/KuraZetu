@@ -4,8 +4,8 @@ import Constants from "expo-constants";
 import React from "react";
 import ResultsLandingPage from "@/app/results";
 import {StatusBar} from "expo-status-bar";
-import UpdateCheckerModal from "../(utils)/updateModal";
-import {windowWidth} from "@/app/(utils)/screenDimensions";
+import UpdateCheckerModal from "../_utils/updateModal";
+import {windowWidth} from "@/app/_utils/screenDimensions";
 
 const LandingComponent = () => {
     return (

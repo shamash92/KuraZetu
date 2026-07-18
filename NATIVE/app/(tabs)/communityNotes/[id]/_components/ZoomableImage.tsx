@@ -7,7 +7,7 @@ import {Dimensions, Image, StyleSheet, Text, View} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
 import React from "react";
-import { windowWidth } from "@/app/(utils)/screenDimensions";
+import { windowWidth } from "@/app/_utils/screenDimensions";
 
 const {width: screenWidth} = Dimensions.get("window");
 

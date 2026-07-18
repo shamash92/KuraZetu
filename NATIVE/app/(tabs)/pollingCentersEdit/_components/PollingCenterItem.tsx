@@ -1,6 +1,6 @@
 import {ChevronRight, MapPin} from "lucide-react-native";
 import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import {getStatusColor, getStatusText} from "../(utils)/LocationService";
+import {getStatusColor, getStatusText} from "../_utils/LocationService";
 
 import {IPollingCenterFeature} from "../types/Location";
 import React from "react";

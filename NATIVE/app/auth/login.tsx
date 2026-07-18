@@ -14,14 +14,14 @@ import {
 import {Eye, EyeOff, Fingerprint, Lock, Phone} from "lucide-react-native";
 import {Link, router} from "expo-router";
 import React, {useEffect, useState} from "react";
-import {windowHeight, windowWidth} from "../(utils)/screenDimensions";
+import {windowHeight, windowWidth} from "../_utils/screenDimensions";
 
 import {ActivityIndicator} from "react-native-paper";
 import LottieComponent from "@/components/lottieLoading";
-import RegisterPushNotifications from "../(utils)/registerPushNotifications";
-import UpdateCheckerModal from "../(utils)/updateModal";
-import {apiBaseURL} from "../(utils)/apiBaseURL";
-import useAuthStore from "../(utils)/authStore";
+import RegisterPushNotifications from "../_utils/registerPushNotifications";
+import UpdateCheckerModal from "../_utils/updateModal";
+import {apiBaseURL} from "../_utils/apiBaseURL";
+import useAuthStore from "../_utils/authStore";
 
 export default function LoginScreen() {
     const [phoneNumber, setPhoneNumber] = useState("+254");

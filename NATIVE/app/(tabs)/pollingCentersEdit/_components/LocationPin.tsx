@@ -4,7 +4,7 @@ import React, {useEffect} from "react";
 import {IPollingCenterFeature} from "../types/Location";
 import {Location} from "../types/Location";
 import {MapPin} from "lucide-react-native";
-import {getStatusColor} from "../(utils)/LocationService";
+import {getStatusColor} from "../_utils/LocationService";
 
 interface LocationPinProps {
     location: IPollingCenterFeature;

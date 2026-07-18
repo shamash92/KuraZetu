@@ -11,7 +11,7 @@ import {
 import {MapPin, Save, X} from "lucide-react-native";
 import MapView, {PROVIDER_GOOGLE} from "react-native-maps";
 import React, {useEffect, useState} from "react";
-import {getStatusColor, getStatusText} from "../(utils)/LocationService";
+import {getStatusColor, getStatusText} from "../_utils/LocationService";
 
 import {IPollingCenterFeature} from "../types/Location";
 

@@ -18,6 +18,18 @@ export default {
             bundleIdentifier: "com.kurazetu.app",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
+                UIApplicationSceneManifest: {
+                    UIApplicationSupportsMultipleScenes: false,
+                    UISceneConfigurations: {
+                        UIWindowSceneSessionRoleApplication: [
+                            {
+                                UISceneConfigurationName: "Default Configuration",
+                                UISceneDelegateClassName:
+                                    "$(PRODUCT_MODULE_NAME).SceneDelegate",
+                            },
+                        ],
+                    },
+                },
             },
             entitlements: {
                 "com.apple.developer.networking.wifi-info": true,
@@ -44,6 +56,9 @@ export default {
         },
         plugins: [
             "expo-router",
+            "expo-image",
+            "expo-web-browser",
+            "expo-status-bar",
             [
                 "expo-splash-screen",
                 {
@@ -72,12 +87,6 @@ export default {
                         "This app uses location to show your position on the map.",
                 },
             ],
-            [
-                "react-native-maps",
-                {
-                    androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-                },
-            ],
             "expo-secure-store",
             [
                 "expo-quick-actions",
@@ -99,6 +108,7 @@ export default {
                     recordAudioAndroid: true,
                 },
             ],
+            "./plugins/withIosBuildFixes",
         ],
         experiments: {
             typedRoutes: true,
