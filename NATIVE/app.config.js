@@ -18,6 +18,20 @@ export default {
             bundleIdentifier: "com.kurazetu.app",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
+                // Xcode 27 / iOS 27 SDK traps at launch unless the app adopts
+                // the UIScene lifecycle. Declaring a default scene configuration
+                // (no delegate class) satisfies UIKit while keeping the legacy
+                // AppDelegate window used by react-native. See Apple TN3187.
+                UIApplicationSceneManifest: {
+                    UIApplicationSupportsMultipleScenes: false,
+                    UISceneConfigurations: {
+                        UIWindowSceneSessionRoleApplication: [
+                            {
+                                UISceneConfigurationName: "Default Configuration",
+                            },
+                        ],
+                    },
+                },
             },
             entitlements: {
                 "com.apple.developer.networking.wifi-info": true,
@@ -99,6 +113,7 @@ export default {
                     recordAudioAndroid: true,
                 },
             ],
+            "./plugins/withIosBuildFixes",
         ],
         experiments: {
             typedRoutes: true,
