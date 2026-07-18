@@ -1,13 +1,13 @@
 import {FlatList, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import MapView, {Geojson, GeojsonProps, Marker} from "react-native-maps";
-import {statusBarHeight, windowHeight, windowWidth} from "../(utils)/screenDimensions";
+import {statusBarHeight, windowHeight, windowWidth} from "../_utils/screenDimensions";
 import {useEffect, useMemo, useState} from "react";
 
 import {ICountyFeature} from "../types";
 import {Ionicons} from "@expo/vector-icons";
 import LottieComponent from "@/components/lottieLoading";
 import React from "react";
-import {apiBaseURL} from "../(utils)/apiBaseURL";
+import {apiBaseURL} from "../_utils/apiBaseURL";
 import {router} from "expo-router";
 
 function MapUpdates() {

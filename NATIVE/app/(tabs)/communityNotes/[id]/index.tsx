@@ -11,9 +11,9 @@ import {
 import {router, useLocalSearchParams} from "expo-router";
 
 import {Ionicons} from "@expo/vector-icons";
-import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
-import useAuthStore from "@/app/(utils)/authStore";
-import useCurrentPollingStationStore from "@/app/(utils)/curentStationStore";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import useAuthStore from "@/app/_utils/authStore";
+import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 
 const PollingStationResultsSummaryList = () => {
     const {id} = useLocalSearchParams();

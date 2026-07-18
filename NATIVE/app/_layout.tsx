@@ -6,15 +6,15 @@ import * as SplashScreen from "expo-splash-screen";
 
 import {Image, PermissionsAndroid, Platform, Text, View} from "react-native";
 import React, {useEffect} from "react";
-import {windowHeight, windowWidth} from "./(utils)/screenDimensions";
+import {windowHeight, windowWidth} from "./_utils/screenDimensions";
 
 import Animated from "react-native-reanimated";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import LottieComponent from "@/components/lottieLoading";
 import {Stack} from "expo-router";
 import {StatusBar} from "expo-status-bar";
-import {blueColor} from "./(utils)/colors";
-import {useAuthStore} from "./(utils)/authStore";
+import {blueColor} from "./_utils/colors";
+import {useAuthStore} from "./_utils/authStore";
 import {useFonts} from "expo-font";
 import {useQuickActionRouting} from "expo-quick-actions/router";
 

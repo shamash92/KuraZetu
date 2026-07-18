@@ -9,10 +9,10 @@ import {
 } from "react-native";
 
 import {Ionicons} from "@expo/vector-icons";
-import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {router} from "expo-router";
-import useAuthStore from "@/app/(utils)/authStore";
-import useCurrentPollingStationStore from "@/app/(utils)/curentStationStore";
+import useAuthStore from "@/app/_utils/authStore";
+import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 
 export interface IPollingCenterInfo {
     code: string;

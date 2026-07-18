@@ -23,15 +23,15 @@ import {
 import MapView, {Marker, PROVIDER_GOOGLE} from "react-native-maps";
 import {Navigation, RefreshCw} from "lucide-react-native";
 import React, {useEffect, useRef, useState} from "react";
-import {windowHeight, windowWidth} from "@/app/(utils)/screenDimensions";
+import {windowHeight, windowWidth} from "@/app/_utils/screenDimensions";
 
-import LocationEditDrawer from "./components/LocationEditDrawer";
-import LocationItem from "./components/PollingCenterItem";
-import LocationPin from "./components/LocationPin";
+import LocationEditDrawer from "./_components/LocationEditDrawer";
+import LocationItem from "./_components/PollingCenterItem";
+import LocationPin from "./_components/LocationPin";
 import Slider from "@react-native-community/slider";
 import {StatusBar} from "expo-status-bar";
-import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
-import {updateLocation} from "./(utils)/LocationService";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {updateLocation} from "./_utils/LocationService";
 
 const {height} = Dimensions.get("window");
 const INITIAL_REGION = {

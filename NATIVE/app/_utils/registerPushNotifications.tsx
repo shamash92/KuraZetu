@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 
 import {Alert, Platform} from "react-native";
 import React, {useEffect} from "react";
-import {getFromSecureStore, saveToSecureStore} from "../(utils)/secureStore";
+import {getFromSecureStore, saveToSecureStore} from "../_utils/secureStore";
 
 import Constants from "expo-constants";
 import useAuthStore from "./authStore";

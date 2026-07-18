@@ -15,10 +15,10 @@ import React, {useState} from "react";
 import {ISignUpData} from "./signUpFormOLD";
 import {LinearGradient} from "expo-linear-gradient";
 import LottieComponent from "@/components/lottieLoading";
-import {apiBaseURL} from "../(utils)/apiBaseURL";
-import {blueColor} from "../(utils)/colors";
-import useAuthStore from "../(utils)/authStore";
-import {windowWidth} from "../(utils)/screenDimensions";
+import {apiBaseURL} from "../_utils/apiBaseURL";
+import {blueColor} from "../_utils/colors";
+import useAuthStore from "../_utils/authStore";
+import {windowWidth} from "../_utils/screenDimensions";
 
 export default function SignupScreen() {
     const [formData, setFormData] = useState({

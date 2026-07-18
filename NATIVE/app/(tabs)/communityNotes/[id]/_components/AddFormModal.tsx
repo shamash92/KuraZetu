@@ -16,8 +16,8 @@ import React, {useEffect, useRef, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {StatusBar} from "expo-status-bar";
 import {TLevelTabs} from "@/app/types";
-import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
-import useAuthStore from "@/app/(utils)/authStore";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import useAuthStore from "@/app/_utils/authStore";
 import {useLocalSearchParams} from "expo-router";
 
 export interface IAspirant {
