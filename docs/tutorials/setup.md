@@ -151,7 +151,7 @@ Create a virtual environment and install the required Python packages:
     sudo apt update
     sudo apt install python3-venv python3-pip
 
-    python -m venv venv
+    python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
     pre-commit install
@@ -309,6 +309,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:8000, http://<your-multipass-ipv4-address>
 Run the following commands to apply database migrations:
 
 ```bash
+source venv/bin/activate  # Activate the virtual environment if not already activated
 python manage.py migrate
 ```
 
