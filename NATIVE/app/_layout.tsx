@@ -4,13 +4,13 @@ import "react-native-reanimated";
 import * as QuickActions from "expo-quick-actions";
 import * as SplashScreen from "expo-splash-screen";
 
-import {Image, PermissionsAndroid, Platform, StyleSheet, Text, View} from "react-native";
+import {Image, PermissionsAndroid, Platform, StyleSheet, Text, useColorScheme, View} from "react-native";
 import React, {useEffect} from "react";
 import {windowWidth} from "./_utils/screenDimensions";
 
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import LottieComponent from "@/components/lottieLoading";
-import {Stack} from "expo-router";
+import {DarkTheme, DefaultTheme, Stack, ThemeProvider} from "expo-router";
 import {StatusBar} from "expo-status-bar";
 import {useAuthStore} from "./_utils/authStore";
 import {useFonts} from "expo-font";
@@ -21,9 +21,10 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
     const {isLoggedIn, shouldCreateAccount} = useAuthStore();
+    const colorScheme = useColorScheme();
 
     return (
-        <React.Fragment>
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
             <StatusBar style="auto" />
             <Stack>
                 <Stack.Protected guard={!isLoggedIn}>
@@ -39,7 +40,7 @@ function RootLayoutNav() {
                     <Stack.Screen name="(tabs)" options={{headerShown: false}} />
                 </Stack.Protected>
             </Stack>
-        </React.Fragment>
+        </ThemeProvider>
     );
 }
 
