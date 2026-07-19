@@ -6,7 +6,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import {MessageCircle, PlusCircleIcon, ThumbsUp} from "lucide-react-native";
+import {MessageCircle, Plus, ThumbsUp} from "lucide-react-native";
 import React, {useEffect, useState} from "react";
 
 import {AddFormModal} from "./_components/AddFormModal";
@@ -185,14 +185,6 @@ export default function ResultsScreen() {
                                 No {levelLabel} tally has been submitted for this
                                 station yet.
                             </Text>
-                            <TouchableOpacity
-                                style={styles.emptyCta}
-                                onPress={() => setAddModalVisible(true)}
-                                activeOpacity={0.85}
-                            >
-                                <PlusCircleIcon size={16} color={perk.limeInk} />
-                                <Text style={styles.emptyCtaText}>Add results</Text>
-                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
@@ -234,9 +226,9 @@ export default function ResultsScreen() {
                     <TouchableOpacity
                         style={[styles.fab, styles.addFab]}
                         onPress={() => setAddModalVisible(true)}
-                        activeOpacity={0.8}
+                        activeOpacity={0.85}
                     >
-                        <PlusCircleIcon size={24} color="#FFFFFF" />
+                        <Plus size={26} color={perk.limeInk} strokeWidth={2.6} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -314,21 +306,6 @@ const styles = StyleSheet.create({
         marginTop: 6,
         maxWidth: 260,
     },
-    emptyCta: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        backgroundColor: perk.lime,
-        paddingVertical: 11,
-        paddingHorizontal: 20,
-        borderRadius: 12,
-        marginTop: 18,
-    },
-    emptyCtaText: {
-        fontSize: 13,
-        fontWeight: "800",
-        color: perk.limeInk,
-    },
     section: {
         paddingHorizontal: 16,
         paddingVertical: 8,
@@ -354,15 +331,15 @@ const styles = StyleSheet.create({
     },
     fabContainer: {},
     fab: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 58,
+        height: 58,
+        borderRadius: 29,
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#000000",
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowColor: perk.ink,
+        shadowOffset: {width: 0, height: 8},
+        shadowOpacity: 0.22,
+        shadowRadius: 14,
         elevation: 8,
     },
     upvoteFab: {
@@ -375,6 +352,8 @@ const styles = StyleSheet.create({
         backgroundColor: perk.coralDeep,
     },
     addFab: {
-        backgroundColor: perk.ink,
+        backgroundColor: perk.lime,
+        shadowColor: perk.limeDeep,
+        shadowOpacity: 0.5,
     },
 });
