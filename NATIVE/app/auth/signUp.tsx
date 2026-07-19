@@ -23,6 +23,8 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
         wardName?: string;
     }>();
     const [counties, setCounties] = useState<ICountyFeature[] | null>(null);
+    const [countyLoadError, setCountyLoadError] = useState<string | null>(null);
+    const [countyLoadAttempt, setCountyLoadAttempt] = useState(0);
     const [selectedCounty, setSelectedCounty] = useState<number | null>(null);
     const [selectedCountyName, setSelectedCountyName] = useState<string | null>(null);
     const [constituencies, setConstituencies] = useState<
@@ -133,8 +135,18 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     };
 
     useEffect(() => {
-        fetch(`${apiBaseURL}/api/stations/counties/boundaries/`)
-            .then((response) => response.json())
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15_000);
+
+        fetch(`${apiBaseURL}/api/stations/counties/boundaries/`, {
+            signal: controller.signal,
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+                return response.json();
+            })
             .then((data) =>
                 setCounties(
                     (data?.features ?? []).filter(
@@ -145,8 +157,20 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
                     ),
                 ),
             )
-            .catch(() => setCounties([]));
-    }, []);
+            .catch(() => {
+                if (!controller.signal.aborted) {
+                    setCountyLoadError("Could not load map data. Check your connection and try again.");
+                } else {
+                    setCountyLoadError("Loading map data took too long. Please try again.");
+                }
+            })
+            .finally(() => clearTimeout(timeout));
+
+        return () => {
+            clearTimeout(timeout);
+            controller.abort();
+        };
+    }, [countyLoadAttempt]);
 
     useEffect(() => {
         if (step === "constituency" && params.county) {
@@ -254,7 +278,16 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
                 ? (wards?.features ?? [])
                 : [];
 
-    if (counties === null) return <Loading />;
+    if (counties === null)
+        return (
+            <Loading
+                error={countyLoadError}
+                onRetry={() => {
+                    setCountyLoadError(null);
+                    setCountyLoadAttempt((attempt) => attempt + 1);
+                }}
+            />
+        );
 
     return (
         <View style={styles.screen}>
@@ -420,7 +453,7 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     );
 }
 
-function Loading() {
+function Loading({error, onRetry}: {error: string | null; onRetry: () => void}) {
     return (
         <View style={styles.loading}>
             <LottieComponent
@@ -430,8 +463,13 @@ function Loading() {
             />
             <Text style={styles.loadingTitle}>Loading map data</Text>
             <Text style={styles.loadingText}>
-                Fetching the latest boundaries and polling centres.
+                {error ?? "Fetching the latest boundaries and polling centres."}
             </Text>
+            {error ? (
+                <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+                    <Text style={styles.retryText}>Try again</Text>
+                </TouchableOpacity>
+            ) : null}
         </View>
     );
 }
@@ -549,6 +587,14 @@ const styles = StyleSheet.create({
         color: perk.mute,
         textAlign: "center",
     },
+    retryButton: {
+        marginTop: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 10,
+        backgroundColor: perk.lime,
+    },
+    retryText: {fontSize: 15, fontWeight: "800", color: perk.limeInk},
 });
 
 export default function SignupEntry() {

@@ -1,81 +1,29 @@
-import {Text, View} from "react-native";
-
-import Constants from "expo-constants";
 import React from "react";
 import ResultsLandingPage from "@/app/results";
 import {StatusBar} from "expo-status-bar";
+import {View} from "react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
 import UpdateCheckerModal from "../_utils/updateModal";
+import {perk} from "@/app/_utils/colors";
 import {windowWidth} from "@/app/_utils/screenDimensions";
 
 const LandingComponent = () => {
     return (
-        <View
+        <SafeAreaView
             style={{
                 flex: 1,
                 width: 1 * windowWidth,
-                flexDirection: "column",
-                justifyContent: "space-between",
-                alignItems: "center",
-                // paddingTop: Constants.statusBarHeight,
+                backgroundColor: perk.card,
             }}
+            edges={["top"]}
         >
-            <StatusBar translucent />
+            <StatusBar style="dark" />
             <UpdateCheckerModal />
 
-            {/* content */}
-
-            <View
-                style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    paddingTop: Constants.statusBarHeight,
-                    // borderWidth: 4,
-                }}
-            >
-                <View
-                    style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                        // borderWidth: 4,
-                        width: 1 * windowWidth,
-                        paddingLeft: 12,
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 32,
-                            marginBottom: 4,
-                            fontWeight: "bold",
-                            fontFamily: "Inter",
-                        }}
-                    >
-                        Kura Zetu
-                    </Text>
-                    <Text
-                        style={{
-                            fontSize: 16,
-                        }}
-                    >
-                        2027 Election Coverage
-                    </Text>
-                </View>
-                <View
-                    style={{
-                        flex: 8,
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        width: 1 * windowWidth,
-                        // backgroundColor: "white",
-                        backgroundColor: "rgba(0,0,0,0.3)",
-                    }}
-                >
-                    <ResultsLandingPage />
-                </View>
+            <View style={{flex: 1, width: 1 * windowWidth}}>
+                <ResultsLandingPage />
             </View>
-        </View>
+        </SafeAreaView>
     );
 };
 

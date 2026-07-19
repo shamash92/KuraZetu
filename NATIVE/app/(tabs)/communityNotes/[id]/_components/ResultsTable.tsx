@@ -2,36 +2,23 @@ import {StyleSheet, Text, View} from "react-native";
 
 import {IPollingStationPresResults} from "@/app/types";
 import React from "react";
+import {perk} from "@/app/_utils/colors";
 
-export function ResultsTable({results}: {results: IPollingStationPresResults[]}) {
+export function ResultsTable({
+    results,
+    title = "Election Results",
+}: {
+    results: IPollingStationPresResults[];
+    title?: string;
+}) {
     // Sort candidates by votes in descending order
     const sortedCandidates = [...results].sort((a, b) => b.votes - a.votes);
     const totalVotes = results.reduce((sum, candidate) => sum + candidate.votes, 0);
 
     return (
-        <View
-            style={{
-                backgroundColor: "#FFFFFF",
-                borderRadius: 12,
-                shadowColor: "#000000",
-                shadowOffset: {width: 0, height: 2},
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 4,
-                overflow: "hidden",
-            }}
-        >
+        <View style={styles.wrapper}>
             <View style={styles.tableHeader}>
-                <Text
-                    style={{
-                        fontSize: 16,
-                        fontWeight: "bold",
-                        color: "#FFFFFF",
-                        textAlign: "center",
-                    }}
-                >
-                    Presidential Election Results
-                </Text>
+                <Text style={styles.tableTitle}>{title}</Text>
             </View>
 
             <View style={styles.headerRow}>
@@ -81,13 +68,13 @@ export function ResultsTable({results}: {results: IPollingStationPresResults[]})
                                     isWinner && styles.winnerText,
                                 ]}
                             >
-                                {candidate.presidential_candidate.first_name}{" "}
-                                {candidate.presidential_candidate.last_name}
+                                {candidate.candidate.first_name}{" "}
+                                {candidate.candidate.last_name}
                             </Text>
                         </View>
                         <View style={styles.partyColumn}>
                             <Text style={[styles.cellText, styles.partyText]}>
-                                {candidate.presidential_candidate.party}
+                                {candidate.candidate.party}
                             </Text>
                         </View>
                         <View style={styles.votesColumn}>
@@ -122,55 +109,51 @@ export function ResultsTable({results}: {results: IPollingStationPresResults[]})
 export default ResultsTable;
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 12,
-        shadowColor: "#000000",
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+    wrapper: {
+        backgroundColor: perk.card,
+        borderWidth: 1.5,
+        borderColor: perk.ink,
+        borderRadius: 14,
         overflow: "hidden",
-        marginVertical: 8,
     },
     tableHeader: {
-        backgroundColor: "#DC143C",
-        paddingVertical: 16,
-        paddingHorizontal: 20,
+        backgroundColor: perk.ink,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
     },
     tableTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#FFFFFF",
-        textAlign: "center",
+        fontSize: 13.5,
+        fontWeight: "800",
+        letterSpacing: 0.2,
+        color: perk.lime,
     },
     headerRow: {
         flexDirection: "row",
-        backgroundColor: "#F8F9FA",
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderBottomWidth: 2,
-        borderBottomColor: "#E9ECEF",
+        backgroundColor: perk.surface,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: perk.rule08,
     },
     dataRow: {
         flexDirection: "row",
-        paddingVertical: 16,
-        paddingHorizontal: 16,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#F1F3F4",
-        minHeight: 60,
+        borderBottomColor: perk.rule08,
+        minHeight: 56,
         alignItems: "center",
     },
     evenRow: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: perk.card,
     },
     oddRow: {
-        backgroundColor: "#FAFBFC",
+        backgroundColor: perk.paper,
     },
     winnerRow: {
-        backgroundColor: "#FFF8E1",
+        backgroundColor: "rgba(196,255,94,0.22)",
         borderLeftWidth: 4,
-        borderLeftColor: "#FF9800",
+        borderLeftColor: perk.limeDeep,
     },
     rankColumn: {
         width: 40,
@@ -193,38 +176,42 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     headerText: {
-        fontSize: 14,
-        fontWeight: "bold",
-        color: "#495057",
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 9,
+        fontWeight: "700",
+        letterSpacing: 0.6,
+        color: perk.mute,
         textAlign: "center",
     },
     cellText: {
-        fontSize: 14,
-        color: "#212529",
+        fontSize: 13,
+        color: perk.ink,
     },
     rankText: {
-        fontWeight: "600",
-        color: "#6C757D",
+        fontWeight: "800",
+        color: perk.mute,
     },
     candidateName: {
-        fontWeight: "600",
-        lineHeight: 20,
-    },
-    partyText: {
-        color: "#6C757D",
-        fontSize: 13,
+        fontWeight: "800",
         lineHeight: 18,
     },
-    voteText: {
-        fontWeight: "bold",
-        fontSize: 15,
+    partyText: {
+        fontFamily: "SpaceMono-Regular",
+        color: perk.mute,
+        fontSize: 10,
+        lineHeight: 15,
     },
-    percentText: {
-        fontWeight: "600",
-        color: "#495057",
+    voteText: {
+        fontFamily: "SpaceMono-Regular",
+        fontWeight: "700",
         fontSize: 13,
     },
+    percentText: {
+        fontWeight: "800",
+        color: perk.ink,
+        fontSize: 12,
+    },
     winnerText: {
-        color: "#DC143C",
+        color: perk.copperDeep,
     },
 });

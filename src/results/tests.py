@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 import pytest
+from rest_framework.test import APIClient
 
 from results.models import (
     Aspirant,
@@ -11,6 +13,7 @@ from results.models import (
     PollingStationGovernorResults,
     PollingStationMCAResults,
     PollingStationMpResults,
+    PollingStationPresidentialExtras,
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
@@ -328,3 +331,167 @@ class TestPollingStationGovernorResultsModel:
             votes=100,
         )
         assert str(results) == f"{polling_station} - {aspirant} - 100"
+
+
+class TestPollingStationLevelResultsAPI:
+    """Tests for the per-level polling-station results endpoint."""
+
+    def url(self, code, level):
+        return f"/api/results/polling-station/{code}/results/{level}/"
+
+    @pytest.fixture(autouse=True)
+    def _clear_cache(self):
+        # The view caches per (level, station); isolate each test.
+        cache.clear()
+        yield
+        cache.clear()
+
+    @pytest.fixture
+    def client(self, user):
+        api_client = APIClient()
+        api_client.force_authenticate(user=user)
+        return api_client
+
+    def test_requires_authentication(self, polling_station):
+        response = APIClient().get(self.url(polling_station.code, "governor"))
+        assert response.status_code == 401
+
+    def test_returns_normalised_governor_results(
+        self, client, party, county, polling_station
+    ):
+        leader = Aspirant.objects.create(
+            first_name="Ann",
+            last_name="Leader",
+            party=party,
+            level="governor",
+            county=county,
+        )
+        runner_up = Aspirant.objects.create(
+            first_name="Bob",
+            last_name="Runner",
+            party=party,
+            level="governor",
+            county=county,
+        )
+        PollingStationGovernorResults.objects.create(
+            polling_station=polling_station, governor_candidate=leader, votes=300
+        )
+        PollingStationGovernorResults.objects.create(
+            polling_station=polling_station, governor_candidate=runner_up, votes=120
+        )
+
+        response = client.get(self.url(polling_station.code, "governor"))
+
+        assert response.status_code == 200
+        data = response.data["data"]
+        assert len(data) == 2
+        # Normalised to a common "candidate" key regardless of office.
+        assert set(data[0].keys()) == {"candidate", "votes"}
+        assert data[0]["candidate"]["first_name"] in {"Ann", "Bob"}
+        # Non-presidential offices carry no extra_data.
+        assert response.data["extra_data"] is None
+
+    def test_president_includes_extra_data(
+        self, client, party, polling_station
+    ):
+        candidate = Aspirant.objects.create(
+            first_name="Prez",
+            last_name="Idential",
+            party=party,
+            level="president",
+        )
+        PollingStationPresidentialResults.objects.create(
+            polling_station=polling_station,
+            presidential_candidate=candidate,
+            votes=200,
+        )
+        PollingStationPresidentialExtras.objects.create(
+            polling_station=polling_station,
+            rejected_votes=2,
+            disputed_votes=1,
+            valid_votes_cast=200,
+        )
+
+        response = client.get(self.url(polling_station.code, "president"))
+
+        assert response.status_code == 200
+        assert len(response.data["data"]) == 1
+        assert response.data["extra_data"] is not None
+        assert response.data["extra_data"]["rejected_votes"] == 2
+        assert response.data["extra_data"]["valid_votes_cast"] == 200
+
+    def test_woman_rep_alias_is_accepted(
+        self, client, party, county, polling_station
+    ):
+        candidate = Aspirant.objects.create(
+            first_name="Wanjiku",
+            last_name="Rep",
+            party=party,
+            level="women_rep",
+            county=county,
+        )
+        PollingStationWomenRepResults.objects.create(
+            polling_station=polling_station,
+            woman_rep_candidate=candidate,
+            votes=50,
+        )
+
+        # The native app sends "womanRep"; it should map to "women_rep".
+        response = client.get(self.url(polling_station.code, "womanRep"))
+
+        assert response.status_code == 200
+        assert len(response.data["data"]) == 1
+        assert response.data["data"][0]["candidate"]["first_name"] == "Wanjiku"
+
+    def test_empty_results_return_empty_list(self, client, polling_station):
+        response = client.get(self.url(polling_station.code, "senator"))
+        assert response.status_code == 200
+        assert response.data["data"] == []
+        assert response.data["extra_data"] is None
+
+    def test_invalid_level_returns_400(self, client, polling_station):
+        response = client.get(self.url(polling_station.code, "president-for-life"))
+        assert response.status_code == 400
+
+    def test_unknown_station_returns_404(self, client):
+        response = client.get(self.url("000000000", "governor"))
+        assert response.status_code == 404
+
+    def test_response_is_cached_per_level_and_station(
+        self, client, party, county, polling_station
+    ):
+        candidate = Aspirant.objects.create(
+            first_name="Cache",
+            last_name="Me",
+            party=party,
+            level="governor",
+            county=county,
+        )
+        PollingStationGovernorResults.objects.create(
+            polling_station=polling_station,
+            governor_candidate=candidate,
+            votes=10,
+        )
+
+        cache_key = f"polling_station_results:governor:{polling_station.code}"
+        assert cache.get(cache_key) is None
+
+        first = client.get(self.url(polling_station.code, "governor"))
+        assert first.status_code == 200
+        # Cache is populated after the first request.
+        assert cache.get(cache_key) is not None
+
+        # A newly added result is not reflected until the cache expires.
+        PollingStationGovernorResults.objects.create(
+            polling_station=polling_station,
+            governor_candidate=Aspirant.objects.create(
+                first_name="Later",
+                last_name="Comer",
+                party=party,
+                level="governor",
+                county=county,
+            ),
+            votes=99,
+        )
+        second = client.get(self.url(polling_station.code, "governor"))
+        assert len(second.data["data"]) == 1
