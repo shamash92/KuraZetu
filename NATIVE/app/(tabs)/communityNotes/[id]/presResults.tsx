@@ -16,6 +16,7 @@ import {ResultsTable} from "./_components/ResultsTable";
 import {VoteSummary} from "./_components/VoteSummary";
 import {ZoomableImage} from "./_components/ZoomableImage";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {perk} from "@/app/_utils/colors";
 import {sampleElectionData} from "../_sampleData";
 import useAuthStore from "@/app/_utils/authStore";
 import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
@@ -108,54 +109,16 @@ export default function ResultsScreen() {
             />
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                <View
-                    style={{
-                        padding: 10,
-                        backgroundColor: "#FFFFFF",
-                        borderBottomWidth: 1,
-                        borderBottomColor: "#E9ECEF",
-                        shadowColor: "#000000",
-                        shadowOffset: {width: 0, height: 2},
-                        shadowOpacity: 0.05,
-                        shadowRadius: 4,
-                        elevation: 2,
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 20,
-                            fontWeight: "bold",
-                            color: "#212529",
-                            textAlign: "center",
-                        }}
-                    >
+                <View style={styles.stationHeader}>
+                    <Text style={styles.stationHeaderLabel}>
+                        PRESIDENTIAL · THIS STATION
+                    </Text>
+                    <Text style={styles.stationName}>
                         {currentStationInfo?.polling_center}
                     </Text>
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            justifyContent: "space-evenly",
-                            paddingTop: 8,
-                        }}
-                    >
-                        <Text style={styles.subtitle}>
-                            Stream No: {currentStationInfo?.stream_number}
-                        </Text>
-                        <Text style={styles.subtitle}>
-                            Code: {currentStationInfo?.code}
-                        </Text>
-                    </View>
-
-                    <Text
-                        style={{
-                            fontSize: 14,
-                            color: "#495057",
-                            textAlign: "center",
-                            paddingTop: 2,
-                        }}
-                    >
-                        {currentCenter?.county} / {currentCenter?.constituency} /{" "}
-                        {currentCenter?.ward}
+                    <Text style={styles.stationMeta}>
+                        Stream {currentStationInfo?.stream_number} ·{" "}
+                        {currentStationInfo?.code} · {currentCenter?.constituency}
                     </Text>
                 </View>
 
@@ -263,7 +226,7 @@ export default function ResultsScreen() {
                             onPress={() => setUpvoted(!upvoted)}
                             activeOpacity={0.8}
                         >
-                            <ThumbsUp size={24} color="#FFFFFF" />
+                            <ThumbsUp size={22} color={perk.limeInk} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -299,11 +262,35 @@ const styles = StyleSheet.create({
     },
     header: {},
     title: {},
-    subtitle: {
+    stationHeader: {
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 12,
+        backgroundColor: perk.card,
+        borderBottomWidth: 1,
+        borderBottomColor: perk.rule08,
+    },
+    stationHeaderLabel: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 9.5,
+        fontWeight: "700",
+        letterSpacing: 1.6,
+        color: perk.mute,
+    },
+    stationName: {
         fontSize: 16,
-        color: "#6C757D",
-        textAlign: "center",
-        fontWeight: "500",
+        fontWeight: "900",
+        letterSpacing: -0.2,
+        textTransform: "uppercase",
+        color: perk.ink,
+        marginTop: 4,
+    },
+    stationMeta: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 9,
+        color: perk.mute,
+        letterSpacing: 0.6,
+        marginTop: 3,
     },
     section: {
         paddingHorizontal: 16,
@@ -342,15 +329,15 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     upvoteFab: {
-        backgroundColor: "#006600",
+        backgroundColor: perk.lime,
     },
     upvotedFab: {
-        backgroundColor: "#006600",
+        backgroundColor: perk.limeDeep,
     },
     commentFab: {
-        backgroundColor: "#B71C1C",
+        backgroundColor: perk.coralDeep,
     },
     addFab: {
-        backgroundColor: "#1976D2",
+        backgroundColor: perk.ink,
     },
 });
