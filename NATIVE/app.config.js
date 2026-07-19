@@ -40,7 +40,6 @@ export default {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#ffffff",
             },
-            edgeToEdgeEnabled: true,
             package: "com.kurazetu.app",
             config: {
                 googleMaps: {

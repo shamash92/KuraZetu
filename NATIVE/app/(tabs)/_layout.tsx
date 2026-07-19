@@ -49,6 +49,7 @@ export default function TabLayout() {
                 tabBarActiveTintColor: "#1A2C4E",
                 tabBarInactiveTintColor: "#8E8E93",
                 tabBarLabelStyle: styles.tabLabel,
+                tabBarItemStyle: styles.tabItem,
             }}
         >
             <Tabs.Screen
@@ -69,7 +70,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="pollingCentersEdit"
                 options={{
-                    title: "Verify Results",
+                    title: "Verify",
                     tabBarIcon: ({focused, color, size}) => (
                         <TabBarIcon
                             IconComponent={User}
@@ -84,7 +85,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="communityNotes"
                 options={{
-                    title: "Polling Station",
+                    title: "Stations",
                     tabBarIcon: ({focused, color, size}) => (
                         <TabBarIcon
                             IconComponent={ChartSplineIcon}
@@ -124,7 +125,11 @@ const styles = StyleSheet.create({
     },
     tabLabel: {
         fontFamily: "Inter-Medium",
-        fontSize: 11,
+        fontSize: 10,
+        lineHeight: 12,
+    },
+    tabItem: {
+        paddingHorizontal: 0,
     },
     iconContainer: {
         alignItems: "center",
