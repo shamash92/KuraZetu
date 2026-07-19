@@ -11,6 +11,7 @@ import {
 import {ChevronLeft, ChevronRight} from "lucide-react-native";
 import {router, useLocalSearchParams} from "expo-router";
 
+import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
 import useAuthStore from "@/app/_utils/authStore";
@@ -64,13 +65,28 @@ const PollingStationResultsSummaryList = () => {
         }
     }, [id, userToken]);
 
-    const races = [
-        {id: "presidential", title: "President", geo: "National"},
-        {id: "governor", title: "Governor", geo: currentCenter?.county},
-        {id: "senator", title: "Senator", geo: currentCenter?.county},
-        {id: "mp", title: "MP", geo: currentCenter?.constituency},
-        {id: "woman-rep", title: "Woman Rep", geo: currentCenter?.county},
-        {id: "mca", title: "MCA", geo: `${currentCenter?.ward} Ward`},
+    const races: {id: string; title: string; geo?: string; level: TLevelTabs}[] = [
+        {id: "presidential", title: "President", geo: "National", level: "president"},
+        {
+            id: "governor",
+            title: "Governor",
+            geo: currentCenter?.county,
+            level: "governor",
+        },
+        {
+            id: "senator",
+            title: "Senator",
+            geo: currentCenter?.county,
+            level: "senator",
+        },
+        {id: "mp", title: "MP", geo: currentCenter?.constituency, level: "mp"},
+        {
+            id: "woman-rep",
+            title: "Woman Rep",
+            geo: currentCenter?.county,
+            level: "womanRep",
+        },
+        {id: "mca", title: "MCA", geo: `${currentCenter?.ward} Ward`, level: "mca"},
     ];
 
     return (
@@ -113,7 +129,7 @@ const PollingStationResultsSummaryList = () => {
                             style={[styles.raceRow, idx > 0 && styles.raceRowBorder]}
                             onPress={() => {
                                 router.navigate(
-                                    `/communityNotes/${currentStationCode}/presResults`,
+                                    `/communityNotes/${currentStationCode}/presResults?level=${race.level}`,
                                 );
                             }}
                             activeOpacity={0.8}

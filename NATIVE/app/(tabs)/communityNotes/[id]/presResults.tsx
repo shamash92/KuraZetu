@@ -13,6 +13,7 @@ import {AddFormModal} from "./_components/AddFormModal";
 import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
 import {IPollingStationPresResults} from "@/app/types";
 import {ResultsTable} from "./_components/ResultsTable";
+import {TLevelTabs} from "@/app/types";
 import {VoteSummary} from "./_components/VoteSummary";
 import {ZoomableImage} from "./_components/ZoomableImage";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
@@ -20,8 +21,18 @@ import {perk} from "@/app/_utils/colors";
 import {sampleElectionData} from "../_sampleData";
 import useAuthStore from "@/app/_utils/authStore";
 import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
+import {useLocalSearchParams} from "expo-router";
 
 const windowHeight = Dimensions.get("window").height;
+
+const LEVEL_LABELS: Record<TLevelTabs, string> = {
+    president: "Presidential",
+    governor: "Governor",
+    senator: "Senator",
+    womanRep: "Woman Rep",
+    mp: "MP",
+    mca: "MCA",
+};
 
 export interface IPollingStationExtraData {
     added_by: number;
@@ -56,6 +67,13 @@ export default function ResultsScreen() {
 
     const {userToken} = useAuthStore();
 
+    const {level: levelParam} = useLocalSearchParams<{level?: string}>();
+    const level: TLevelTabs =
+        levelParam && levelParam in LEVEL_LABELS
+            ? (levelParam as TLevelTabs)
+            : "president";
+    const levelLabel = LEVEL_LABELS[level];
+
     useEffect(() => {
         if (!currentStationCode) {
             return;
@@ -68,7 +86,7 @@ export default function ResultsScreen() {
         const fetchStationResults = async () => {
             try {
                 const response = await fetch(
-                    `${apiBaseURL}/api/results/polling-station/${currentStationCode}/presidential/`,
+                    `${apiBaseURL}/api/results/polling-station/${currentStationCode}/results/${level}/`,
                     {
                         headers: {
                             Authorization: `Token ${userToken}`,
@@ -89,18 +107,19 @@ export default function ResultsScreen() {
         if (currentStationCode && userToken) {
             fetchStationResults();
         }
-    }, [currentStationCode, userToken, addModalVisible]);
+    }, [currentStationCode, userToken, addModalVisible, level]);
 
     return (
         <View
             style={{
                 flex: 1,
+                backgroundColor: perk.card,
             }}
         >
             <AddFormModal
                 visible={addModalVisible}
                 onClose={() => setAddModalVisible(false)}
-                level="president"
+                level={level}
             />
             <CounterEvidenceModal
                 visible={modalVisible}
@@ -111,7 +130,7 @@ export default function ResultsScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.stationHeader}>
                     <Text style={styles.stationHeaderLabel}>
-                        PRESIDENTIAL · THIS STATION
+                        {levelLabel.toUpperCase()} · THIS STATION
                     </Text>
                     <Text style={styles.stationName}>
                         {currentStationInfo?.polling_center}
@@ -123,44 +142,12 @@ export default function ResultsScreen() {
                 </View>
 
                 {/* Form 34A Image */}
-                {extraData && extraData.form_34A ? (
-                    <View
-                        style={{
-                            paddingHorizontal: 8,
-                        }}
-                    >
-                        <Text
-                            style={{
-                                fontSize: 14,
-                                fontWeight: "bold",
-                                color: "#212529",
-                                textAlign: "center",
-                                // marginBottom: 12,
-                                // paddingHorizontal: 4,
-                            }}
-                        >
-                            Original Form 34A
-                        </Text>
-                        <View
-                            style={{
-                                height: 0.5 * windowHeight,
-                            }}
-                        >
+                {extraData && extraData.form_34A && (
+                    <View style={{paddingHorizontal: 8}}>
+                        <Text style={styles.formLabel}>Original Form 34A</Text>
+                        <View style={{height: 0.5 * windowHeight}}>
                             <ZoomableImage uri={extraData.form_34A} />
                         </View>
-                    </View>
-                ) : (
-                    <View
-                        style={{
-                            padding: 16,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 0.2 * windowHeight,
-                        }}
-                    >
-                        <Text style={{textAlign: "center"}}>
-                            No Form 34A image available for this polling station.
-                        </Text>
                     </View>
                 )}
 
@@ -175,7 +162,10 @@ export default function ResultsScreen() {
                 >
                     {results && results.length > 0 ? (
                         <>
-                            <ResultsTable results={results} />
+                            <ResultsTable
+                                results={results}
+                                title={`${levelLabel} Election Results`}
+                            />
                             {extraData && (
                                 <VoteSummary
                                     totalValidVotes={extraData.valid_votes_cast}
@@ -189,17 +179,20 @@ export default function ResultsScreen() {
                             )}
                         </>
                     ) : (
-                        <View
-                            style={{
-                                padding: 16,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: 0.2 * windowHeight,
-                            }}
-                        >
-                            <Text style={{textAlign: "center"}}>
-                                No results available for this polling station.
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyTitle}>No results yet</Text>
+                            <Text style={styles.emptyBody}>
+                                No {levelLabel} tally has been submitted for this
+                                station yet.
                             </Text>
+                            <TouchableOpacity
+                                style={styles.emptyCta}
+                                onPress={() => setAddModalVisible(true)}
+                                activeOpacity={0.85}
+                            >
+                                <PlusCircleIcon size={16} color={perk.limeInk} />
+                                <Text style={styles.emptyCtaText}>Add results</Text>
+                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
@@ -291,6 +284,50 @@ const styles = StyleSheet.create({
         color: perk.mute,
         letterSpacing: 0.6,
         marginTop: 3,
+    },
+    formLabel: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 10,
+        fontWeight: "700",
+        letterSpacing: 1.6,
+        color: perk.mute,
+        textAlign: "center",
+        marginBottom: 6,
+    },
+    emptyState: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 32,
+        paddingVertical: 48,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: "900",
+        letterSpacing: -0.3,
+        color: perk.ink,
+    },
+    emptyBody: {
+        fontSize: 13.5,
+        color: perk.mute,
+        textAlign: "center",
+        lineHeight: 19,
+        marginTop: 6,
+        maxWidth: 260,
+    },
+    emptyCta: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: perk.lime,
+        paddingVertical: 11,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        marginTop: 18,
+    },
+    emptyCtaText: {
+        fontSize: 13,
+        fontWeight: "800",
+        color: perk.limeInk,
     },
     section: {
         paddingHorizontal: 16,

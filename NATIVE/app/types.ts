@@ -17,20 +17,10 @@ export interface ICountyFeatureCollection {
 }
 
 export type TLevelTabs =
-    | "president"
-    | "governor"
-    | "senator"
-    | "womanRep"
-    | "mp"
-    | "mca";
+    "president" | "governor" | "senator" | "womanRep" | "mp" | "mca";
 
 export type TLevelDjango =
-    | "president"
-    | "governor"
-    | "senator"
-    | "mp"
-    | "women_rep"
-    | "mca";
+    "president" | "governor" | "senator" | "mp" | "women_rep" | "mca";
 
 export interface ICandidateDetails {
     id: number;
@@ -92,10 +82,8 @@ export interface ICountyPresResults {
 }
 
 export interface IPollingStationPresResults {
-    polling_station: IPollingStationData;
-    presidential_candidate: ICandidateDetails;
+    candidate: ICandidateDetails;
     votes: number;
-    is_verified: boolean;
 }
 
 export default {};

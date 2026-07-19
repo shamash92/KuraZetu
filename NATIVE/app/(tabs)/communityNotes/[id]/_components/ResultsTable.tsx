@@ -4,7 +4,13 @@ import {IPollingStationPresResults} from "@/app/types";
 import React from "react";
 import {perk} from "@/app/_utils/colors";
 
-export function ResultsTable({results}: {results: IPollingStationPresResults[]}) {
+export function ResultsTable({
+    results,
+    title = "Election Results",
+}: {
+    results: IPollingStationPresResults[];
+    title?: string;
+}) {
     // Sort candidates by votes in descending order
     const sortedCandidates = [...results].sort((a, b) => b.votes - a.votes);
     const totalVotes = results.reduce((sum, candidate) => sum + candidate.votes, 0);
@@ -12,7 +18,7 @@ export function ResultsTable({results}: {results: IPollingStationPresResults[]})
     return (
         <View style={styles.wrapper}>
             <View style={styles.tableHeader}>
-                <Text style={styles.tableTitle}>Presidential Election Results</Text>
+                <Text style={styles.tableTitle}>{title}</Text>
             </View>
 
             <View style={styles.headerRow}>
@@ -62,13 +68,13 @@ export function ResultsTable({results}: {results: IPollingStationPresResults[]})
                                     isWinner && styles.winnerText,
                                 ]}
                             >
-                                {candidate.presidential_candidate.first_name}{" "}
-                                {candidate.presidential_candidate.last_name}
+                                {candidate.candidate.first_name}{" "}
+                                {candidate.candidate.last_name}
                             </Text>
                         </View>
                         <View style={styles.partyColumn}>
                             <Text style={[styles.cellText, styles.partyText]}>
-                                {candidate.presidential_candidate.party}
+                                {candidate.candidate.party}
                             </Text>
                         </View>
                         <View style={styles.votesColumn}>
