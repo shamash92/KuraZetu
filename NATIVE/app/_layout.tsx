@@ -11,7 +11,6 @@ import {windowWidth} from "./_utils/screenDimensions";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import LottieComponent from "@/components/lottieLoading";
 import {DarkTheme, DefaultTheme, Stack, ThemeProvider} from "expo-router";
-import {StatusBar} from "expo-status-bar";
 import {useAuthStore} from "./_utils/authStore";
 import {useFonts} from "expo-font";
 import {useQuickActionRouting} from "expo-quick-actions/router";
@@ -25,7 +24,6 @@ function RootLayoutNav() {
 
     return (
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-            <StatusBar style="auto" />
             <Stack>
                 <Stack.Protected guard={!isLoggedIn}>
                     <Stack.Screen

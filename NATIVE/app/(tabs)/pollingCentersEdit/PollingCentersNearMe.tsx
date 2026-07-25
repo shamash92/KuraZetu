@@ -29,7 +29,6 @@ import LocationEditDrawer from "./_components/LocationEditDrawer";
 import LocationItem from "./_components/PollingCenterItem";
 import LocationPin from "./_components/LocationPin";
 import Slider from "@react-native-community/slider";
-import {StatusBar} from "expo-status-bar";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {updateLocation} from "./_utils/LocationService";
 
@@ -323,8 +322,6 @@ export default function LocationsScreen() {
 
     return (
         <View style={styles.container}>
-            {/* <StatusBar style="dark" /> */}
-
             {/* Map View */}
             <View style={styles.mapContainer}>
                 <View

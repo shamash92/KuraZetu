@@ -18,6 +18,8 @@ export default {
             bundleIdentifier: "com.kurazetu.app",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
+                UIStatusBarStyle: "UIStatusBarStyleDarkContent",
+                UIViewControllerBasedStatusBarAppearance: true,
                 UIApplicationSceneManifest: {
                     UIApplicationSupportsMultipleScenes: false,
                     UISceneConfigurations: {
@@ -57,7 +59,6 @@ export default {
             "expo-router",
             "expo-image",
             "expo-web-browser",
-            "expo-status-bar",
             [
                 "expo-splash-screen",
                 {
@@ -71,6 +72,13 @@ export default {
                 "expo-local-authentication",
                 {
                     faceIDPermission: "Allow $(PRODUCT_NAME) to use Face ID.",
+                },
+            ],
+            [
+                "expo-status-bar",
+                {
+                    hidden: false,
+                    style: "dark",
                 },
             ],
             "expo-font",

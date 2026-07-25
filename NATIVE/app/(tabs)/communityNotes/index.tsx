@@ -1,8 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {
-    SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -10,6 +8,7 @@ import {
 } from "react-native";
 
 import {ChevronRight} from "lucide-react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
 import {router} from "expo-router";
@@ -81,8 +80,6 @@ const ElectionResultsApp = () => {
 
     return (
         <SafeAreaView style={styles.screen}>
-            <StatusBar barStyle="dark-content" backgroundColor={perk.card} />
-
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
@@ -179,7 +176,6 @@ const styles = StyleSheet.create({
     screen: {
         flex: 1,
         backgroundColor: perk.card,
-        paddingTop: StatusBar.currentHeight || 0,
     },
     scroll: {
         flex: 1,

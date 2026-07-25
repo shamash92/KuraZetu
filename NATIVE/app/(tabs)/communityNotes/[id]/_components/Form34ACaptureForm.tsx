@@ -13,7 +13,6 @@ import {CameraView, useCameraPermissions} from "expo-camera";
 import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 
-import {StatusBar} from "expo-status-bar";
 import {perk} from "@/app/_utils/colors";
 
 export interface Form34ACandidate {
@@ -130,7 +129,6 @@ export function Form34ACaptureForm({
                 transparent
                 statusBarTranslucent
             >
-                <StatusBar style="light" />
                 <SafeAreaProvider>
                     <View style={styles.permissionOverlay}>
                         <SafeAreaView style={styles.permissionSafeArea}>
@@ -171,7 +169,6 @@ export function Form34ACaptureForm({
             presentationStyle="fullScreen"
             statusBarTranslucent={Platform.OS === "android"}
         >
-            <StatusBar style="dark" />
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
                     <View style={styles.header}>

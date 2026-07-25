@@ -1,8 +1,6 @@
 import {
     Dimensions,
-    SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -11,6 +9,7 @@ import {
 import React, {useState} from "react";
 
 import {Ionicons} from "@expo/vector-icons";
+import {SafeAreaView} from "react-native-safe-area-context";
 
 const {width} = Dimensions.get("window");
 
@@ -384,8 +383,6 @@ const ElectionResultsApp = () => {
 
         return (
             <SafeAreaView style={styles.container}>
-                <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
                 {/* Header */}
                 <View style={styles.detailHeader}>
                     <TouchableOpacity
@@ -479,8 +476,6 @@ const ElectionResultsApp = () => {
 
     const PollingStationsView = () => (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.userGreeting}>
@@ -588,8 +583,6 @@ const ElectionResultsApp = () => {
 
         return (
             <SafeAreaView style={styles.container}>
-                <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity
@@ -652,7 +645,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#F5F5F5",
-        paddingTop: StatusBar.currentHeight || 0,
     },
     header: {
         backgroundColor: "#fff",

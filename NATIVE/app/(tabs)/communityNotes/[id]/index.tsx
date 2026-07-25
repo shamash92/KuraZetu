@@ -1,8 +1,6 @@
 import React, {useEffect} from "react";
 import {
-    SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -11,6 +9,7 @@ import {
 import {ChevronLeft, ChevronRight} from "lucide-react-native";
 import {router, useLocalSearchParams} from "expo-router";
 
+import {SafeAreaView} from "react-native-safe-area-context";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
@@ -91,8 +90,6 @@ const PollingStationResultsSummaryList = () => {
 
     return (
         <SafeAreaView style={styles.screen}>
-            <StatusBar barStyle="dark-content" backgroundColor={perk.card} />
-
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
@@ -153,7 +150,6 @@ const styles = StyleSheet.create({
     screen: {
         flex: 1,
         backgroundColor: perk.card,
-        paddingTop: StatusBar.currentHeight || 0,
     },
     scroll: {
         flex: 1,

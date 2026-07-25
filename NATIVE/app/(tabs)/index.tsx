@@ -1,6 +1,5 @@
 import React from "react";
 import ResultsLandingPage from "@/app/results";
-import {StatusBar} from "expo-status-bar";
 import {View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import UpdateCheckerModal from "../_utils/updateModal";
@@ -17,7 +16,6 @@ const LandingComponent = () => {
             }}
             edges={["top"]}
         >
-            <StatusBar style="dark" />
             <UpdateCheckerModal />
 
             <View style={{flex: 1, width: 1 * windowWidth}}>
