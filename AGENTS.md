@@ -91,6 +91,12 @@ for Claude Code and `.github/skills/impeccable/` (plus the `postToolUse` hook in
   npx impeccable install     # adds the build for a harness we do not carry yet
   npx impeccable update      # refreshes the committed builds
   ```
+- **Codex needs its own selected install target.** If `/impeccable` is missing in Codex even though
+  the Claude/GitHub builds exist, run `npx impeccable install`, choose `Customize`, select
+  `Codex CLI (.agents/skills)`, then choose `Global (~)` unless you intentionally want a
+  project-local Codex build. Reload Codex afterwards. The installer writes the Codex skill under
+  `~/.agents/skills/impeccable/` and may write a project hook manifest at `.codex/hooks.json`.
+  Open `/hooks` in Codex and approve the Impeccable hook if prompted.
 - **Turn the detector hook on per clone** with `/impeccable hooks on`. It is configured in
   `.claude/settings.local.json`, which is machine-local and never cloned.
 - **Local state regenerates.** `.impeccable/` is ignored, so a fresh clone has no live config and no
