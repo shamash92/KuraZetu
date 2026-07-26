@@ -14,34 +14,6 @@ export const PRIMARY = {
     900: "#050D1D",
 };
 
-// Democratic Party
-export const DEMOCRATIC = {
-    50: "#E5F0FF",
-    100: "#CCE0FF",
-    200: "#99C2FF",
-    300: "#66A3FF",
-    400: "#3385FF",
-    500: "#0066FF",
-    600: "#0052CC",
-    700: "#003D99",
-    800: "#002966",
-    900: "#001433",
-};
-
-// Republican Party
-export const REPUBLICAN = {
-    50: "#FFEBE5",
-    100: "#FFD6CC",
-    200: "#FFAD99",
-    300: "#FF8566",
-    400: "#FF5C33",
-    500: "#FF3300",
-    600: "#CC2900",
-    700: "#991F00",
-    800: "#661400",
-    900: "#330A00",
-};
-
 // Neutral/Gray
 export const NEUTRAL = {
     50: "#F9FAFB",
