@@ -154,7 +154,8 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
-    pre-commit install
+    cd ..
+    pre-commit install --hook-type pre-commit --hook-type commit-msg
     ```
 ```
 ```{group-tab} Multipass (Windows and MacOS)
@@ -172,10 +173,17 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
-    pre-commit install
+    cd ..
+    pre-commit install --hook-type pre-commit --hook-type commit-msg
     ```
 ```
 ````
+
+```{important}
+`black`, `isort`, and `pytest-black` are pinned to exact versions in `src/requirements.txt`, and
+`.pre-commit-config.yaml` pins the same versions under `rev:`. Bump both together. If they drift,
+the hook reformats a file one way and the test suite's format check rejects it the other way.
+```
 
 ### Install System Dependencies
 
@@ -405,7 +413,7 @@ In a new terminal, run the following command to watch for CSS changes during dev
 python manage.py tailwind watch
 ```
 
-Alternatively, to run the dev server and Tailwind watcher together:
+Alternatively, to run the development server and Tailwind watcher together:
 
 ```bash
 python manage.py tailwind runserver

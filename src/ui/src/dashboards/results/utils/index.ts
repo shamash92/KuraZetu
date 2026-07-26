@@ -11,6 +11,27 @@ export const formatNumber = (num: number) => {
     return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
 };
 
+const neutralResultColors = [
+    "#4b5563",
+    "#6b7280",
+    "#9ca3af",
+    "#d1d5db",
+    "#374151",
+    "#71717a",
+];
+
+export function getResultPartyColor(
+    partyColor: string | null | undefined,
+    index: number,
+) {
+    const normalized = partyColor?.trim();
+    if (normalized && /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(normalized)) {
+        return normalized;
+    }
+
+    return neutralResultColors[index % neutralResultColors.length];
+}
+
 // Parse and aggregate candidate results across all streams
 export function aggregateCandidateResults(
     data: IPollingCenterCandidateResults[],

@@ -16,7 +16,7 @@ import {
 import {IPollingCenterResultsProcessed, TLevelDjango} from "../types";
 
 import React from "react";
-import {formatNumber} from "../utils";
+import {formatNumber, getResultPartyColor} from "../utils";
 
 // TODO: Add a check for zero votes since its rendering badly, maybe exclude it from the chart
 // TODO: Fix pie charts, it renders out of bounds when aspirants names are long
@@ -74,7 +74,7 @@ function PollingStationCandidatePieChart({
                     {activeData.map((entry, index) => (
                         <Cell
                             key={`cell-${index}`}
-                            fill={activeData[index].party_color}
+                            fill={getResultPartyColor(entry.party_color, index)}
                         />
                     ))}
                 </Pie>

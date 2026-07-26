@@ -4,7 +4,6 @@ import React from "react";
 // (`../_utils/colors`) keep resolving unchanged.
 export * from "./legacy";
 export * from "./palettes";
-export * from "./semantic";
 export * from "./perk";
 
 // This directory does not export a React component by default.

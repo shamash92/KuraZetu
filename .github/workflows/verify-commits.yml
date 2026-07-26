@@ -1,0 +1,53 @@
+name: Verify commits
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+    check-commits:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Verify commit messages
+              env:
+                  BASE_SHA: ${{ github.event.pull_request.base.sha }}
+                  HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+              run: |
+                  set -e -o pipefail
+
+                  # Merge commits are exempt from the MSG rules (CONTRIBUTING.md).
+                  COMMITS=$(git rev-list --reverse --no-merges "$BASE_SHA".."$HEAD_SHA")
+
+                  if [ -z "$COMMITS" ]; then
+                    echo "No non-merge commits to verify"
+                    exit 0
+                  fi
+
+                  FAILED=0
+
+                  # A for loop, not a pipe, so FAILED survives the loop body.
+                  for SHA in $COMMITS; do
+                    echo "-- $SHA --"
+                    MSG=$(git log -n1 --format=%B "$SHA")
+                    echo "$MSG"
+
+                    if printf '%s\n' "$MSG" | ./git-hooks/commit-msg.py --strict -; then
+                      echo "PASS"
+                    else
+                      echo "FAIL"
+                      FAILED=1
+                    fi
+                    echo
+                  done
+
+                  if [ "$FAILED" -eq 1 ]; then
+                    echo "One or more commit messages failed validation."
+                    echo "See CONTRIBUTING.md, and run git-hooks/commit-msg.py locally."
+                    exit 1
+                  fi
+
+                  echo "All commit messages passed validation"

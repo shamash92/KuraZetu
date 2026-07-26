@@ -3,30 +3,30 @@ from django.db import transaction
 from django.db.models import F
 
 from rest_framework import status
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 
 from stations.api.serializers import (
+    CommunityNotesPollingCenterSerializer,
     ConstituencySerializer,
     CountySerializer,
-    PollingCenterSerializer,
-    WardSerializer,
-    PollingCenterBoundarySerializer,
     PartiallyVerifiedPollingCenterBoundarySerializer,
-    CommunityNotesPollingCenterSerializer,
-    PollingStationSerializer,
+    PollingCenterBoundarySerializer,
+    PollingCenterSerializer,
     PollingStationInfoSerializer,
+    PollingStationSerializer,
+    WardSerializer,
 )
 from stations.models import (
     Constituency,
     County,
     PollingCenter,
-    Ward,
     PollingCenterVerification,
     PollingStation,
+    Ward,
 )
 from stations.verification import recompute_consensus
 
@@ -154,14 +154,12 @@ class WardPollingCenterFromLocationListAPIView(APIView):
 
 
 class RandomUnverifiedPollingCenterAPIView(APIView):
-
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [AllowAny]
 
     serializer_class = PollingCenterSerializer
 
     def get(self, request, *args, **kwargs):
-
         user = self.request.user
         admin_level = kwargs.get("admin_level")
         print(user, "user inside the server")
@@ -352,10 +350,13 @@ class VerificationPollingCenterAPIView(APIView):
         print(isUpvote is True, "is upvote boolean value")
 
         if isUpvote is True:
-            if user.is_authenticated and PollingCenterVerification.objects.filter(
-                polling_center=polling_center,
-                verified_by=user,
-            ).exists():
+            if (
+                user.is_authenticated
+                and PollingCenterVerification.objects.filter(
+                    polling_center=polling_center,
+                    verified_by=user,
+                ).exists()
+            ):
                 return Response(
                     {"error": "You have already verified this polling center"},
                     status=status.HTTP_200_OK,
@@ -441,7 +442,9 @@ class AIPollingCenterVerificationAPIView(APIView):
 
         if not school_name or not ward_name or latitude is None or longitude is None:
             return Response(
-                {"error": "school_name, ward_name, latitude, and longitude are required fields."},
+                {
+                    "error": "school_name, ward_name, latitude, and longitude are required fields."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -467,11 +470,17 @@ class AIPollingCenterVerificationAPIView(APIView):
 
         # 2. Lookup Polling Center in Ward
         try:
-            polling_center = PollingCenter.objects.get(ward=ward, name__iexact=school_name)
+            polling_center = PollingCenter.objects.get(
+                ward=ward, name__iexact=school_name
+            )
         except PollingCenter.DoesNotExist:
-            polling_center = PollingCenter.objects.filter(ward=ward, name__icontains=school_name).first()
+            polling_center = PollingCenter.objects.filter(
+                ward=ward, name__icontains=school_name
+            ).first()
             if not polling_center:
-                available_centers = PollingCenter.objects.filter(ward=ward).values_list("name", flat=True)
+                available_centers = PollingCenter.objects.filter(ward=ward).values_list(
+                    "name", flat=True
+                )
                 return Response(
                     {
                         "error": f"Polling Center (School) '{school_name}' not found in Ward '{ward.name}'.",
@@ -587,7 +596,6 @@ class CommunityNotesPollingCenterDetailsAPIView(APIView):
     serializer_class = CommunityNotesPollingCenterSerializer
 
     def get(self, *args, **kwargs):
-
         user = self.request.user
 
         print(user, "user inside the server")
@@ -654,9 +662,10 @@ class GeocodeAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
-        import requests
         from django.conf import settings
         from django.core.cache import cache
+
+        import requests
 
         query = (request.query_params.get("q") or "").strip()
         ward_number = request.query_params.get("ward_number")
@@ -706,7 +715,12 @@ class GeocodeAPIView(APIView):
                         }
                     )
             else:
-                params = {"q": query, "format": "json", "limit": 6, "countrycodes": "ke"}
+                params = {
+                    "q": query,
+                    "format": "json",
+                    "limit": 6,
+                    "countrycodes": "ke",
+                }
                 if bbox:
                     params["viewbox"] = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
                     params["bounded"] = 1

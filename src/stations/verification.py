@@ -77,9 +77,7 @@ def recompute_consensus(polling_center):
     if not suggestions:
         return {"verified": False, "agree": 0, "needed": threshold, "outliers": 0}
 
-    ward_boundary = (
-        polling_center.ward.boundary if polling_center.ward_id else None
-    )
+    ward_boundary = polling_center.ward.boundary if polling_center.ward_id else None
 
     centroid = cluster_centroid([s.pin_location for s in suggestions])
 
