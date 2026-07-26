@@ -72,16 +72,28 @@ handing off.
 
 ### Setting it up
 
-The skill itself ships with the repository, so there is nothing to download. Node is the only
-requirement. What does not clone is the per-harness wiring:
+Current documentation lives at <https://impeccable.style/docs/>; prefer it over anything restated
+here. Impeccable builds are per harness, and two are already committed: `.claude/skills/impeccable/`
+for Claude Code and `.github/skills/impeccable/` (plus the `postToolUse` hook in
+`.github/hooks/impeccable.json`) for the others that read `.github/`.
 
-- **Claude Code** — the skill is at `.claude/skills/impeccable/`; invoke it as `/impeccable <command>`.
-  The detector hook is configured in `.claude/settings.local.json`, which is machine-local, so turn
-  it on once per clone with `/impeccable hooks on`.
-- **Other harnesses** — use `.github/skills/impeccable/SKILL.md` and the `postToolUse` hook in
-  `.github/hooks/impeccable.json`, which calls `.github/skills/impeccable/scripts/hook.mjs`.
-- **Verify it runs** — `node .claude/skills/impeccable/scripts/detect.mjs <file>` should print a
-  findings count.
+- **Try the committed build first.** If your harness reads one of those two paths, the skill already
+  works — invoke `/impeccable <command>`. Confirm with
+  `node .claude/skills/impeccable/scripts/detect.mjs <file>`, which prints a findings count.
+- **Install only when your harness has no build here, or to update.** From the repository root, then
+  reload your agent. Needs Node 22.12+.
+
+  ```sh
+  npx impeccable install     # tailored to your harness and model
+  npx impeccable update      # later, to refresh
+  ```
+
+- **Installing rewrites tracked files.** Roughly 250 files under `.claude/skills/` and
+  `.github/skills/` are committed. After running either command, check `git status`: keep the churn
+  out of unrelated work and commit it on its own as `[ci]`, or discard it if you only meant to add
+  your own harness.
+- **Turn the detector hook on per clone** with `/impeccable hooks on`. It is configured in
+  `.claude/settings.local.json`, which is machine-local and never cloned.
 - **Local state regenerates.** `.impeccable/` is ignored, so a fresh clone has no live config and no
   design sidecar. `/impeccable live` writes its own config on first run; `/impeccable document`
   rebuilds the sidecar from the committed `DESIGN.md`.
