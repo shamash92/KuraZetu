@@ -42,3 +42,6 @@ android/
 ios/
 google-services.json
 
+
+# Android SDK path, generated per machine
+local.properties
