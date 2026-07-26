@@ -1,0 +1,28 @@
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: ^src/
+
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        files: ^src/
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: local
+    hooks:
+      - id: commit-msg
+        name: Check commit message
+        entry: git-hooks/commit-msg.py
+        language: system
+        stages: [commit-msg]
