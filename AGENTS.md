@@ -70,9 +70,28 @@ When changing Django templates, landing pages, React UI, or any `*.tsx` file tha
 UI, use the Impeccable workflow when it is available to preview and inspect the result before
 handing off.
 
+### Setting it up
+
+The skill itself ships with the repository, so there is nothing to download. Node is the only
+requirement. What does not clone is the per-harness wiring:
+
+- **Claude Code** — the skill is at `.claude/skills/impeccable/`; invoke it as `/impeccable <command>`.
+  The detector hook is configured in `.claude/settings.local.json`, which is machine-local, so turn
+  it on once per clone with `/impeccable hooks on`.
+- **Other harnesses** — use `.github/skills/impeccable/SKILL.md` and the `postToolUse` hook in
+  `.github/hooks/impeccable.json`, which calls `.github/skills/impeccable/scripts/hook.mjs`.
+- **Verify it runs** — `node .claude/skills/impeccable/scripts/detect.mjs <file>` should print a
+  findings count.
+- **Local state regenerates.** `.impeccable/` is ignored, so a fresh clone has no live config and no
+  design sidecar. `/impeccable live` writes its own config on first run; `/impeccable document`
+  rebuilds the sidecar from the committed `DESIGN.md`.
+- **Live mode needs a server.** Start Django first, then `/impeccable live`; it attaches to the page
+  the browser actually loads.
+
+### Rules
+
 Impeccable is a local QA aid only:
 
-- Do not commit `.impeccable/`; it is local tool state and should stay ignored.
 - Do not commit Impeccable live-injection snippets, including markers like
   `impeccable-live-start`, `impeccable-live-end`, or localhost `live.js` scripts.
 - Do not create shared Django templates or partials solely to load Impeccable. The tool may change,
@@ -84,8 +103,8 @@ Impeccable is a local QA aid only:
   rg "impeccable-live|localhost:8400/live.js" . --glob '!AGENTS.md'
   ```
 
-If a template such as `src/templates/base.html` was modified only to support local Impeccable
-preview, revert or remove that local-only change before staging commits.
+- If a template such as `src/templates/base.html` was modified only to support local Impeccable
+  preview, revert or remove that local-only change before staging commits.
 
 ## Documentation
 
