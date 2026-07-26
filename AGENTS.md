@@ -25,6 +25,7 @@ pre-commit install --hook-type pre-commit --hook-type commit-msg
 Hooks live in `.git/hooks/`, which is never cloned, so every new working copy needs this once.
 
 ## Project instructions
+
 We have a few agent instructions living in various CLAUDE.md files in the project. These are for specific agents and are not shared with all agents. Please read and follow them as appropriate.
 
 - For any android/ios related wotk, use the NATIVE/CLAUDE.md file for instructions.

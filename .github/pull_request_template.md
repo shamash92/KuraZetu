@@ -16,11 +16,11 @@ Closes #
 
 <!-- List exact commands and notable results. Do not write "not tested" without a reason. -->
 - Automated tests:
-  -
+  - …
 - Manual testing:
-  1.
-  2.
-  3.
+  1. …
+  2. …
+  3. …
 
 ## Screenshots
 

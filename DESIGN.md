@@ -147,6 +147,7 @@ Against that quiet substrate, the display type is loud and physical: Public Sans
 Surfaces are flat. Depth comes from hairline rules at 7% and 14% ink, tonal steps between paper, surface, and card, and a single frosted-glass bar that blurs what scrolls beneath it. The only real shadow in the system belongs to the phone frames on the prototype pages — a device rendered in a document, not a UI convention.
 
 **Key Characteristics:**
+
 - Warm paper substrate (`#f7f6f3`), never pure white as the page ground
 - Drawn, animated survey mesh and square-ruled grid instead of decorative imagery
 - Uppercase monospace micro-labels with `0.18em`–`0.22em` tracking
@@ -160,17 +161,21 @@ Surfaces are flat. Depth comes from hairline rules at 7% and 14% ink, tonal step
 A warm, paper-toned neutral field holding one acid accent, with copper as the labelling voice and a small set of semantic hues that never take the lead.
 
 ### Primary
+
 - **Acid Lime** (`#c4ff5e`): the only action colour. Primary pill buttons, the hand-drawn underline beneath display headlines, live indicators. It appears on a small fraction of any screen; that scarcity is what makes it read as "act here." Its hover is **Lime Deep** (`#a8e63a`), and text on lime is always **Lime Ink** (`#0a0a0a`), never white.
 
 ### Secondary
+
 - **Copper** (`#c97b3e`): the labelling voice. Eyebrows, footer column titles, field labels — never body copy, never a button. **Copper Deep** (`#8a4a25`) carries the standing disclaimer strip and link hovers. **Copper Soft** (`#e9d4b8`) is a tint for warm fills.
 
 ### Tertiary
+
 - **Verification Green** (`#16a35a`) and **Green Deep** (`#0f7a40`): confirmed, verified, reporting-complete states, plus the default marker underline stroke. **Mint** (`#d8f5dc`) and **Mint 2** (`#b9eac1`) are its tints.
 - **Flag Red** (`#c44539`): the period after the wordmark, alert strokes, the alternate underline. **Coral** (`#ffd0c0`) and **Coral Deep** (`#a8442a`) sit beside it for softer warning surfaces.
 - **Periwinkle** (`#c8d4ff`) / **Periwinkle Deep** (`#2532a8`): informational accents, used sparingly.
 
 ### Neutral
+
 - **Paper** (`#f7f6f3`): the page ground. Warm, not Tailwind gray-50.
 - **Paper Deep** (`#efeeea`) / **Paper Vivid** (`#e9e8e2`): the radial ground gradient steps.
 - **Surface** (`#f1f0eb`): recessed panels, hover fills, input prefixes.
@@ -182,6 +187,7 @@ A warm, paper-toned neutral field holding one acid accent, with copper as the la
 - **Mesh Ink** (`rgba(40,50,60,0.14)`) / **Mesh Dot** (`rgba(40,50,60,0.28)`): the drawn grid strokes and their nodes.
 
 ### Named Rules
+
 **The One Live Signal Rule.** Lime marks action and liveness, nothing else. A screen with lime in three roles has no action colour left.
 
 **The Neutral Ballot Rule.** A party may carry its own colour and logo as identification — the colour comes from `Party.party_colour_hex` in the data, never from a map in the design system. This is what makes charts and maps readable: bar and pie series, legends, result rows, and county or constituency choropleths shade by party colour, because people read a party's colour faster than its name. Shading a region by the party leading there is reporting the figures, not ranking them.
@@ -201,6 +207,7 @@ What stays banned is *emphasis*: no party gets a larger mark, a heavier weight, 
 **Character:** A single grotesque doing two very different jobs — set at 900 with negative tracking it is blunt and physical; at 400–500 it disappears and lets the content read. The monospace never carries prose. It exists to make labels and figures look measured: wide-tracked uppercase for annotations, tabular numerals for anything countable. Body copy runs `font-feature-settings: "ss01", "cv05", "cv11", "tnum" 1`.
 
 ### Hierarchy
+
 - **Display** (900, `clamp(48px, 6vw, 84px)`, line-height 0.94, tracking `-0.045em`): page headlines only, capped at ~1000px measure. Takes the hand-drawn accent underline.
 - **Headline** (900, 30px, line-height 38px, tracking `-0.7px`): native screen headings.
 - **Title** (800, 24px, line-height 1, tracking `-0.035em`): the wordmark and section titles.
@@ -210,6 +217,7 @@ What stays banned is *emphasis*: no party gets a larger mark, a heavier weight, 
 - **Meta** (mono, 500, 10.5px, tracking `0.06em`–`0.18em`, uppercase, colour Mute): disclaimer strip, phone captions, footer coordinates, status chips.
 
 ### Named Rules
+
 **The Mono-Is-Not-Prose Rule.** IBM Plex Mono is for labels, figures, coordinates, and status — never a sentence.
 
 **The Tight Display Rule.** Display type is always negative-tracked and set below 1.0 line-height. Loose display type is off-system.
@@ -229,9 +237,11 @@ The page shell isolates a stacking context: a `paper-bg` layer paints the ruled 
 The system is flat by conviction. Depth is carried by tonal steps (paper → surface → card), hairline rules, and blur — not by shadow. Cards are white with a 1px `rule-08` border and no shadow at all. The sticky nav and floating pills use `glass` with `backdrop-filter: blur(20px)`, so depth reads as *translucency over drawn paper* rather than as a lifted plane.
 
 ### Shadow Vocabulary
+
 - **Device frame** (`0 0 0 1px rgba(0,0,0,0.08), 0 24px 60px rgba(13,13,13,0.16), 0 8px 24px rgba(13,13,13,0.08)`): the phone mockups on prototype pages. This is the *only* place a real shadow appears.
 
 ### Named Rules
+
 **The No-Shadow-On-Surface Rule.** Product surfaces get borders and tone, never shadows. If something needs separating, use a hairline or a tonal step.
 
 ## Shapes
@@ -243,6 +253,7 @@ Borders are the primary separator: 1px `rule-08` for structure, `rule-16` for in
 ## Components
 
 ### Buttons
+
 - **Shape:** fully round (`999px`), 13px × 22px padding; large variant 16px × 26px at 15px type.
 - **Lime (primary):** lime fill, lime-ink text, weight 700, arrow glyph at 16px. Hover swaps to Lime Deep.
 - **Ink:** ink fill, paper text — the dark counterpart used where lime would be too loud.
@@ -250,29 +261,37 @@ Borders are the primary separator: 1px `rule-08` for structure, `rule-16` for in
 - **Transition:** `background 140ms ease, border-color 140ms ease`.
 
 ### Chips & Status Pills
+
 - Glass or Surface fill, fully round, mono uppercase at 10.5px with `0.16em` tracking, Mute text. Used for map annotations (`KENYA · 47 COUNTIES`), step counters (`STOP 9 / 12`), and the screen switcher, whose current item inverts to ink-on-paper.
 
 ### Cards / Containers
+
 - White (`card`) on paper ground, 18px radius, 1px `rule-08` border, no shadow, 24px internal padding.
 
 ### Inputs / Fields
+
 - Card fill with a full-weight border and 14px radius; a Surface-filled prefix cell (country code, icon) divided by a `rule-16` hairline; 16px vertical padding, 16px value type at weight 600. The label above is always mono, uppercase, copper.
 
 ### Navigation
+
 - Sticky glass bar with `blur(20px)` and a `rule-08` bottom border, 20px × 32px padding, 32px gap. The wordmark sets at 24px/800 with a red period appended via `::after`, and a mono tagline beneath at 9.5px / `0.18em`. Links are pill-shaped, 14px/500, hover-filling Surface.
 
 ### Disclaimer Strip
+
 The signature component. A full-width bar *above* the nav, mono uppercase at 10.5px in Copper Deep on translucent paper, with a bottom hairline: `● CITIZEN TALLY · NOT AN IEBC SYSTEM` on the left, provenance (`OPEN SOURCE · MIT · github.com/…`) on the right. It is permanent chrome, not a dismissible banner.
 
 ### Drawn Mesh & Atlas
+
 SVG patches stroked in `mesh-ink` at 1px with round joins and `mesh-dot` nodes, revealed by animating `stroke-dashoffset` from `var(--len)` to 0 over 1100ms on `cubic-bezier(0.22, 0.61, 0.36, 1)` with per-patch `--delay`, opacity easing in over 600ms. The county atlas draws all 47 boundaries with the same sketched fade and zooms county to county — the same motion the results map uses when a region finishes reporting. Every drawn element has a `prefers-reduced-motion: reduce` branch that snaps to the drawn state.
 
 ### Marker Underline
+
 An inline-block accent span with an SVG stroke in the `::after`, 0.22em tall, bleeding 0.04em past each edge — a hand-swiped highlighter under the operative words of a display headline. Green by default, red via `.accent--red`.
 
 ## Do's and Don'ts
 
 ### Do:
+
 - **Do** ground pages in Paper (`#f7f6f3`) and reserve white for cards.
 - **Do** keep lime to a single role per screen — the primary action.
 - **Do** set every eyebrow and micro-label in IBM Plex Mono, uppercase, `0.18em`–`0.22em` tracking, in Copper.
@@ -284,6 +303,7 @@ An inline-block accent span with an SVG stroke in the `::after`, 0.22em tall, bl
 - **Do** use `140ms ease` for hover states and `cubic-bezier(0.22, 0.61, 0.36, 1)` for drawn reveals.
 
 ### Don't:
+
 - **Don't** let a party's colour do more than identify and encode it. Charts, legends, and maps may shade by party colour; no party gets a larger mark, a brighter treatment, a highlighted row, a winner's badge, or the system's lime. Take the colour from `Party.party_colour_hex`, never from a hard-coded party map in the design system.
 - **Don't** carry meaning on party colour alone. Label every chart series, map region, and legend entry with the party's short name or its figure.
 - **Don't** put shadows on product surfaces; the phone frame is the sole exception.
