@@ -34,3 +34,4 @@ vscode.yaml
 claude-design/
 prompts/
 .impeccable/
+.codex/hooks.json
