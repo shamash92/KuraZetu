@@ -8,6 +8,7 @@
         "build": "webpack --mode production"
     },
     "dependencies": {
+        "@babel/runtime": "^7.29.7",
         "@hookform/resolvers": "^5.0.1",
         "@radix-ui/react-dialog": "^1.1.14",
         "@radix-ui/react-label": "^2.1.6",
