@@ -184,7 +184,11 @@ A warm, paper-toned neutral field holding one acid accent, with copper as the la
 ### Named Rules
 **The One Live Signal Rule.** Lime marks action and liveness, nothing else. A screen with lime in three roles has no action colour left.
 
-**The Neutral Ballot Rule.** No party, candidate, or aspirant is ever assigned a distinguishing colour, order, or emphasis. Results are differentiated by figures and typographic weight alone. This is a product commitment, not a stylistic preference.
+**The Neutral Ballot Rule.** A party may carry its own colour and logo as identification — the colour comes from `Party.party_colour_hex` in the data, never from a map in the design system. This is what makes charts and maps readable: bar and pie series, legends, result rows, and county or constituency choropleths shade by party colour, because people read a party's colour faster than its name. Shading a region by the party leading there is reporting the figures, not ranking them.
+
+What stays banned is *emphasis*: no party gets a larger mark, a heavier weight, a brighter or more saturated treatment than the palette gives it, a highlighted row, a winner's badge, or the system's lime. Legends and lists order by a neutral key (alphabetical, ballot order, or the ordering the data itself dictates), never by a hand-picked favourite. Colour identifies and encodes; it never editorialises. This is a product commitment, not a stylistic preference.
+
+**The Colour-Is-Not-Alone Rule.** Party colour is never the only channel carrying meaning. Every chart series, map region, and legend entry is also labelled with the party's short name or its figure, so the reading survives similar party colours, colour-blind vision, and greyscale printing.
 
 **The Warm Ground Rule.** Pure white is a card surface. The page ground is always paper.
 
@@ -280,7 +284,8 @@ An inline-block accent span with an SVG stroke in the `::after`, 0.22em tall, bl
 - **Do** use `140ms ease` for hover states and `cubic-bezier(0.22, 0.61, 0.36, 1)` for drawn reveals.
 
 ### Don't:
-- **Don't** give any party or aspirant its own colour, its own position in a list, or extra visual weight. Colour that identifies a party makes the eye rank candidates before it reads the figures. There is deliberately no party-colour map in the codebase.
+- **Don't** let a party's colour do more than identify and encode it. Charts, legends, and maps may shade by party colour; no party gets a larger mark, a brighter treatment, a highlighted row, a winner's badge, or the system's lime. Take the colour from `Party.party_colour_hex`, never from a hard-coded party map in the design system.
+- **Don't** carry meaning on party colour alone. Label every chart series, map region, and legend entry with the party's short name or its figure.
 - **Don't** put shadows on product surfaces; the phone frame is the sole exception.
 - **Don't** set prose in the monospace, or labels in the sans.
 - **Don't** introduce a second accent hue to compete with lime.
