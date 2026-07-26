@@ -154,7 +154,8 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
-    pre-commit install
+    cd ..
+    pre-commit install --hook-type pre-commit --hook-type commit-msg
     ```
 ```
 ```{group-tab} Multipass (Windows and MacOS)
@@ -172,7 +173,8 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
-    pre-commit install
+    cd ..
+    pre-commit install --hook-type pre-commit --hook-type commit-msg
     ```
 ```
 ````
