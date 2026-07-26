@@ -7,6 +7,23 @@ machine-local or user-private preferences. Do not commit `local.AGENTS.md`.
 
 - AGENTS.md takes preference over local.AGENTS.md, in the event there is a contradicting instruction.
 
+## Setup
+
+Follow the docs; do not improvise install steps.
+
+- Backend, frontend, and pre-commit — [Setup instructions](./docs/tutorials/setup.md)
+- Docker alternative — [Running the project with Docker](./docs/tutorials/docker-setup.md)
+- Expo app in `NATIVE/` — [Setting up the Expo project](./docs/tutorials/setup-android.md)
+
+Before committing in a fresh clone, confirm both hooks are installed — `ls .git/hooks/` must list
+`pre-commit` and `commit-msg`. If either is missing, run from the repository root:
+
+```sh
+pre-commit install --hook-type pre-commit --hook-type commit-msg
+```
+
+Hooks live in `.git/hooks/`, which is never cloned, so every new working copy needs this once.
+
 ## Project instructions
 We have a few agent instructions living in various CLAUDE.md files in the project. These are for specific agents and are not shared with all agents. Please read and follow them as appropriate.
 
@@ -16,35 +33,23 @@ We have a few agent instructions living in various CLAUDE.md files in the projec
 
 ## Git
 
-Our git rules live in [CONTRIBUTING.md](./CONTRIBUTING.md). Read the relevant section before
-committing, branching, or opening a PR — do not rely on your own defaults. Rules are referenced by
-ID (`MSG5`, `GIT8`, `PR2`), so cite the ID when you explain a choice.
+Read the relevant section of [CONTRIBUTING.md](./CONTRIBUTING.md) before committing, branching, or
+opening a PR. Do not rely on your own defaults. Cite rule IDs (`MSG5`, `GIT8`, `PR2`) when
+explaining a choice.
 
-- **Commit messages** — [Commit messages (MSG)](./CONTRIBUTING.md#commit-messages-msg). Every
-  subject line starts with a bracketed lower-case category and is capitalized after it, 50
-  characters or fewer, imperative mood, no trailing period (`MSG1`–`MSG7`). Pick the category from
-  the table in [Categories](./CONTRIBUTING.md#categories) based on the area you touched. Bodies are
-  wrapped at 72 characters and explain what and why, not how (`MSG12`, `MSG13`); omit the body when
-  the subject says it all (`MSG15`).
-- **Counting characters** — you cannot count characters reliably, so do not try. Run
-  `git-hooks/commit-msg.py` against your draft and fix what it reports before committing; see
-  [Checking a message](./CONTRIBUTING.md#checking-a-message). Never claim a subject fits in 50
-  characters without having run it. CI runs the same script with `--strict` over every non-merge
-  commit in a PR, so a message that fails locally will fail the PR.
-- **Splitting work** — a message of the form "do this and that" means it should have been two
-  commits (`MSG3`, `GIT2`). Keep commits atomic (`GIT1`).
-- **Branches and history** — [Versioning (GIT)](./CONTRIBUTING.md#versioning-git). Branch names are
-  kebab-case (`GIT8`). Rebase rather than merging the target branch back in (`GIT6`). Do not squash
-  (`GIT4`) and do not introduce whitespace errors (`GIT9`).
-- **Pull requests** — [Pull requests (PR)](./CONTRIBUTING.md#pull-requests-pr). Target `main`, keep
-  PRs small and single-issue, include a description, and test and review the diff before handing it
-  over (`PR1`, `PR2`, `PR10`–`PR12`).
-- **Workflow around the code** — issues before PRs, tests, and the pre-commit hooks are in
-  [docs/contributing.md](./docs/contributing.md). Commit from the terminal so hook output is
-  visible.
+- Commit messages — [Commit messages (MSG)](./CONTRIBUTING.md#commit-messages-msg) and
+  [Categories](./CONTRIBUTING.md#categories)
+- Branches and history — [Versioning (GIT)](./CONTRIBUTING.md#versioning-git)
+- Pull requests — [Pull requests (PR)](./CONTRIBUTING.md#pull-requests-pr)
+- Issues, tests, and hooks — [docs/contributing.md](./docs/contributing.md)
 
-Do not advertise agent tooling in commit messages or PR bodies: no `Co-Authored-By` lines for
-agents, no "generated with" footers. Write as the human author.
+Two rules that are yours specifically, not the contributor's:
+
+- You cannot count characters. Run `git-hooks/commit-msg.py` on every draft message and fix what it
+  reports — see [Checking a message](./CONTRIBUTING.md#checking-a-message). Never assert a subject
+  fits in 50 characters without having run it.
+- Never advertise agent tooling in a commit message or PR body: no `Co-Authored-By` lines for
+  agents, no "generated with" footers. Write as the human author.
 
 ## Safety and anonymity
 
