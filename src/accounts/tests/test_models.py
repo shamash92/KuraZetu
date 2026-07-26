@@ -60,7 +60,8 @@ class TestUserModel:
             phone_number="+254700000000", password="testpassword"
         )
         user.save()
-        assert user.get_full_name() == "+254700000000"
+        # Falling back to the phone number must not expose it in full.
+        assert user.get_full_name() == "+254700000XXX"
 
     def test_unconventional_phone_number(self):
         with pytest.raises(ValueError, match="Invalid phone number format"):
@@ -105,7 +106,8 @@ class TestUserModel:
             phone_number="+254700000000", password="testpassword"
         )
         user.save()
-        assert user.get_short_name() == "+254700000000"
+        # Falling back to the phone number must not expose it in full.
+        assert user.get_short_name() == "+254700000XXX"
 
     def test_str_representation(self):
         user = User.objects.create_user(
