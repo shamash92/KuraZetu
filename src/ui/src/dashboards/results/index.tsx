@@ -15,7 +15,7 @@ import CountyResults from "./countyResults";
 import {IPresidentialNationalResults} from "./types";
 import PlayGameCallToActionButton from "../../landing-pages/gameButton";
 import PollingCenterResults from "./pollingCenterResults";
-import {formatNumber} from "./utils";
+import {formatNumber, getResultPartyColor} from "./utils";
 import {useUser} from "../../App";
 
 //TODO: split into smaller components for each administrative level
@@ -230,8 +230,7 @@ export default function ResultsDashboard() {
                     {presidentialData.map((candidate) => (
                         <div
                             key={candidate.name}
-                            className="flex flex-col items-center w-64 overflow-hidden border-t-4 rounded-lg shadow-md"
-                            style={{borderColor: candidate.party_color}}
+                            className="flex flex-col items-center w-64 overflow-hidden border-t-4 border-gray-200 rounded-lg shadow-md"
                         >
                             <div className="flex items-center justify-center w-full p-3 bg-gray-100">
                                 <div className="flex items-center gap-3">
@@ -249,10 +248,7 @@ export default function ResultsDashboard() {
                                         <h3 className="text-lg font-bold">
                                             {candidate.name}
                                         </h3>
-                                        <p
-                                            className="text-sm"
-                                            style={{color: candidate.party_color}}
-                                        >
+                                        <p className="text-sm text-gray-600">
                                             {candidate.party}
                                         </p>
                                     </div>
@@ -310,7 +306,10 @@ export default function ResultsDashboard() {
                                     {presidentialData.map((entry, index) => (
                                         <Cell
                                             key={`cell-${index}`}
-                                            fill={entry.party_color}
+                                            fill={getResultPartyColor(
+                                                entry.party_color,
+                                                index,
+                                            )}
                                         />
                                     ))}
                                 </Bar>
