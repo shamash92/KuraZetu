@@ -179,6 +179,12 @@ Create a virtual environment and install the required Python packages:
 ```
 ````
 
+```{important}
+`black`, `isort`, and `pytest-black` are pinned to exact versions in `src/requirements.txt`, and
+`.pre-commit-config.yaml` pins the same versions under `rev:`. Bump both together. If they drift,
+the hook reformats a file one way and the test suite's format check rejects it the other way.
+```
+
 ### Install System Dependencies
 
 Before proceeding, install the required system dependencies for PostgreSQL, PostGIS, and GeoDjango:
