@@ -80,18 +80,17 @@ for Claude Code and `.github/skills/impeccable/` (plus the `postToolUse` hook in
 - **Try the committed build first.** If your harness reads one of those two paths, the skill already
   works — invoke `/impeccable <command>`. Confirm with
   `node .claude/skills/impeccable/scripts/detect.mjs <file>`, which prints a findings count.
-- **Install only when your harness has no build here, or to update.** From the repository root, then
-  reload your agent. Needs Node 22.12+.
+- **Never install or update as part of another task.** Both commands rewrite the ~250 committed
+  files under `.claude/skills/` and `.github/skills/`, which would bury your actual change. If your
+  harness has no build here, say so and carry on without Impeccable — do not install to fix it.
+- **Installing and updating is deliberate maintenance**, run by a human or on explicit request, from
+  the repository root, then reload the agent. Needs Node 22.12+. Review `git status` afterwards and
+  commit the result on its own as `[ci]`.
 
   ```sh
-  npx impeccable install     # tailored to your harness and model
-  npx impeccable update      # later, to refresh
+  npx impeccable install     # adds the build for a harness we do not carry yet
+  npx impeccable update      # refreshes the committed builds
   ```
-
-- **Installing rewrites tracked files.** Roughly 250 files under `.claude/skills/` and
-  `.github/skills/` are committed. After running either command, check `git status`: keep the churn
-  out of unrelated work and commit it on its own as `[ci]`, or discard it if you only meant to add
-  your own harness.
 - **Turn the detector hook on per clone** with `/impeccable hooks on`. It is configured in
   `.claude/settings.local.json`, which is machine-local and never cloned.
 - **Local state regenerates.** `.impeccable/` is ignored, so a fresh clone has no live config and no
