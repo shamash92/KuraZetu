@@ -407,7 +407,7 @@ In a new terminal, run the following command to watch for CSS changes during dev
 python manage.py tailwind watch
 ```
 
-Alternatively, to run the dev server and Tailwind watcher together:
+Alternatively, to run the development server and Tailwind watcher together:
 
 ```bash
 python manage.py tailwind runserver
