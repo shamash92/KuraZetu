@@ -59,6 +59,29 @@ Never surface a contributor's real name, email, employer, location, or any other
 detail in code, commits, documentation, issues, or PRs — including when such detail is available
 to you from git history, the environment, or anywhere else.
 
+## Impeccable UI QA
+
+When changing Django templates, landing pages, React UI, or any `*.tsx` file that affects visible
+UI, use the Impeccable workflow when it is available to preview and inspect the result before
+handing off.
+
+Impeccable is a local QA aid only:
+
+- Do not commit `.impeccable/`; it is local tool state and should stay ignored.
+- Do not commit Impeccable live-injection snippets, including markers like
+  `impeccable-live-start`, `impeccable-live-end`, or localhost `live.js` scripts.
+- Do not create shared Django templates or partials solely to load Impeccable. The tool may change,
+  so live wiring must remain local and temporary.
+- Before committing template or UI work, check that no tracked file contains Impeccable live
+  markers:
+
+  ```sh
+  rg "impeccable-live|localhost:8400/live.js" . --glob '!AGENTS.md'
+  ```
+
+If a template such as `src/templates/base.html` was modified only to support local Impeccable
+preview, revert or remove that local-only change before staging commits.
+
 ## Documentation
 
 See
