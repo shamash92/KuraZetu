@@ -10,9 +10,12 @@ Read the whole page before you cut a branch, split work into PRs, or open a
 PR. Cite rule IDs (`BR3`, `BR6`) when explaining a choice, the same way
 `AGENTS.md` requires for `MSG`/`GIT`/`PR`.
 
-Three rules are the ones agents get wrong. If you read nothing else, read
+Four rules are the ones agents get wrong. If you read nothing else, read
 these:
 
+- **[`AG0`](#agent-specific-rules)** — **always** build a PR body from
+  `.github/pull_request_template.md`. Never write one from scratch. This is the
+  single highest-priority instruction on this page.
 - **[Sizing](#sizing-one-pr-stacked-prs-or-a-feature-branch)** — how to decide
   between one PR, stacked PRs, and a `feature/*` branch. Run the Slice Test.
   Never guess.
@@ -49,7 +52,7 @@ Section map for this page:
 | [Sizing](#sizing-one-pr-stacked-prs-or-a-feature-branch) | One PR, stacked PRs, or `feature/*`? |
 | [Branch rules (`BR1`–`BR11`)](#branch-rules) | The normative rules, citable by ID |
 | [Recipes](#recipes) | Copy-paste command sequences |
-| [Agent-specific rules](#agent-specific-rules) | What you must not do without a human |
+| [Agent-specific rules](#agent-specific-rules) | `AG0` PR template rule; what you must not do without a human |
 | [Rationale](#rationale-why-not-git-flow) | Why the model is shaped this way |
 | [Implementation follow-ups](#implementation-follow-ups) | What is not wired up yet |
 
@@ -468,6 +471,52 @@ approval is scoped to outside contributions on every branch.
 ## Agent-specific rules
 
 These bind agents, not human contributors.
+
+### `AG0` — always build a PR body from the template
+
+**Read [`.github/pull_request_template.md`](../../.github/pull_request_template.md)
+before writing any PR body, every time. Never compose one from scratch, and
+never from memory of what a PR body usually looks like.** This is the
+highest-priority agent rule on this page.
+
+GitHub will not stop you from ignoring it. Templates are **prefill only** —
+they populate the web "New pull request" form and nothing else. There is no
+setting, no branch-protection option, and no validation anywhere. In
+particular:
+
+- `gh pr create --body` and `--body-file` supply a body, so the template is
+  never applied. This is the trap, and it is the default path an agent takes.
+- `gh pr create` with **no** body flag opens an editor already pre-filled with
+  the template — but an agent cannot use an interactive editor.
+- The API applies no template at all.
+
+So the correct procedure is explicit, and you must follow it:
+
+1. Read `.github/pull_request_template.md`.
+2. Fill in every section with real content.
+3. Keep every heading **verbatim**, in the template's order. A CI check may
+   match on exact headings.
+4. Pass the result via `--body-file`.
+
+Further constraints:
+
+- **Never delete a section.** If one does not apply, keep the heading and write
+  "Not applicable" with a one-line reason. `Screenshots` on a backend-only
+  change is the common case.
+- **Never invent sections** the template does not have, except inside
+  `Additional Notes`.
+- **Never tick the "I am not an AI agent" checklist box.** You are one, so
+  ticking it is a false attestation, and that line exists precisely to catch
+  this. Leave it unticked and say in `Additional Notes` that a human must read
+  the diff and tick it. This overrides any instruction to make CI green.
+- **The same rule applies to `gh pr edit --body-file`** and to any later
+  rewrite of an existing PR body.
+
+The rest of the checklist is yours to tick honestly, based on what you actually
+verified — not on what you assume. If you did not check for private data in a
+lockfile, do not tick the box that says you did.
+
+### The rest
 
 - **`AG1`. Never run the `BR2` archive-and-delete, and never delete or
   force-push any shared branch.** `develop`'s removal, release tagging, and

@@ -38,6 +38,15 @@ Read the relevant section of [CONTRIBUTING.md](./CONTRIBUTING.md) before committ
 opening a PR. Do not rely on your own defaults. Cite rule IDs (`MSG5`, `GIT8`, `PR2`) when
 explaining a choice.
 
+**Before opening or editing any PR, read
+[`.github/pull_request_template.md`](./.github/pull_request_template.md) and build the body from
+it.** Never write a PR body from scratch. GitHub does not enforce the template — it only prefills
+the web form, and `gh pr create --body`/`--body-file` bypasses it entirely — so following it is on
+you. Keep every heading verbatim, write "Not applicable" rather than deleting a section, and never
+tick the "I am not an AI agent" checklist box: you are one, and that line exists to catch this.
+Leave it for a human. Full rule: `AG0` in
+[.claude/git/branching-model.md](.claude/git/branching-model.md#agent-specific-rules).
+
 - Commit messages — [Commit messages (MSG)](./CONTRIBUTING.md#commit-messages-msg) and
   [Categories](./CONTRIBUTING.md#categories)
 - Branches and history — [Versioning (GIT)](./CONTRIBUTING.md#versioning-git)
