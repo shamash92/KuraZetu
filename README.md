@@ -13,6 +13,10 @@ Since every Kenyan voter has access to a smartphone and results announced at pol
 
 The system is designed as an open source, community-driven project where anyone can contribute, verify, and improve the codebase.
 
+<p align="center">
+  <img src=".github/assets/readme/landing-hero.png" alt="Kura Zetu landing page: Election results, uploaded by you" width="900">
+</p>
+
 > [!CAUTION]
 > This project is not an official tallying system. It does not provide legal representation of election results and does not replace Independent Electoral and Boundaries Commission (IEBC) systems. This is a parallel citizen-led tool for transparency, verification, and civic vigilance. It may contain inaccuracies and gaps and should not be used as a sole source for official election results.
 
@@ -26,6 +30,35 @@ Kura Zetu addresses this challenge by:
 - Enabling public cross-verification of vote counts and irregularity flagging
 - Providing live, transparent tally dashboards
 - Implementing a community notes system for flagging suspected fraud, misinformation, or conflicting results
+
+## What It Looks Like
+
+Every number below is **sample data**. We never declare a winner.
+
+**Live tally, with the caveats attached.** Every figure traces back to a Form 34A scan confirmed by two independent citizens.
+
+<p align="center">
+  <img src=".github/assets/readme/results-dashboard.png" alt="Presidential citizen-verified results dashboard showing stations reported, turnout, per-candidate shares, and county coverage" width="900">
+</p>
+
+**PinVerify254 — mapping the ground truth.** Kenya's polling centers are not all on a map. Three matching citizen pins verify a location.
+
+<p align="center">
+  <img src=".github/assets/readme/pinverify-map.png" alt="PinVerify254 landing page: put every polling center on the map, together" width="900">
+</p>
+
+**On the phone, where the uploads happen.**
+
+<table>
+  <tr>
+    <td align="center"><img src=".github/assets/readme/mobile-dashboard.png" alt="Mobile dashboard showing presidential shares and governor results by county" width="260"></td>
+    <td align="center"><img src=".github/assets/readme/mobile-verify.png" alt="Mobile verify screen offering to update centers nearby, map missing centers, and edit center details" width="260"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Results dashboard</b></td>
+    <td align="center"><b>Verify polling centers</b></td>
+  </tr>
+</table>
 
 ## Why We Have AGENTS.md and CLAUDE.md
 
