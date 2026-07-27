@@ -23,9 +23,23 @@ Kenya conducts elections in over 46,000 polling stations. Each station posts For
 Kura Zetu addresses this challenge by:
 
 - Crowdsourcing results from individual polling stations
-- Enabling public cross-verification of vote counts and irregularity flagging  
+- Enabling public cross-verification of vote counts and irregularity flagging
 - Providing live, transparent tally dashboards
 - Implementing a community notes system for flagging suspected fraud, misinformation, or conflicting results
+
+## Why We Have AGENTS.md and CLAUDE.md
+
+We used **no AI agents on this project until June 2026**. That was deliberate, and at the time it was the right call.
+
+Things have matured. The ecosystem has moved, and so has the work — we see it in our day jobs and in teams across the world. This is a project of serious scope carried mostly by a single developer, and we intend to support every contributor who shows up, with whatever tools they bring.
+
+> *Meet contributors where they are.*
+
+So we accepted AI, **on our terms**. [`AGENTS.md`](./AGENTS.md) and the various `CLAUDE.md` files are those terms.
+
+They are **guardrails**, not tutorials. They encode the standard of technical quality we hold to, and they are unapologetically opinionated: how you contribute, how commits and branches are shaped, how we envision the architecture and where we expect it to grow. An agent that reads them produces work that looks like ours. One that ignores them produces work we send back.
+
+They are worth reading if you are human, too. They are the shortest honest description of our taste that we have written down — and we hope you take something from working here, long after this project.
 
 ## Project Scope
 
@@ -44,7 +58,7 @@ This project is:
 This project is not:
 
 - A system for legally challenging election results
-- A means to announce or declare election results  
+- A means to announce or declare election results
 - An official government or IEBC system replacement
 - A substitute for legal electoral processes
 - A partisan or politically-affiliated project
@@ -61,7 +75,7 @@ This project requires diverse expertise beyond software development:
 **Technical Contributors:**
 
 - Backend and Frontend Developers (Django, React)
-- DevOps Engineers (CI/CD, Docker, GitHub Actions)  
+- DevOps Engineers (CI/CD, Docker, GitHub Actions)
 - Security Experts (software verification, data integrity)
 
 **Non-Technical Contributors:**
