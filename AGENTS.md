@@ -38,11 +38,30 @@ Read the relevant section of [CONTRIBUTING.md](./CONTRIBUTING.md) before committ
 opening a PR. Do not rely on your own defaults. Cite rule IDs (`MSG5`, `GIT8`, `PR2`) when
 explaining a choice.
 
+**Before opening or editing any PR, read
+[`.github/pull_request_template.md`](./.github/pull_request_template.md) and build the body from
+it.** Never write a PR body from scratch. GitHub does not enforce the template — it only prefills
+the web form, and `gh pr create --body`/`--body-file` bypasses it entirely — so following it is on
+you. Keep every heading verbatim, write "Not applicable" rather than deleting a section, and never
+tick the "I am not an AI agent" checklist box: you are one, and that line exists to catch this.
+Leave it for a human. Full rule: `AG0` in
+[.claude/git/branching-model.md](.claude/git/branching-model.md#agent-specific-rules).
+
 - Commit messages — [Commit messages (MSG)](./CONTRIBUTING.md#commit-messages-msg) and
   [Categories](./CONTRIBUTING.md#categories)
 - Branches and history — [Versioning (GIT)](./CONTRIBUTING.md#versioning-git)
+- Branching model and PR sizing — [.claude/git/branching-model.md](.claude/git/branching-model.md),
+  rules `BR0`–`BR11` and the agent rules `AG1`–`AG7`
 - Pull requests — [Pull requests (PR)](./CONTRIBUTING.md#pull-requests-pr)
 - Issues, tests, and hooks — [docs/contributing.md](./docs/contributing.md)
+
+Before cutting a branch or splitting work into PRs, read
+[.claude/git/branching-model.md](.claude/git/branching-model.md) and run its
+[Slice Test](.claude/git/branching-model.md#sizing-one-pr-stacked-prs-or-a-feature-branch) to
+decide between a single PR, stacked PRs, and a `feature/*` branch. State that decision before
+writing code (`AG4`). Never create a `feature/*` branch on your own initiative (`AG3`), and never
+delete, force-push, or tag a shared branch (`AG1`, `AG2`). `main` is the trunk; there is no
+`develop` branch.
 
 Two rules that are yours specifically, not the contributor's:
 

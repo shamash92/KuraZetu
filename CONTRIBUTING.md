@@ -120,12 +120,23 @@ but not the *choice* of it, and says nothing about splitting commits (`MSG3`), i
 - **GIT8.** Use kebab-case branch names (i.e. lower-case-words-separated-with-hyphens).
 - **GIT9.** Do not introduce whitespace errors.
 
+## Branching (BR)
+
+The branching model — which branch to cut from, how releases and tags work, and how to decide
+between a single PR, stacked PRs, and a `feature/*` branch — lives in
+[.claude/git/branching-model.md](.claude/git/branching-model.md) as rules `BR0`–`BR11`. It is
+authoritative for branching and PR sizing, and will be folded into this file once signed off.
+
+Read it before cutting a branch or splitting work into PRs. In short: `main` is the trunk and the
+target of every normal PR; branches are named `category/kebab-name` using the same categories as
+commit messages; releases are `release/YYYY.MM` branches tagged `vYYYY.MM.N`.
+
 ## Pull requests (PR)
 
 Guidelines for how we use and handle pull requests.
 
 - **PR1.** Concrete modifications of KuraZetu are proposed via
-  [Pull Requests](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)
+  [Pull Requests](https://docs.github.com/en/pull-requests/reference/pull-requests)
   (AKA PRs) targeting the `main` branch.
 - **PR2.** Prefer small, single-issue PRs.
 - **PR3.** A PR should introduce a coherent change that appears as a unit in a medium or high level
