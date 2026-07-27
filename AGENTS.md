@@ -41,8 +41,18 @@ explaining a choice.
 - Commit messages — [Commit messages (MSG)](./CONTRIBUTING.md#commit-messages-msg) and
   [Categories](./CONTRIBUTING.md#categories)
 - Branches and history — [Versioning (GIT)](./CONTRIBUTING.md#versioning-git)
+- Branching model and PR sizing — [.claude/git/branching-model.md](.claude/git/branching-model.md),
+  rules `BR0`–`BR11` and the agent rules `AG1`–`AG7`
 - Pull requests — [Pull requests (PR)](./CONTRIBUTING.md#pull-requests-pr)
 - Issues, tests, and hooks — [docs/contributing.md](./docs/contributing.md)
+
+Before cutting a branch or splitting work into PRs, read
+[.claude/git/branching-model.md](.claude/git/branching-model.md) and run its
+[Slice Test](.claude/git/branching-model.md#sizing-one-pr-stacked-prs-or-a-feature-branch) to
+decide between a single PR, stacked PRs, and a `feature/*` branch. State that decision before
+writing code (`AG4`). Never create a `feature/*` branch on your own initiative (`AG3`), and never
+delete, force-push, or tag a shared branch (`AG1`, `AG2`). `main` is the trunk; there is no
+`develop` branch.
 
 Two rules that are yours specifically, not the contributor's:
 
