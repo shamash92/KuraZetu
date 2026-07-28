@@ -1,0 +1,7 @@
+# Agent tooling is installed per developer, not vendored (see
+# .claude/design/impeccable.md). If a generated skill tree is
+# ever force-added past .gitignore, keep it out of GitHub's language statistics.
+.claude/** linguist-vendored
+.github/skills/** linguist-vendored
+.agents/** linguist-vendored
+.cursor/** linguist-vendored

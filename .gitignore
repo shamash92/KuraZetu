@@ -35,3 +35,13 @@ claude-design/
 prompts/
 .impeccable/
 .codex/hooks.json
+
+# Impeccable is installed per developer, never vendored. A project-scoped
+# install drops several MB of generated JS into these trees; keep it untracked.
+# See .claude/design/impeccable.md
+.claude/skills/
+.github/skills/
+.github/hooks/
+.agents/skills/
+.cursor/skills/
+.grok/skills/
