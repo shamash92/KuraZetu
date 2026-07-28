@@ -6,6 +6,7 @@ Kura
 LLMs
 NGOs
 Nodejs
+pnpm
 Postgres
 sequential_nav
 Serverless
