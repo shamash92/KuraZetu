@@ -142,22 +142,6 @@ sitemap_excludes = [
 html_static_path = ["_static"]
 # templates_path = ["_templates"]
 
-#############
-# Redirects #
-#############
-
-# Add redirects to the 'redirects.txt' file
-# https://sphinxext-rediraffe.readthedocs.io/en/latest/
-
-# To set up redirects in the Read the Docs project dashboard:
-# https://docs.readthedocs.io/en/stable/guides/redirects.html
-
-rediraffe_redirects = "redirects.txt"
-
-# Strips '/index.html' from destination URLs when building with 'dirhtml'
-rediraffe_dir_only = True
-
-
 ############################
 # sphinx-llm configuration #
 ############################
@@ -222,8 +206,6 @@ extensions = [
     "canonical_sphinx",
     "notfound.extension",
     "sphinx_design",
-    "sphinx_rerediraffe",
-    "sphinx_reredirects",
     "sphinx_tabs.tabs",
     "sphinxcontrib.jquery",
     "sphinxext.opengraph",
