@@ -1,9 +1,0 @@
-
-Quickstart
-ReadMe
-reST
-reStructuredText
-roadmap
-RTD
-TODO
-YAML
