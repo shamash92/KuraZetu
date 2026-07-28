@@ -31,7 +31,7 @@ Vite is a great tool, and we love it. We would welcome a PR to migrate our curre
 
 ## Why not Bun?
 
-The UI currently uses pnpm for package management. Bun would be a promising replacement, and we would welcome a migration that does not introduce technical hurdles. In particular, a proposal should preserve reproducible dependency installation and confirm that the existing Webpack development and production builds work as expected.
+The UI currently uses `pnpm` for package management. Bun would be a promising replacement, and we would welcome a migration that does not introduce technical hurdles. In particular, a proposal should preserve reproducible dependency installation and confirm that the existing Webpack development and production builds work as expected.
 
 ## Why Django?
 

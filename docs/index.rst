@@ -36,25 +36,14 @@ At its core, the platform leverages **community participation** to document and 
 In addition to the core results tallying functionality, Kura Zetu includes a special “**Community Notes**” feature that allows citizens to flag suspicious patterns, discrepancies, or signs of fraud. This mechanism is key in ensuring transparency and accountability during the electoral period.
 
 
-In this documentation
----------------------
-.. list-table::
-   :header-rows: 0
-   :widths: 50 50
+How this documentation is organized
+-----------------------------------
 
-   * - `Tutorials <tutorials>`__
+This documentation uses the `Diátaxis <https://diataxis.fr/>`_ documentation structure.
 
-       Hands-on introductions to help you report, track, and visualize polling station results.
-     - `How-to guides <how-to-guides>`_
-
-       Step-by-step guides for contributors and community members on using and contributing to the platform.
-
-   * - `Explanations <explanations>`__
-
-       In-depth discussions on how elections work, how we verify data, and our tallying logic.
-     - `Reference <reference>`__
-
-       Technical specs – API docs, data models, contributor guidelines, and architecture.
+* `Tutorials <tutorials>`__ walk you through setting up a Kura Zetu development environment, locally, with Docker, or for the Android app.
+* `How-to guides <how-to-guides>`__ cover specific contributor tasks, such as loading boundary data or contributing anonymously.
+* `Explanations <explanations>`__ discuss the reasoning behind the technical decisions in the platform.
 
 .. note::
 
@@ -64,8 +53,8 @@ In this documentation
    From frontend and backend contributions, DevOps and infrastructure, legal audits, digital security, community outreach, to social media awareness — this platform thrives on the diverse strength of Kenya’s people and global allies who believe in **free, fair, and verifiable elections**.
 
 
-Project and Community
-=====================
+Project and community
+---------------------
 
 **Kura Zetu** is entirely open source and driven by the Kenyan people. We welcome contributors from all backgrounds and skill levels. Whether you're technical or not, there's a way for you to contribute and make a difference.
 
