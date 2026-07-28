@@ -44,8 +44,14 @@ it.** Never write a PR body from scratch. GitHub does not enforce the template �
 the web form, and `gh pr create --body`/`--body-file` bypasses it entirely — so following it is on
 you. Keep every heading verbatim, write "Not applicable" rather than deleting a section, and never
 tick the "I am not an AI agent" checklist box: you are one, and that line exists to catch this.
-Leave it for a human. Full rule: `AG0` in
-[.claude/git/branching-model.md](.claude/git/branching-model.md#agent-specific-rules).
+Leave it unticked and write nothing about it — an unticked box is the whole signal. Full rule:
+`AG0` in [.claude/git/branching-model.md](.claude/git/branching-model.md#agent-specific-rules).
+
+**A PR body describes the change, not your process** (`AG8`). No account of how you reached the
+change, no rules you followed, no caveats about yourself, no "worth deciding separately" or "you
+may also want to" suggestions. Reviewers did not ask for any of it, and it outlives the session.
+Raise those in the terminal instead. `Additional Notes` carries only facts the diff does not show —
+a known CI failure, a risk, a dependency on another PR — and otherwise says "Not applicable".
 
 - Commit messages — [Commit messages (MSG)](./CONTRIBUTING.md#commit-messages-msg) and
   [Categories](./CONTRIBUTING.md#categories)
