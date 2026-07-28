@@ -36,6 +36,43 @@ At its core, the platform leverages **community participation** to document and 
 In addition to the core results tallying functionality, Kura Zetu includes a special “**Community Notes**” feature that allows citizens to flag suspicious patterns, discrepancies, or signs of fraud. This mechanism is key in ensuring transparency and accountability during the electoral period.
 
 
+In this documentation
+---------------------
+
+Getting started
+~~~~~~~~~~~~~~~
+
+Start here to run Kura Zetu for the first time.
+
+* **Installation:** :doc:`Set up the project locally <tutorials/setup>` •
+  :doc:`Run the project with Docker <tutorials/docker-setup>` •
+  :doc:`Set up the Expo app in NATIVE <tutorials/setup-android>`
+
+Development environment
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Prepare a machine to develop on, and load the data the platform runs on.
+
+* **Virtual machines:** :doc:`Customize a Multipass instance <how-to-guides/customize-multipass>` •
+  :doc:`Connect VS Code to a Multipass instance <how-to-guides/vscode-multipass>`
+* **Election data:** :doc:`Load administrative boundaries data <how-to-guides/load_boundaries_data>`
+
+Safety and anonymity
+~~~~~~~~~~~~~~~~~~~~
+
+Contributors to Kura Zetu face surveillance and retaliation. Read this before your first commit.
+
+* **Accounts:** :doc:`Contribute anonymously <how-to-guides/anonymous_github>`
+
+Contributing
+~~~~~~~~~~~~
+
+The workflow to follow, and the reasoning behind the stack you will work in.
+
+* **Process:** :doc:`Contributing guidelines <contributing>`
+* **Background:** :doc:`Why we chose Django, React and Webpack <explanations/why-react>`
+
+
 How this documentation is organized
 -----------------------------------
 
