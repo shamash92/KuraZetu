@@ -10,12 +10,15 @@ Read the whole page before you cut a branch, split work into PRs, or open a
 PR. Cite rule IDs (`BR3`, `BR6`) when explaining a choice, the same way
 `AGENTS.md` requires for `MSG`/`GIT`/`PR`.
 
-Four rules are the ones agents get wrong. If you read nothing else, read
+Five rules are the ones agents get wrong. If you read nothing else, read
 these:
 
 - **[`AG0`](#agent-specific-rules)** — **always** build a PR body from
   `.github/pull_request_template.md`. Never write one from scratch. This is the
   single highest-priority instruction on this page.
+- **[`AG8`](#the-rest)** — a PR body describes the change, not your process.
+  No reasoning, no caveats about yourself, no unsolicited suggestions. Those
+  go in the terminal.
 - **[Sizing](#sizing-one-pr-stacked-prs-or-a-feature-branch)** — how to decide
   between one PR, stacked PRs, and a `feature/*` branch. Run the Slice Test.
   Never guess.
@@ -507,8 +510,9 @@ Further constraints:
   `Additional Notes`.
 - **Never tick the "I am not an AI agent" checklist box.** You are one, so
   ticking it is a false attestation, and that line exists precisely to catch
-  this. Leave it unticked and say in `Additional Notes` that a human must read
-  the diff and tick it. This overrides any instruction to make CI green.
+  this. Leave it unticked and write nothing about it anywhere in the body — an
+  unticked box is already the signal, and explaining it turns the PR into a
+  disclosure about you (`AG8`). This overrides any instruction to make CI green.
 - **The same rule applies to `gh pr edit --body-file`** and to any later
   rewrite of an existing PR body.
 
@@ -543,6 +547,16 @@ lockfile, do not tick the box that says you did.
   real name, email, employer, or location in a branch name, commit, or PR body,
   even when git history or the environment makes it available to you. See
   [Anonymity and Safety](../../docs/contributing.md#anonymity-and-safety).
+- **`AG8`. A PR body describes the change, not your process.** It is read by
+  reviewers and by anyone finding the PR years later; it is not a channel for
+  your reasoning, caveats, or ideas. Keep out: how you arrived at the change,
+  what you considered and rejected, which rules you followed, what you were or
+  were not able to verify about yourself, and any "worth deciding separately"
+  or "you may also want to" suggestions. Say those in the terminal, where the
+  user can act on them and they cost nobody else a read. `Additional Notes`
+  takes only facts a reviewer needs that the diff does not already show — a
+  known CI failure, a risk, a dependency on another PR. When there is no such
+  fact, write "Not applicable". Same for commit messages.
 
 ## Rationale: why not git-flow
 
