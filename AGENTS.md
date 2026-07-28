@@ -86,62 +86,9 @@ to you from git history, the environment, or anywhere else.
 
 ## Impeccable UI QA
 
-When changing Django templates, landing pages, React UI, or any `*.tsx` file that affects visible
-UI, use the Impeccable workflow when it is available to preview and inspect the result before
-handing off.
-
-### Setting it up
-
-Current documentation lives at <https://impeccable.style/docs/>; prefer it over anything restated
-here. Impeccable builds are per harness, and two are already committed: `.claude/skills/impeccable/`
-for Claude Code and `.github/skills/impeccable/` (plus the `postToolUse` hook in
-`.github/hooks/impeccable.json`) for the others that read `.github/`.
-
-- **Try the committed build first.** If your harness reads one of those two paths, the skill already
-  works — invoke `/impeccable <command>`. Confirm with
-  `node .claude/skills/impeccable/scripts/detect.mjs <file>`, which prints a findings count.
-- **Never install or update as part of another task.** Both commands rewrite the ~250 committed
-  files under `.claude/skills/` and `.github/skills/`, which would bury your actual change. If your
-  harness has no build here, say so and carry on without Impeccable — do not install to fix it.
-- **Installing and updating is deliberate maintenance**, run by a human or on explicit request, from
-  the repository root, then reload the agent. Needs Node 22.12+. Review `git status` afterwards and
-  commit the result on its own as `[ci]`.
-
-  ```sh
-  npx impeccable install     # adds the build for a harness we do not carry yet
-  npx impeccable update      # refreshes the committed builds
-  ```
-- **Codex needs its own selected install target.** If `/impeccable` is missing in Codex even though
-  the Claude/GitHub builds exist, run `npx impeccable install`, choose `Customize`, select
-  `Codex CLI (.agents/skills)`, then choose `Global (~)` unless you intentionally want a
-  project-local Codex build. Reload Codex afterwards. The installer writes the Codex skill under
-  `~/.agents/skills/impeccable/` and may write a project hook manifest at `.codex/hooks.json`.
-  Open `/hooks` in Codex and approve the Impeccable hook if prompted.
-- **Turn the detector hook on per clone** with `/impeccable hooks on`. It is configured in
-  `.claude/settings.local.json`, which is machine-local and never cloned.
-- **Local state regenerates.** `.impeccable/` is ignored, so a fresh clone has no live config and no
-  design sidecar. `/impeccable live` writes its own config on first run; `/impeccable document`
-  rebuilds the sidecar from the committed `DESIGN.md`.
-- **Live mode needs a server.** Start Django first, then `/impeccable live`; it attaches to the page
-  the browser actually loads.
-
-### Rules
-
-Impeccable is a local QA aid only:
-
-- Do not commit Impeccable live-injection snippets, including markers like
-  `impeccable-live-start`, `impeccable-live-end`, or localhost `live.js` scripts.
-- Do not create shared Django templates or partials solely to load Impeccable. The tool may change,
-  so live wiring must remain local and temporary.
-- Before committing template or UI work, check that no tracked file contains Impeccable live
-  markers:
-
-  ```sh
-  rg "impeccable-live|localhost:8400/live.js" . --glob '!AGENTS.md'
-  ```
-
-- If a template such as `src/templates/base.html` was modified only to support local Impeccable
-  preview, revert or remove that local-only change before staging commits.
+- Touching a `*.tsx` in `src/ui/`, a Django template under `src/*/templates/`, or anything else
+  that changes visible UI? Read
+  [`.claude/design/impeccable.md`](.claude/design/impeccable.md) first.
 
 ## Documentation
 
