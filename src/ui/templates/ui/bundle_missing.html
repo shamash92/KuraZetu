@@ -1,0 +1,218 @@
+{% comment %}
+Shown when the webpack manifest is missing, which means the frontend has not
+been built yet. Deliberately standalone — no base.html, no tailwind, no
+staticfiles, no webfonts — so it still renders on a setup where those are not
+ready either. Tokens are inlined from the Perk design language rather than
+imported, for the same reason.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>One more step — Kura Zetu setup</title>
+        <style>
+            :root {
+                --red: #c44539;
+
+                --paper: #f7f6f3;
+                --card: #ffffff;
+
+                --ink: #0d0d0d;
+                --mute: #6b6d72;
+                --mute-2: #9a9da3;
+
+                --rule-08: rgba(13, 13, 13, 0.07);
+                --rule-16: rgba(13, 13, 13, 0.14);
+
+                --mesh-grid: rgba(40, 50, 60, 0.04);
+                --paper-grad-1: #faf9f6;
+                --paper-grad-2: #f0efea;
+                --paper-grad-3: #e7e6e0;
+
+                --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+                --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+            }
+
+            * { box-sizing: border-box; }
+            html, body { margin: 0; padding: 0; }
+
+            body {
+                position: relative;
+                min-height: 100vh;
+                font-family: var(--sans);
+                color: var(--ink);
+                background: var(--paper);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+
+            /* Paper grid, lifted from the Perk page shell. Pure CSS, no assets. */
+            .paper-bg {
+                position: absolute;
+                inset: 0;
+                z-index: 0;
+                pointer-events: none;
+                background:
+                    repeating-linear-gradient(0deg,  var(--mesh-grid) 0 0.5px, transparent 0.5px 40px),
+                    repeating-linear-gradient(90deg, var(--mesh-grid) 0 0.5px, transparent 0.5px 40px),
+                    radial-gradient(ellipse 80% 50% at 50% 18%, var(--paper-grad-1) 0%, var(--paper-grad-2) 60%, var(--paper-grad-3) 100%);
+            }
+
+            main {
+                position: relative;
+                z-index: 1;
+                max-width: 680px;
+                margin: 0 auto;
+                padding: clamp(48px, 10vh, 96px) 32px 72px;
+            }
+
+            .brand-name {
+                font-size: 20px;
+                font-weight: 800;
+                letter-spacing: -0.035em;
+                line-height: 1;
+                margin: 0 0 56px;
+            }
+            .brand-name::after {
+                content: ".";
+                color: var(--red);
+                font-weight: 900;
+            }
+
+            .status {
+                display: flex;
+                align-items: baseline;
+                gap: 14px;
+                font-family: var(--mono);
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: var(--mute-2);
+                margin: 0;
+            }
+            .status .code {
+                font-size: 15px;
+                letter-spacing: 0.1em;
+                color: var(--mute);
+            }
+
+            h1 {
+                font-size: clamp(26px, 3.4vw, 36px);
+                font-weight: 800;
+                letter-spacing: -0.03em;
+                line-height: 1.14;
+                margin: 14px 0 0;
+                max-width: 20ch;
+            }
+
+            .lede {
+                font-size: 16.5px;
+                line-height: 1.62;
+                color: var(--mute);
+                margin: 18px 0 0;
+                max-width: 56ch;
+            }
+
+            .step {
+                font-family: var(--mono);
+                font-size: 10.5px;
+                font-weight: 600;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                color: var(--mute);
+                margin: 40px 0 12px;
+            }
+
+            pre {
+                margin: 0;
+                background: var(--card);
+                border: 1px solid var(--rule-08);
+                border-radius: 12px;
+                padding: 20px 22px;
+                overflow-x: auto;
+                box-shadow: 0 1px 2px rgba(13, 13, 13, 0.04);
+            }
+            code {
+                font-family: var(--mono);
+                font-size: 13.5px;
+                line-height: 1.9;
+                color: var(--ink);
+            }
+            code .prompt {
+                color: var(--mute-2);
+                user-select: none;
+            }
+
+            .after {
+                margin: 18px 0 0;
+                font-size: 15px;
+                line-height: 1.6;
+                color: var(--mute);
+            }
+
+            footer {
+                margin: 48px 0 0;
+                padding: 18px 0 0;
+                border-top: 1px solid var(--rule-08);
+                color: var(--mute-2);
+            }
+            footer .note {
+                margin: 0;
+                font-size: 13.5px;
+                line-height: 1.55;
+                max-width: 52ch;
+            }
+            footer .link {
+                margin: 12px 0 0;
+                font-family: var(--mono);
+                font-size: 10.5px;
+                font-weight: 500;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--mute);
+            }
+            footer a {
+                color: var(--ink);
+                text-decoration: none;
+                border-bottom: 1px solid var(--rule-16);
+            }
+            footer a:hover { border-bottom-color: var(--ink); }
+        </style>
+    </head>
+    <body>
+        <div class="paper-bg"></div>
+
+        <main>
+            <p class="brand-name">Kura Zetu</p>
+
+            <p class="status">
+                <span class="code">503</span>
+                <span>Frontend not built</span>
+            </p>
+
+            <h1>One more step and you're set</h1>
+
+            <p class="lede">
+                Everything on the backend is working. The frontend just needs to be built
+                once, which takes a couple of minutes.
+            </p>
+
+            <p class="step">Run this in a second terminal</p>
+
+            <pre><code><span class="prompt">$</span> cd src/ui
+<span class="prompt">$</span> pnpm install
+<span class="prompt">$</span> pnpm run dev</code></pre>
+
+            <p class="after">Reload once webpack reports a successful compile.</p>
+
+            <footer>
+                <p class="link">
+                    Full instructions —
+                    <a href="https://github.com/shamash92/KuraZetu/blob/main/docs/tutorials/setup.md">setup guide</a>
+                </p>
+            </footer>
+        </main>
+    </body>
+</html>
