@@ -158,8 +158,10 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
+
     cd ..
     pre-commit install --hook-type pre-commit --hook-type commit-msg
+    cd src/
     ```
 ```
 ```{tab-item} Multipass (Windows and MacOS)
@@ -179,11 +181,19 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
+
     cd ..
     pre-commit install --hook-type pre-commit --hook-type commit-msg
+    cd /home/ubuntu/KuraZetu/src
     ```
 ```
 ````
+
+```{important}
+Run the rest of this backend guide from `src/`, with the virtual environment
+active. In a new shell, run `cd src/` (or `cd /home/ubuntu/KuraZetu/src` in the
+VM) and `source venv/bin/activate` again before continuing.
+```
 
 ```{important}
 `black`, `isort`, and `pytest-black` are pinned to exact versions in `src/requirements.txt`, and
