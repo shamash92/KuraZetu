@@ -10,8 +10,9 @@ This guide assumes you have already set up your django project and run migration
 
 1. **Open the Django Shell**
 
-````{tabs}
-```{group-tab} Non-docker setup
+````{tab-set}
+```{tab-item} Non-docker setup
+:sync: non-docker
 
 - Run the following command in your terminal to open the Django shell:
 
@@ -20,7 +21,9 @@ This guide assumes you have already set up your django project and run migration
     ```
 ```
 
-```{group-tab} Docker
+```{tab-item} Docker
+:sync: docker
+
 - Run the following command in your terminal to open the Django shell:
 
     ```bash
@@ -85,16 +88,20 @@ This guide assumes you have already set up your django project and run migration
 
     The script `parse_polling_station_data.py` is used for this purpose. It reads the CSV files and generates the corresponding GeoJSON file `cleaned_polling_station_data.json`.
 
-````{tabs}
+````{tab-set}
 
-```{group-tab} Non-docker setup
+```{tab-item} Non-docker setup
+:sync: non-docker
+
 - Run the following command in your terminal to convert the CSV files to GeoJSON format:
     ```bash
     python stations/scripts/parse_polling_station_data.py
     ```
 ```
 
-```{group-tab} Docker
+```{tab-item} Docker
+:sync: docker
+
 - Run the following command in your terminal to convert the CSV files to GeoJSON format:
     ```bash
     docker compose exec web python stations/scripts/parse_polling_station_data.py
@@ -105,14 +112,18 @@ This guide assumes you have already set up your django project and run migration
 
 6. **Save Polling Center and Polling Station Data**
 
-````{tabs}
-```{group-tab} Non-docker setup
+````{tab-set}
+```{tab-item} Non-docker setup
+:sync: non-docker
+
 - If already inside the Django shell, exit and run the following command:
     ```bash
     python stations/scripts/save_polling_stations.py
     ```
 ```
-```{group-tab} Docker
+```{tab-item} Docker
+:sync: docker
+
 - Run the following command in your terminal to save the polling stations data:
     ```bash
     docker compose exec web python stations/scripts/save_polling_stations.py
@@ -125,15 +136,19 @@ This guide assumes you have already set up your django project and run migration
 
     This script saves the polling center pin locations to the database. It reads the `cleaned_polling_station_data.json` file and saves the `lat/lng` data to the database.
 
-````{tabs}
-```{group-tab} Non-docker setup
+````{tab-set}
+```{tab-item} Non-docker setup
+:sync: non-docker
+
 - Run the following command in your terminal to save the polling center pin locations:
 
     ```bash
     python stations/scripts/save_polling_center_pin_locations.py
     ```
 ```
-```{group-tab} Docker
+```{tab-item} Docker
+:sync: docker
+
 - Run the following command in your terminal to save the polling center pin locations:
     ```bash
     docker compose exec web python stations/scripts/save_polling_center_pin_locations.py
@@ -146,15 +161,19 @@ This guide assumes you have already set up your django project and run migration
 
     This script checks for any errors e.g missing lat/lng data, pin outside ward boundaries, missing parent ward boundary etc. and save the errors to the `PollingCenter` model
 
-````{tabs}
-```{group-tab} Non-docker setup
+````{tab-set}
+```{tab-item} Non-docker setup
+:sync: non-docker
+
 - Run the following command in your terminal to check for pin location errors:
 
     ```bash
     python stations/scripts/polling_center_pin_errors_parse.py
     ```
 ```
-```{group-tab} Docker
+```{tab-item} Docker
+:sync: docker
+
 - Run the following command in your terminal to check for pin location errors:
     ```bash
     docker compose exec web python stations/scripts/polling_center_pin_errors_parse.py
@@ -172,8 +191,10 @@ This guide assumes you have already set up your django project and run migration
     This step is only for development environment and to visualise data. In production, you will need to create a superuser and assign them a polling center using the admin panel and ofcourse, data will come from users who will be submitting results from the polling stations through the app.
     ```
 
-````{tabs}
-```{group-tab} Non-docker setup
+````{tab-set}
+```{tab-item} Non-docker setup
+:sync: non-docker
+
 - Run the following command in your terminal to create fake polling station results:
 
     ```bash
@@ -181,7 +202,9 @@ This guide assumes you have already set up your django project and run migration
     python results/scripts/create_100k_pres_results.py
     ```
 ```
-```{group-tab} Docker
+```{tab-item} Docker
+:sync: docker
+
 - Run the following command in your terminal to create fake polling station results:
     ```bash
     docker compose exec web python results/scripts/load_fake_results.py

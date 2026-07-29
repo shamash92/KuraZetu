@@ -10,8 +10,9 @@ There are two ways to run the project: using Docker or setting it up locally. Th
 
 ## Prerequisites
 
-```` {tabs}
-```{group-tab} Ubuntu
+````{tab-set}
+```{tab-item} Ubuntu
+:sync: ubuntu
 
 Ensure you have the following installed:
 
@@ -22,7 +23,8 @@ Ensure you have the following installed:
 - Git
 ```
 
-```{group-tab} Windows and MacOS
+```{tab-item} Windows and MacOS
+:sync: windows-macos
 
 For Windows and MacOS users, it is recommended to use a virtual machine to run the project. We strongly recommend [Multipass](https://multipass.run/) to create a virtual machine with Ubuntu 24.04. Follow the instructions below to set up Multipass and create a virtual machine. NB: You can also use [VirtualBox](https://www.virtualbox.org/) or [VMware](https://www.vmware.com/) to create a virtual machine with Ubuntu 24.04, but we recommend Multipass for its simplicity, ease of creating, tearing down and tweaking the Ubuntu VM and it strips down the GUI part of the OS meaning we can create VMs in a few seconds.
 
@@ -143,8 +145,10 @@ This is supposed to be done in a separate terminal from the frontend setup. The 
 
 Create a virtual environment and install the required Python packages:
 
-````{tabs}
-```{group-tab} Ubuntu
+````{tab-set}
+```{tab-item} Ubuntu
+:sync: ubuntu
+
 - Navigate to the project directory:
     ```bash
     cd src/
@@ -158,7 +162,9 @@ Create a virtual environment and install the required Python packages:
     pre-commit install --hook-type pre-commit --hook-type commit-msg
     ```
 ```
-```{group-tab} Multipass (Windows and MacOS)
+```{tab-item} Multipass (Windows and MacOS)
+:sync: windows-macos
+
 - Open a new shell and navigate to the project directory:
 - If you are not using VSCode, you can use the following command to launch a new shell in the Multipass VM:
     ```bash
@@ -331,8 +337,10 @@ python manage.py collectstatic --noinput
 
 ### 7. Run the Development Server
 
-````{tabs}
-```{group-tab} Ubuntu or VSCode with Multipass
+````{tab-set}
+```{tab-item} Ubuntu or VSCode with Multipass
+:sync: ubuntu
+
 - Run the Django development server:
 
     ```bash
@@ -342,7 +350,9 @@ python manage.py collectstatic --noinput
 - You can now access the application at `http://127.0.0.1:8000` or `http://localhost:8000`.
 ```
 
-```{group-tab} Multipass Shell (Windows and MacOS)
+```{tab-item} Multipass Shell (Windows and MacOS)
+:sync: windows-macos
+
 - Run the Django development server:
 
     ```bash

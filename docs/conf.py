@@ -206,7 +206,6 @@ extensions = [
     "canonical_sphinx",
     "notfound.extension",
     "sphinx_design",
-    "sphinx_tabs.tabs",
     "sphinxcontrib.jquery",
     "sphinxext.opengraph",
     "sphinx_config_options",
