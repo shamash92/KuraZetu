@@ -62,6 +62,11 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 
 AUTH_USER_MODEL = "accounts.User"
 
+# Numbers entered without a country code are read as Kenyan, so 0712345678 and
+# 254712345678 both resolve to +254712345678. International numbers still work
+# when written with their own prefix.
+PHONENUMBER_DEFAULT_REGION = "KE"
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -191,10 +196,16 @@ SPECTACULAR_SETTINGS = {
     },
     # Schema tags for better organization
     "TAGS": [
-        {"name": "stations", "description": "Geographic location data for counties, constituencies, and wards"},
+        {
+            "name": "stations",
+            "description": "Geographic location data for counties, constituencies, and wards",
+        },
         {"name": "results", "description": "Election results and party information"},
         {"name": "historical", "description": "Historical election data and archives"},
-        {"name": "accounts", "description": "User authentication and account management"},
+        {
+            "name": "accounts",
+            "description": "User authentication and account management",
+        },
     ],
     # External documentation
     "EXTERNAL_DOCS": {
