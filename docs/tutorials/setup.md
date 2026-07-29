@@ -101,9 +101,9 @@ Open a new terminal to run the following commands parallel to the backend comman
    cd src/ui
    ```
 
-2. Install Nodejs and Yarn
+2. Install Nodejs
 
-   Ensure you have Nodejs (>= 20) and Yarn installed on your system. You can install them using the following commands:
+   Ensure you have Nodejs (>= 20) installed on your system. You can install it using the following commands:
 
    ```bash
     sudo apt update
@@ -111,16 +111,16 @@ Open a new terminal to run the following commands parallel to the backend comman
     sudo apt install -y nodejs
     ```
 
-3. Install Yarn globally
+3. Install pnpm globally
 
    ```bash
-   sudo npm install -g yarn
+   sudo npm install -g pnpm
    ```
 
 4. Install frontend dependencies:
 
    ```bash
-   yarn install
+   pnpm install
    ```
 
 5. Copy the example `.env.sample` file to `.env`:
@@ -132,7 +132,7 @@ Open a new terminal to run the following commands parallel to the backend comman
 6. Run the frontend development server:
 
    ```bash
-   yarn run dev
+   pnpm run dev
    ```
 
 ## 2. Setup Instructions (Django Backend)
@@ -427,7 +427,7 @@ Go back to the urls file and un-comment the lines you commented out earlier. Thi
 
 ## 3. Setup Tailwind CSS
 
-In a new terminal, run the following command to watch for CSS changes during development. No Node or yarn needed — the first run will automatically download the standalone Tailwind CLI binary into `src/.django_tailwind_cli/`.
+In a new terminal, run the following command to watch for CSS changes during development. No Node or pnpm needed — the first run will automatically download the standalone Tailwind CLI binary into `src/.django_tailwind_cli/`.
 
 ```bash
 python manage.py tailwind watch
