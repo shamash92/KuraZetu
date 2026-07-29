@@ -26,7 +26,7 @@ Ensure you have the following installed:
 ```{tab-item} Windows and MacOS
 :sync: windows-macos
 
-For Windows and MacOS users, it is recommended to use a virtual machine to run the project. We strongly recommend [Multipass](https://multipass.run/) to create a virtual machine with Ubuntu 24.04. Follow the instructions below to set up Multipass and create a virtual machine. NB: You can also use [VirtualBox](https://www.virtualbox.org/) or [VMware](https://www.vmware.com/) to create a virtual machine with Ubuntu 24.04, but we recommend Multipass for its simplicity, ease of creating, tearing down and tweaking the Ubuntu VM and it strips down the GUI part of the OS meaning we can create VMs in a few seconds.
+For Windows and MacOS users, it is recommended to use a virtual machine to run the project. We have decided to use VMs to closely mirror production, since PostGIS, GeoDjango and Celery tasks all work best in an Ubuntu environment. We strongly recommend [Multipass](https://multipass.run/) to create a virtual machine with Ubuntu 24.04. Follow the instructions below to set up Multipass and create a virtual machine. NB: You can also use [VirtualBox](https://www.virtualbox.org/) or [VMware](https://www.vmware.com/) to create a virtual machine with Ubuntu 24.04, but we recommend Multipass for its simplicity, ease of creating, tearing down and tweaking the Ubuntu VM and it strips down the GUI part of the OS meaning we can create VMs in a few seconds.
 
 #### Multipass Setup Instructions
 
@@ -195,12 +195,6 @@ active. In a new shell, run `cd src/` (or `cd /home/ubuntu/KuraZetu/src` in the
 VM) and `source venv/bin/activate` again before continuing.
 ```
 
-```{important}
-`black`, `isort`, and `pytest-black` are pinned to exact versions in `src/requirements.txt`, and
-`.pre-commit-config.yaml` pins the same versions under `rev:`. Bump both together. If they drift,
-the hook reformats a file one way and the test suite's format check rejects it the other way.
-```
-
 ### Install System Dependencies
 
 Before proceeding, install the required system dependencies for PostgreSQL, PostGIS, and GeoDjango:
@@ -259,7 +253,7 @@ DATABASE_USER=kurazetu_user
 DATABASE_PASSWORD=your_password
 DATABASE_HOST=localhost
 
-ALLOWED_HOSTS= http://localhost:8000, 127.0.0.1, localhost, 10.0.2.2, multipass-ipv4-address
+ALLOWED_HOSTS= http://localhost:8000, 127.0.0.1, localhost, 10.0.2.2, <your-multipass-ipv4-address>
 CORS_ALLOWED_ORIGINS=http://localhost:8000, http://<your-multipass-ipv4-address>
 
 # Path prefix for the real Django admin
