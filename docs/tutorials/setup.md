@@ -250,7 +250,7 @@ Copy the example `.env.local` file to `.env`:
 cp .env.local .env
 ```
 
-Edit the `.env` file to configure your environment-specific settings. e.g.
+Edit the values already present in `.env` to match your environment. e.g.
 
 ```bash
 # Database settings
@@ -258,12 +258,12 @@ DATABASE_NAME=kurazetu_db
 DATABASE_USER=kurazetu_user
 DATABASE_PASSWORD=your_password
 DATABASE_HOST=localhost
-DATABASE_PORT=5432
 
 ALLOWED_HOSTS= http://localhost:8000, 127.0.0.1, localhost, 10.0.2.2, multipass-ipv4-address
 CORS_ALLOWED_ORIGINS=http://localhost:8000, http://<your-multipass-ipv4-address>
 
-# Other environment variables
+# Path prefix for the real Django admin
+ADMIN_URL_SUFFIX=backend
 ```
 
 ### 4. Set Up PostgreSQL and PostGIS
@@ -413,7 +413,7 @@ To set up the OTP, follow these steps:
 python manage.py runserver
 ```
 
-- Login to the Django admin interface at `http://localhost:8000/<ADMIN_URL_SUFFIX>` or `http://<your-multipass-ipv4-address>:8000/ADMIN_URL_SUFFIX` using the superuser credentials you created earlier.
+- Login to the Django admin interface at `http://localhost:8000/backend` or `http://<your-multipass-ipv4-address>:8000/backend` using the superuser credentials you created earlier.
 - Under TOTP devices, click "Add". After filling in the form, click on "Save and Continue editing". At the bottom of the page, you will see a QR code link.Click it and scan this QR code using an authenticator app (e.g., Google Authenticator, Microsoft Authenticator etc.) on your phone.
 
 Go back to the urls file and un-comment the lines you commented out earlier. This will enable the OTP authentication for the admin interface.
