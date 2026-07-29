@@ -17,8 +17,12 @@ def get_js_bundle():
     if IS_PROD is False:
         # Local file path
         url = os.path.join(BASE_DIR, "ui/static/ui/manifest.json")
-        with open(url, "r") as f:
-            manifest = json.load(f)
+        try:
+            with open(url, "r") as f:
+                manifest = json.load(f)
+        except FileNotFoundError:
+            # webpack has not run yet, so there is no bundle to serve.
+            return None
     else:
         # S3 endpoint for prod
         s3_endpoint = config("S3_ENDPOINT_URL")
@@ -34,5 +38,8 @@ def get_js_bundle():
 
 def react_view(request):
     js_bundle = get_js_bundle()
+
+    if js_bundle is None:
+        return render(request, "ui/bundle_missing.html", status=503)
 
     return render(request, "ui/index.html", {"js_bundle": js_bundle})
