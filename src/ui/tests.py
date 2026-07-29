@@ -40,5 +40,6 @@ class TestReactView:
         assert response.status_code == 503
 
         body = response.content.decode()
+        assert "pnpm install" in body
         assert "pnpm run dev" in body
-        assert "has not been built" in body
+        assert "One more step" in body
