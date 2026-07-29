@@ -154,7 +154,7 @@ class Aspirant(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.level} - {self.first_name + ' '} {self.last_name} - {self.party.name}"
+        return f"{self.level} - {self.first_name} {self.last_name} - {self.party.name}"
 
 
 # Results

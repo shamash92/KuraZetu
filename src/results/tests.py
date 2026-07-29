@@ -233,8 +233,7 @@ class TestAspirantModel:
             level="governor",
             county=county,
         )
-        # Asserted as the code behaves today, double space included.
-        assert str(aspirant) == "governor - John  Doe - Test Party"
+        assert str(aspirant) == "governor - John Doe - Test Party"
 
 
 class TestPollingStationGovernorResultsModel:
