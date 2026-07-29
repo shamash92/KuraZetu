@@ -1,4 +1,5 @@
 import os
+import logging
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -9,6 +10,8 @@ from accounts.forms import LoginForm, PasswordResetForm
 from accounts.models import User
 
 BASE_DIR = os.path.dirname((os.path.dirname(os.path.abspath(__file__))))
+
+logger = logging.getLogger(__name__)
 
 
 def home_view(request):
@@ -26,7 +29,6 @@ class LoginView(generic.FormView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print("form validation in views")
         user = User.objects.get(phone_number=form.cleaned_data["phone_number"])
 
         try:
@@ -34,12 +36,10 @@ class LoginView(generic.FormView):
                 phone_number=form.cleaned_data["phone_number"],
                 password=form.cleaned_data["password"],
             )
-            print(user, "user")
 
         except Exception as e:
-            print(e)
+            logger.error("Exception: %s", e)
 
-        print(user, "user")
         if user is not None:
             if user.is_active:
                 login(self.request, user)
@@ -62,20 +62,13 @@ class PasswordResetView(generic.FormView):
 
         # This method is called when valid form data has been POSTed.
 
-        phone_number = form.cleaned_data.get("phone_number")
-        password = form.cleaned_data.get("password")
-        print(phone_number, "should be phone number")
-        print(password, "should be password")
-
-        print("form validation in views")
-
         try:
             user = User.objects.get(phone_number=form.cleaned_data.get("phone_number"))
             user.set_password(form.cleaned_data.get("password"))
             user.save()
 
         except Exception as e:
-            print(e)
+            logger.error("Exception: %s", e)
         return super().form_valid(form)
 
 

@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login
 
+import logging
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
@@ -9,6 +10,8 @@ from rest_framework.views import APIView
 from accounts.api.serializers import PhoneNumberSerializer, UserSerializer
 from accounts.models import User
 from stations.models import PollingCenter, Ward
+
+logger = logging.getLogger(__name__)
 
 
 class SignupView(APIView):
@@ -25,17 +28,13 @@ class SignupView(APIView):
         """
 
         data = request.data
-        print("Received data:", data)
 
         ward_code = data["ward_code"]
 
-        print("Ward code:", ward_code)
-
         try:
             ward = Ward.objects.get(number=ward_code)
-            print("Ward found:", ward)
         except Ward.DoesNotExist:
-            print("Ward not found")
+            logger.debug("Ward not found for code: %s", ward_code)
             return Response(
                 {"error": "Ward not found"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -43,9 +42,6 @@ class SignupView(APIView):
         serializer = UserSerializer(data=data["data"])
 
         if serializer.is_valid():
-            # print("Serializer is valid:", serializer.is_valid())
-            print("Serializer validated data:", serializer.validated_data)
-
             try:
                 polling_center = PollingCenter.objects.get(
                     code=data["data"]["polling_center"],
@@ -53,7 +49,6 @@ class SignupView(APIView):
                 )
 
             except PollingCenter.DoesNotExist:
-                print("Polling center not found")
                 return Response(
                     {"error": "Polling center not found"},
                     status=status.HTTP_200_OK,
@@ -73,14 +68,12 @@ class SignupView(APIView):
             )
             if user:
                 token, created = Token.objects.get_or_create(user=user)
-                print("Token from server:", token)
                 #  authenticate
                 user = authenticate(
                     username=data["data"]["phone_number"],
                     password=data["data"]["password"],
                 )
                 if user is None:
-                    print("User authentication failed")
                     return Response(
                         {"error": "User authentication failed"},
                         status=status.HTTP_200_OK,
@@ -90,7 +83,7 @@ class SignupView(APIView):
                     if user.is_active:
                         login(request, user)
 
-                print("User authenticated:", user)
+                logger.debug("User authenticated: user_id=%s", user.id)
 
                 return Response(
                     {
@@ -103,14 +96,13 @@ class SignupView(APIView):
                     status=status.HTTP_201_CREATED,
                 )
             else:
-                print("User not found after creation")
                 return Response(
                     {"error": "User not found after creation"},
                     status=status.HTTP_200_OK,
                 )
 
         else:
-            print("Serializer errors:", serializer.errors)
+            logger.debug("Signup validation failed")
             return Response(
                 {
                     "error": "Invalid data",
@@ -132,15 +124,14 @@ class LoginView(APIView):
         Handle POST request for user login.
         """
         data = request.data
-        print("Login data received:", data)  # dangerous to log in production
 
         phone_serializer = PhoneNumberSerializer(
             data={"number": data.get("phone_number", "")}
         )
 
         if not phone_serializer.is_valid(raise_exception=False):
-            print(
-                "Phone number validation errors:",
+            logger.debug(
+                "Phone number validation errors: %s",
                 phone_serializer.errors.get("number"),
             )
             return Response(
@@ -161,15 +152,14 @@ class LoginView(APIView):
             expo_push_token = data.get("expo_push_token", None)
             if expo_push_token:
                 if user.expo_push_token == expo_push_token:
-                    print("Expo push token is the same, no update needed.")
+                    logger.debug("Expo push token is the same, no update needed.")
                 else:
-                    print("Updating expo push token for user:", user)
+                    logger.debug("Updating expo push token for user_id=%s", user.id)
                     user.expo_push_token = expo_push_token
                     user.save()
-                    print("Expo push token updated:", expo_push_token)
+                    logger.debug("Expo push token updated for user_id=%s:", user.id)
 
             token, created = Token.objects.get_or_create(user=user)
-            print("Token created:", token)
             login(request, user)
             return Response(
                 {
@@ -182,7 +172,7 @@ class LoginView(APIView):
                 status=status.HTTP_200_OK,
             )
         else:
-            print("User authentication failed")
+            logger.debug("User authentication failed")
             return Response(
                 {"error": "Invalid credentials"},
                 status=status.HTTP_400_BAD_REQUEST,
