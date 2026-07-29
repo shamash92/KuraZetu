@@ -30,7 +30,7 @@ if not settings.DEBUG:
     admin.site.__class__ = OTPAdminSite
 
 
-admin_url_suffix = config("ADMIN_URL_SUFFIX", default="admin/")
+admin_url_suffix = config("ADMIN_URL_SUFFIX", default="backend")
 urlpatterns = [
     path(f"{admin_url_suffix}/", admin.site.urls),  # to use OTP and dynamic name
     path("admin/", include("admin_honeypot.urls")),
