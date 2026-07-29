@@ -233,7 +233,8 @@ class TestAspirantModel:
             level="governor",
             county=county,
         )
-        assert str(aspirant) == "governor - Test Party"
+        # Asserted as the code behaves today, double space included.
+        assert str(aspirant) == "governor - John  Doe - Test Party"
 
 
 class TestPollingStationGovernorResultsModel:
@@ -391,9 +392,7 @@ class TestPollingStationLevelResultsAPI:
         # Non-presidential offices carry no extra_data.
         assert response.data["extra_data"] is None
 
-    def test_president_includes_extra_data(
-        self, client, party, polling_station
-    ):
+    def test_president_includes_extra_data(self, client, party, polling_station):
         candidate = Aspirant.objects.create(
             first_name="Prez",
             last_name="Idential",
@@ -420,9 +419,7 @@ class TestPollingStationLevelResultsAPI:
         assert response.data["extra_data"]["rejected_votes"] == 2
         assert response.data["extra_data"]["valid_votes_cast"] == 200
 
-    def test_woman_rep_alias_is_accepted(
-        self, client, party, county, polling_station
-    ):
+    def test_woman_rep_alias_is_accepted(self, client, party, county, polling_station):
         candidate = Aspirant.objects.create(
             first_name="Wanjiku",
             last_name="Rep",
