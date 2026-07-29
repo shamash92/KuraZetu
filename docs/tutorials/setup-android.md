@@ -17,15 +17,19 @@ The value for `EXPO_PUBLIC_DEVELOPMENT_IP_ADDRESS` is the computer local IP addr
 
 To obtain this, run the following command in your terminal:
 
-````{tabs}
-```{group-tab} MacOS
+````{tab-set}
+```{tab-item} MacOS
+:sync: macos
+
 - run the following command in your terminal:
     ```bash
     ipconfig getifaddr en0
     ```
 ```
 
-```{group-tab} Windows
+```{tab-item} Windows
+:sync: windows
+
 - run the following command in your terminal:
 
     ```shell
@@ -33,7 +37,9 @@ To obtain this, run the following command in your terminal:
     ```
 ```
 
-```{group-tab} Linux (Ubuntu)
+```{tab-item} Linux (Ubuntu)
+:sync: linux-ubuntu
+
 - run the following command in your terminal:
 
     ```bash
@@ -52,9 +58,10 @@ yarn install
 
 ## 2. Running the App
 
-````{tabs}
+````{tab-set}
 
-```{group-tab} Android Studio Emulator
+```{tab-item} Android Studio Emulator
+:sync: android-studio-emulator
 
 1. Install Android Studio
     Download and install [Android Studio](https://developer.android.com/studio).
@@ -73,7 +80,8 @@ yarn install
     - Press `a` in the Expo CLI to launch the app on the emulator.
 ```
 
-```{group-tab} Expo Go
+```{tab-item} Expo Go
+:sync: expo-go
 
 1. **Install Expo Go**
     Download Expo Go from [Google Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent).
@@ -87,7 +95,8 @@ yarn install
     - Scan the QR code with Expo Go to open the app.
 ```
 
-```{group-tab} Expo Development Builds (Recommended)
+```{tab-item} Expo Development Builds (Recommended)
+:sync: expo-development-builds
 
 1. Before you  start:
     ``` {important}

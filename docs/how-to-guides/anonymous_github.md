@@ -14,9 +14,9 @@ It is a tragic reflection of our current state that such measures are necessary.
 
 ## Setting Up an Anonymous Email
 
-```` {tabs}
+````{tab-set}
 
-```{tab} ProtonMail
+```{tab-item} ProtonMail
 
 1. **ProtonMail**:
 
@@ -26,7 +26,7 @@ It is a tragic reflection of our current state that such measures are necessary.
 
 ```
 
-```{tab} Tutanota
+```{tab-item} Tutanota
 
 2. **Tutanota**:
 
