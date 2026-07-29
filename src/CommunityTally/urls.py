@@ -1,27 +1,23 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.urls import include, path, re_path
+from django.views.generic import TemplateView
 
+from decouple import config
+from django_otp.admin import OTPAdminSite
+from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
 from rest_framework import permissions
-from decouple import config
+
 from accounts.views import home_view
 from ui.views import react_view
-
-
-from django.contrib.auth.models import User
-
-from django_otp.admin import OTPAdminSite
-from django_otp.plugins.otp_totp.models import TOTPDevice
-from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
-from django.contrib import admin
-
-from django.views.generic import TemplateView
 
 # Django admin customizations
 admin.site.site_header = "Kura Zetu Admin"
@@ -65,7 +61,6 @@ urlpatterns = [
     path("api/accounts/", include("accounts.api.urls")),
     path("api/results/", include("results.api.urls")),
     path("api/historical/", include("historical.api.urls")),
-
     path("", home_view, name="home"),
     re_path(r"ui/.*", react_view, name="react"),
     path("__reload__/", include("django_browser_reload.urls")),
