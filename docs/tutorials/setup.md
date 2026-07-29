@@ -26,7 +26,7 @@ Ensure you have the following installed:
 ```{tab-item} Windows and MacOS
 :sync: windows-macos
 
-For Windows and MacOS users, it is recommended to use a virtual machine to run the project. We strongly recommend [Multipass](https://multipass.run/) to create a virtual machine with Ubuntu 24.04. Follow the instructions below to set up Multipass and create a virtual machine. NB: You can also use [VirtualBox](https://www.virtualbox.org/) or [VMware](https://www.vmware.com/) to create a virtual machine with Ubuntu 24.04, but we recommend Multipass for its simplicity, ease of creating, tearing down and tweaking the Ubuntu VM and it strips down the GUI part of the OS meaning we can create VMs in a few seconds.
+For Windows and MacOS users, it is recommended to use a virtual machine to run the project. We have decided to use VMs to closely mirror production, since PostGIS, GeoDjango and Celery tasks all work best in an Ubuntu environment. We strongly recommend [Multipass](https://multipass.run/) to create a virtual machine with Ubuntu 24.04. Follow the instructions below to set up Multipass and create a virtual machine. NB: You can also use [VirtualBox](https://www.virtualbox.org/) or [VMware](https://www.vmware.com/) to create a virtual machine with Ubuntu 24.04, but we recommend Multipass for its simplicity, ease of creating, tearing down and tweaking the Ubuntu VM and it strips down the GUI part of the OS meaning we can create VMs in a few seconds.
 
 #### Multipass Setup Instructions
 
@@ -101,9 +101,9 @@ Open a new terminal to run the following commands parallel to the backend comman
    cd src/ui
    ```
 
-2. Install Nodejs and Yarn
+2. Install Nodejs
 
-   Ensure you have Nodejs (>= 20) and Yarn installed on your system. You can install them using the following commands:
+   Ensure you have Nodejs (>= 20) installed on your system. You can install it using the following commands:
 
    ```bash
     sudo apt update
@@ -111,16 +111,16 @@ Open a new terminal to run the following commands parallel to the backend comman
     sudo apt install -y nodejs
     ```
 
-3. Install Yarn globally
+3. Install pnpm globally
 
    ```bash
-   sudo npm install -g yarn
+   sudo npm install -g pnpm
    ```
 
 4. Install frontend dependencies:
 
    ```bash
-   yarn install
+   pnpm install
    ```
 
 5. Copy the example `.env.sample` file to `.env`:
@@ -132,7 +132,7 @@ Open a new terminal to run the following commands parallel to the backend comman
 6. Run the frontend development server:
 
    ```bash
-   yarn run dev
+   pnpm run dev
    ```
 
 ## 2. Setup Instructions (Django Backend)
@@ -158,8 +158,10 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
+
     cd ..
     pre-commit install --hook-type pre-commit --hook-type commit-msg
+    cd src/
     ```
 ```
 ```{tab-item} Multipass (Windows and MacOS)
@@ -179,16 +181,18 @@ Create a virtual environment and install the required Python packages:
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
+
     cd ..
     pre-commit install --hook-type pre-commit --hook-type commit-msg
+    cd /home/ubuntu/KuraZetu/src
     ```
 ```
 ````
 
 ```{important}
-`black`, `isort`, and `pytest-black` are pinned to exact versions in `src/requirements.txt`, and
-`.pre-commit-config.yaml` pins the same versions under `rev:`. Bump both together. If they drift,
-the hook reformats a file one way and the test suite's format check rejects it the other way.
+Run the rest of this backend guide from `src/`, with the virtual environment
+active. In a new shell, run `cd src/` (or `cd /home/ubuntu/KuraZetu/src` in the
+VM) and `source venv/bin/activate` again before continuing.
 ```
 
 ### Install System Dependencies
@@ -240,7 +244,7 @@ Copy the example `.env.local` file to `.env`:
 cp .env.local .env
 ```
 
-Edit the `.env` file to configure your environment-specific settings. e.g.
+Edit the values already present in `.env` to match your environment. e.g.
 
 ```bash
 # Database settings
@@ -248,12 +252,12 @@ DATABASE_NAME=kurazetu_db
 DATABASE_USER=kurazetu_user
 DATABASE_PASSWORD=your_password
 DATABASE_HOST=localhost
-DATABASE_PORT=5432
 
-ALLOWED_HOSTS= http://localhost:8000, 127.0.0.1, localhost, 10.0.2.2, multipass-ipv4-address
+ALLOWED_HOSTS= http://localhost:8000, 127.0.0.1, localhost, 10.0.2.2, <your-multipass-ipv4-address>
 CORS_ALLOWED_ORIGINS=http://localhost:8000, http://<your-multipass-ipv4-address>
 
-# Other environment variables
+# Path prefix for the real Django admin
+ADMIN_URL_SUFFIX=backend
 ```
 
 ### 4. Set Up PostgreSQL and PostGIS
@@ -403,7 +407,7 @@ To set up the OTP, follow these steps:
 python manage.py runserver
 ```
 
-- Login to the Django admin interface at `http://localhost:8000/<ADMIN_URL_SUFFIX>` or `http://<your-multipass-ipv4-address>:8000/ADMIN_URL_SUFFIX` using the superuser credentials you created earlier.
+- Login to the Django admin interface at `http://localhost:8000/backend` or `http://<your-multipass-ipv4-address>:8000/backend` using the superuser credentials you created earlier.
 - Under TOTP devices, click "Add". After filling in the form, click on "Save and Continue editing". At the bottom of the page, you will see a QR code link.Click it and scan this QR code using an authenticator app (e.g., Google Authenticator, Microsoft Authenticator etc.) on your phone.
 
 Go back to the urls file and un-comment the lines you commented out earlier. This will enable the OTP authentication for the admin interface.
@@ -417,7 +421,7 @@ Go back to the urls file and un-comment the lines you commented out earlier. Thi
 
 ## 3. Setup Tailwind CSS
 
-In a new terminal, run the following command to watch for CSS changes during development. No Node or yarn needed — the first run will automatically download the standalone Tailwind CLI binary into `src/.django_tailwind_cli/`.
+In a new terminal, run the following command to watch for CSS changes during development. No Node or pnpm needed — the first run will automatically download the standalone Tailwind CLI binary into `src/.django_tailwind_cli/`.
 
 ```bash
 python manage.py tailwind watch
