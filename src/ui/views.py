@@ -20,8 +20,6 @@ BUNDLE_MISSING_MESSAGE = (
 
 
 def get_js_bundle():
-    print(BASE_DIR, "BASE DIR")
-
     IS_PROD = config("IS_PROD", default=False, cast=bool)
 
     if IS_PROD is False:
