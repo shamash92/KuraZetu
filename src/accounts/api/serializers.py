@@ -5,7 +5,7 @@ from accounts.models import User
 
 
 class PhoneNumberSerializer(Serializer):
-    number = PhoneNumberField(region="KE", required=True)
+    number = PhoneNumberField(required=True)
 
 
 class UserSerializer(ModelSerializer):

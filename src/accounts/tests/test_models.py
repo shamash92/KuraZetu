@@ -63,9 +63,16 @@ class TestUserModel:
         # Falling back to the phone number must not expose it in full.
         assert user.get_full_name() == "+254700000XXX"
 
+    def test_local_phone_number_is_normalised(self):
+        # PHONENUMBER_DEFAULT_REGION makes the local spelling valid.
+        user = User.objects.create_user(
+            phone_number="0700000000", password="testpassword"
+        )
+        assert str(user.phone_number) == "+254700000000"
+
     def test_unconventional_phone_number(self):
-        with pytest.raises(ValueError, match="Invalid phone number format"):
-            User.objects.create_user(phone_number="0700000000", password="testpassword")
+        with pytest.raises(ValidationError, match="Enter it with the country code"):
+            User.objects.create_user(phone_number="12", password="testpassword")
 
     def test_get_full_name(self):
         user = User.objects.create_user(

@@ -62,6 +62,11 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 
 AUTH_USER_MODEL = "accounts.User"
 
+# Numbers entered without a country code are read as Kenyan, so 0712345678 and
+# 254712345678 both resolve to +254712345678. International numbers still work
+# when written with their own prefix.
+PHONENUMBER_DEFAULT_REGION = "KE"
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
