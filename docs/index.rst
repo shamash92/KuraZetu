@@ -70,7 +70,8 @@ Contributing
 The workflow to follow, and the reasoning behind the stack you will work in.
 
 * **Process:** :doc:`Contributing guidelines <contributing>`
-* **Background:** :doc:`Why we chose Django, React and Webpack <explanations/why-react>`
+* **Background:** :doc:`Why we chose Django, React and Webpack <explanations/why-react>` •
+  :doc:`How logging and redaction work <explanations/logging-approach>`
 
 
 How this documentation is organized

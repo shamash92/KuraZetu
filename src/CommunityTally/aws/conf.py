@@ -10,8 +10,14 @@ AWS_FILE_EXPIRE = 200
 AWS_PRELOAD_METADATA = True
 AWS_QUERYSTRING_AUTH = False
 
-DEFAULT_FILE_STORAGE = "CommunityTally.aws.utils.MediaRootS3BotoStorage"
-STATICFILES_STORAGE = "CommunityTally.aws.utils.StaticRootS3BotoStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "CommunityTally.aws.utils.MediaRootS3BotoStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "CommunityTally.aws.utils.StaticRootS3BotoStorage",
+    },
+}
 
 S3DIRECT_REGION = config("S3_REGION_NAME")
 # AWS_S3_SIGNATURE_VERSION = "s3v4"

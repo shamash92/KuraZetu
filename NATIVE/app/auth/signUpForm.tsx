@@ -3,11 +3,14 @@ import {ArrowLeft, ChevronDown, Eye, EyeOff, Lock, User} from "lucide-react-nati
 import {Link, router, useLocalSearchParams} from "expo-router";
 import React, {useState} from "react";
 
-import LottieComponent from "@/components/lottieLoading";
+import SignupLoading from "@/components/auth/signup";
 import {apiBaseURL} from "../_utils/apiBaseURL";
 import {perk} from "../_utils/colors";
 import useAuthStore from "../_utils/authStore";
-import {windowWidth} from "../_utils/screenDimensions";
+
+// Pins the loading screen on so the animation can be watched without racing a
+// real request. Development only — must be false on any branch that merges.
+const PREVIEW_SIGNUP_LOADING = false;
 
 interface ISignUpData {
     phone_number: string;
@@ -69,7 +72,7 @@ export default function SignupScreen() {
             .catch(() => { setIsLoading(false); Alert.alert("Connection problem", "We could not create your account. Please try again."); });
     };
 
-    if (isLoading) return <View style={styles.loading}><LottieComponent name="tea" backgroundColor="transparent" width={0.42 * windowWidth} /><Text style={styles.loadingTitle}>Things are boiling nicely …</Text><Text style={styles.loadingText}>Creating your KuraZetu account.</Text></View>;
+    if (isLoading || PREVIEW_SIGNUP_LOADING) return <SignupLoading />;
 
     return <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -79,7 +82,7 @@ export default function SignupScreen() {
 
             <View style={styles.form}>
                 <FieldLabel label="Phone number" />
-                <View style={styles.phoneShell}><View style={styles.prefix}><View style={styles.flag}><View style={styles.flagRed} /></View><Text style={styles.prefixText}>+254</Text></View><TextInput style={styles.phoneInput} placeholder="712 345 678" placeholderTextColor={perk.mute2} value={formData.phoneNumber.replace("+254", "")} onChangeText={(text) => updateFormData("phoneNumber", `+254${text.replace(/^\+?254/, "")}`)} keyboardType="phone-pad" maxLength={9} /></View>
+                <View style={styles.phoneShell}><View style={styles.prefix}><View style={styles.flag}><View style={styles.flagBlack} /><View style={styles.flagWhite} /><View style={styles.flagRed} /><View style={styles.flagWhite} /><View style={styles.flagGreen} /></View><Text style={styles.prefixText}>+254</Text></View><TextInput style={styles.phoneInput} placeholder="712 345 678" placeholderTextColor={perk.mute2} value={formData.phoneNumber.replace("+254", "")} onChangeText={(text) => updateFormData("phoneNumber", `+254${text.replace(/^\+?254/, "")}`)} keyboardType="phone-pad" maxLength={9} /></View>
 
                 <View style={styles.nameRow}><View style={styles.half}><FieldLabel label="First name" /><Input icon={<User size={17} color={perk.mute} />} value={formData.firstName} onChangeText={(value) => updateFormData("firstName", value)} placeholder="First name" /></View><View style={styles.half}><FieldLabel label="Last name" /><Input icon={<User size={17} color={perk.mute} />} value={formData.lastName} onChangeText={(value) => updateFormData("lastName", value)} placeholder="Last name" /></View></View>
 
@@ -105,9 +108,8 @@ const styles = StyleSheet.create({
     backButton: {width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: perk.surface, marginBottom: 17},
     title: {fontSize: 31, lineHeight: 35, letterSpacing: -1, fontWeight: "800", color: perk.ink}, subtitle: {marginTop: 9, maxWidth: 290, fontSize: 15, lineHeight: 22, color: perk.mute},
     form: {marginTop: 27}, label: {fontFamily: "SpaceMono-Regular", marginBottom: 8, fontSize: 10, fontWeight: "700", letterSpacing: 1.7, color: perk.copper, textTransform: "uppercase"},
-    phoneShell: {height: 53, flexDirection: "row", alignItems: "center", borderRadius: 14, overflow: "hidden", borderWidth: 1.5, borderColor: perk.ink, marginBottom: 18}, prefix: {height: "100%", paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: perk.surface, borderRightWidth: 1, borderRightColor: perk.rule16}, prefixText: {fontFamily: "SpaceMono-Regular", fontSize: 14, fontWeight: "700", color: perk.ink}, flag: {width: 19, height: 13, borderRadius: 2, overflow: "hidden", backgroundColor: perk.green, justifyContent: "center"}, flagRed: {height: 4, backgroundColor: "#c4302b", borderTopWidth: 1, borderBottomWidth: 1, borderColor: perk.card}, phoneInput: {flex: 1, height: "100%", paddingHorizontal: 14, fontSize: 16, fontWeight: "600", color: perk.ink},
+    phoneShell: {height: 53, flexDirection: "row", alignItems: "center", borderRadius: 14, overflow: "hidden", borderWidth: 1.5, borderColor: perk.ink, marginBottom: 18}, prefix: {height: "100%", paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: perk.surface, borderRightWidth: 1, borderRightColor: perk.rule16}, prefixText: {fontFamily: "SpaceMono-Regular", fontSize: 14, fontWeight: "700", color: perk.ink}, flag: {width: 19, height: 13, borderRadius: 2, overflow: "hidden"}, flagBlack: {flex: 4, backgroundColor: "#000000"}, flagWhite: {flex: 1, backgroundColor: perk.card}, flagRed: {flex: 4, backgroundColor: "#be3a34"}, flagGreen: {flex: 4, backgroundColor: "#006b3f"}, phoneInput: {flex: 1, height: "100%", paddingHorizontal: 14, fontSize: 16, fontWeight: "600", color: perk.ink},
     nameRow: {flexDirection: "row", gap: 10}, half: {flex: 1}, inputShell: {height: 51, marginBottom: 18, flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1.5, borderColor: perk.ink, backgroundColor: perk.card}, leading: {paddingLeft: 13, paddingRight: 9}, input: {flex: 1, height: "100%", paddingHorizontal: 13, fontSize: 15, fontWeight: "600", color: perk.ink}, trailing: {paddingRight: 13},
     demographicRow: {flexDirection: "row", gap: 10}, gender: {flex: 1.25, zIndex: 2}, age: {flex: 0.75}, selectShell: {height: 51, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 14, borderWidth: 1.5, borderColor: perk.ink}, selectText: {fontSize: 15, color: perk.mute}, selectedText: {color: perk.ink}, dropdown: {position: "absolute", top: 72, left: 0, right: 0, paddingVertical: 4, borderRadius: 12, backgroundColor: perk.card, borderWidth: 1, borderColor: perk.rule16, shadowColor: perk.ink, shadowOpacity: 0.14, shadowRadius: 12, elevation: 6}, dropdownOption: {paddingHorizontal: 14, paddingVertical: 12}, dropdownText: {fontSize: 14, fontWeight: "700", color: perk.ink},
     error: {marginTop: -8, marginBottom: 6, fontSize: 12, color: perk.coralDeep}, createButton: {height: 53, marginTop: 20, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: perk.lime, shadowColor: perk.limeDeep, shadowOpacity: 0.4, shadowRadius: 12, elevation: 3}, createText: {fontSize: 15, fontWeight: "800", color: perk.limeInk}, arrow: {fontSize: 21, lineHeight: 22, fontWeight: "800", color: perk.limeInk}, loginLine: {marginTop: 20, flexDirection: "row", justifyContent: "center"}, loginText: {fontSize: 13, color: perk.mute}, loginLink: {fontSize: 13, fontWeight: "800", color: perk.ink, textDecorationLine: "underline", textDecorationColor: perk.limeDeep, textDecorationStyle: "solid"},
-    loading: {flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: perk.paper, paddingHorizontal: 28}, loadingTitle: {marginTop: 18, fontSize: 20, fontWeight: "800", color: perk.periwinkleDeep}, loadingText: {marginTop: 7, fontSize: 14, color: perk.mute},
 });

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.core.cache import cache
 from django.db.models import Sum
@@ -33,6 +34,8 @@ from results.models import (
 )
 from stations.models import PollingCenter, PollingStation, Ward
 
+logger = logging.getLogger(__name__)
+
 
 # TODO: We can refactor this code to use a single view for all results and pass the admin level e.g. presidential, governor, senator as url parameter
 class PollingCenterPresidentialResultsAPIView(APIView):
@@ -66,14 +69,11 @@ class PollingCenterPresidentialResultsAPIView(APIView):
             polling_center=polling_center
         )
 
-        # print(polling_stations_qs, "polling_stations_qs")
-
         # Fetch the polling center results
         results = PollingStationPresidentialResults.objects.filter(
             polling_station__polling_center=polling_center
         )
 
-        # print(results, "presidential results results")
         serializer = PollingStationPresidentialResultsSerializer(results, many=True)
         # TODO: get the stream number from polling center model once the model is updated
         return Response(
@@ -128,8 +128,6 @@ class PollingCenterGovernorResultsAPIView(APIView):
         results = PollingStationGovernorResults.objects.filter(
             polling_station__polling_center=polling_center
         )
-
-        # print(results, "gpovernor results")
 
         serializer = PollingStationGovernorResultsSerializer(results, many=True)
 
@@ -186,8 +184,6 @@ class PollingCenterSenatorResultsAPIView(APIView):
             polling_station__polling_center=polling_center
         )
 
-        # print(results, "senator results")
-
         serializer = PollingStationSenatorResultsSerializer(results, many=True)
 
         return Response(
@@ -242,8 +238,6 @@ class PollingCenterWomenRepResultsAPIView(APIView):
         results = PollingStationWomenRepResults.objects.filter(
             polling_station__polling_center=polling_center
         )
-
-        # print(results, "women rep results")
 
         serializer = PollingStationWomenRepResultsSerializer(results, many=True)
 
@@ -565,10 +559,6 @@ class PollingStationPresidentialResultsAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         polling_station_code = kwargs.get("polling_station_code")
-        print(
-            polling_station_code,
-            "polling_station_code in PollingStationPresidentialResultsAPIView",
-        )
 
         try:
             polling_station = PollingStation.objects.get(code=polling_station_code)
@@ -599,7 +589,6 @@ class PollingStationPresidentialResultsAPIView(APIView):
             else None
         )
 
-        # print(serializer.data, "serializer data in PollingStationPresResultsAPIView")
         return Response(
             {
                 "data": serializer.data,
@@ -629,10 +618,6 @@ class PollingStationCandidatesListAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        print(
-            polling_station_code,
-            "polling_station_code in PollingStationPresidentialResultsAPIView",
-        )
         if level == "president":
             aspirants = Aspirant.objects.filter(level="president")
         elif level == "governor":
@@ -690,19 +675,17 @@ class PollingStationResultsCreateAPIView(APIView):
         data = json.loads(client_data.get("data", "{}"))
         image = client_data.get("image", "{}")
 
-        print(data, "data in PollingStationResultsCreateAPIView")
-        print(image, "image in PollingStationResultsCreateAPIView")
-
         polling_station_code = data.get("polling_station")
 
-        print(
+        # Results submission is the one write worth a record of its own: it is
+        # how a tally enters the system. The shape of the submission is logged,
+        # never the payload, and the request filter attaches who sent it.
+        logger.info(
+            "results submitted station=%s level=%s aspirants=%s form_34a=%s",
             polling_station_code,
-            "polling_station_code in PollingStationResultsCreateAPIView",
-        )
-
-        print(
-            data["polling_station"],
-            "polling_station_code in PollingStationResultsCreateAPIView 2222",
+            level,
+            len(data.get("votes") or []),
+            bool(image and image != "{}"),
         )
 
         if not polling_station_code:
@@ -716,7 +699,7 @@ class PollingStationResultsCreateAPIView(APIView):
                 {"error": "Level mismatch."},
                 status=status.HTTP_200_OK,
             )
-        print("-------")
+
         try:
             polling_station = PollingStation.objects.get(code=polling_station_code)
         except PollingStation.DoesNotExist:
@@ -732,10 +715,6 @@ class PollingStationResultsCreateAPIView(APIView):
             )
 
         for aspirant_votes in data.get("votes"):
-            print(
-                aspirant_votes,
-                "aspirant_votes in for loop",
-            )
             try:
                 aspirant = Aspirant.objects.get(pk=aspirant_votes["id"])
                 result = PollingStationPresidentialResults.objects.create(

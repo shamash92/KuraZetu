@@ -1,3 +1,4 @@
+import * as Device from "expo-device";
 import {Platform} from "react-native";
 
 const djangoPort = 8000; // Django default port
@@ -27,7 +28,8 @@ const getApiBaseURL = (): string => {
         // App is running in development mode
 
         if (typeof Platform !== "undefined" && Platform.OS === "ios") {
-            return IOS_SIMULATOR_BASE_URL;
+            // A physical device cannot reach the Mac on 127.0.0.1, it needs the LAN IP.
+            return Device.isDevice ? DEVELOPMENT_BASE_URL : IOS_SIMULATOR_BASE_URL;
         }
         if (typeof Platform !== "undefined" && Platform.OS === "android") {
             return DEVELOPMENT_BASE_URL; // because it will default to ANDROID_SIMULATOR_BASE_URL is not in environment

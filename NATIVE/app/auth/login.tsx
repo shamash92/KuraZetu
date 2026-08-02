@@ -11,9 +11,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import {ArrowRight, Eye, EyeOff, Fingerprint, Lock} from "lucide-react-native";
-import {Link, router} from "expo-router";
-import React, {useEffect, useRef, useState} from "react";
 import Animated, {
     Easing,
     useAnimatedStyle,
@@ -21,16 +18,7 @@ import Animated, {
     withDelay,
     withTiming,
 } from "react-native-reanimated";
-import {windowHeight, windowWidth} from "../_utils/screenDimensions";
-
-import {ActivityIndicator} from "react-native-paper";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
-import LottieComponent from "@/components/lottieLoading";
-import RegisterPushNotifications from "../_utils/registerPushNotifications";
-import UpdateCheckerModal from "../_utils/updateModal";
-import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
-import {apiBaseURL} from "../_utils/apiBaseURL";
-import useAuthStore from "../_utils/authStore";
+import {ArrowRight, Eye, EyeOff, Fingerprint, Lock} from "lucide-react-native";
 import {
     CARD,
     COPPER,
@@ -43,6 +31,22 @@ import {
     RULE_16,
     SURFACE,
 } from "../_utils/colors";
+import {Link, router} from "expo-router";
+import React, {useEffect, useRef, useState} from "react";
+
+import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
+import LottieComponent from "@/components/lottieLoading";
+import RegisterPushNotifications from "../_utils/registerPushNotifications";
+import LoginLoading from "@/components/auth/login";
+import UpdateCheckerModal from "../_utils/updateModal";
+import {apiBaseURL} from "../_utils/apiBaseURL";
+import useAuthStore from "../_utils/authStore";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {windowHeight} from "../_utils/screenDimensions";
+
+// Pins the sign-in screen on so the animation can be watched without racing a
+// real request. Development only — must be false on any branch that merges.
+const PREVIEW_SIGNING_IN = false;
 
 const HEADING_LINE_HEIGHT = 38;
 // Mask is taller than the text line so Gĩkũyũ/Kĩkamba diacritics (ĩ, ũ) and bold
@@ -324,58 +328,8 @@ export default function LoginScreen() {
 
     useEffect(() => {}, [shouldRedirect]);
 
-    if (isLoading && !shouldRedirect) {
-        return (
-            <View style={{flex: 1}}>
-                <Modal
-                    transparent
-                    animationType="slide"
-                    visible={isLoading}
-                    onRequestClose={() => {}}
-                >
-                    <View
-                        style={{
-                            flex: 1,
-                            justifyContent: "flex-end",
-                            backgroundColor: "rgba(0,0,0,0.3)",
-                        }}
-                    >
-                        <View
-                            style={{
-                                height: 0.5 * windowHeight,
-                                backgroundColor: "rgba(255,255,255,0.97)",
-                                borderTopLeftRadius: 24,
-                                borderTopRightRadius: 24,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                shadowColor: "#000",
-                                shadowOffset: {width: 0, height: -2},
-                                shadowOpacity: 0.2,
-                                shadowRadius: 8,
-                                elevation: 8,
-                            }}
-                        >
-                            <LottieComponent
-                                name="login"
-                                backgroundColor="transparent"
-                                width={0.75 * windowWidth}
-                            />
-
-                            <View>
-                                <Text style={{fontSize: 14, color: "#000"}}>
-                                    Signing In ...
-                                </Text>
-                                <ActivityIndicator
-                                    size="small"
-                                    color={COPPER_DEEP}
-                                    style={{marginTop: 8}}
-                                />
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
-            </View>
-        );
+    if ((isLoading || PREVIEW_SIGNING_IN) && !shouldRedirect) {
+        return <LoginLoading />;
     }
 
     return (

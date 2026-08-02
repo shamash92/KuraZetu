@@ -41,6 +41,7 @@ export const MUTE_2 = "#9a9da3";
 export const RULE_08 = "rgba(13,13,13,0.07)";
 export const RULE_16 = "rgba(13,13,13,0.14)";
 export const GLASS = "rgba(255,255,255,0.88)";
+export const MESH_GRID = "rgba(40,50,60,0.04)";
 
 // Grouped object for ergonomic access: perk.lime, perk.ink, etc.
 export const perk = {
@@ -75,6 +76,7 @@ export const perk = {
     rule08: RULE_08,
     rule16: RULE_16,
     glass: GLASS,
+    meshGrid: MESH_GRID,
 } as const;
 
 export default function PerkColorsRoute() {

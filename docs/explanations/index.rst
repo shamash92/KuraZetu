@@ -7,3 +7,4 @@ Explanations
    :caption: Explanations:
 
    why-react.md
+   logging-approach.md

@@ -5,6 +5,7 @@ django_browser_reload
 django-admin-honeypot-updated-2021
 django-cors-headers
 django-crispy-forms
+django-storages[s3]
 django-leaflet
 django-otp
 django-phonenumber-field

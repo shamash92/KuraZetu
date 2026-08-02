@@ -22,6 +22,7 @@ import {sampleElectionData} from "../_sampleData";
 import useAuthStore from "@/app/_utils/authStore";
 import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 import {useLocalSearchParams} from "expo-router";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 const windowHeight = Dimensions.get("window").height;
 
@@ -47,6 +48,9 @@ export interface IPollingStationExtraData {
 }
 
 export default function ResultsScreen() {
+    // Inside a tab screen this includes the tab bar, which floats over the content.
+    const insets = useSafeAreaInsets();
+
     const [modalVisible, setModalVisible] = useState(false);
     const [addModalVisible, setAddModalVisible] = useState(false);
 
@@ -195,7 +199,7 @@ export default function ResultsScreen() {
                 style={{
                     position: "absolute",
                     right: 20,
-                    bottom: 30,
+                    bottom: insets.bottom + 16,
                     flexDirection: "column",
                     gap: 16,
                 }}
