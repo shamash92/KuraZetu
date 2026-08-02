@@ -26,6 +26,7 @@ export default function ExamLayout() {
                     // headerBackTitleVisible: true,
                 }}
             />
+            <Stack.Screen name="signup/[step]" options={{headerShown: false}} />
             <Stack.Screen
                 name="signUpForm"
                 options={{

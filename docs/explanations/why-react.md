@@ -27,7 +27,11 @@ Even if the community later votes to adopt Next.js (and we will respect that dem
 
 ## Why not Vite?
 
-Vite is a great tool, an we love it. We would welcome a PR to migrate our current setup to Vite.
+Vite is a great tool, and we love it. We would welcome a PR to migrate our current setup to Vite.
+
+## Why not Bun?
+
+The UI currently uses `pnpm` for package management. Bun would be a promising replacement, and we would welcome a migration that does not introduce technical hurdles. In particular, a proposal should preserve reproducible dependency installation and confirm that the existing Webpack development and production builds work as expected.
 
 ## Why Django?
 

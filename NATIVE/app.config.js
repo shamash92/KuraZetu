@@ -18,6 +18,20 @@ export default {
             bundleIdentifier: "com.kurazetu.app",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
+                UIStatusBarStyle: "UIStatusBarStyleDarkContent",
+                UIViewControllerBasedStatusBarAppearance: true,
+                UIApplicationSceneManifest: {
+                    UIApplicationSupportsMultipleScenes: false,
+                    UISceneConfigurations: {
+                        UIWindowSceneSessionRoleApplication: [
+                            {
+                                UISceneConfigurationName: "Default Configuration",
+                                UISceneDelegateClassName:
+                                    "$(PRODUCT_MODULE_NAME).SceneDelegate",
+                            },
+                        ],
+                    },
+                },
             },
             entitlements: {
                 "com.apple.developer.networking.wifi-info": true,
@@ -28,7 +42,6 @@ export default {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#ffffff",
             },
-            edgeToEdgeEnabled: true,
             package: "com.kurazetu.app",
             config: {
                 googleMaps: {
@@ -44,6 +57,8 @@ export default {
         },
         plugins: [
             "expo-router",
+            "expo-image",
+            "expo-web-browser",
             [
                 "expo-splash-screen",
                 {
@@ -59,6 +74,13 @@ export default {
                     faceIDPermission: "Allow $(PRODUCT_NAME) to use Face ID.",
                 },
             ],
+            [
+                "expo-status-bar",
+                {
+                    hidden: false,
+                    style: "dark",
+                },
+            ],
             "expo-font",
             [
                 "expo-location",
@@ -70,12 +92,6 @@ export default {
                         "This app uses location to show your position on the map.",
                     locationWhenInUsePermission:
                         "This app uses location to show your position on the map.",
-                },
-            ],
-            [
-                "react-native-maps",
-                {
-                    androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
                 },
             ],
             "expo-secure-store",
@@ -99,6 +115,8 @@ export default {
                     recordAudioAndroid: true,
                 },
             ],
+            "./plugins/withIosBuildFixes",
+            "./plugins/withAndroidSliderFix",
         ],
         experiments: {
             typedRoutes: true,

@@ -16,13 +16,13 @@ import {
     Moon,
     User2,
 } from "lucide-react-native";
-import {NEUTRAL, PRIMARY} from "../../(utils)/colors";
+import {NEUTRAL, PRIMARY} from "../../_utils/colors";
 import React, {useState} from "react";
 
-import {deleteFromSecureStore} from "@/app/(utils)/secureStore";
+import {deleteFromSecureStore} from "@/app/_utils/secureStore";
 import {router} from "expo-router";
-import {statusBarHeight} from "@/app/(utils)/screenDimensions";
-import useAuthStore from "@/app/(utils)/authStore";
+import {statusBarHeight} from "@/app/_utils/screenDimensions";
+import useAuthStore from "@/app/_utils/authStore";
 
 interface SettingItemProps {
     icon: React.ReactNode;

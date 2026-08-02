@@ -23,15 +23,15 @@ import {
 import MapView, {Marker, PROVIDER_GOOGLE} from "react-native-maps";
 import {Navigation, RefreshCw} from "lucide-react-native";
 import React, {useEffect, useRef, useState} from "react";
-import {windowHeight, windowWidth} from "@/app/(utils)/screenDimensions";
+import {windowHeight, windowWidth} from "@/app/_utils/screenDimensions";
 
-import LocationEditDrawer from "./components/LocationEditDrawer";
-import LocationItem from "./components/PollingCenterItem";
-import LocationPin from "./components/LocationPin";
+import LocationEditDrawer from "./_components/LocationEditDrawer";
+import LocationItem from "./_components/PollingCenterItem";
+import LocationPin from "./_components/LocationPin";
 import Slider from "@react-native-community/slider";
-import {StatusBar} from "expo-status-bar";
-import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
-import {updateLocation} from "./(utils)/LocationService";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {updateLocation} from "./_utils/LocationService";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 const {height} = Dimensions.get("window");
 const INITIAL_REGION = {
@@ -44,6 +44,9 @@ const INITIAL_REGION = {
 const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function LocationsScreen() {
+    // Inside a tab screen this includes the tab bar, which floats over the content.
+    const insets = useSafeAreaInsets();
+
     const [locations, setLocations] = useState<IPollingCenterFeature[] | null>(null);
 
     const [error, setError] = useState<string | null>(null);
@@ -323,8 +326,6 @@ export default function LocationsScreen() {
 
     return (
         <View style={styles.container}>
-            {/* <StatusBar style="dark" /> */}
-
             {/* Map View */}
             <View style={styles.mapContainer}>
                 <View
@@ -462,7 +463,7 @@ export default function LocationsScreen() {
                 </MapView>
 
                 {/* Map Controls */}
-                <View style={styles.mapControls}>
+                <View style={[styles.mapControls, {bottom: insets.bottom + 16}]}>
                     <TouchableOpacity
                         style={styles.mapControlButton}
                         onPress={goToUserLocation}
@@ -578,7 +579,6 @@ const styles = StyleSheet.create({
     mapControls: {
         position: "absolute",
         right: 16,
-        bottom: 24,
         alignItems: "center",
     },
     mapControlButton: {

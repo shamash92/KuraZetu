@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from phonenumber_field.modelfields import PhoneNumberField
@@ -31,8 +32,13 @@ class UserManager(BaseUserManager):
         # Validate phone number format
         try:
             PhoneNumberField().clean(phone_number, None)
-        except Exception as e:
-            raise ValueError(f"Invalid phone number format: {e}")
+        except ValidationError as e:
+            # Raised as a ValidationError so createsuperuser renders it as a
+            # readable CommandError rather than a traceback.
+            raise ValidationError(
+                f"{e.messages[0]} Enter it with the country code, for example "
+                f"+254712345678, or in local form as 0712345678."
+            ) from e
 
         user = self.model(phone_number=phone_number)
 

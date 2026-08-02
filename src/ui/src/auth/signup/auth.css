@@ -608,6 +608,7 @@
   background: var(--surface);
   color: var(--mute-2);
   cursor: not-allowed;
+  border: 1.5px solid var(--rule-16);
 }
 .kz-auth .register .submit svg {
   width: 16px;

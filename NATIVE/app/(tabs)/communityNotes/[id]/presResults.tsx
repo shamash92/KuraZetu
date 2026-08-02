@@ -6,21 +6,34 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import {MessageCircle, PlusCircleIcon, ThumbsUp} from "lucide-react-native";
+import {MessageCircle, Plus, ThumbsUp} from "lucide-react-native";
 import React, {useEffect, useState} from "react";
 
-import {AddFormModal} from "./components/AddFormModal";
-import {CounterEvidenceModal} from "./components/CounterEvidenceModal";
+import {AddFormModal} from "./_components/AddFormModal";
+import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
 import {IPollingStationPresResults} from "@/app/types";
-import {ResultsTable} from "./components/ResultsTable";
-import {VoteSummary} from "./components/VoteSummary";
-import {ZoomableImage} from "./components/ZoomableImage";
-import {apiBaseURL} from "@/app/(utils)/apiBaseURL";
-import {sampleElectionData} from "../sampleData";
-import useAuthStore from "@/app/(utils)/authStore";
-import useCurrentPollingStationStore from "@/app/(utils)/curentStationStore";
+import {ResultsTable} from "./_components/ResultsTable";
+import {TLevelTabs} from "@/app/types";
+import {VoteSummary} from "./_components/VoteSummary";
+import {ZoomableImage} from "./_components/ZoomableImage";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {perk} from "@/app/_utils/colors";
+import {sampleElectionData} from "../_sampleData";
+import useAuthStore from "@/app/_utils/authStore";
+import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
+import {useLocalSearchParams} from "expo-router";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 const windowHeight = Dimensions.get("window").height;
+
+const LEVEL_LABELS: Record<TLevelTabs, string> = {
+    president: "Presidential",
+    governor: "Governor",
+    senator: "Senator",
+    womanRep: "Woman Rep",
+    mp: "MP",
+    mca: "MCA",
+};
 
 export interface IPollingStationExtraData {
     added_by: number;
@@ -35,6 +48,9 @@ export interface IPollingStationExtraData {
 }
 
 export default function ResultsScreen() {
+    // Inside a tab screen this includes the tab bar, which floats over the content.
+    const insets = useSafeAreaInsets();
+
     const [modalVisible, setModalVisible] = useState(false);
     const [addModalVisible, setAddModalVisible] = useState(false);
 
@@ -55,6 +71,13 @@ export default function ResultsScreen() {
 
     const {userToken} = useAuthStore();
 
+    const {level: levelParam} = useLocalSearchParams<{level?: string}>();
+    const level: TLevelTabs =
+        levelParam && levelParam in LEVEL_LABELS
+            ? (levelParam as TLevelTabs)
+            : "president";
+    const levelLabel = LEVEL_LABELS[level];
+
     useEffect(() => {
         if (!currentStationCode) {
             return;
@@ -67,7 +90,7 @@ export default function ResultsScreen() {
         const fetchStationResults = async () => {
             try {
                 const response = await fetch(
-                    `${apiBaseURL}/api/results/polling-station/${currentStationCode}/presidential/`,
+                    `${apiBaseURL}/api/results/polling-station/${currentStationCode}/results/${level}/`,
                     {
                         headers: {
                             Authorization: `Token ${userToken}`,
@@ -88,18 +111,19 @@ export default function ResultsScreen() {
         if (currentStationCode && userToken) {
             fetchStationResults();
         }
-    }, [currentStationCode, userToken, addModalVisible]);
+    }, [currentStationCode, userToken, addModalVisible, level]);
 
     return (
         <View
             style={{
                 flex: 1,
+                backgroundColor: perk.card,
             }}
         >
             <AddFormModal
                 visible={addModalVisible}
                 onClose={() => setAddModalVisible(false)}
-                level="president"
+                level={level}
             />
             <CounterEvidenceModal
                 visible={modalVisible}
@@ -108,96 +132,26 @@ export default function ResultsScreen() {
             />
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                <View
-                    style={{
-                        padding: 10,
-                        backgroundColor: "#FFFFFF",
-                        borderBottomWidth: 1,
-                        borderBottomColor: "#E9ECEF",
-                        shadowColor: "#000000",
-                        shadowOffset: {width: 0, height: 2},
-                        shadowOpacity: 0.05,
-                        shadowRadius: 4,
-                        elevation: 2,
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 20,
-                            fontWeight: "bold",
-                            color: "#212529",
-                            textAlign: "center",
-                        }}
-                    >
+                <View style={styles.stationHeader}>
+                    <Text style={styles.stationHeaderLabel}>
+                        {levelLabel.toUpperCase()} · THIS STATION
+                    </Text>
+                    <Text style={styles.stationName}>
                         {currentStationInfo?.polling_center}
                     </Text>
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            justifyContent: "space-evenly",
-                            paddingTop: 8,
-                        }}
-                    >
-                        <Text style={styles.subtitle}>
-                            Stream No: {currentStationInfo?.stream_number}
-                        </Text>
-                        <Text style={styles.subtitle}>
-                            Code: {currentStationInfo?.code}
-                        </Text>
-                    </View>
-
-                    <Text
-                        style={{
-                            fontSize: 14,
-                            color: "#495057",
-                            textAlign: "center",
-                            paddingTop: 2,
-                        }}
-                    >
-                        {currentCenter?.county} / {currentCenter?.constituency} /{" "}
-                        {currentCenter?.ward}
+                    <Text style={styles.stationMeta}>
+                        Stream {currentStationInfo?.stream_number} ·{" "}
+                        {currentStationInfo?.code} · {currentCenter?.constituency}
                     </Text>
                 </View>
 
                 {/* Form 34A Image */}
-                {extraData && extraData.form_34A ? (
-                    <View
-                        style={{
-                            paddingHorizontal: 8,
-                        }}
-                    >
-                        <Text
-                            style={{
-                                fontSize: 14,
-                                fontWeight: "bold",
-                                color: "#212529",
-                                textAlign: "center",
-                                // marginBottom: 12,
-                                // paddingHorizontal: 4,
-                            }}
-                        >
-                            Original Form 34A
-                        </Text>
-                        <View
-                            style={{
-                                height: 0.5 * windowHeight,
-                            }}
-                        >
+                {extraData && extraData.form_34A && (
+                    <View style={{paddingHorizontal: 8}}>
+                        <Text style={styles.formLabel}>Original Form 34A</Text>
+                        <View style={{height: 0.5 * windowHeight}}>
                             <ZoomableImage uri={extraData.form_34A} />
                         </View>
-                    </View>
-                ) : (
-                    <View
-                        style={{
-                            padding: 16,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 0.2 * windowHeight,
-                        }}
-                    >
-                        <Text style={{textAlign: "center"}}>
-                            No Form 34A image available for this polling station.
-                        </Text>
                     </View>
                 )}
 
@@ -212,7 +166,10 @@ export default function ResultsScreen() {
                 >
                     {results && results.length > 0 ? (
                         <>
-                            <ResultsTable results={results} />
+                            <ResultsTable
+                                results={results}
+                                title={`${levelLabel} Election Results`}
+                            />
                             {extraData && (
                                 <VoteSummary
                                     totalValidVotes={extraData.valid_votes_cast}
@@ -226,16 +183,11 @@ export default function ResultsScreen() {
                             )}
                         </>
                     ) : (
-                        <View
-                            style={{
-                                padding: 16,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: 0.2 * windowHeight,
-                            }}
-                        >
-                            <Text style={{textAlign: "center"}}>
-                                No results available for this polling station.
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyTitle}>No results yet</Text>
+                            <Text style={styles.emptyBody}>
+                                No {levelLabel} tally has been submitted for this
+                                station yet.
                             </Text>
                         </View>
                     )}
@@ -247,7 +199,7 @@ export default function ResultsScreen() {
                 style={{
                     position: "absolute",
                     right: 20,
-                    bottom: 30,
+                    bottom: insets.bottom + 16,
                     flexDirection: "column",
                     gap: 16,
                 }}
@@ -263,7 +215,7 @@ export default function ResultsScreen() {
                             onPress={() => setUpvoted(!upvoted)}
                             activeOpacity={0.8}
                         >
-                            <ThumbsUp size={24} color="#FFFFFF" />
+                            <ThumbsUp size={22} color={perk.limeInk} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -278,9 +230,9 @@ export default function ResultsScreen() {
                     <TouchableOpacity
                         style={[styles.fab, styles.addFab]}
                         onPress={() => setAddModalVisible(true)}
-                        activeOpacity={0.8}
+                        activeOpacity={0.85}
                     >
-                        <PlusCircleIcon size={24} color="#FFFFFF" />
+                        <Plus size={26} color={perk.limeInk} strokeWidth={2.6} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -299,11 +251,64 @@ const styles = StyleSheet.create({
     },
     header: {},
     title: {},
-    subtitle: {
+    stationHeader: {
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 12,
+        backgroundColor: perk.card,
+        borderBottomWidth: 1,
+        borderBottomColor: perk.rule08,
+    },
+    stationHeaderLabel: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 9.5,
+        fontWeight: "700",
+        letterSpacing: 1.6,
+        color: perk.mute,
+    },
+    stationName: {
         fontSize: 16,
-        color: "#6C757D",
+        fontWeight: "900",
+        letterSpacing: -0.2,
+        textTransform: "uppercase",
+        color: perk.ink,
+        marginTop: 4,
+    },
+    stationMeta: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 9,
+        color: perk.mute,
+        letterSpacing: 0.6,
+        marginTop: 3,
+    },
+    formLabel: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 10,
+        fontWeight: "700",
+        letterSpacing: 1.6,
+        color: perk.mute,
         textAlign: "center",
-        fontWeight: "500",
+        marginBottom: 6,
+    },
+    emptyState: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 32,
+        paddingVertical: 48,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: "900",
+        letterSpacing: -0.3,
+        color: perk.ink,
+    },
+    emptyBody: {
+        fontSize: 13.5,
+        color: perk.mute,
+        textAlign: "center",
+        lineHeight: 19,
+        marginTop: 6,
+        maxWidth: 260,
     },
     section: {
         paddingHorizontal: 16,
@@ -330,27 +335,29 @@ const styles = StyleSheet.create({
     },
     fabContainer: {},
     fab: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 58,
+        height: 58,
+        borderRadius: 29,
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#000000",
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowColor: perk.ink,
+        shadowOffset: {width: 0, height: 8},
+        shadowOpacity: 0.22,
+        shadowRadius: 14,
         elevation: 8,
     },
     upvoteFab: {
-        backgroundColor: "#006600",
+        backgroundColor: perk.lime,
     },
     upvotedFab: {
-        backgroundColor: "#006600",
+        backgroundColor: perk.limeDeep,
     },
     commentFab: {
-        backgroundColor: "#B71C1C",
+        backgroundColor: perk.coralDeep,
     },
     addFab: {
-        backgroundColor: "#1976D2",
+        backgroundColor: perk.lime,
+        shadowColor: perk.limeDeep,
+        shadowOpacity: 0.5,
     },
 });

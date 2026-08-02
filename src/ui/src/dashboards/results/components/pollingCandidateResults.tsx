@@ -3,10 +3,7 @@ import {formatNumber} from "../utils/index";
 
 function PollingCandidateResults({candidate, streamsNumber}) {
     return (
-        <div
-            className="flex items-center justify-between p-3 border-l-4 rounded-lg shadow-sm"
-            style={{borderColor: candidate.party_color}}
-        >
+        <div className="flex items-center justify-between p-3 border-l-4 border-gray-200 rounded-lg shadow-sm">
             <div>
                 <div className="font-medium">{candidate.fullName}</div>
                 <div className="text-sm text-gray-600">{candidate.party}</div>

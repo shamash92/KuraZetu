@@ -6,7 +6,6 @@ import {
 } from "lucide-react-native";
 import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 
-import {StatusBar} from "expo-status-bar";
 import {useRouter} from "expo-router";
 
 export default function PollingCentersLanding() {
@@ -14,7 +13,6 @@ export default function PollingCentersLanding() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="dark" />
             <View style={styles.header}>
                 <Text style={styles.title}>Verify Polling Centers </Text>
                 <Text style={styles.subtitle}>Help improve election data accuracy</Text>

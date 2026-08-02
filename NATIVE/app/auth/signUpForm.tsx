@@ -1,557 +1,115 @@
-import {
-    Alert,
-    Animated,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import {ArrowLeft, Eye, EyeOff, Lock, Phone, User} from "lucide-react-native";
+import {Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {ArrowLeft, ChevronDown, Eye, EyeOff, Lock, User} from "lucide-react-native";
 import {Link, router, useLocalSearchParams} from "expo-router";
 import React, {useState} from "react";
 
-import {ISignUpData} from "./signUpFormOLD";
-import {LinearGradient} from "expo-linear-gradient";
-import LottieComponent from "@/components/lottieLoading";
-import {apiBaseURL} from "../(utils)/apiBaseURL";
-import {blueColor} from "../(utils)/colors";
-import useAuthStore from "../(utils)/authStore";
-import {windowWidth} from "../(utils)/screenDimensions";
+import SignupLoading from "@/components/auth/signup";
+import {apiBaseURL} from "../_utils/apiBaseURL";
+import {perk} from "../_utils/colors";
+import useAuthStore from "../_utils/authStore";
+
+// Pins the loading screen on so the animation can be watched without racing a
+// real request. Development only — must be false on any branch that merges.
+const PREVIEW_SIGNUP_LOADING = false;
+
+interface ISignUpData {
+    phone_number: string;
+    first_name: string;
+    last_name: string;
+    gender: "M" | "F";
+    age: number;
+    role: "voter";
+    password: string;
+    confirm_password: string;
+    polling_center: string;
+}
 
 export default function SignupScreen() {
-    const [formData, setFormData] = useState({
-        phoneNumber: "+254",
-        firstName: "",
-        lastName: "",
-        password: "",
-        confirmPassword: "",
-        gender: "",
-        age: "",
-    });
+    const [formData, setFormData] = useState({phoneNumber: "+254", firstName: "", lastName: "", password: "", confirmPassword: "", gender: "", age: ""});
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-
     const [showGenderDropdown, setShowGenderDropdown] = useState(false);
-
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string>("");
-
     const {logIn} = useAuthStore();
-
     const params = useLocalSearchParams();
-    console.log(params, "params");
-
     const genders = ["Male", "Female"];
 
     const updateFormData = (field: string, value: string) => {
-        if (field === "phoneNumber" && !value.startsWith("+254")) {
-            value = "+254";
-        }
-        setFormData((prev) => ({...prev, [field]: value}));
+        if (field === "phoneNumber" && !value.startsWith("+254")) value = "+254";
+        setFormData((previous) => ({...previous, [field]: value}));
     };
 
     const validateForm = () => {
-        const {
-            phoneNumber,
-            firstName,
-            lastName,
-            password,
-            confirmPassword,
-            gender,
-            age,
-        } = formData;
-
-        // Phone number must start with "+254" and be exactly 13 characters (e.g., +2547XXXXXXXX)
-        if (
-            !phoneNumber ||
-            (!phoneNumber.startsWith("+2547") && !phoneNumber.startsWith("+2541")) ||
-            phoneNumber.length !== 13
-        ) {
-            Alert.alert(
-                "Error",
-                "Please enter a valid Kenyan phone number (e.g., +254 7XX XXX XXX or +254 1XX XXX XXX)",
-            );
-            return false;
-        }
-        if (!firstName.trim()) {
-            Alert.alert("Error", "Please enter your first name");
-            return false;
-        }
-        if (!lastName.trim()) {
-            Alert.alert("Error", "Please enter your last name");
-            return false;
-        }
-        if (password.length < 6) {
-            Alert.alert("Error", "Password must be at least 6 characters");
-            return false;
-        }
-        if (password !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match");
-            return false;
-        }
-        if (!gender) {
-            Alert.alert("Error", "Please select your gender");
-            return false;
-        }
-
-        if (age && parseInt(age) >= 80) {
-            Alert.alert("Error", "Uko aje na smartphone at this age?");
-            return false;
-        }
-        if (!age || parseInt(age) < 18 || parseInt(age) > 80) {
-            Alert.alert("Error", "Please enter a valid age");
-            return false;
-        }
-
+        const {phoneNumber, firstName, lastName, password, confirmPassword, gender, age} = formData;
+        if (!phoneNumber || (!phoneNumber.startsWith("+2547") && !phoneNumber.startsWith("+2541")) || phoneNumber.length !== 13) { Alert.alert("Check your phone number", "Enter a valid Kenyan number, for example +254 7XX XXX XXX."); return false; }
+        if (!firstName.trim() || !lastName.trim()) { Alert.alert("Add your name", "Please enter your first and last name."); return false; }
+        if (password.length < 6) { Alert.alert("Choose a longer password", "Your password needs at least 6 characters."); return false; }
+        if (password !== confirmPassword) { Alert.alert("Passwords do not match", "Please check and try again."); return false; }
+        if (!gender) { Alert.alert("Select your gender", "Please choose an option to continue."); return false; }
+        if (!age || parseInt(age) < 18 || parseInt(age) > 80) { Alert.alert("Check your age", "Please enter an age between 18 and 80."); return false; }
         return true;
     };
 
     const handleSignup = () => {
         if (!validateForm()) return;
-
         setIsLoading(true);
-
-        // TODO: Add Backend API call here
-        let wardCode = params.ward;
-        let pollingCenterNumber = params.pollingCenter;
-
-        let data: ISignUpData = {
-            phone_number: formData.phoneNumber,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            gender: formData.gender === "Male" ? "M" : "F",
-            age: parseInt(formData.age),
-            role: "voter",
-            password: formData.password,
-            confirm_password: formData.confirmPassword,
-        };
-
-        data["polling_center"] = pollingCenterNumber.toString();
-
-        fetch(`${apiBaseURL}/api/accounts/signup/`, {
-            method: "POST",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                data: data,
-                ward_code: wardCode,
-            }),
-        })
+        const data: ISignUpData = {phone_number: formData.phoneNumber, first_name: formData.firstName, last_name: formData.lastName, gender: formData.gender === "Male" ? "M" : "F", age: parseInt(formData.age), role: "voter", password: formData.password, confirm_password: formData.confirmPassword, polling_center: String(params.pollingCenter)};
+        fetch(`${apiBaseURL}/api/accounts/signup/`, {method: "POST", headers: {Accept: "application/json", "Content-Type": "application/json"}, body: JSON.stringify({data, ward_code: params.ward})})
             .then((response) => response.json())
-            .then((data) => {
-                console.log(data, "data from server");
-
-                if (data["error"]) {
+            .then((response) => {
+                if (response.error) {
                     setIsLoading(false);
-
-                    if (data["error"] === "Polling center not found") {
-                        console.log("Polling center not found");
-                        // setError(data["error"]);
-                    } else if (data["details"]["phone_number"]) {
-                        console.log("Phone number error");
-                        setError(data["details"]["phone_number"]);
-                        Alert.alert(
-                            "Phone number error",
-                            data["details"]["phone_number"][0],
-                        );
-                    } else {
-                        // setError(data["details"]);
-                        console.log("Error: ", data["details"]);
-                        Alert.alert(JSON.stringify(data["details"]));
-                    }
-                } else if (data["message"] === "User signup successful") {
-                    let token = data["data"]["token"];
-
-                    console.log(token, "token from server");
-
-                    if (typeof token === "string" && token.length > 0) {
-                        setTimeout(() => {
-                            logIn(token);
-                            setIsLoading(false);
-                            router.replace("/(tabs)");
-                        }, 3000); // just to create a delay for the animation
-                    } else {
-                        console.error("Invalid token format");
-                    }
+                    const message = response.details?.phone_number?.[0] ?? (typeof response.details === "string" ? response.details : "Please review your details and try again.");
+                    setError(message);
+                    Alert.alert(response.error === "Polling center not found" ? "Polling centre not found" : "Could not create account", message);
+                    return;
                 }
-            });
+                if (response.message === "User signup successful" && typeof response.data?.token === "string") {
+                    setTimeout(() => { logIn(response.data.token); setIsLoading(false); router.replace("/(tabs)"); }, 1200);
+                } else { setIsLoading(false); Alert.alert("Could not create account", "Please try again shortly."); }
+            })
+            .catch(() => { setIsLoading(false); Alert.alert("Connection problem", "We could not create your account. Please try again."); });
     };
 
-    if (isLoading) {
-        return (
-            <View
-                style={{
-                    flex: 1,
-                    flexDirection: "column",
-                    justifyContent: "flex-start",
-                    alignItems: "center",
-                    width: "100%",
-                }}
-            >
-                <LottieComponent
-                    name="wave"
-                    backgroundColor={"transparent"}
-                    width={0.6 * windowWidth}
-                />
-                <LottieComponent
-                    name="tea"
-                    backgroundColor={"transparent"}
-                    width={0.3 * windowWidth}
-                />
+    if (isLoading || PREVIEW_SIGNUP_LOADING) return <SignupLoading />;
 
-                <Animated.Text
-                    style={{
-                        textAlign: "center",
-                        marginTop: 40,
-                        opacity: 0.9,
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 16,
-                            color: blueColor,
-                            marginTop: 20,
-                        }}
-                    >
-                        Things are boiling nicely
-                    </Text>
-                </Animated.Text>
+    return <View style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back"><ArrowLeft size={20} color={perk.ink} /></TouchableOpacity>
+            <Text style={styles.title}>Create account</Text>
+            <Text style={styles.subtitle}>Last step — join the community that keeps the count honest.</Text>
+
+            <View style={styles.form}>
+                <FieldLabel label="Phone number" />
+                <View style={styles.phoneShell}><View style={styles.prefix}><View style={styles.flag}><View style={styles.flagBlack} /><View style={styles.flagWhite} /><View style={styles.flagRed} /><View style={styles.flagWhite} /><View style={styles.flagGreen} /></View><Text style={styles.prefixText}>+254</Text></View><TextInput style={styles.phoneInput} placeholder="712 345 678" placeholderTextColor={perk.mute2} value={formData.phoneNumber.replace("+254", "")} onChangeText={(text) => updateFormData("phoneNumber", `+254${text.replace(/^\+?254/, "")}`)} keyboardType="phone-pad" maxLength={9} /></View>
+
+                <View style={styles.nameRow}><View style={styles.half}><FieldLabel label="First name" /><Input icon={<User size={17} color={perk.mute} />} value={formData.firstName} onChangeText={(value) => updateFormData("firstName", value)} placeholder="First name" /></View><View style={styles.half}><FieldLabel label="Last name" /><Input icon={<User size={17} color={perk.mute} />} value={formData.lastName} onChangeText={(value) => updateFormData("lastName", value)} placeholder="Last name" /></View></View>
+
+                <FieldLabel label="Password" /><Input icon={<Lock size={17} color={perk.mute} />} value={formData.password} onChangeText={(value) => updateFormData("password", value)} placeholder="At least 6 characters" secureTextEntry={!showPassword} trailing={<TouchableOpacity onPress={() => setShowPassword((value) => !value)}><>{showPassword ? <EyeOff size={18} color={perk.mute} /> : <Eye size={18} color={perk.mute} />}</></TouchableOpacity>} />
+                <FieldLabel label="Confirm password" /><Input icon={<Lock size={17} color={perk.mute} />} value={formData.confirmPassword} onChangeText={(value) => updateFormData("confirmPassword", value)} placeholder="Repeat your password" secureTextEntry={!showConfirmPassword} trailing={<TouchableOpacity onPress={() => setShowConfirmPassword((value) => !value)}><>{showConfirmPassword ? <EyeOff size={18} color={perk.mute} /> : <Eye size={18} color={perk.mute} />}</></TouchableOpacity>} />
+
+                <View style={styles.demographicRow}><View style={styles.gender}><FieldLabel label="Gender" /><TouchableOpacity style={styles.selectShell} onPress={() => setShowGenderDropdown((value) => !value)}><Text style={[styles.selectText, formData.gender && styles.selectedText]}>{formData.gender || "Select"}</Text><ChevronDown size={17} color={perk.ink} /></TouchableOpacity>{showGenderDropdown && <View style={styles.dropdown}>{genders.map((gender) => <TouchableOpacity key={gender} style={styles.dropdownOption} onPress={() => { updateFormData("gender", gender); setShowGenderDropdown(false); }}><Text style={styles.dropdownText}>{gender}</Text></TouchableOpacity>)}</View>}</View><View style={styles.age}><FieldLabel label="Age" /><Input value={formData.age} onChangeText={(value) => updateFormData("age", value)} placeholder="24" keyboardType="numeric" /></View></View>
+                {error ? <Text style={styles.error}>{error}</Text> : null}
             </View>
-        );
-    }
 
-    return (
-        <LinearGradient
-            colors={["#DC143C", "#006B3C", "#1E40AF"]}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
-            style={styles.container}
-        >
-            <ScrollView style={styles.overlay} showsVerticalScrollIndicator={false}>
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        style={styles.backButton}
-                    >
-                        <ArrowLeft size={24} color="#DC143C" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Create Account</Text>
-                    <Text style={styles.subtitle}>Join our community today</Text>
-                </View>
-
-                <View style={styles.formContainer}>
-                    <View style={styles.inputWrapper}>
-                        <Phone size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Phone Number"
-                            placeholderTextColor="#666"
-                            value={formData.phoneNumber}
-                            onChangeText={(text) => updateFormData("phoneNumber", text)}
-                            keyboardType="phone-pad"
-                            maxLength={13}
-                        />
-                    </View>
-
-                    <View style={styles.row}>
-                        <View style={[styles.inputWrapper, styles.halfWidth]}>
-                            <User size={20} color="#666" style={styles.inputIcon} />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="First Name"
-                                placeholderTextColor="#666"
-                                value={formData.firstName}
-                                maxLength={20} // because the backend enforces a max length of 20
-                                onChangeText={(text) =>
-                                    updateFormData("firstName", text)
-                                }
-                            />
-                        </View>
-                        <View style={[styles.inputWrapper, styles.halfWidth]}>
-                            <User size={20} color="#666" style={styles.inputIcon} />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Last Name"
-                                placeholderTextColor="#666"
-                                maxLength={20} // because the backend enforces a max length of 20
-                                value={formData.lastName}
-                                onChangeText={(text) =>
-                                    updateFormData("lastName", text)
-                                }
-                            />
-                        </View>
-                    </View>
-
-                    <View style={styles.inputWrapper}>
-                        <Lock size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Password"
-                            placeholderTextColor="#666"
-                            value={formData.password}
-                            onChangeText={(text) => updateFormData("password", text)}
-                            secureTextEntry={!showPassword}
-                        />
-                        <TouchableOpacity
-                            onPress={() => setShowPassword(!showPassword)}
-                            style={styles.eyeIcon}
-                        >
-                            {showPassword ? (
-                                <EyeOff size={20} color="#666" />
-                            ) : (
-                                <Eye size={20} color="#666" />
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.inputWrapper}>
-                        <Lock size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Confirm Password"
-                            placeholderTextColor="#666"
-                            value={formData.confirmPassword}
-                            onChangeText={(text) =>
-                                updateFormData("confirmPassword", text)
-                            }
-                            secureTextEntry={!showConfirmPassword}
-                        />
-                        <TouchableOpacity
-                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                            style={styles.eyeIcon}
-                        >
-                            {showConfirmPassword ? (
-                                <EyeOff size={20} color="#666" />
-                            ) : (
-                                <Eye size={20} color="#666" />
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.row}>
-                        <View style={[styles.inputWrapper, styles.halfWidth]}>
-                            {/* <Users size={20} color="#666" style={styles.inputIcon} /> */}
-                            <View style={{flex: 1}}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.genderOption,
-                                        formData.gender ? styles.selectedGender : null,
-                                        {
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                        },
-                                    ]}
-                                    onPress={() =>
-                                        setShowGenderDropdown((prev) => !prev)
-                                    }
-                                    activeOpacity={0.8}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.genderText,
-                                            formData.gender
-                                                ? styles.selectedGenderText
-                                                : null,
-                                        ]}
-                                    >
-                                        {formData.gender || "Select Gender"}
-                                    </Text>
-                                    <Text style={{color: "#666", fontSize: 16}}>▼</Text>
-                                </TouchableOpacity>
-                                {showGenderDropdown && (
-                                    <View
-                                        style={{
-                                            backgroundColor: "#fff",
-                                            borderRadius: 8,
-                                            marginTop: 4,
-                                            borderWidth: 1,
-                                            borderColor: "#E9ECEF",
-                                            zIndex: 10,
-                                            elevation: 2,
-                                        }}
-                                    >
-                                        {genders.map((gender) => (
-                                            <TouchableOpacity
-                                                key={gender}
-                                                style={[
-                                                    styles.genderOption,
-                                                    formData.gender === gender &&
-                                                        styles.selectedGender,
-                                                ]}
-                                                onPress={() => {
-                                                    updateFormData("gender", gender);
-                                                    setShowGenderDropdown(false);
-                                                }}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.genderText,
-                                                        formData.gender === gender &&
-                                                            styles.selectedGenderText,
-                                                    ]}
-                                                >
-                                                    {gender}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                        <View style={[styles.inputWrapper, styles.halfWidth]}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Age"
-                                placeholderTextColor="#666"
-                                value={formData.age}
-                                onChangeText={(text) => updateFormData("age", text)}
-                                keyboardType="numeric"
-                                maxLength={3}
-                            />
-                        </View>
-                    </View>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.signupButton,
-                            isLoading && styles.buttonDisabled,
-                        ]}
-                        onPress={handleSignup}
-                        disabled={isLoading}
-                    >
-                        <Text style={styles.signupButtonText}>
-                            {isLoading ? "Creating Account..." : "Create Account"}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <View style={styles.loginContainer}>
-                        <Text style={styles.loginText}>Already have an account? </Text>
-                        <Link href="/auth/login" asChild>
-                            <TouchableOpacity>
-                                <Text style={styles.loginLink}>Sign In</Text>
-                            </TouchableOpacity>
-                        </Link>
-                    </View>
-                </View>
-            </ScrollView>
-        </LinearGradient>
-    );
+            <TouchableOpacity style={styles.createButton} onPress={handleSignup} activeOpacity={0.85}><Text style={styles.createText}>Create account</Text><IonArrow /></TouchableOpacity>
+            <View style={styles.loginLine}><Text style={styles.loginText}>Already have an account? </Text><Link href="/auth/login" asChild><TouchableOpacity><Text style={styles.loginLink}>Sign in</Text></TouchableOpacity></Link></View>
+        </ScrollView>
+    </View>;
 }
 
+function FieldLabel({label}: {label: string}) { return <Text style={styles.label}>{label}</Text>; }
+function IonArrow() { return <Text style={styles.arrow}>→</Text>; }
+function Input({icon, trailing, ...props}: any) { return <View style={styles.inputShell}>{icon ? <View style={styles.leading}>{icon}</View> : null}<TextInput {...props} style={styles.input} placeholderTextColor={perk.mute2} />{trailing ? <View style={styles.trailing}>{trailing}</View> : null}</View>; }
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
-    },
-    header: {
-        paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 32,
-    },
-    backButton: {
-        alignSelf: "flex-start",
-        padding: 8,
-        marginBottom: 16,
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: "bold",
-        color: "#000",
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: "#666",
-    },
-    formContainer: {
-        paddingHorizontal: 24,
-        paddingBottom: 32,
-    },
-    inputWrapper: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#F8F9FA",
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#E9ECEF",
-    },
-    inputIcon: {
-        marginRight: 12,
-    },
-    input: {
-        flex: 1,
-        fontSize: 12,
-        color: "#000",
-    },
-    eyeIcon: {
-        padding: 4,
-    },
-    row: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-    },
-    halfWidth: {
-        width: "48%",
-    },
-    pickerContainer: {
-        flex: 1,
-    },
-    genderOption: {
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 6,
-        marginBottom: 4,
-    },
-    selectedGender: {
-        backgroundColor: "#DC143C",
-    },
-    genderText: {
-        fontSize: 14,
-        color: "#666",
-    },
-    selectedGenderText: {
-        color: "#FFF",
-        fontWeight: "600",
-    },
-    signupButton: {
-        backgroundColor: "#DC143C",
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: "center",
-        marginTop: 24,
-        marginBottom: 24,
-    },
-    buttonDisabled: {
-        opacity: 0.6,
-    },
-    signupButtonText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    loginContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    loginText: {
-        color: "#666",
-        fontSize: 16,
-    },
-    loginLink: {
-        color: "#DC143C",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
+    screen: {flex: 1, backgroundColor: perk.card}, scrollContent: {paddingHorizontal: 22, paddingTop: 56, paddingBottom: 36},
+    backButton: {width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: perk.surface, marginBottom: 17},
+    title: {fontSize: 31, lineHeight: 35, letterSpacing: -1, fontWeight: "800", color: perk.ink}, subtitle: {marginTop: 9, maxWidth: 290, fontSize: 15, lineHeight: 22, color: perk.mute},
+    form: {marginTop: 27}, label: {fontFamily: "SpaceMono-Regular", marginBottom: 8, fontSize: 10, fontWeight: "700", letterSpacing: 1.7, color: perk.copper, textTransform: "uppercase"},
+    phoneShell: {height: 53, flexDirection: "row", alignItems: "center", borderRadius: 14, overflow: "hidden", borderWidth: 1.5, borderColor: perk.ink, marginBottom: 18}, prefix: {height: "100%", paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: perk.surface, borderRightWidth: 1, borderRightColor: perk.rule16}, prefixText: {fontFamily: "SpaceMono-Regular", fontSize: 14, fontWeight: "700", color: perk.ink}, flag: {width: 19, height: 13, borderRadius: 2, overflow: "hidden"}, flagBlack: {flex: 4, backgroundColor: "#000000"}, flagWhite: {flex: 1, backgroundColor: perk.card}, flagRed: {flex: 4, backgroundColor: "#be3a34"}, flagGreen: {flex: 4, backgroundColor: "#006b3f"}, phoneInput: {flex: 1, height: "100%", paddingHorizontal: 14, fontSize: 16, fontWeight: "600", color: perk.ink},
+    nameRow: {flexDirection: "row", gap: 10}, half: {flex: 1}, inputShell: {height: 51, marginBottom: 18, flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1.5, borderColor: perk.ink, backgroundColor: perk.card}, leading: {paddingLeft: 13, paddingRight: 9}, input: {flex: 1, height: "100%", paddingHorizontal: 13, fontSize: 15, fontWeight: "600", color: perk.ink}, trailing: {paddingRight: 13},
+    demographicRow: {flexDirection: "row", gap: 10}, gender: {flex: 1.25, zIndex: 2}, age: {flex: 0.75}, selectShell: {height: 51, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 14, borderWidth: 1.5, borderColor: perk.ink}, selectText: {fontSize: 15, color: perk.mute}, selectedText: {color: perk.ink}, dropdown: {position: "absolute", top: 72, left: 0, right: 0, paddingVertical: 4, borderRadius: 12, backgroundColor: perk.card, borderWidth: 1, borderColor: perk.rule16, shadowColor: perk.ink, shadowOpacity: 0.14, shadowRadius: 12, elevation: 6}, dropdownOption: {paddingHorizontal: 14, paddingVertical: 12}, dropdownText: {fontSize: 14, fontWeight: "700", color: perk.ink},
+    error: {marginTop: -8, marginBottom: 6, fontSize: 12, color: perk.coralDeep}, createButton: {height: 53, marginTop: 20, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: perk.lime, shadowColor: perk.limeDeep, shadowOpacity: 0.4, shadowRadius: 12, elevation: 3}, createText: {fontSize: 15, fontWeight: "800", color: perk.limeInk}, arrow: {fontSize: 21, lineHeight: 22, fontWeight: "800", color: perk.limeInk}, loginLine: {marginTop: 20, flexDirection: "row", justifyContent: "center"}, loginText: {fontSize: 13, color: perk.mute}, loginLink: {fontSize: 13, fontWeight: "800", color: perk.ink, textDecorationLine: "underline", textDecorationColor: perk.limeDeep, textDecorationStyle: "solid"},
 });

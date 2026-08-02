@@ -9,6 +9,7 @@ from results.api.views import (
     PollingCenterPresidentialResultsAPIView,
     PollingCenterSenatorResultsAPIView,
     PollingCenterWomenRepResultsAPIView,
+    PollingStationLevelResultsAPIView,
     PollingStationPresidentialResultsAPIView,
     PollingStationCandidatesListAPIView,
     PollingStationResultsCreateAPIView,
@@ -60,6 +61,11 @@ urlpatterns = [
         "polling-station/<str:polling_station_code>/presidential/",
         PollingStationPresidentialResultsAPIView.as_view(),
         name="polling-station-presidential-results",
+    ),
+    path(
+        "polling-station/<str:polling_station_code>/results/<str:level>/",
+        PollingStationLevelResultsAPIView.as_view(),
+        name="polling-station-level-results",
     ),
     path(
         "polling-station/aspirants/<str:polling_station_code>/<str:level>/",

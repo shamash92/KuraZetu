@@ -6,7 +6,10 @@ __pycache__/
 *.env
 
 # Django
+# Runtime logs are useful beside the code while debugging and for agents that
+# inspect logs and source together. The directory stays local.
 *.log
+logs/
 /media/
 *.pot
 *.py[co]
@@ -19,6 +22,7 @@ venv/
 Thumbs.db
 
 .coverage
+.pytest_cache/
 
 
 static/
@@ -34,3 +38,15 @@ vscode.yaml
 claude-design/
 prompts/
 server_setup.md
+.impeccable/
+.codex/hooks.json
+
+# Impeccable is installed per developer, never vendored. A project-scoped
+# install drops several MB of generated JS into these trees; keep it untracked.
+# See .claude/design/impeccable.md
+.claude/skills/
+.github/skills/
+.github/hooks/
+.agents/skills/
+.cursor/skills/
+.grok/skills/

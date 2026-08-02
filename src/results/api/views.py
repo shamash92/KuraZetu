@@ -436,6 +436,125 @@ class TotalPresResultsAPIView(APIView):
         )
 
 
+class PollingStationLevelResultsAPIView(APIView):
+    """
+    Return the tally for a single elective office (level) at a polling station.
+
+    The level is part of the URL path (``.../results/<level>/``) so each office
+    gets its own cache key. Output is normalised to a common ``candidate``/``votes``
+    shape regardless of office. Presidential additionally returns ``extra_data``
+    (Form 34A, rejected/disputed/valid votes); other offices have none.
+    """
+
+    authentication_classes = [
+        TokenAuthentication,
+        SessionAuthentication,
+    ]
+    permission_classes = [IsAuthenticated]
+
+    # level -> (results model, results serializer, candidate FK field name)
+    LEVEL_CONFIG = {
+        "president": (
+            PollingStationPresidentialResults,
+            PollingStationPresidentialResultsSerializer,
+            "presidential_candidate",
+        ),
+        "governor": (
+            PollingStationGovernorResults,
+            PollingStationGovernorResultsSerializer,
+            "governor_candidate",
+        ),
+        "senator": (
+            PollingStationSenatorResults,
+            PollingStationSenatorResultsSerializer,
+            "senator_candidate",
+        ),
+        "women_rep": (
+            PollingStationWomenRepResults,
+            PollingStationWomenRepResultsSerializer,
+            "woman_rep_candidate",
+        ),
+        "mp": (
+            PollingStationMpResults,
+            PollingStationMpResultsSerializer,
+            "mp_candidate",
+        ),
+        "mca": (
+            PollingStationMCAResults,
+            PollingStationMCAResultsSerializer,
+            "mca_candidate",
+        ),
+    }
+
+    # 5 minutes. TODO: invalidate on submission instead of relying on expiry.
+    CACHE_TIMEOUT = 60 * 5
+
+    def get(self, request, *args, **kwargs):
+        # The native app uses "womanRep"; the Django level is "women_rep".
+        level = kwargs.get("level")
+        level = {"womanRep": "women_rep"}.get(level, level)
+
+        config = self.LEVEL_CONFIG.get(level)
+        if config is None:
+            return Response(
+                {"error": "Invalid level specified."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        polling_station_code = kwargs.get("polling_station_code")
+
+        # Per-level, per-station cache key. The level is in the URL path, so each
+        # office caches independently and can be invalidated on its own.
+        cache_key = f"polling_station_results:{level}:{polling_station_code}"
+        cached_payload = cache.get(cache_key)
+        if cached_payload is not None:
+            return Response(cached_payload)
+
+        model, serializer_class, candidate_field = config
+
+        try:
+            polling_station = PollingStation.objects.get(code=polling_station_code)
+        except PollingStation.DoesNotExist:
+            return Response(
+                {"error": "Polling station not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        results_qs = model.objects.filter(polling_station=polling_station).order_by(
+            "votes"
+        )
+        serializer = serializer_class(
+            results_qs, many=True, context={"request": request}
+        )
+
+        # Normalise the per-office candidate key to a common "candidate" field.
+        data = [
+            {"candidate": row[candidate_field], "votes": row["votes"]}
+            for row in serializer.data
+        ]
+
+        extra_data = None
+        if level == "president":
+            try:
+                polling_station_extras = PollingStationPresidentialExtras.objects.get(
+                    polling_station=polling_station
+                )
+                extra_data = PollingStationPresidentialExtrasSerializer(
+                    polling_station_extras, context={"request": request}
+                ).data
+            except PollingStationPresidentialExtras.DoesNotExist:
+                extra_data = None
+
+        payload = {
+            "data": data,
+            "extra_data": extra_data,
+            "status": status.HTTP_200_OK,
+        }
+        cache.set(cache_key, payload, timeout=self.CACHE_TIMEOUT)
+
+        return Response(payload)
+
+
 class PollingStationPresidentialResultsAPIView(APIView):
 
     authentication_classes = [

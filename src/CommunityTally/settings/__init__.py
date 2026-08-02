@@ -1,11 +1,13 @@
-"""
-main settings file
-"""
+"""Select the appropriate settings module for the current environment."""
+
+from decouple import config
 
 from .base import *
-from .production import *
 
-# try:
-# 	from .local import *
-# except Exception as e:
-# 	print(e, "error in settings/local.py")
+# Local development must not load the S3-only production configuration.  In
+# particular, the production uploader requires credentials that are not used
+# when Django serves local media files.
+if config("DEBUG", default=False, cast=bool):
+    from .local import *
+else:
+    from .production import *

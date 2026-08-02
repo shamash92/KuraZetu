@@ -38,23 +38,50 @@ In addition to the core results tallying functionality, Kura Zetu includes a spe
 
 In this documentation
 ---------------------
-.. list-table::
-   :header-rows: 0
-   :widths: 50 50
 
-   * - `Tutorials <tutorials>`__
+Getting started
+~~~~~~~~~~~~~~~
 
-       Hands-on introductions to help you report, track, and visualize polling station results.
-     - `How-to guides <how-to-guides>`_
+Start here to run Kura Zetu for the first time.
 
-       Step-by-step guides for contributors and community members on using and contributing to the platform.
+* **Installation:** :doc:`Set up the project locally <tutorials/setup>` •
+  :doc:`Run the project with Docker <tutorials/docker-setup>` •
+  :doc:`Set up the Expo app in NATIVE <tutorials/setup-android>`
 
-   * - `Explanations <explanations>`__
+Development environment
+~~~~~~~~~~~~~~~~~~~~~~~
 
-       In-depth discussions on how elections work, how we verify data, and our tallying logic.
-     - `Reference <reference>`__
+Prepare a machine to develop on, and load the data the platform runs on.
 
-       Technical specs – API docs, data models, contributor guidelines, and architecture.
+* **Virtual machines:** :doc:`Customize a Multipass instance <how-to-guides/customize-multipass>` •
+  :doc:`Connect VS Code to a Multipass instance <how-to-guides/vscode-multipass>`
+* **Election data:** :doc:`Load administrative boundaries data <how-to-guides/load_boundaries_data>`
+
+Safety and anonymity
+~~~~~~~~~~~~~~~~~~~~
+
+Contributors to Kura Zetu face surveillance and retaliation. Read this before your first commit.
+
+* **Accounts:** :doc:`Contribute anonymously <how-to-guides/anonymous_github>`
+
+Contributing
+~~~~~~~~~~~~
+
+The workflow to follow, and the reasoning behind the stack you will work in.
+
+* **Process:** :doc:`Contributing guidelines <contributing>`
+* **Background:** :doc:`Why we chose Django, React and Webpack <explanations/why-react>` •
+  :doc:`How logging and redaction work <explanations/logging-approach>`
+
+
+How this documentation is organized
+-----------------------------------
+
+This documentation uses the `Diátaxis <https://diataxis.fr/>`_ documentation structure.
+
+* `Tutorials <tutorials>`__ walk you through setting up a Kura Zetu development environment, locally, with Docker, or for the Android app.
+* `How-to guides <how-to-guides>`__ cover specific contributor tasks, such as loading boundary data or contributing anonymously.
+* `Explanations <explanations>`__ discuss the reasoning behind the technical decisions in the platform.
 
 .. note::
 
@@ -64,8 +91,8 @@ In this documentation
    From frontend and backend contributions, DevOps and infrastructure, legal audits, digital security, community outreach, to social media awareness — this platform thrives on the diverse strength of Kenya’s people and global allies who believe in **free, fair, and verifiable elections**.
 
 
-Project and Community
-=====================
+Project and community
+---------------------
 
 **Kura Zetu** is entirely open source and driven by the Kenyan people. We welcome contributors from all backgrounds and skill levels. Whether you're technical or not, there's a way for you to contribute and make a difference.
 

@@ -1,139 +1,64 @@
-import {
-    BarChart,
-    BinocularsIcon,
-    ChartSplineIcon,
-    ListFilter,
-    Map,
-    User,
-} from "lucide-react-native";
-import {Platform, StyleSheet, View} from "react-native";
+import {NativeTabs} from "expo-router/unstable-native-tabs";
+import {DynamicColorIOS, Platform} from "react-native";
 
-import {BlurView} from "expo-blur";
-import {Tabs} from "expo-router";
+const tabTintColor =
+    Platform.OS === "ios"
+        ? DynamicColorIOS({
+              light: "#1A2C4E",
+              dark: "#E9F0FF",
+          })
+        : "#1A2C4E";
 
-const TabBarIcon = ({
-    IconComponent,
-    focused,
-    color,
-    size,
-}: {
-    IconComponent: React.ComponentType<{color: string; size: number}>;
-    focused: boolean;
-    color: string;
-    size: number;
-}) => {
-    return (
-        <View style={[styles.iconContainer, focused && styles.activeIcon]}>
-            <IconComponent color={color} size={size} />
-        </View>
-    );
-};
+const tabLabelColor =
+    Platform.OS === "ios"
+        ? DynamicColorIOS({
+              light: "#1A2C4E",
+              dark: "#FFFFFF",
+          })
+        : "#1A2C4E";
 
 export default function TabLayout() {
     return (
-        <Tabs
-            screenOptions={{
-                headerShown: false,
-                tabBarStyle: {
-                    ...styles.tabBar,
-                    ...(Platform.OS === "web" ? {} : {backgroundColor: "transparent"}),
-                },
-                tabBarBackground: () =>
-                    Platform.OS !== "web" ? (
-                        <BlurView
-                            tint="light"
-                            intensity={80}
-                            style={StyleSheet.absoluteFill}
-                        />
-                    ) : null,
-                tabBarActiveTintColor: "#1A2C4E",
-                tabBarInactiveTintColor: "#8E8E93",
-                tabBarLabelStyle: styles.tabLabel,
+        <NativeTabs
+            tintColor={tabTintColor}
+            labelStyle={{
+                color: tabLabelColor,
+                fontFamily: "Inter-Medium",
+                fontSize: 10,
             }}
+            indicatorColor="#E9F0FF"
+            labelVisibilityMode="labeled"
+            tabBarRespectsIMEInsets
+            minimizeBehavior="onScrollDown"
         >
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: "Dashboard",
-                    tabBarIcon: ({focused, color, size}) => (
-                        <TabBarIcon
-                            IconComponent={BarChart}
-                            focused={focused}
-                            color={color}
-                            size={size}
-                        />
-                    ),
-                }}
-            />
+            <NativeTabs.Trigger name="index">
+                <NativeTabs.Trigger.Icon
+                    sf={{default: "chart.bar.xaxis", selected: "chart.bar.xaxis"}}
+                    md="bar_chart"
+                />
+                <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
+            </NativeTabs.Trigger>
 
-            <Tabs.Screen
-                name="pollingCentersEdit"
-                options={{
-                    title: "Verify Results",
-                    tabBarIcon: ({focused, color, size}) => (
-                        <TabBarIcon
-                            IconComponent={User}
-                            focused={focused}
-                            color={color}
-                            size={size}
-                        />
-                    ),
-                }}
-            />
+            <NativeTabs.Trigger name="pollingCentersEdit">
+                <NativeTabs.Trigger.Icon
+                    sf={{default: "person", selected: "person.fill"}}
+                    md="person"
+                />
+                <NativeTabs.Trigger.Label>Verify</NativeTabs.Trigger.Label>
+            </NativeTabs.Trigger>
 
-            <Tabs.Screen
-                name="communityNotes"
-                options={{
-                    title: "Polling Station",
-                    tabBarIcon: ({focused, color, size}) => (
-                        <TabBarIcon
-                            IconComponent={ChartSplineIcon}
-                            focused={focused}
-                            color={color}
-                            size={size}
-                        />
-                    ),
-                }}
-            />
+            <NativeTabs.Trigger name="communityNotes">
+                <NativeTabs.Trigger.Icon
+                    sf={{default: "chart.xyaxis.line", selected: "chart.xyaxis.line"}}
+                    md="query_stats"
+                />
+                <NativeTabs.Trigger.Label>Stations</NativeTabs.Trigger.Label>
+            </NativeTabs.Trigger>
 
-            <Tabs.Screen
-                name="settings/index"
-                options={{
-                    title: "Profile",
-                    tabBarIcon: ({focused, color, size}) => (
-                        <TabBarIcon
-                            IconComponent={ListFilter}
-                            focused={focused}
-                            color={color}
-                            size={size}
-                        />
-                    ),
-                }}
-            />
-        </Tabs>
+            <NativeTabs.Trigger name="settings/index">
+                <NativeTabs.Trigger.Icon sf="slider.horizontal.3" md="tune" />
+                <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
+            </NativeTabs.Trigger>
+        </NativeTabs>
     );
 }
-
-const styles = StyleSheet.create({
-    tabBar: {
-        borderTopWidth: 0,
-        elevation: 0,
-        height: 90,
-        paddingBottom: 25,
-        paddingTop: 10,
-    },
-    tabLabel: {
-        fontFamily: "Inter-Medium",
-        fontSize: 11,
-    },
-    iconContainer: {
-        alignItems: "center",
-        justifyContent: "center",
-        width: 42,
-        height: 28,
-        borderRadius: 14,
-    },
-    activeIcon: {
-        backgroundColor: "#E9F0FF",
-    },
-});

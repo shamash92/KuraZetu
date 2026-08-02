@@ -1,4 +1,5 @@
 import os
+import sys
 
 from decouple import Csv, config
 
@@ -62,6 +63,11 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 
 AUTH_USER_MODEL = "accounts.User"
 
+# Numbers entered without a country code are read as Kenyan, so 0712345678 and
+# 254712345678 both resolve to +254712345678. International numbers still work
+# when written with their own prefix.
+PHONENUMBER_DEFAULT_REGION = "KE"
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -74,6 +80,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",
+    "CommunityTally.logging_utils.request_id.RequestIDMiddleware",
 ]
 
 ROOT_URLCONF = "CommunityTally.urls"
@@ -262,3 +269,129 @@ NOMINATIM_USER_AGENT = config(
 # suggestions agree within CONSENSUS_RADIUS_M metres of the cluster centroid.
 CONSENSUS_THRESHOLD = config("CONSENSUS_THRESHOLD", default=3, cast=int)
 CONSENSUS_RADIUS_M = config("CONSENSUS_RADIUS_M", default=150, cast=int)
+
+# ── Logging ─────────────────────────────────────────────────────────────
+# Everything goes to stdout. Under systemd that means journald, which already
+# owns rotation, retention and querying. A JSON file can sit beside the source
+# too, so a person or agent can inspect runtime evidence and code together.
+#
+#   journalctl -u <unit> -f                     follow
+#   journalctl -u <unit> --since "1 hour ago" -o json | jq 'select(.level=="ERROR")'
+#
+# Retention is a systemd concern, set in journald.conf. Keep it short: it
+# bounds how much history a compromised or seized server can yield.
+LOG_LEVEL = config("LOG_LEVEL", default="INFO")
+DJANGO_LOG_LEVEL = config("DJANGO_LOG_LEVEL", default="INFO")
+
+# Humans read the console format; the JSON format is for `journalctl -o json`
+# and for the agent that reads it. Overridable so production can be debugged in
+# a readable format without a code change.
+LOG_FORMAT = config("LOG_FORMAT", default="console" if DEBUG else "json")
+
+# A JSON file alongside stdout, for tools that want a path to tail rather than a
+# journalctl call: the log-reading agent, and anything correlating application
+# events with nginx access logs while chasing bad traffic. The tracked local
+# template writes to logs/app.json under BASE_DIR, and .gitignore keeps it out
+# of commits. Empty disables file logging.
+#
+# WatchedFileHandler, never RotatingFileHandler: it reopens the file when
+# logrotate replaces the inode, so several Gunicorn workers can write to one
+# file without losing lines. Rotation belongs to logrotate, not to the app.
+LOG_FILE = config("LOG_FILE", default="")
+
+if LOG_FILE:
+    if not os.path.isabs(LOG_FILE):
+        LOG_FILE = os.path.join(BASE_DIR, LOG_FILE)
+
+    # A logging destination must never stop the site from booting. Two things
+    # go wrong on a real machine: the directory does not exist yet, which is
+    # fixable here, and the path belongs to another user, which is not. The
+    # first is created, the second falls back to the journal with a warning on
+    # stderr. Either way the application starts.
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(LOG_FILE)), exist_ok=True)
+        with open(LOG_FILE, "a", encoding="utf-8"):
+            pass
+    except OSError as exc:
+        sys.stderr.write(
+            f"LOG_FILE={LOG_FILE!r} is not writable ({exc.strerror}); "
+            f"logging to stdout only.\n"
+        )
+        LOG_FILE = ""
+
+LOGGING = {
+    "version": 1,
+    # Django and third-party libraries configure loggers at import time.
+    # Disabling them here would silence warnings we want to see.
+    "disable_existing_loggers": False,
+    "filters": {
+        "redaction": {
+            "()": "CommunityTally.logging_utils.redaction.RedactionFilter",
+        },
+        "request_context": {
+            "()": "CommunityTally.logging_utils.request_id.RequestContextFilter",
+        },
+    },
+    "formatters": {
+        "console": {
+            "format": "%(asctime)s %(levelname)-8s %(name)-24s req=%(request_id)s user=%(user_id)s %(message)s",
+            "datefmt": "%H:%M:%S",
+        },
+        "json": {
+            "()": "CommunityTally.logging_utils.formatters.JSONFormatter",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": LOG_FORMAT,
+            # On the handler, not the loggers: a filter on a logger is skipped
+            # when a child logger propagates a record up to it, which would let
+            # unredacted records through.
+            "filters": ["redaction", "request_context"],
+        },
+    },
+    # Root catches our own modules and anything else without explicit config.
+    "root": {
+        "level": LOG_LEVEL,
+        "handlers": ["console"],
+    },
+    "loggers": {
+        "django": {
+            "level": DJANGO_LOG_LEVEL,
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        # Every request Django refused: 4xx and 5xx, with the path. The first
+        # place to look when traffic turns hostile, though nginx sees the
+        # requests that never reached Django at all.
+        "django.security": {
+            "level": "INFO",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        # Every SQL statement at DEBUG. Left at INFO deliberately: it is
+        # enormous, and query parameters can carry the data we redact.
+        "django.db.backends": {
+            "level": "INFO",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+    },
+}
+
+# Wired after the fact so the handler list stays in one place: every logger
+# gains the file, or none does.
+if LOG_FILE:
+    LOGGING["handlers"]["logfile"] = {
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": LOG_FILE,
+        # Always JSON. A file exists to be parsed, not read over someone's
+        # shoulder.
+        "formatter": "json",
+        "filters": ["redaction", "request_context"],
+    }
+    LOGGING["root"]["handlers"].append("logfile")
+    for _logger in LOGGING["loggers"].values():
+        _logger["handlers"].append("logfile")
