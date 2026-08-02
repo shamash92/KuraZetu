@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
