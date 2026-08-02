@@ -73,7 +73,7 @@ see three different things.
 - **nginx** sees what passed the edge, including requests Django never handled:
   404 floods, probes for `/wp-admin`, malformed paths.
 - **Django** sees only what reached the application. Useful for a bot that
-  behaves like a real client, such as scripted signups or credential stuffing,
+  behaves like a real client, such as scripted sign-ups or credential stuffing,
   which is exactly what the `django.security` logger and the per-user
   correlation are for.
 
@@ -101,13 +101,13 @@ someone would want, and the people in it are civilians.
 So a phone number is treated like a password. It never reaches a log line.
 
 Discipline at the point of logging does not achieve this. Someone debugging a
-failed signup logs the whole request body, and the line outlives the bug. It
+failed sign-up logs the whole request body, and the line outlives the bug. It
 has happened here already. Redaction is applied centrally instead, by a filter
 on the log handler, which is the one place a child logger cannot bypass.
 
 Values with keys are matched reliably:
 
-```json
+```text
 {"phone_number": "+254712345678", "password": "x", "ward_code": "094"}
     -> {"phone_number": "[redacted]", "password": "[redacted]", "ward_code": "094"}
 
@@ -118,7 +118,7 @@ Values with keys are matched reliably:
 Formatted strings have no keys left, so secrets are matched by shape. This
 catches the common cases and misses uncommon ones:
 
-```
+```text
 "auth failed for +254712345678 after 3 attempts"
     -> "auth failed for [redacted] after 3 attempts"
 "Token from server: 9f8a7b6c5d4e3f2a"
@@ -151,7 +151,7 @@ original later. Three reasons against it.
 
 1. Encrypted personal data is still personal data: it exists indefinitely, waiting
 on the key holding. Correlating one person across lines needs the same input to
-give the same ciphertext, and there are only about a hundred million Kenyan
+give the same `ciphertext`, and there are only about a hundred million Kenyan
 mobile numbers, few enough to encrypt all of them and match.
 
 2. The deciding one is that a capability which exists can be compelled, by a
