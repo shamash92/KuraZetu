@@ -6,7 +6,10 @@ __pycache__/
 *.env
 
 # Django
+# Runtime logs are useful beside the code while debugging and for agents that
+# inspect logs and source together. The directory stays local.
 *.log
+logs/
 /media/
 *.pot
 *.py[co]
@@ -19,6 +22,7 @@ venv/
 Thumbs.db
 
 .coverage
+.pytest_cache/
 
 
 static/

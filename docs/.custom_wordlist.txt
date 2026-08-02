@@ -1,7 +1,9 @@
 Cybersecurity
 geojson
 geospatial
+Gunicorn
 influencers
+journald
 Kura
 LLMs
 NGOs
@@ -10,6 +12,9 @@ pnpm
 Postgres
 sequential_nav
 Serverless
+stderr
+stdout
+systemd
 Vite
 VPNs
 vscode
