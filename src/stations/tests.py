@@ -14,7 +14,6 @@ def test_county_creation():
 
     boundary_polygon = Polygon(((0, 0), (1, 1), (1, 0), (0, 0)))
 
-    print(boundary_polygon, " boundary_polygon")
     county = County.objects.create(
         name="Test County",
         number=1,

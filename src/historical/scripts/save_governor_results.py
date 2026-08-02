@@ -1,7 +1,8 @@
-import os
 import json
-import django
+import os
 import sys
+
+import django
 from django.conf import settings
 
 # Add the project root to the Python path
@@ -13,9 +14,9 @@ os.environ.setdefault(
 )  # Adjust if your settings module is different
 django.setup()
 
-from historical.models import GovernorResults, Aspirant2017
-from stations.models import County
+from historical.models import Aspirant2017, GovernorResults
 from results.models import Party
+from stations.models import County
 
 # Path to JSON file
 JSON_PATH = os.path.join(
@@ -56,7 +57,6 @@ def main():
             continue
 
         county_code = entry.get("COUNTY CODE")
-        print(county_code, "county code")
         if not int(county_code):
             continue  # Skip invalid county codes
 
@@ -68,19 +68,14 @@ def main():
 
         party_name = entry.get("POLITICAL PARTY NAME", "")
         abbrv = entry.get("ABBRV", "")
-        print(party_name, "party name")
-        print(abbrv, "abbrv")
         party, created = Party.objects.get_or_create(
             name=party_name,
         )
-        print(party, "party obj")
-        print(created, "was created?")
         if not created and party.short_name != abbrv:
             party.short_name = abbrv
             party.save()
 
         # Parse candidate name
-        print("are we here")
         candidate_surname = entry.get("SURNAME", "")
         candidate_other_names = entry.get("OTHER NAMES", "")
         name_parts = candidate_other_names.split()

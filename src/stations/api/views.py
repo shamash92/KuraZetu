@@ -106,8 +106,6 @@ class WardPollingCenterFromLocationListAPIView(APIView):
         )  # Default distance is 5000 meters (5 km)
 
         distance_km = distance / 1000  # Convert meters to kilometers
-        print(data, "data inside the server")
-        print(distance, "distance inside the server")
 
         latitude = data.get("latitude")
         longitude = data.get("longitude")
@@ -145,8 +143,6 @@ class WardPollingCenterFromLocationListAPIView(APIView):
             )
         serializer = PollingCenterSerializer(qs, many=True)
 
-        # print(serializer.data, "serializer data")
-
         return Response(
             serializer.data,
             status=status.HTTP_200_OK,
@@ -162,14 +158,11 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
     def get(self, request, *args, **kwargs):
         user = self.request.user
         admin_level = kwargs.get("admin_level")
-        print(user, "user inside the server")
-        print(admin_level, "admin level inside the server")
 
         total_stations_count = 0
         verified_stations_count = 0
 
         if user.is_authenticated:
-            print(user, "user is authenticated")
 
             if admin_level == "county":
                 all_county_stations_qs = PollingCenter.objects.filter(
@@ -248,7 +241,6 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
             )
 
             if verified_by_user_qs.exists():
-                print("xxxxxx", total_stations_count)
                 return Response(
                     {
                         "error": "You have already verified this polling center",
@@ -264,8 +256,6 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                     status=status.HTTP_200_OK,
                 )
             else:
-                print("No verification record found.")
-                print("yyyyyyyy", total_stations_count)
 
                 boundary_data = PollingCenterBoundarySerializer(
                     random_unverified_polling_center
@@ -285,7 +275,6 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                     status=status.HTTP_200_OK,
                 )
         else:
-            print(user, "user is not authenticated")
             random_unverified_polling_center = (
                 PollingCenter.objects.filter(
                     is_verified=False, pin_location__isnull=False
@@ -296,8 +285,6 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
             boundary_data = PollingCenterBoundarySerializer(
                 random_unverified_polling_center
             ).data
-
-            # print(boundary_data, "boundary data")
 
             return Response(
                 {
@@ -320,11 +307,7 @@ class VerificationPollingCenterAPIView(APIView):
     def post(self, *args, **kwargs):
         data = self.request.data
 
-        print(data, "data inside the server")
-
         user = self.request.user
-
-        print(user, "user inside the server")
 
         latitude = data.get("latitude")
         longitude = data.get("longitude")
@@ -339,15 +322,11 @@ class VerificationPollingCenterAPIView(APIView):
 
         try:
             polling_center = PollingCenter.objects.get(pk=pollingCenterDBId)
-            print(polling_center, "polling center")
         except PollingCenter.DoesNotExist:
             return Response(
                 {"error": "Polling Center does not exist."},
                 status=status.HTTP_200_OK,
             )
-
-        print(isUpvote, "is upvote value")
-        print(isUpvote is True, "is upvote boolean value")
 
         if isUpvote is True:
             if (
@@ -545,11 +524,7 @@ class PartiallyVerifiedPollingCenterAPIView(APIView):
     def post(self, *args, **kwargs):
         data = self.request.data
 
-        print(data, "data inside the server")
-
         user = self.request.user
-
-        print(user, "user inside the server")
 
         pollingCenterDBId = data.get("pollingCenterDBId")
 
@@ -563,14 +538,12 @@ class PartiallyVerifiedPollingCenterAPIView(APIView):
             polling_center = PollingCenterVerification.objects.filter(
                 polling_center__pk=pollingCenterDBId,
             ).last()
-            print(polling_center, "polling center")
         else:
             try:
                 polling_center = PollingCenterVerification.objects.get(
                     polling_center__pk=pollingCenterDBId,
                     verified_by=user,
                 )
-                print(polling_center, "polling center")
             except PollingCenterVerification.DoesNotExist:
                 return Response(
                     {"error": "Polling Center Verification does not exist."},
@@ -598,11 +571,8 @@ class CommunityNotesPollingCenterDetailsAPIView(APIView):
     def get(self, *args, **kwargs):
         user = self.request.user
 
-        print(user, "user inside the server")
-
         try:
             polling_center = PollingCenter.objects.get(pk=user.polling_center.pk)
-            print(polling_center, "polling center")
         except PollingCenter.DoesNotExist:
             return Response(
                 {"error": "Polling Center does not exist."},

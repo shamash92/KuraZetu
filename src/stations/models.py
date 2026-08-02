@@ -113,11 +113,7 @@ class PollingCenter(gis_models.Model):
         creating = self._state.adding
         update_boundary = False
 
-        # print(creating, "creating value")
-        # print(update_boundary, "update_boundary")
-
         if not creating:
-            # print("not creating, updating ...")
             old = type(self).objects.get(pk=self.pk)
             # Only update if pin_location changed and not if boundary changed directly
             if old.pin_location != self.pin_location:
@@ -177,7 +173,6 @@ class PollingStation(models.Model):
     def save(self, *args, **kwargs):
         if not self.stream_number:
             num = self.code[-2:]
-            # print(num, "num")
             self.stream_number = int(num)
 
         super().save(*args, **kwargs)
@@ -233,9 +228,6 @@ class PollingCenterVerification(gis_models.Model):
 
     def save(self, *args, **kwargs):
         update_boundary = False
-
-        # print(creating, "creating value")
-        # print(update_boundary, "update_boundary")
 
         if self.pin_location:
             center = self.pin_location
