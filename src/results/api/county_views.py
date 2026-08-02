@@ -24,14 +24,12 @@ class CountyTotalResultsAPIView(APIView):
 
     def get(self, request, level):
         level = self.kwargs.get("level")
-        print(level, "level ")
         # Try to get cached results
         user_ward = request.user.polling_center.ward
         user_constituency = user_ward.constituency
         user_county = user_constituency.county
 
         county_code = user_county.number
-        # print(county_code, "county code")
 
         cache_key = f"county_{county_code}_{level}_candidate_results"
 
@@ -58,18 +56,14 @@ class CountyTotalResultsAPIView(APIView):
                 level=level,
             )
 
-            # print(aspirants, "aspirants")
-
             if level == "president":
                 county_results_qs = PollingStationPresidentialResults.objects.filter(
                     polling_station__polling_center__ward__constituency__county=user_county,
                 )
             elif level == "governor":
-                print("are we reaching here")
                 county_results_qs = PollingStationGovernorResults.objects.filter(
                     polling_station__polling_center__ward__constituency__county=user_county,
                 )
-                print(county_results_qs, "county results qs governor")
             elif level == "senator":
                 county_results_qs = PollingStationSenatorResults.objects.filter(
                     polling_station__polling_center__ward__constituency__county=user_county,
@@ -97,10 +91,6 @@ class CountyTotalResultsAPIView(APIView):
                 elif level == "governor":
                     total_polling_stations_with_results = county_results_qs.filter(
                         governor_candidate=aspirant,
-                    )
-                    print(
-                        total_polling_stations_with_results.count(),
-                        "total_polling_stations_with_results governor",
                     )
                 elif level == "senator":
                     total_polling_stations_with_results = county_results_qs.filter(
@@ -158,8 +148,6 @@ class CountyTotalResultsAPIView(APIView):
             candidate_results = sorted(
                 candidate_results, key=lambda x: x["totalVotes"], reverse=True
             )
-
-            # print(candidate_results, "candidate results")
 
             cache.set(
                 cache_key,

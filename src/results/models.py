@@ -200,9 +200,6 @@ def upload_to_presidential_extras(instance, filename):
     ward = polling_center.ward
     constituency = ward.constituency
     county = constituency.county
-    # print(
-    #     f"forms/34A/{county.name}/{constituency.name}/{ward.name}/{polling_center.name}/{instance.polling_station.code}/{filename}.{extension}"
-    # )
     return f"forms/34A/{county.name}/{constituency.name}/{ward.name}/{polling_center.name}/{instance.polling_station.code}/{filename}"
 
 

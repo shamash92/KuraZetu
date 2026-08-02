@@ -1,22 +1,23 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.sites.models import Site
 
+from decouple import config
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
-from decouple import config
+
 from results.models import (
     Aspirant,
     Party,
     PollingStationGovernorResults,
     PollingStationMCAResults,
     PollingStationMpResults,
+    PollingStationPresidentialExtras,
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
-    PollingStationPresidentialExtras,
 )
 from stations.api.serializers import PollingStationSerializer
-from django.contrib.sites.models import Site
-from django.conf import settings
 
 User = get_user_model()
 
@@ -97,9 +98,7 @@ class PollingStationPresidentialExtrasSerializer(ModelSerializer):
         elif obj.form_34A:
             domain = Site.objects.get_current().domain
             current_ip = config("CURRENT_IP", default="127.0.0.1")
-            is_debug = config("DEBUG")
             is_prod = config("IS_PROD")
-            print(f"DEBUG: {is_debug}, IS_PROD: {is_prod}")
             if str(is_prod).lower() in ("true", "1", "yes"):
                 scheme = "https"
                 return f"{scheme}://{domain}{obj.form_34A.url}"
