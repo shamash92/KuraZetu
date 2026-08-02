@@ -153,6 +153,9 @@ USE_L10N = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets")]
+
+
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", cast=Csv())
 
 
@@ -191,10 +194,16 @@ SPECTACULAR_SETTINGS = {
     },
     # Schema tags for better organization
     "TAGS": [
-        {"name": "stations", "description": "Geographic location data for counties, constituencies, and wards"},
+        {
+            "name": "stations",
+            "description": "Geographic location data for counties, constituencies, and wards",
+        },
         {"name": "results", "description": "Election results and party information"},
         {"name": "historical", "description": "Historical election data and archives"},
-        {"name": "accounts", "description": "User authentication and account management"},
+        {
+            "name": "accounts",
+            "description": "User authentication and account management",
+        },
     ],
     # External documentation
     "EXTERNAL_DOCS": {
