@@ -1,3 +1,5 @@
+import logging
+
 from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AdminPasswordChangeForm, ReadOnlyPasswordHashField
@@ -5,6 +7,8 @@ from django.contrib.auth.forms import AdminPasswordChangeForm, ReadOnlyPasswordH
 from phonenumber_field.formfields import PhoneNumberField
 
 from accounts.models import User
+
+logger = logging.getLogger(__name__)
 
 
 class LoginForm(forms.Form):
@@ -25,7 +29,7 @@ class LoginForm(forms.Form):
         qs = User.objects.filter(phone_number=phone_number)
 
         if qs.exists():
-            print("qs exists")
+            logger.debug("Phone Number found in registered users")
 
         if not qs.exists():
             raise forms.ValidationError("This Phone Number is not registered")
@@ -33,14 +37,14 @@ class LoginForm(forms.Form):
         return phone_number
 
     def clean_password(self):
-        print("in clean password")
+        logger.debug("Validating Password")
         phone_number = self.cleaned_data.get("phone_number")
         password = self.cleaned_data.get("password")
         qs = User.objects.filter(phone_number=phone_number)
 
-        print(qs, "qs")
+        logger.debug("User lookup count: %s", qs.count())
         if qs.exists():
-            print("qs exists")
+            logger.debug("Phone Number Exists")
 
         if qs.count() == 1 and self.cleaned_data.get("password"):
             try:
@@ -51,14 +55,14 @@ class LoginForm(forms.Form):
                 if user is None:
                     raise forms.ValidationError("Invalid  Password")
             except Exception as e:
-                print(e)
+                logger.error("Password Validation Failed: %s", e)
                 raise forms.ValidationError("Invalid Phone Number or Password")
         else:
             pass
         return password
 
     def save(self, commit=False):
-        print("in save")
+        logger.debug("Saving Login Form...")
         user = super(LoginForm, self).save(commit=False)
 
         # login the user
@@ -69,7 +73,7 @@ class LoginForm(forms.Form):
             )
 
         except Exception as e:
-            print(e)
+            logger.error("Login save failed: %s", e)
 
         if user is not None:
             if user.is_active:
@@ -125,7 +129,6 @@ class UserAdminCreationForm(forms.ModelForm):
         # Save the provided password in hashed format
 
         user = super(UserAdminCreationForm, self).save(commit=False)
-        print(dir(user), "uer")
         user.phone_number = self.cleaned_data["phone_number"]
         user.first_name = self.cleaned_data["first_name"]
         user.last_name = self.cleaned_data["last_name"]
@@ -187,7 +190,7 @@ class PasswordResetForm(forms.Form):
     )
 
     def clean_phone_number(self):
-        print("in save...")
+        logger.debug("Validating Phone Number for password reset")
         phone_number = self.cleaned_data.get("phone_number")
         qs = User.objects.filter(phone_number=phone_number)
 
@@ -196,7 +199,7 @@ class PasswordResetForm(forms.Form):
         return phone_number
 
     def save(self, commit=False):
-        print("in save method")
+        logger.debug("Saving Password Reset form")
         user = super(PasswordResetForm, self).save(commit=False)
 
         return user
