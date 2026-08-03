@@ -5918,6 +5918,16 @@ react-native-modal@^14.0.0-rc.1:
   dependencies:
     react-native-animatable "1.4.0"
 
+react-native-nitro-image@0.15.1:
+  version "0.15.1"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-image/-/react-native-nitro-image-0.15.1.tgz#afe8aeea82fe763ec5d74467156a4b4a70657042"
+  integrity sha512-slrImfUgasAdzylTiNWuTkawE0R4t7LGh+7N2VFa/D9+SxlQbkKYp1J6hA3XkkEnTnUCKaea39ZVg+1xx665MQ==
+
+react-native-nitro-modules@0.36.5:
+  version "0.36.5"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.36.5.tgz#438c77e4f1e77bd1d3e901eb5b4953762e68a078"
+  integrity sha512-SJby84+hovD70JmQ1fq+56tw3oapJeChehUqXA4Gqjm+ktJhMAcj8LGwoAjStSOUwRaK7czbzBPB0Widj+EDoQ==
+
 react-native-pager-view@8.0.2:
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/react-native-pager-view/-/react-native-pager-view-8.0.2.tgz#333f05ecf887c7cfa970fdee8128f115478ce5db"
@@ -5988,6 +5998,21 @@ react-native-tab-view@^4.0.12:
   integrity sha512-A6pse3u7343aTw8OKxCyC90XG7ytnLBBn2QOxVByQ3TqPTi+X/bUW+B28GBpgNPODl4jscAsXW4qmAJqXDjJ+g==
   dependencies:
     use-latest-callback "^0.2.3"
+
+react-native-vision-camera-location@5.2.1:
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/react-native-vision-camera-location/-/react-native-vision-camera-location-5.2.1.tgz#f314bc24c5c1070b5b03921f12640fbc8e556b28"
+  integrity sha512-3DuipPWciMKyE+j7hIq379pvWWCeJ0FCECmRMxIkZtnR9Gdn7NlhYXPImPHR0/U1wmjYI8dRA24CKAv1iVArqA==
+
+react-native-vision-camera-worklets@5.2.1:
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/react-native-vision-camera-worklets/-/react-native-vision-camera-worklets-5.2.1.tgz#abb12ced6e66a016335fbd2a4ced83b366ee529a"
+  integrity sha512-zugSX5D6TIzQYSr/eGcoPp4MEsk5i43CXtcrdDPOmZous1wAzZHM+N6+JGRZXx0O3GdceCnXKTvAPJI6/DkfMw==
+
+react-native-vision-camera@5.2.1:
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/react-native-vision-camera/-/react-native-vision-camera-5.2.1.tgz#a1eab4d319f0aa606ab311407bcef3b55edc7bc3"
+  integrity sha512-ShA49jelI9/xg6P9uHLwJ00tfH8sIMqS3a4fo7qlLxbJaHcqXC4WGdXmKKZMoJGRc6cOeJj9nAEzq915AN4MQw==
 
 react-native-web@^0.21.0:
   version "0.21.2"

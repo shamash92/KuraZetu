@@ -18,6 +18,10 @@ export default {
             bundleIdentifier: "com.kurazetu.app",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
+                // react-native-vision-camera ships no config plugin, so its
+                // permission strings are declared here rather than generated.
+                NSCameraUsageDescription:
+                    "Allow $(PRODUCT_NAME) to access your camera to capture Form 34A",
                 UIStatusBarStyle: "UIStatusBarStyleDarkContent",
                 UIViewControllerBasedStatusBarAppearance: true,
                 UIApplicationSceneManifest: {
