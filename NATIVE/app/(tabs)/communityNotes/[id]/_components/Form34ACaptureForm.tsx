@@ -1,4 +1,5 @@
 import {
+    Image,
     Modal,
     Platform,
     ScrollView,
@@ -14,12 +15,67 @@ import {
     CommonResolutions,
     useCameraDevice,
     useCameraPermission,
+    useFrameOutput,
     usePhotoOutput,
 } from "react-native-vision-camera";
 import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
+import {scheduleOnRN} from "react-native-worklets";
+import {useSharedValue} from "react-native-reanimated";
 
+import * as Haptics from "expo-haptics";
+
+import {BracketState, FramingBracket} from "./FramingBracket";
+import {DetectedDocument, detectDocument} from "./documentDetection";
+import {
+    FrameQuality,
+    LumaThumbnail,
+    analyseLumaPlane,
+    assessQuality,
+    extractLumaThumbnail,
+    smoothQuality,
+} from "./frameQuality";
 import {perk} from "@/app/_utils/colors";
+
+/** Roughly how many readings arrive per second, for the countdown. */
+const READINGS_PER_SECOND = 6;
+
+/**
+ * Consecutive good readings required before auto-capture fires.
+ *
+ * Three seconds, matching a familiar camera self-timer. Firing the moment the
+ * frame settles is technically correct and horrible to use: the shutter goes
+ * before the citizen has registered that anything is happening. The wait is
+ * what makes the countdown readable, and gives time to adjust the framing
+ * before the photo is taken.
+ */
+const AUTO_CAPTURE_READINGS = READINGS_PER_SECOND * 3;
+
+/** Width the frame is reduced to before edge detection. */
+const DETECTION_WIDTH = 300;
+
+/**
+ * How much of the frame the detected form must cover before auto-capture is
+ * allowed. Guards against a sharp, well-lit close-up of one corner, which the
+ * luma metrics happily rate as perfect.
+ *
+ * Raised from 0.25, which let captures through with a lot of desk around the
+ * form. Every wasted pixel is resolution the extractor does not get to spend
+ * on handwritten digits, which is the hardest thing it has to read.
+ */
+const MIN_DOCUMENT_COVERAGE = 0.35;
+
+/**
+ * Accepted width/height range for the detected shape.
+ *
+ * A Form 34A is A4 portrait (~0.71). Without this the detector treats any
+ * large quadrilateral as a document, so pointing the phone at a laptop screen,
+ * a monitor or a desk is enough to trigger a capture. The range is wide enough
+ * to tolerate the perspective of a form photographed at an angle, while still
+ * excluding anything landscape.
+ */
+const MIN_DOCUMENT_ASPECT = 0.45;
+const MAX_DOCUMENT_ASPECT = 1.0;
 
 export interface Form34ACandidate {
     key: string;
@@ -71,6 +127,8 @@ export function Form34ACaptureForm({
     const {hasPermission, requestPermission} = useCameraPermission();
     const [showCamera, setShowCamera] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    /** Captured but not yet accepted — shown full-screen for review. */
+    const [pendingImage, setPendingImage] = useState<string | null>(null);
     const [votes, setVotes] = useState<Record<string, number>>({});
     const [rejectedVotes, setRejectedVotes] = useState(0);
     const [disputedVotes, setDisputedVotes] = useState(0);
@@ -81,6 +139,187 @@ export function Form34ACaptureForm({
         qualityPrioritization: "quality",
     });
 
+    const capturingRef = React.useRef(false);
+
+    const takePicture = React.useCallback(async () => {
+        // Auto-capture and the shutter button race each other, and a second
+        // capture while one is in flight throws.
+        if (capturingRef.current) return;
+        capturingRef.current = true;
+        try {
+            // VisionCamera returns a bare filesystem path; the rest of the app
+            // (and expo-file-system's `File`) expects a `file://` URI.
+            const {filePath} = await photoOutput.capturePhotoToFile(
+                {flashMode: "off"},
+                {},
+            );
+            // Held for review rather than accepted outright. Auto-capture can
+            // fire on a frame the citizen would have rejected, and they are
+            // still standing in front of the form and able to retake.
+            setPendingImage(`file://${filePath}`);
+            setShowCamera(false);
+        } catch {
+            // Swallow: the capture button stays available for a retry.
+        } finally {
+            capturingRef.current = false;
+        }
+    }, [photoOutput]);
+
+    // Live capture-quality readout. The frame processor runs on the camera
+    // thread at full rate, but only every Nth frame is measured and pushed to
+    // React, so the preview never waits on us.
+    const [quality, setQuality] = useState<FrameQuality | null>(null);
+
+    // Consecutive good readings. The camera is continuously auto-focusing and
+    // re-metering, so a single good frame proves nothing — it may be the middle
+    // of a focus sweep. Requiring a run of them is what makes auto-capture fire
+    // on a settled image rather than a lucky one. The streak lives in a ref as
+    // well as state: the ref is what the capture decision reads as each reading
+    // lands, the state only exists to re-render the bracket.
+    const [steadyReadings, setSteadyReadings] = useState(0);
+    const steadyRef = React.useRef(0);
+    const smoothedRef = React.useRef<FrameQuality | null>(null);
+
+    // The form as OpenCV currently sees it, or null when no four-cornered
+    // shape is in frame.
+    const [document, setDocument] = useState<DetectedDocument | null>(null);
+
+    // CALIBRATION — also stream readings to Metro so a run can be captured as
+    // a series rather than read off the screen one frame at a time.
+    const reportQuality = React.useCallback(
+        (measured: FrameQuality, thumbnail: LumaThumbnail) => {
+            // OpenCV cannot run in the worklet, so edge detection happens here
+            // on the JS thread, at the same throttled rate as the metrics.
+            const found = detectDocument(thumbnail);
+            setDocument(found);
+
+            // Smooth before judging: raw readings jitter enough to flip the
+            // banner several times a second and to trip auto-capture on noise.
+            const smoothed = smoothQuality(smoothedRef.current, measured);
+            smoothedRef.current = smoothed;
+            setQuality(smoothed);
+
+            const covers =
+                !!found &&
+                found.areaFraction >= MIN_DOCUMENT_COVERAGE &&
+                found.aspectRatio >= MIN_DOCUMENT_ASPECT &&
+                found.aspectRatio <= MAX_DOCUMENT_ASPECT;
+
+            console.log(
+                `[form34a] bright=${smoothed.brightness.toFixed(1)} ` +
+                    `sharp=${smoothed.sharpness.toFixed(1)} ` +
+                    `glare=${(smoothed.glare * 100).toFixed(2)}% ` +
+                    `doc=${found ? (found.areaFraction * 100).toFixed(1) + "%" : "none"} ` +
+                    `largest=${found ? (found.largestAreaFraction * 100).toFixed(1) + "%" : "-"} ` +
+                    `contours=${found?.contourCount ?? 0} ` +
+                    `corners=${found?.bestPointCount ?? 0} ` +
+                    `ratio=${found ? found.aspectRatio.toFixed(2) : "-"}`,
+            );
+
+            // Both gates must hold: the image has to be legible *and* show the
+            // whole form. Either alone passes on a perfect close-up.
+            steadyRef.current =
+                assessQuality(smoothed).ok && covers ? steadyRef.current + 1 : 0;
+            setSteadyReadings(steadyRef.current);
+
+            // Fired from here rather than an effect: this is the event that
+            // decides it, so there is nothing to synchronise after the fact.
+            // Readings only arrive while the session is active, so reaching
+            // here already implies the camera panel is open.
+            if (steadyRef.current >= AUTO_CAPTURE_READINGS) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                takePicture();
+            }
+        },
+        [takePicture],
+    );
+
+    const rawAssessment = quality ? assessQuality(quality) : null;
+
+    // Framing is reported before lighting or focus: there is no point telling
+    // someone to hold steady if the form is not in the shot at all.
+    const covered =
+        !!document &&
+        document.areaFraction >= MIN_DOCUMENT_COVERAGE &&
+        document.aspectRatio >= MIN_DOCUMENT_ASPECT &&
+        document.aspectRatio <= MAX_DOCUMENT_ASPECT;
+    const secondsToCapture = Math.ceil(
+        (AUTO_CAPTURE_READINGS - steadyReadings) / READINGS_PER_SECOND,
+    );
+
+    const assessment =
+        rawAssessment && !covered
+            ? {
+                  ...rawAssessment,
+                  label: document ? "Move closer" : "Show the whole form",
+                  hint: document
+                      ? "Fill the brackets with the form"
+                      : "Fit all four edges inside the brackets",
+                  ok: false,
+              }
+            : rawAssessment?.ok && steadyReadings > 0
+              ? {
+                    // The countdown itself is the centred 3-2-1; the banner
+                    // only has to say why the numbers are running.
+                    ...rawAssessment,
+                    label: "Hold still",
+                    hint: null,
+                }
+              : rawAssessment;
+
+    // Only while a capture is actually pending, so the digits do not flash up
+    // for a single frame every time the form drifts in and out of focus.
+    const countdown =
+        showCamera && assessment?.ok && steadyReadings > 0 ? secondsToCapture : null;
+
+    // Amber the moment the frame is usable, green only once it has held long
+    // enough that auto-capture is about to fire — so the colour tells the
+    // citizen whether to keep holding still.
+    const bracketState: BracketState = !assessment?.ok
+        ? "bad"
+        : steadyReadings >= AUTO_CAPTURE_READINGS - 1
+          ? "steady"
+          : "ok";
+
+    const frameCounter = useSharedValue(0);
+    const frameOutput = useFrameOutput({
+        targetResolution: CommonResolutions.VGA_4_3,
+        pixelFormat: "yuv",
+        onFrame(frame) {
+            "worklet";
+            try {
+                frameCounter.value += 1;
+                if (frameCounter.value % 5 !== 0) return;
+
+                const planes = frame.getPlanes();
+                if (planes.length === 0) return;
+
+                // Plane 0 of a YUV frame is luma, which is all these metrics need.
+                const luma = planes[0];
+                const bytes = new Uint8Array(luma.getPixelBuffer());
+                const measured = analyseLumaPlane(
+                    bytes,
+                    luma.width,
+                    luma.height,
+                    luma.bytesPerRow,
+                );
+                // Copied before the frame is disposed, since the thumbnail
+                // outlives this callback.
+                const thumbnail = extractLumaThumbnail(
+                    bytes,
+                    luma.width,
+                    luma.height,
+                    luma.bytesPerRow,
+                    DETECTION_WIDTH,
+                );
+                scheduleOnRN(reportQuality, measured, thumbnail);
+            } finally {
+                // Must always release the frame or the pipeline stalls.
+                frame.dispose();
+            }
+        },
+    });
+
     // Reset the form each time the sheet opens (render-phase state adjustment).
     if (visible && !wasVisible) {
         setWasVisible(true);
@@ -88,6 +327,7 @@ export function Form34ACaptureForm({
         setRejectedVotes(0);
         setDisputedVotes(0);
         setCapturedImage(null);
+        setPendingImage(null);
         setShowCamera(false);
     } else if (!visible && wasVisible) {
         setWasVisible(false);
@@ -109,19 +349,15 @@ export function Form34ACaptureForm({
         : true;
     const submitEnabled = !!capturedImage && hasVotes && extraGate;
 
-    const takePicture = async () => {
-        try {
-            // VisionCamera returns a bare filesystem path; the rest of the app
-            // (and expo-file-system's `File`) expects a `file://` URI.
-            const {filePath} = await photoOutput.capturePhotoToFile(
-                {flashMode: "off"},
-                {},
-            );
-            setCapturedImage(`file://${filePath}`);
-            setShowCamera(false);
-        } catch {
-            // Swallow: the capture button stays available for a retry.
-        }
+    // Clear the previous run's readings so a stale good streak can't fire
+    // auto-capture the instant the camera reopens for a retake.
+    const openCamera = () => {
+        setQuality(null);
+        setDocument(null);
+        smoothedRef.current = null;
+        steadyRef.current = 0;
+        setSteadyReadings(0);
+        setShowCamera(true);
     };
 
     const parseCount = (text: string) => {
@@ -186,15 +422,98 @@ export function Form34ACaptureForm({
                         </TouchableOpacity>
                     </View>
 
-                    {showCamera ? (
+                    {pendingImage ? (
+                        <View style={styles.reviewContainer}>
+                            <Image
+                                source={{uri: pendingImage}}
+                                style={styles.reviewImage}
+                                resizeMode="contain"
+                            />
+                            <Text style={styles.reviewPrompt}>
+                                Can you read every vote number?
+                            </Text>
+                            <View style={styles.reviewControls}>
+                                <TouchableOpacity
+                                    style={styles.reviewRetake}
+                                    onPress={() => {
+                                        setPendingImage(null);
+                                        openCamera();
+                                    }}
+                                >
+                                    <Text style={styles.cancelButtonText}>Retake</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.reviewAccept}
+                                    onPress={() => {
+                                        setCapturedImage(pendingImage);
+                                        setPendingImage(null);
+                                    }}
+                                >
+                                    <Check size={18} color={perk.limeInk} />
+                                    <Text style={styles.submitButtonText}>
+                                        Use this photo
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    ) : showCamera ? (
                         <View style={styles.cameraContainer}>
                             {device && (
                                 <Camera
                                     style={styles.camera}
                                     device={device}
                                     isActive={visible && showCamera}
-                                    outputs={[photoOutput]}
+                                    outputs={[photoOutput, frameOutput]}
                                 />
+                            )}
+                            <FramingBracket state={bracketState} />
+                            {countdown !== null && (
+                                <View style={styles.countdown} pointerEvents="none">
+                                    <Text style={styles.countdownNumber}>
+                                        {countdown}
+                                    </Text>
+                                </View>
+                            )}
+                            {assessment && (
+                                <View
+                                    style={[
+                                        styles.qualityBanner,
+                                        assessment.ok
+                                            ? styles.qualityBannerOk
+                                            : styles.qualityBannerBad,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.qualityLabel,
+                                            assessment.ok
+                                                ? styles.qualityLabelOk
+                                                : styles.qualityLabelBad,
+                                        ]}
+                                    >
+                                        {assessment.label}
+                                    </Text>
+                                    {!!assessment.hint && (
+                                        <Text style={styles.qualityHint}>
+                                            {assessment.hint}
+                                        </Text>
+                                    )}
+                                </View>
+                            )}
+                            {/* CALIBRATION readout — remove once thresholds are set. */}
+                            {quality && (
+                                <View style={styles.qualityReadout}>
+                                    <Text style={styles.qualityText}>
+                                        {`bright ${quality.brightness.toFixed(0)}  ` +
+                                            `sharp ${quality.sharpness.toFixed(0)}  ` +
+                                            `glare ${(quality.glare * 100).toFixed(1)}%  ` +
+                                            `doc ${
+                                                document
+                                                    ? `${(document.areaFraction * 100).toFixed(0)}%/${document.bestPointCount}pt`
+                                                    : "—"
+                                            }`}
+                                    </Text>
+                                </View>
                             )}
                             <View style={styles.cameraControls}>
                                 <TouchableOpacity
@@ -221,9 +540,7 @@ export function Form34ACaptureForm({
                                         <Text style={styles.capturedText}>
                                             ✓ Form 34A captured
                                         </Text>
-                                        <TouchableOpacity
-                                            onPress={() => setShowCamera(true)}
-                                        >
+                                        <TouchableOpacity onPress={openCamera}>
                                             <Text style={styles.recaptureText}>
                                                 Retake
                                             </Text>
@@ -232,7 +549,7 @@ export function Form34ACaptureForm({
                                 ) : (
                                     <TouchableOpacity
                                         style={styles.cameraButton}
-                                        onPress={() => setShowCamera(true)}
+                                        onPress={openCamera}
                                     >
                                         <CameraIcon size={16} color={perk.lime} />
                                         <Text style={styles.cameraButtonText}>
@@ -467,6 +784,109 @@ const styles = StyleSheet.create({
         backgroundColor: perk.surface,
         alignItems: "center",
         justifyContent: "center",
+    },
+    qualityBanner: {
+        position: "absolute",
+        top: 14,
+        alignSelf: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 9,
+        borderRadius: 12,
+        alignItems: "center",
+        maxWidth: "88%",
+    },
+    qualityBannerOk: {backgroundColor: perk.lime},
+    qualityBannerBad: {backgroundColor: perk.coralDeep},
+    qualityLabel: {
+        fontSize: 14,
+        fontWeight: "900",
+        letterSpacing: -0.2,
+    },
+    qualityLabelOk: {color: perk.limeInk},
+    qualityLabelBad: {color: perk.card},
+    qualityHint: {
+        fontSize: 11.5,
+        fontWeight: "700",
+        color: perk.card,
+        marginTop: 2,
+        textAlign: "center",
+    },
+    // CALIBRATION readout — remove once thresholds are set.
+    qualityReadout: {
+        position: "absolute",
+        top: 74,
+        alignSelf: "center",
+        backgroundColor: "rgba(13,13,13,0.75)",
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 8,
+    },
+    qualityText: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 11,
+        fontWeight: "700",
+        color: perk.lime,
+    },
+    countdown: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    countdownNumber: {
+        fontSize: 132,
+        fontWeight: "900",
+        color: perk.lime,
+        // Legible over both a bright form and a dark background, without a
+        // panel that would hide the very thing being framed.
+        textShadowColor: "rgba(13,13,13,0.55)",
+        textShadowOffset: {width: 0, height: 3},
+        textShadowRadius: 14,
+    },
+    // Review
+    reviewContainer: {
+        flex: 1,
+        paddingHorizontal: 12,
+        paddingBottom: 12,
+    },
+    reviewImage: {
+        flex: 1,
+        width: "100%",
+        borderRadius: 12,
+        backgroundColor: perk.ink,
+    },
+    reviewPrompt: {
+        fontSize: 13,
+        fontWeight: "800",
+        color: perk.ink,
+        textAlign: "center",
+        marginTop: 12,
+    },
+    reviewControls: {
+        flexDirection: "row",
+        gap: 8,
+        marginTop: 10,
+    },
+    reviewRetake: {
+        flex: 0.7,
+        paddingVertical: 14,
+        borderRadius: 12,
+        backgroundColor: perk.surface,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    reviewAccept: {
+        flex: 1.3,
+        flexDirection: "row",
+        paddingVertical: 14,
+        borderRadius: 12,
+        backgroundColor: perk.lime,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
     },
     // Camera
     cameraContainer: {flex: 1},
