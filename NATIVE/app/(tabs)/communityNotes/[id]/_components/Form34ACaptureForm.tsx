@@ -8,8 +8,14 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import {Camera, Check, X} from "lucide-react-native";
-import {CameraView, useCameraPermissions} from "expo-camera";
+import {Camera as CameraIcon, Check, X} from "lucide-react-native";
+import {
+    Camera,
+    CommonResolutions,
+    useCameraDevice,
+    useCameraPermission,
+    usePhotoOutput,
+} from "react-native-vision-camera";
 import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 
@@ -62,14 +68,18 @@ export function Form34ACaptureForm({
     onSubmit,
     canSubmit,
 }: Form34ACaptureFormProps) {
-    const [permission, requestPermission] = useCameraPermissions();
+    const {hasPermission, requestPermission} = useCameraPermission();
     const [showCamera, setShowCamera] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [votes, setVotes] = useState<Record<string, number>>({});
     const [rejectedVotes, setRejectedVotes] = useState(0);
     const [disputedVotes, setDisputedVotes] = useState(0);
     const [wasVisible, setWasVisible] = useState(false);
-    const cameraRef = React.useRef<CameraView>(null);
+    const device = useCameraDevice("back");
+    const photoOutput = usePhotoOutput({
+        targetResolution: CommonResolutions.UHD_4_3,
+        qualityPrioritization: "quality",
+    });
 
     // Reset the form each time the sheet opens (render-phase state adjustment).
     if (visible && !wasVisible) {
@@ -100,13 +110,15 @@ export function Form34ACaptureForm({
     const submitEnabled = !!capturedImage && hasVotes && extraGate;
 
     const takePicture = async () => {
-        if (!cameraRef.current) return;
         try {
-            const photo = await cameraRef.current.takePictureAsync();
-            if (photo) {
-                setCapturedImage(photo.uri);
-                setShowCamera(false);
-            }
+            // VisionCamera returns a bare filesystem path; the rest of the app
+            // (and expo-file-system's `File`) expects a `file://` URI.
+            const {filePath} = await photoOutput.capturePhotoToFile(
+                {flashMode: "off"},
+                {},
+            );
+            setCapturedImage(`file://${filePath}`);
+            setShowCamera(false);
         } catch {
             // Swallow: the capture button stays available for a retry.
         }
@@ -117,11 +129,7 @@ export function Form34ACaptureForm({
         return clean === "" ? 0 : Number(clean);
     };
 
-    if (!permission) {
-        return null;
-    }
-
-    if (!permission.granted) {
+    if (!hasPermission) {
         return (
             <Modal
                 visible={visible}
@@ -180,17 +188,21 @@ export function Form34ACaptureForm({
 
                     {showCamera ? (
                         <View style={styles.cameraContainer}>
-                            <CameraView
-                                ref={cameraRef}
-                                style={styles.camera}
-                                facing="back"
-                            />
+                            {device && (
+                                <Camera
+                                    style={styles.camera}
+                                    device={device}
+                                    isActive={visible && showCamera}
+                                    outputs={[photoOutput]}
+                                />
+                            )}
                             <View style={styles.cameraControls}>
                                 <TouchableOpacity
                                     style={styles.captureButton}
                                     onPress={takePicture}
+                                    disabled={!device}
                                 >
-                                    <Camera size={32} color={perk.limeInk} />
+                                    <CameraIcon size={32} color={perk.limeInk} />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -222,7 +234,7 @@ export function Form34ACaptureForm({
                                         style={styles.cameraButton}
                                         onPress={() => setShowCamera(true)}
                                     >
-                                        <Camera size={16} color={perk.lime} />
+                                        <CameraIcon size={16} color={perk.lime} />
                                         <Text style={styles.cameraButtonText}>
                                             Capture Form 34A
                                         </Text>
