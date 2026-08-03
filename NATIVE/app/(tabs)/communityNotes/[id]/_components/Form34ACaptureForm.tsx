@@ -13,6 +13,7 @@ import {Camera as CameraIcon, Check, X} from "lucide-react-native";
 import {
     Camera,
     CommonResolutions,
+    Size,
     useCameraDevice,
     useCameraPermission,
     useFrameOutput,
@@ -53,6 +54,32 @@ const AUTO_CAPTURE_READINGS = READINGS_PER_SECOND * 3;
 
 /** Width the frame is reduced to before edge detection. */
 const DETECTION_WIDTH = 300;
+
+export type CaptureAspect = "16:9" | "4:3";
+
+/**
+ * Aspect the camera starts on.
+ *
+ * 4:3, even though 16:9 fills a tall phone screen more neatly. 16:9 is a crop
+ * of the sensor's 4:3 readout (2160x3840 against 3024x4032), and a portrait A4
+ * page fits a 4:3 frame far more closely than a 16:9 one — together roughly
+ * 74% more pixels landing on the form itself. That is resolution spent on
+ * handwritten vote figures, which are the hardest thing to read back.
+ *
+ * 16:9 remains selectable for anyone who prefers the framing.
+ */
+const DEFAULT_ASPECT: CaptureAspect = "4:3";
+
+const PHOTO_RESOLUTION: Record<CaptureAspect, Size> = {
+    "16:9": CommonResolutions.UHD_16_9,
+    "4:3": CommonResolutions.UHD_4_3,
+};
+
+/** Frame-processing resolution stays small; only the shape needs to match. */
+const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
+    "16:9": CommonResolutions.VGA_16_9,
+    "4:3": CommonResolutions.VGA_4_3,
+};
 
 /**
  * How much of the frame the detected form must cover before auto-capture is
@@ -134,8 +161,9 @@ export function Form34ACaptureForm({
     const [disputedVotes, setDisputedVotes] = useState(0);
     const [wasVisible, setWasVisible] = useState(false);
     const device = useCameraDevice("back");
+    const [aspect, setAspect] = useState<CaptureAspect>(DEFAULT_ASPECT);
     const photoOutput = usePhotoOutput({
-        targetResolution: CommonResolutions.UHD_4_3,
+        targetResolution: PHOTO_RESOLUTION[aspect],
         qualityPrioritization: "quality",
     });
 
@@ -243,6 +271,9 @@ export function Form34ACaptureForm({
         document.areaFraction >= MIN_DOCUMENT_COVERAGE &&
         document.aspectRatio >= MIN_DOCUMENT_ASPECT &&
         document.aspectRatio <= MAX_DOCUMENT_ASPECT;
+    // Portrait: a 4:3 sensor frame shown upright is 3 wide by 4 tall.
+    const previewAspect = aspect === "4:3" ? 3 / 4 : 9 / 16;
+
     const secondsToCapture = Math.ceil(
         (AUTO_CAPTURE_READINGS - steadyReadings) / READINGS_PER_SECOND,
     );
@@ -283,7 +314,7 @@ export function Form34ACaptureForm({
 
     const frameCounter = useSharedValue(0);
     const frameOutput = useFrameOutput({
-        targetResolution: CommonResolutions.VGA_4_3,
+        targetResolution: FRAME_RESOLUTION[aspect],
         pixelFormat: "yuv",
         onFrame(frame) {
             "worklet";
@@ -311,6 +342,7 @@ export function Form34ACaptureForm({
                     luma.height,
                     luma.bytesPerRow,
                     DETECTION_WIDTH,
+                    frame.orientation === "left" || frame.orientation === "right",
                 );
                 scheduleOnRN(reportQuality, measured, thumbnail);
             } finally {
@@ -458,22 +490,45 @@ export function Form34ACaptureForm({
                         </View>
                     ) : showCamera ? (
                         <View style={styles.cameraContainer}>
-                            {device && (
-                                <Camera
-                                    style={styles.camera}
-                                    device={device}
-                                    isActive={visible && showCamera}
-                                    outputs={[photoOutput, frameOutput]}
-                                />
-                            )}
-                            <FramingBracket state={bracketState} />
-                            {countdown !== null && (
-                                <View style={styles.countdown} pointerEvents="none">
-                                    <Text style={styles.countdownNumber}>
-                                        {countdown}
-                                    </Text>
-                                </View>
-                            )}
+                            <TouchableOpacity
+                                style={styles.aspectToggle}
+                                onPress={() =>
+                                    setAspect(aspect === "4:3" ? "16:9" : "4:3")
+                                }
+                            >
+                                <Text style={styles.aspectToggleText}>{aspect}</Text>
+                            </TouchableOpacity>
+                            {/* Locked to the capture aspect so the brackets sit
+                                over the frame itself, not the letterboxing.
+                                Screen shapes vary widely between handsets; the
+                                frame's shape does not. */}
+                            <View
+                                style={[styles.preview, {aspectRatio: previewAspect}]}
+                            >
+                                {device && (
+                                    <Camera
+                                        style={styles.camera}
+                                        device={device}
+                                        isActive={visible && showCamera}
+                                        outputs={[photoOutput, frameOutput]}
+                                        // The default, 'cover', crops the 4:3 frame
+                                        // to fill a tall screen, so the citizen
+                                        // frames against less than the camera
+                                        // actually records. Showing the whole field
+                                        // of view is what makes the brackets mean
+                                        // anything.
+                                        resizeMode="contain"
+                                    />
+                                )}
+                                <FramingBracket state={bracketState} />
+                                {countdown !== null && (
+                                    <View style={styles.countdown} pointerEvents="none">
+                                        <Text style={styles.countdownNumber}>
+                                            {countdown}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                             {assessment && (
                                 <View
                                     style={[
@@ -889,7 +944,32 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     // Camera
-    cameraContainer: {flex: 1},
+    cameraContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: perk.ink,
+    },
+    preview: {
+        width: "100%",
+        maxHeight: "100%",
+    },
+    aspectToggle: {
+        position: "absolute",
+        top: 14,
+        right: 14,
+        zIndex: 2,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 999,
+        backgroundColor: "rgba(13,13,13,0.6)",
+    },
+    aspectToggleText: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 12,
+        fontWeight: "700",
+        color: perk.lime,
+    },
     camera: {flex: 1},
     cameraControls: {
         position: "absolute",

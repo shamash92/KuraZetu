@@ -35,6 +35,15 @@ export interface LumaThumbnail {
     data: Uint8Array;
     width: number;
     height: number;
+    /**
+     * Whether the buffer is rotated 90° from what the citizen sees.
+     *
+     * Frames stream in the camera hardware's native orientation, so a portrait
+     * page held in a portrait phone arrives with its width and height swapped.
+     * Anything reasoning about shape has to undo that or it measures a
+     * portrait form as landscape.
+     */
+    rotated: boolean;
 }
 
 /**
@@ -51,6 +60,7 @@ export function extractLumaThumbnail(
     height: number,
     bytesPerRow: number,
     targetWidth: number,
+    rotated: boolean,
 ): LumaThumbnail {
     "worklet";
 
@@ -70,7 +80,7 @@ export function extractLumaThumbnail(
         }
     }
 
-    return {data: out, width: outWidth, height: outHeight};
+    return {data: out, width: outWidth, height: outHeight, rotated};
 }
 
 /**

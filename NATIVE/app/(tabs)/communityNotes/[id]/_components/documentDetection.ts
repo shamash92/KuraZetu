@@ -76,7 +76,7 @@ const APPROX_EPSILON_RATIO = 0.02;
  * to tell "no form in view" apart from "detection is broken".
  */
 export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | null {
-    const {data, width, height} = thumbnail;
+    const {data, width, height, rotated} = thumbnail;
 
     // OpenCV objects hold native memory and are not garbage collected, so
     // everything created here is tracked and released before returning.
@@ -159,7 +159,13 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
 
             bestArea = area;
             bestPointCount = approximated.length;
-            bestAspectRatio = boxHeight > 0 ? boxWidth / boxHeight : 0;
+            // Reported in display space, not buffer space. A portrait page in
+            // a portrait phone arrives rotated 90°, so measuring the buffer
+            // directly makes an A4 form look landscape and fails the shape
+            // check that is meant to reject landscape things.
+            const bufferRatio = boxHeight > 0 ? boxWidth / boxHeight : 0;
+            bestAspectRatio =
+                rotated && bufferRatio > 0 ? 1 / bufferRatio : bufferRatio;
             bestCorners =
                 approximated.length === 4
                     ? points.map((point) => ({
