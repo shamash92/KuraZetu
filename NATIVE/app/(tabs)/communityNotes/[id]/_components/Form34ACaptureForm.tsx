@@ -77,7 +77,7 @@ export interface Form34ACandidate {
     party?: string | null;
 }
 
-export interface Form34ASubmission {
+interface Form34ASubmission {
     image: string;
     votes: Record<string, number>;
     rejectedVotes: number;
