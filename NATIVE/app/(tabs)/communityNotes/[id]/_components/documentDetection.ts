@@ -14,6 +14,7 @@
 
 import {
     ContourApproximationModes,
+    DataTypes,
     MorphShapes,
     MorphTypes,
     OpenCV,
@@ -87,13 +88,19 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
     };
 
     try {
+        // `createFromBuffer` wraps the JavaScript buffer rather than copying
+        // it, so the Mat points at memory OpenCV does not own. Filtering in
+        // place through that wrapper writes back into it and lets OpenCV
+        // reallocate underneath us. Everything after the first operation
+        // therefore runs in `work`, which OpenCV owns outright.
         const source = track(Mat.createFromBuffer("uint8", height, width, 1, data));
+        const work = track(Mat.create(height, width, DataTypes.CV_8U));
 
         // Light blur only. Heavier smoothing (or morphology before Canny)
         // erases the paper boundary at this resolution, which is what left the
         // edge fragmented into dozens of near-zero-area pieces.
-        OpenCV.GaussianBlur(source, source, track(Size.create(5, 5)), 0);
-        OpenCV.Canny(source, source, 50, 150);
+        OpenCV.GaussianBlur(source, work, track(Size.create(5, 5)), 0);
+        OpenCV.Canny(work, work, 50, 150);
 
         // Canny leaves the boundary as a broken line, and `contourArea` of a
         // broken line is ~0 because it encloses nothing. Dilating welds the
@@ -106,15 +113,15 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
         );
         // morphologyEx rather than dilate(): this binding's dilate() requires
         // all seven OpenCV arguments, and MORPH_DILATE is the same operation.
-        OpenCV.morphologyEx(source, source, MorphTypes.MORPH_DILATE, kernel);
-        OpenCV.morphologyEx(source, source, MorphTypes.MORPH_CLOSE, kernel);
+        OpenCV.morphologyEx(work, work, MorphTypes.MORPH_DILATE, kernel);
+        OpenCV.morphologyEx(work, work, MorphTypes.MORPH_CLOSE, kernel);
 
         const contours = track(PointVectorOfVectors.create());
         // RETR_EXTERNAL keeps only outermost contours — a page is by
         // definition the outer boundary, and this drops every line of printed
         // text inside it.
         OpenCV.findContours(
-            source,
+            work,
             contours,
             RetrievalModes.RETR_EXTERNAL,
             ContourApproximationModes.CHAIN_APPROX_SIMPLE,
@@ -155,7 +162,22 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
 
             // The largest shape wins regardless of its corner count; four
             // corners only upgrades it to something deskew could use.
-            const points = approximated.getAll();
+            // getAll() hands back native Point objects. Read them into plain
+            // numbers straight away and release them: a handful leaked per
+            // frame, six times a second, is what eventually exhausts memory.
+            const nativePoints = approximated.getAll();
+            const points = nativePoints.map((point) => ({
+                x: point.x,
+                y: point.y,
+            }));
+            for (const point of nativePoints) {
+                try {
+                    point.release();
+                } catch {
+                    // Owned elsewhere, or already gone.
+                }
+            }
+
             const xs = points.map((point) => point.x);
             const ys = points.map((point) => point.y);
             const boxWidth = Math.max(...xs) - Math.min(...xs);
@@ -171,7 +193,7 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
             bestAspectRatio =
                 rotated && bufferRatio > 0 ? 1 / bufferRatio : bufferRatio;
             bestCorners =
-                approximated.length === 4
+                points.length === 4
                     ? points.map((point) => ({
                           x: point.x / width,
                           y: point.y / height,

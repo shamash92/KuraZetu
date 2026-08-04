@@ -451,11 +451,19 @@ export function Form34ACaptureForm({
 
                     {pendingImage ? (
                         <View style={styles.reviewContainer}>
-                            <Image
-                                source={{uri: pendingImage}}
-                                style={styles.reviewImage}
-                                resizeMode="contain"
-                            />
+                            {/* Same aspect box as the preview, so the photo is
+                                shown at the framing the citizen just composed
+                                rather than rescaled into a taller container. */}
+                            <View style={styles.reviewImageFrame}>
+                                <Image
+                                    source={{uri: pendingImage}}
+                                    style={[
+                                        styles.reviewImage,
+                                        {aspectRatio: previewAspect},
+                                    ]}
+                                    resizeMode="contain"
+                                />
+                            </View>
                             <Text style={styles.reviewPrompt}>
                                 Can you read every vote number?
                             </Text>
@@ -882,8 +890,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingBottom: 12,
     },
-    reviewImage: {
+    reviewImageFrame: {
         flex: 1,
+        justifyContent: "center",
+    },
+    reviewImage: {
         width: "100%",
         borderRadius: 12,
         backgroundColor: perk.ink,
