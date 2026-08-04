@@ -17,66 +17,26 @@ import {
     Size,
     useCameraDevice,
     useCameraPermission,
-    useFrameOutput,
     usePhotoOutput,
 } from "react-native-vision-camera";
 import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
-import {scheduleOnRN} from "react-native-worklets";
-import {useSharedValue} from "react-native-reanimated";
 import {
     NativeNitroImage,
     type Image as NitroImageHandle,
 } from "react-native-nitro-image";
 
 import {File} from "expo-file-system";
-import * as Haptics from "expo-haptics";
 
-import {BracketState, FramingBracket} from "./FramingBracket";
+import {FramingBracket} from "./FramingBracket";
 import {getCameraPermissionRecovery} from "./cameraPermission";
 import {
-    CaptureReadiness,
-    INITIAL_CAPTURE_READINESS,
-    advanceCaptureReadiness,
-} from "./captureReadiness";
-import {DetectedDocument, detectDocument} from "./documentDetection";
-import {
-    FrameQuality,
-    LumaThumbnail,
-    analyseLumaPlane,
-    assessQuality,
-    extractLumaThumbnail,
-    smoothQuality,
-} from "./frameQuality";
+    CaptureAspect,
+    useForm34AFrameAnalysis,
+} from "./useForm34AFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
 
-/**
- * Measure one frame in every `FRAME_SAMPLE_INTERVAL`.
- *
- * Every frame would be wasteful and stall the camera pipeline; this lands
- * around six readings a second on a 30fps stream, which is more than enough
- * for guidance a human is reacting to.
- */
-const FRAME_SAMPLE_INTERVAL = 5;
-
-// VisionCamera 5.2 exposes Android frame timestamps in nanoseconds and iOS
-// frame timestamps in seconds. Normalize at the camera boundary so readiness
-// measures wall-clock capture time consistently on both platforms.
-const FRAME_TIMESTAMP_TO_SECONDS = Platform.OS === "android" ? 1e-9 : 1;
-
-/**
- * Print every frame reading to the console.
- *
- * Development only, and the switch for calibrating `THRESHOLDS` against a
- * printed form under real light — the on-screen readout shows one frame at a
- * time, whereas a log captures the whole run.
- */
-const LOG_READINGS = false;
-
-/** Width the frame is reduced to before edge detection. */
-const DETECTION_WIDTH = 300;
-
-export type CaptureAspect = "16:9" | "4:3";
+export type {CaptureAspect} from "./useForm34AFrameAnalysis";
 
 /**
  * Aspect the camera starts on.
@@ -94,12 +54,6 @@ const DEFAULT_ASPECT: CaptureAspect = "4:3";
 const PHOTO_RESOLUTION: Record<CaptureAspect, Size> = {
     "16:9": CommonResolutions.UHD_16_9,
     "4:3": CommonResolutions.UHD_4_3,
-};
-
-/** Frame-processing resolution stays small; only the shape needs to match. */
-const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
-    "16:9": CommonResolutions.VGA_16_9,
-    "4:3": CommonResolutions.VGA_4_3,
 };
 
 /** A bounded in-memory image for the full-screen review step. */
@@ -120,38 +74,6 @@ function deleteTemporaryPhoto(uri: string | null) {
         console.warn("[form34a] temporary photo cleanup failed", error);
     }
 }
-
-/**
- * How much of the frame the detected form must cover before the shutter is
- * offered.
- *
- * A4 is 0.707 wide-to-tall and a 4:3 portrait frame is 0.75, so a form
- * spanning the full frame height covers about 94% of it — the ratios very
- * nearly match. Filling the on-screen bracket lands around 82%, and captures
- * framed by hand measure 84-92% in practice, so this is a reachable target
- * rather than a theoretical one.
- *
- * Set well below that to leave room for imperfect framing, but far above the
- * 0.35 it started at, which passed shots with two-thirds of the frame spent on
- * the desk. Every wasted pixel is resolution the extractor does not get to
- * spend on handwritten digits, which are the hardest thing it has to read.
- *
- * Note this measures the *frame*, not the screen. Letterboxing around the
- * preview on a tall phone costs nothing — those pixels were never captured.
- */
-const MIN_DOCUMENT_COVERAGE = 0.65;
-
-/**
- * Accepted width/height range for the detected shape.
- *
- * A Form 34A is A4 portrait (~0.71). Without this the detector treats any
- * large quadrilateral as a document, so pointing the phone at a laptop screen,
- * a monitor or a desk is enough to trigger a capture. The range is wide enough
- * to tolerate the perspective of a form photographed at an angle, while still
- * excluding anything landscape.
- */
-const MIN_DOCUMENT_ASPECT = 0.45;
-const MAX_DOCUMENT_ASPECT = 1.0;
 
 export interface Form34ACandidate {
     key: string;
@@ -293,206 +215,19 @@ export function Form34ACaptureForm({
         }
     }, [photoOutput]);
 
-    // Live capture-quality readout. The frame processor runs on the camera
-    // thread at full rate, but only every Nth frame is measured and pushed to
-    // React, so the preview never waits on us.
-    const [quality, setQuality] = useState<FrameQuality | null>(null);
-
-    // The camera is continuously auto-focusing and re-metering, so a single
-    // good frame proves nothing. Camera timestamps measure a real two-second
-    // run even when devices deliver or analyse frames at different rates.
-    const [readiness, setReadiness] = useState<CaptureReadiness>(
-        INITIAL_CAPTURE_READINESS,
-    );
-    const readinessRef = React.useRef(INITIAL_CAPTURE_READINESS);
-    const smoothedRef = React.useRef<FrameQuality | null>(null);
-
-    // At most one copied thumbnail may wait for the React Native thread. A
-    // monotonically increasing token prevents an old callback from clearing a
-    // newer session's in-flight marker after the camera is reopened.
-    const frameCounter = useSharedValue(0);
-    const analysisGeneration = useSharedValue(0);
-    const analysisRequestSequence = useSharedValue(0);
-    const analysisInFlightRequest = useSharedValue(0);
-
-    // The form as OpenCV currently sees it, or null when no four-cornered
-    // shape is in frame.
-    const [document, setDocument] = useState<DetectedDocument | null>(null);
-
-    // CALIBRATION — also stream readings to Metro so a run can be captured as
-    // a series rather than read off the screen one frame at a time.
-    const reportQuality = React.useCallback(
-        (
-            measured: FrameQuality,
-            thumbnail: LumaThumbnail,
-            timestampSeconds: number,
-            generation: number,
-            requestId: number,
-        ) => {
-            try {
-                // A callback already queued when a camera session ended must
-                // not restore stale guidance in a new session.
-                if (generation !== analysisGeneration.get()) return;
-
-                // OpenCV cannot run in the worklet, so edge detection happens
-                // here on the JS thread, at the same throttled rate as metrics.
-                const found = detectDocument(thumbnail);
-                setDocument(found);
-
-                // Smooth before judging: raw readings jitter enough to flip the
-                // banner several times a second.
-                const smoothed = smoothQuality(smoothedRef.current, measured);
-                smoothedRef.current = smoothed;
-                setQuality(smoothed);
-
-                const covers =
-                    !!found &&
-                    found.areaFraction >= MIN_DOCUMENT_COVERAGE &&
-                    found.aspectRatio >= MIN_DOCUMENT_ASPECT &&
-                    found.aspectRatio <= MAX_DOCUMENT_ASPECT;
-
-                // Off by default. Frame readings are the only way to calibrate
-                // thresholds against a real printed form, so the capability
-                // stays — but it prints several lines a second.
-                if (LOG_READINGS)
-                    console.log(
-                        `[form34a] bright=${smoothed.brightness.toFixed(1)} ` +
-                            `sharp=${smoothed.sharpness.toFixed(1)} ` +
-                            `glare=${(smoothed.glare * 100).toFixed(2)}% ` +
-                            `doc=${found ? (found.areaFraction * 100).toFixed(1) + "%" : "none"} ` +
-                            `largest=${found ? (found.largestAreaFraction * 100).toFixed(1) + "%" : "-"} ` +
-                            `contours=${found?.contourCount ?? 0} ` +
-                            `corners=${found?.bestPointCount ?? 0} ` +
-                            `ratio=${found ? found.aspectRatio.toFixed(2) : "-"}`,
-                    );
-
-                // Both gates must hold: the image has to be legible *and* show
-                // the whole form. Either alone passes on a perfect close-up.
-                const transition = advanceCaptureReadiness(
-                    readinessRef.current,
-                    assessQuality(smoothed).ok && covers,
-                    timestampSeconds,
-                );
-                readinessRef.current = transition.state;
-                setReadiness(transition.state);
-
-                // A tap the moment the shutter appears, so it can be felt
-                // without watching the screen while holding a form steady.
-                if (transition.becameReady) {
-                    Haptics.notificationAsync(
-                        Haptics.NotificationFeedbackType.Success,
-                    );
-                }
-            } finally {
-                // An invalidated callback cannot clear a newer request's token.
-                if (analysisInFlightRequest.get() === requestId) {
-                    analysisInFlightRequest.set(0);
-                }
-            }
-        },
-        [analysisGeneration, analysisInFlightRequest],
-    );
-
-    const rawAssessment = quality ? assessQuality(quality) : null;
-
-    // Framing is reported before lighting or focus: there is no point telling
-    // someone to hold steady if the form is not in the shot at all.
-    const covered =
-        !!document &&
-        document.areaFraction >= MIN_DOCUMENT_COVERAGE &&
-        document.aspectRatio >= MIN_DOCUMENT_ASPECT &&
-        document.aspectRatio <= MAX_DOCUMENT_ASPECT;
     // Portrait: a 4:3 sensor frame shown upright is 3 wide by 4 tall.
     const previewAspect = aspect === "4:3" ? 3 / 4 : 9 / 16;
-
-    const assessment =
-        rawAssessment && !covered
-            ? {
-                  ...rawAssessment,
-                  label: document ? "Move closer" : "Show the whole form",
-                  hint: document
-                      ? "Fill the brackets with the form"
-                      : "Fit all four edges inside the brackets",
-                  ok: false,
-              }
-            : rawAssessment?.ok &&
-                readiness.goodSinceSeconds !== null &&
-                !readiness.ready
-              ? {
-                    ...rawAssessment,
-                    label: "Hold still",
-                    hint: null,
-                }
-              : rawAssessment;
-
-    /** The shutter is offered only once the shot has held up for a while. */
-    const readyToCapture = readiness.ready;
-
-    // Amber the moment the frame is usable, green once it has held long enough
-    // that the shutter is available — so the colour and the button agree.
-    const bracketState: BracketState = !assessment?.ok
-        ? "bad"
-        : readyToCapture
-          ? "steady"
-          : "ok";
-
-    const frameOutput = useFrameOutput({
-        targetResolution: FRAME_RESOLUTION[aspect],
-        pixelFormat: "yuv",
-        onFrame(frame) {
-            "worklet";
-            try {
-                frameCounter.value += 1;
-                if (frameCounter.value % FRAME_SAMPLE_INTERVAL !== 0) return;
-                if (analysisInFlightRequest.value !== 0) return;
-                const generation = analysisGeneration.value;
-
-                const planes = frame.getPlanes();
-                if (planes.length === 0) return;
-
-                // Plane 0 of a YUV frame is luma, which is all these metrics need.
-                const luma = planes[0];
-                const bytes = new Uint8Array(luma.getPixelBuffer());
-                const measured = analyseLumaPlane(
-                    bytes,
-                    luma.width,
-                    luma.height,
-                    luma.bytesPerRow,
-                );
-                // Copied before the frame is disposed, since the thumbnail
-                // outlives this callback.
-                const thumbnail = extractLumaThumbnail(
-                    bytes,
-                    luma.width,
-                    luma.height,
-                    luma.bytesPerRow,
-                    DETECTION_WIDTH,
-                    frame.orientation === "left" || frame.orientation === "right",
-                );
-                if (generation !== analysisGeneration.value) return;
-                analysisRequestSequence.value += 1;
-                const requestId = analysisRequestSequence.value;
-                analysisInFlightRequest.value = requestId;
-                try {
-                    scheduleOnRN(
-                        reportQuality,
-                        measured,
-                        thumbnail,
-                        frame.timestamp * FRAME_TIMESTAMP_TO_SECONDS,
-                        generation,
-                        requestId,
-                    );
-                } catch (error) {
-                    if (analysisInFlightRequest.value === requestId) {
-                        analysisInFlightRequest.value = 0;
-                    }
-                    console.warn("[form34a] unable to schedule analysis", error);
-                }
-            } finally {
-                // Must always release the frame or the pipeline stalls.
-                frame.dispose();
-            }
-        },
+    const {
+        assessment,
+        bracketState,
+        document,
+        frameOutput,
+        quality,
+        readyToCapture,
+        resetAnalysis,
+    } = useForm34AFrameAnalysis({
+        active: visible && showCamera,
+        aspect,
     });
 
     // Reset the form each time the sheet opens (render-phase state adjustment).
@@ -527,25 +262,6 @@ export function Form34ACaptureForm({
         ? canSubmit({votes, rejectedVotes, disputedVotes, hasImage: !!capturedImage})
         : true;
     const submitEnabled = !!capturedImage && hasVotes && extraGate;
-
-    const invalidateAnalysis = React.useCallback(() => {
-        analysisGeneration.set((generation) => generation + 1);
-        analysisInFlightRequest.set(0);
-        frameCounter.set(0);
-    }, [analysisGeneration, analysisInFlightRequest, frameCounter]);
-
-    const resetAnalysis = React.useCallback(() => {
-        invalidateAnalysis();
-        setQuality(null);
-        setDocument(null);
-        smoothedRef.current = null;
-        readinessRef.current = INITIAL_CAPTURE_READINESS;
-        setReadiness(INITIAL_CAPTURE_READINESS);
-    }, [invalidateAnalysis]);
-
-    React.useEffect(() => {
-        if (!visible || !showCamera) invalidateAnalysis();
-    }, [invalidateAnalysis, showCamera, visible]);
 
     React.useEffect(() => {
         if (!visible) {
@@ -609,11 +325,11 @@ export function Form34ACaptureForm({
         (error: Error) => {
             console.warn("[form34a] camera session failed", error);
             captureGenerationRef.current += 1;
-            invalidateAnalysis();
+            resetAnalysis();
             setCameraError("The camera stopped unexpectedly.");
             setCaptureError(null);
         },
-        [invalidateAnalysis],
+        [resetAnalysis],
     );
 
     const permissionRecovery = getCameraPermissionRecovery(canRequestPermission);
