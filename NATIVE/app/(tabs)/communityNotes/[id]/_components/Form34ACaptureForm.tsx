@@ -6,7 +6,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -29,6 +28,7 @@ import {
 import {File} from "expo-file-system";
 
 import {FramingBracket} from "./FramingBracket";
+import {VoteCountRow} from "./VoteCountRow";
 import {getCameraPermissionRecovery} from "./cameraPermission";
 import {
     CaptureAspect,
@@ -356,11 +356,6 @@ export function Form34ACaptureForm({
         }
     }, [permissionRecovery.action, requestPermission]);
 
-    const parseCount = (text: string) => {
-        const clean = text.replace(/[^0-9]/g, "");
-        return clean === "" ? 0 : Number(clean);
-    };
-
     if (!hasPermission) {
         return (
             <Modal
@@ -378,13 +373,17 @@ export function Form34ACaptureForm({
                                         {permissionRecovery.message}
                                     </Text>
                                     {!!permissionError && (
-                                        <Text style={styles.permissionError}>
+                                        <Text
+                                            style={styles.permissionError}
+                                            accessibilityRole="alert"
+                                        >
                                             {permissionError}
                                         </Text>
                                     )}
                                     <TouchableOpacity
                                         style={styles.permissionButton}
                                         onPress={handlePermissionRecovery}
+                                        accessibilityRole="button"
                                     >
                                         <Text style={styles.permissionButtonText}>
                                             {permissionRecovery.buttonLabel}
@@ -393,6 +392,7 @@ export function Form34ACaptureForm({
                                     <TouchableOpacity
                                         style={styles.permissionCancelButton}
                                         onPress={closeForm}
+                                        accessibilityRole="button"
                                     >
                                         <Text style={styles.cancelButtonText}>
                                             Cancel
@@ -417,10 +417,15 @@ export function Form34ACaptureForm({
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>{title}</Text>
+                        <Text style={styles.title} accessibilityRole="header">
+                            {title}
+                        </Text>
                         <TouchableOpacity
                             onPress={closeForm}
                             style={styles.closeButton}
+                            accessibilityRole="button"
+                            accessibilityLabel="Close form"
+                            hitSlop={7}
                         >
                             <X size={16} color={perk.ink} />
                         </TouchableOpacity>
@@ -440,6 +445,8 @@ export function Form34ACaptureForm({
                                             {aspectRatio: previewAspect},
                                         ]}
                                         resizeMode="contain"
+                                        accessible
+                                        accessibilityLabel="Captured Form 34A preview"
                                     />
                                 ) : (
                                     <Image
@@ -449,6 +456,8 @@ export function Form34ACaptureForm({
                                             {aspectRatio: previewAspect},
                                         ]}
                                         resizeMode="contain"
+                                        accessible
+                                        accessibilityLabel="Captured Form 34A preview"
                                     />
                                 )}
                             </View>
@@ -459,12 +468,14 @@ export function Form34ACaptureForm({
                                 <TouchableOpacity
                                     style={styles.reviewRetake}
                                     onPress={discardPendingPhoto}
+                                    accessibilityRole="button"
                                 >
                                     <Text style={styles.cancelButtonText}>Retake</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.reviewAccept}
                                     onPress={acceptPendingPhoto}
+                                    accessibilityRole="button"
                                 >
                                     <Check size={18} color={perk.limeInk} />
                                     <Text style={styles.submitButtonText}>
@@ -479,6 +490,10 @@ export function Form34ACaptureForm({
                                 <TouchableOpacity
                                     style={styles.aspectToggle}
                                     onPress={toggleAspect}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Capture aspect ratio, ${aspect}`}
+                                    accessibilityHint="Switches between 4 by 3 and 16 by 9"
+                                    hitSlop={8}
                                 >
                                     <Text style={styles.aspectToggleText}>
                                         {aspect}
@@ -508,8 +523,14 @@ export function Form34ACaptureForm({
                                         onError={handleCameraError}
                                     />
                                 ) : (
-                                    <View style={styles.cameraFailure}>
-                                        <Text style={styles.cameraFailureTitle}>
+                                    <View
+                                        style={styles.cameraFailure}
+                                        accessibilityRole="alert"
+                                    >
+                                        <Text
+                                            style={styles.cameraFailureTitle}
+                                            accessibilityRole="header"
+                                        >
                                             Camera unavailable
                                         </Text>
                                         <Text style={styles.cameraFailureText}>
@@ -519,6 +540,7 @@ export function Form34ACaptureForm({
                                         <TouchableOpacity
                                             style={styles.cameraRetryButton}
                                             onPress={openCamera}
+                                            accessibilityRole="button"
                                         >
                                             <Text style={styles.cameraRetryText}>
                                                 Try again
@@ -536,6 +558,8 @@ export function Form34ACaptureForm({
                                         styles.qualityBanner,
                                         styles.qualityBannerBad,
                                     ]}
+                                    accessibilityRole="alert"
+                                    accessibilityLiveRegion="polite"
                                 >
                                     <Text
                                         style={[
@@ -554,6 +578,8 @@ export function Form34ACaptureForm({
                                             ? styles.qualityBannerOk
                                             : styles.qualityBannerBad,
                                     ]}
+                                    accessibilityRole="alert"
+                                    accessibilityLiveRegion="polite"
                                 >
                                     <Text
                                         style={[
@@ -592,6 +618,9 @@ export function Form34ACaptureForm({
                                     <TouchableOpacity
                                         style={styles.captureButton}
                                         onPress={takePicture}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Take photo"
+                                        accessibilityHint="Captures Form 34A for review"
                                     >
                                         <CameraIcon size={32} color={perk.limeInk} />
                                     </TouchableOpacity>
@@ -599,7 +628,10 @@ export function Form34ACaptureForm({
                                     // A placeholder rather than nothing, so the
                                     // shutter appears in place instead of the
                                     // controls jumping when it becomes available.
-                                    <View style={styles.captureButtonWaiting} />
+                                    <View
+                                        style={styles.captureButtonWaiting}
+                                        importantForAccessibility="no"
+                                    />
                                 )}
                             </View>
                         </View>
@@ -618,7 +650,12 @@ export function Form34ACaptureForm({
                                         <Text style={styles.capturedText}>
                                             ✓ Form 34A captured
                                         </Text>
-                                        <TouchableOpacity onPress={openCamera}>
+                                        <TouchableOpacity
+                                            onPress={openCamera}
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Retake Form 34A photo"
+                                            hitSlop={8}
+                                        >
                                             <Text style={styles.recaptureText}>
                                                 Retake
                                             </Text>
@@ -628,6 +665,7 @@ export function Form34ACaptureForm({
                                     <TouchableOpacity
                                         style={styles.cameraButton}
                                         onPress={openCamera}
+                                        accessibilityRole="button"
                                     >
                                         <CameraIcon size={16} color={perk.lime} />
                                         <Text style={styles.cameraButtonText}>
@@ -642,95 +680,32 @@ export function Form34ACaptureForm({
                                 {candidates.map((candidate) => {
                                     const value = getVote(candidate.key);
                                     return (
-                                        <View
+                                        <VoteCountRow
                                             key={candidate.key}
-                                            style={styles.voteRow}
-                                        >
-                                            <View style={styles.voteWho}>
-                                                <Text
-                                                    style={styles.voteName}
-                                                    numberOfLines={1}
-                                                >
-                                                    {candidate.name}
-                                                </Text>
-                                                {!!candidate.party && (
-                                                    <Text
-                                                        style={styles.voteParty}
-                                                        numberOfLines={1}
-                                                    >
-                                                        {candidate.party}
-                                                    </Text>
-                                                )}
-                                            </View>
-                                            <TextInput
-                                                style={[
-                                                    styles.vbox,
-                                                    value > 0 && styles.vboxSet,
-                                                ]}
-                                                value={value === 0 ? "" : String(value)}
-                                                onChangeText={(t) =>
-                                                    setVote(
-                                                        candidate.key,
-                                                        parseCount(t),
-                                                    )
-                                                }
-                                                placeholder="0"
-                                                placeholderTextColor={perk.mute2}
-                                                keyboardType="numeric"
-                                            />
-                                        </View>
+                                            label={candidate.name}
+                                            party={candidate.party}
+                                            value={value}
+                                            accessibilityLabel={`Votes for ${candidate.name}`}
+                                            onChange={(nextValue) =>
+                                                setVote(candidate.key, nextValue)
+                                            }
+                                        />
                                     );
                                 })}
 
-                                <View style={styles.voteRow}>
-                                    <View style={styles.voteWho}>
-                                        <Text style={styles.voteName}>
-                                            Rejected votes
-                                        </Text>
-                                    </View>
-                                    <TextInput
-                                        style={[
-                                            styles.vbox,
-                                            rejectedVotes > 0 && styles.vboxSet,
-                                        ]}
-                                        value={
-                                            rejectedVotes === 0
-                                                ? ""
-                                                : String(rejectedVotes)
-                                        }
-                                        onChangeText={(t) =>
-                                            setRejectedVotes(parseCount(t))
-                                        }
-                                        placeholder="0"
-                                        placeholderTextColor={perk.mute2}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
+                                <VoteCountRow
+                                    label="Rejected votes"
+                                    value={rejectedVotes}
+                                    accessibilityLabel="Rejected votes"
+                                    onChange={setRejectedVotes}
+                                />
 
-                                <View style={styles.voteRow}>
-                                    <View style={styles.voteWho}>
-                                        <Text style={styles.voteName}>
-                                            Disputed votes
-                                        </Text>
-                                    </View>
-                                    <TextInput
-                                        style={[
-                                            styles.vbox,
-                                            disputedVotes > 0 && styles.vboxSet,
-                                        ]}
-                                        value={
-                                            disputedVotes === 0
-                                                ? ""
-                                                : String(disputedVotes)
-                                        }
-                                        onChangeText={(t) =>
-                                            setDisputedVotes(parseCount(t))
-                                        }
-                                        placeholder="0"
-                                        placeholderTextColor={perk.mute2}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
+                                <VoteCountRow
+                                    label="Disputed votes"
+                                    value={disputedVotes}
+                                    accessibilityLabel="Disputed votes"
+                                    onChange={setDisputedVotes}
+                                />
                             </ScrollView>
 
                             {/* Floating footer sheet */}
@@ -745,6 +720,7 @@ export function Form34ACaptureForm({
                                     <TouchableOpacity
                                         style={styles.cancelButton}
                                         onPress={closeForm}
+                                        accessibilityRole="button"
                                     >
                                         <Text style={styles.cancelButtonText}>
                                             Cancel
@@ -756,6 +732,10 @@ export function Form34ACaptureForm({
                                             !submitEnabled && styles.disabledButton,
                                         ]}
                                         disabled={!submitEnabled}
+                                        accessibilityRole="button"
+                                        accessibilityState={{
+                                            disabled: !submitEnabled,
+                                        }}
                                         onPress={() =>
                                             onSubmit({
                                                 image: capturedImage as string,
@@ -1092,49 +1072,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "800",
         textDecorationLine: "underline",
-    },
-    voteRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 8,
-        borderTopWidth: 1,
-        borderTopColor: perk.rule08,
-    },
-    voteWho: {
-        flex: 1,
-        paddingRight: 12,
-    },
-    voteName: {
-        fontSize: 12.5,
-        fontWeight: "800",
-        color: perk.ink,
-    },
-    voteParty: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 9,
-        color: perk.mute,
-        letterSpacing: 0.6,
-        marginTop: 1,
-        textTransform: "uppercase",
-    },
-    vbox: {
-        width: 52,
-        height: 34,
-        borderWidth: 1.5,
-        borderColor: perk.rule16,
-        borderRadius: 9,
-        paddingHorizontal: 4,
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 12,
-        fontWeight: "700",
-        textAlign: "center",
-        color: perk.mute2,
-        backgroundColor: perk.card,
-    },
-    vboxSet: {
-        borderColor: perk.ink,
-        color: perk.ink,
     },
     // Floating footer
     footer: {
