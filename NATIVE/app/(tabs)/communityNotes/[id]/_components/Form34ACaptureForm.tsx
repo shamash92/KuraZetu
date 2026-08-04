@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import {Camera as CameraIcon, Check, X} from "lucide-react-native";
 import {
-    Camera,
     CommonResolutions,
     Size,
     useCameraDevice,
@@ -27,7 +26,7 @@ import {
 
 import {File} from "expo-file-system";
 
-import {FramingBracket} from "./FramingBracket";
+import {LiveCameraPane} from "./LiveCameraPane";
 import {VoteCountRow} from "./VoteCountRow";
 import {getCameraPermissionRecovery} from "./cameraPermission";
 import {
@@ -481,141 +480,23 @@ export function Form34ACaptureForm({
                             </View>
                         </View>
                     ) : showCamera ? (
-                        <View style={styles.cameraContainer}>
-                            {!cameraError && !!device && (
-                                <TouchableOpacity
-                                    style={styles.aspectToggle}
-                                    onPress={toggleAspect}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Capture aspect ratio, ${aspect}`}
-                                    accessibilityHint="Switches between 4 by 3 and 16 by 9"
-                                    hitSlop={8}
-                                >
-                                    <Text style={styles.aspectToggleText}>
-                                        {aspect}
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-                            {/* Locked to the capture aspect so the brackets sit
-                                over the frame itself, not the letterboxing.
-                                Screen shapes vary widely between handsets; the
-                                frame's shape does not. */}
-                            <View
-                                style={[styles.preview, {aspectRatio: previewAspect}]}
-                            >
-                                {device && !cameraError ? (
-                                    <Camera
-                                        style={styles.camera}
-                                        device={device}
-                                        isActive={visible && showCamera}
-                                        outputs={[photoOutput, frameOutput]}
-                                        // The default, 'cover', crops the 4:3 frame
-                                        // to fill a tall screen, so the citizen
-                                        // frames against less than the camera
-                                        // actually records. Showing the whole field
-                                        // of view is what makes the brackets mean
-                                        // anything.
-                                        resizeMode="contain"
-                                        onError={handleCameraError}
-                                    />
-                                ) : (
-                                    <View
-                                        style={styles.cameraFailure}
-                                        accessibilityRole="alert"
-                                    >
-                                        <Text
-                                            style={styles.cameraFailureTitle}
-                                            accessibilityRole="header"
-                                        >
-                                            Camera unavailable
-                                        </Text>
-                                        <Text style={styles.cameraFailureText}>
-                                            {cameraError ??
-                                                "No back camera is available on this device."}
-                                        </Text>
-                                        <TouchableOpacity
-                                            style={styles.cameraRetryButton}
-                                            onPress={openCamera}
-                                            accessibilityRole="button"
-                                        >
-                                            <Text style={styles.cameraRetryText}>
-                                                Try again
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                                {!cameraError && !!device && (
-                                    <FramingBracket state={bracketState} />
-                                )}
-                            </View>
-                            {captureError ? (
-                                <View
-                                    style={[
-                                        styles.qualityBanner,
-                                        styles.qualityBannerBad,
-                                    ]}
-                                    accessibilityRole="alert"
-                                    accessibilityLiveRegion="polite"
-                                >
-                                    <Text
-                                        style={[
-                                            styles.qualityLabel,
-                                            styles.qualityLabelBad,
-                                        ]}
-                                    >
-                                        {captureError}
-                                    </Text>
-                                </View>
-                            ) : assessment && !cameraError && device ? (
-                                <View
-                                    style={[
-                                        styles.qualityBanner,
-                                        assessment.ok
-                                            ? styles.qualityBannerOk
-                                            : styles.qualityBannerBad,
-                                    ]}
-                                    accessibilityRole="alert"
-                                    accessibilityLiveRegion="polite"
-                                >
-                                    <Text
-                                        style={[
-                                            styles.qualityLabel,
-                                            assessment.ok
-                                                ? styles.qualityLabelOk
-                                                : styles.qualityLabelBad,
-                                        ]}
-                                    >
-                                        {assessment.label}
-                                    </Text>
-                                    {!!assessment.hint && (
-                                        <Text style={styles.qualityHint}>
-                                            {assessment.hint}
-                                        </Text>
-                                    )}
-                                </View>
-                            ) : null}
-                            <View style={styles.cameraControls}>
-                                {readyToCapture && !!device && !cameraError ? (
-                                    <TouchableOpacity
-                                        style={styles.captureButton}
-                                        onPress={takePicture}
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Take photo"
-                                        accessibilityHint="Captures Form 34A for review"
-                                    >
-                                        <CameraIcon size={32} color={perk.limeInk} />
-                                    </TouchableOpacity>
-                                ) : (
-                                    // A placeholder rather than nothing, so the
-                                    // shutter appears in place instead of the
-                                    // controls jumping when it becomes available.
-                                    <View
-                                        style={styles.captureButtonWaiting}
-                                        importantForAccessibility="no"
-                                    />
-                                )}
-                            </View>
-                        </View>
+                        <LiveCameraPane
+                            active={visible && showCamera}
+                            aspect={aspect}
+                            assessment={assessment}
+                            bracketState={bracketState}
+                            cameraError={cameraError}
+                            captureError={captureError}
+                            device={device}
+                            frameOutput={frameOutput}
+                            photoOutput={photoOutput}
+                            previewAspect={previewAspect}
+                            readyToCapture={readyToCapture}
+                            onCameraError={handleCameraError}
+                            onCapture={takePicture}
+                            onRetry={openCamera}
+                            onToggleAspect={toggleAspect}
+                        />
                     ) : (
                         <View style={styles.body}>
                             <ScrollView
@@ -833,32 +714,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    qualityBanner: {
-        position: "absolute",
-        top: 14,
-        alignSelf: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 9,
-        borderRadius: 12,
-        alignItems: "center",
-        maxWidth: "88%",
-    },
-    qualityBannerOk: {backgroundColor: perk.lime},
-    qualityBannerBad: {backgroundColor: perk.coralDeep},
-    qualityLabel: {
-        fontSize: 14,
-        fontWeight: "900",
-        letterSpacing: -0.2,
-    },
-    qualityLabelOk: {color: perk.limeInk},
-    qualityLabelBad: {color: perk.card},
-    qualityHint: {
-        fontSize: 11.5,
-        fontWeight: "700",
-        color: perk.card,
-        marginTop: 2,
-        textAlign: "center",
-    },
     // Review
     reviewContainer: {
         flex: 1,
@@ -903,89 +758,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-    },
-    // Camera
-    cameraContainer: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: perk.ink,
-    },
-    preview: {
-        width: "100%",
-        maxHeight: "100%",
-    },
-    aspectToggle: {
-        position: "absolute",
-        top: 14,
-        right: 14,
-        zIndex: 2,
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: 999,
-        backgroundColor: "rgba(13,13,13,0.6)",
-    },
-    aspectToggleText: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 12,
-        fontWeight: "700",
-        color: perk.lime,
-    },
-    camera: {flex: 1},
-    cameraFailure: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 28,
-        backgroundColor: perk.ink,
-    },
-    cameraFailureTitle: {
-        color: perk.card,
-        fontSize: 18,
-        fontWeight: "900",
-        textAlign: "center",
-    },
-    cameraFailureText: {
-        color: perk.paperDeep,
-        fontSize: 13,
-        fontWeight: "600",
-        lineHeight: 19,
-        marginTop: 8,
-        textAlign: "center",
-    },
-    cameraRetryButton: {
-        backgroundColor: perk.lime,
-        borderRadius: 12,
-        marginTop: 18,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-    },
-    cameraRetryText: {
-        color: perk.limeInk,
-        fontSize: 13,
-        fontWeight: "800",
-    },
-    cameraControls: {
-        position: "absolute",
-        bottom: 50,
-        left: 0,
-        right: 0,
-        alignItems: "center",
-    },
-    captureButton: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: perk.lime,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    captureButtonWaiting: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.35)",
     },
     // Body
     body: {flex: 1},
