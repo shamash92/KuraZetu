@@ -14,30 +14,19 @@
 
 import {
     ContourApproximationModes,
-    DataTypes,
     MorphShapes,
     MorphTypes,
+    Mat,
     OpenCV,
     PointVector,
     PointVectorOfVectors,
     RetrievalModes,
     Size,
-    Mat,
 } from "react-native-fast-opencv";
 
 import {LumaThumbnail} from "./frameQuality";
 
 export interface DetectedDocument {
-    /**
-     * Four corners in 0..1 frame coordinates, or null when the largest shape
-     * did not simplify to a quadrilateral.
-     *
-     * Coverage does not depend on this. Answering "is the whole form in view"
-     * only needs the size of the largest shape, whereas corners are needed for
-     * deskew — so requiring four of them here would reject usable frames for
-     * the benefit of a feature that does not exist yet.
-     */
-    corners: {x: number; y: number}[] | null;
     /** How much of the frame the largest qualifying shape covers, 0..1. */
     areaFraction: number;
     /**
@@ -88,19 +77,16 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
     };
 
     try {
-        // `createFromBuffer` wraps the JavaScript buffer rather than copying
-        // it, so the Mat points at memory OpenCV does not own. Filtering in
-        // place through that wrapper writes back into it and lets OpenCV
-        // reallocate underneath us. Everything after the first operation
-        // therefore runs in `work`, which OpenCV owns outright.
+        // Version 1 of react-native-fast-opencv copies the JavaScript buffer
+        // into an owned Mat, so the processing pipeline can safely run in
+        // place without allocating a second full-size working Mat.
         const source = track(Mat.createFromBuffer("uint8", height, width, 1, data));
-        const work = track(Mat.create(height, width, DataTypes.CV_8U));
 
         // Light blur only. Heavier smoothing (or morphology before Canny)
         // erases the paper boundary at this resolution, which is what left the
         // edge fragmented into dozens of near-zero-area pieces.
-        OpenCV.GaussianBlur(source, work, track(Size.create(5, 5)), 0);
-        OpenCV.Canny(work, work, 50, 150);
+        OpenCV.GaussianBlur(source, source, track(Size.create(5, 5)), 0);
+        OpenCV.Canny(source, source, 50, 150);
 
         // Canny leaves the boundary as a broken line, and `contourArea` of a
         // broken line is ~0 because it encloses nothing. Dilating welds the
@@ -113,15 +99,15 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
         );
         // morphologyEx rather than dilate(): this binding's dilate() requires
         // all seven OpenCV arguments, and MORPH_DILATE is the same operation.
-        OpenCV.morphologyEx(work, work, MorphTypes.MORPH_DILATE, kernel);
-        OpenCV.morphologyEx(work, work, MorphTypes.MORPH_CLOSE, kernel);
+        OpenCV.morphologyEx(source, source, MorphTypes.MORPH_DILATE, kernel);
+        OpenCV.morphologyEx(source, source, MorphTypes.MORPH_CLOSE, kernel);
 
         const contours = track(PointVectorOfVectors.create());
         // RETR_EXTERNAL keeps only outermost contours — a page is by
         // definition the outer boundary, and this drops every line of printed
         // text inside it.
         OpenCV.findContours(
-            work,
+            source,
             contours,
             RetrievalModes.RETR_EXTERNAL,
             ContourApproximationModes.CHAIN_APPROX_SIMPLE,
@@ -130,92 +116,61 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
         const frameArea = width * height;
         const minArea = frameArea * MIN_AREA_FRACTION;
 
-        let bestCorners: {x: number; y: number}[] | null = null;
         let bestArea = 0;
         let bestPointCount = 0;
         let bestAspectRatio = 0;
         let largestArea = 0;
 
         for (let index = 0; index < contours.length; index++) {
-            // Deliberately not tracked for release. `get()` hands back a child
-            // owned by `contours`, so releasing it here and again when the
-            // parent is released is a double free — a native crash, and one
-            // that only shows up after the camera has been running a while.
+            // `get()` copies this contour into its own native PointVector. It
+            // is not owned by the parent vector, so release it deterministically
+            // instead of retaining one native copy per contour until JS GC.
             const contour = contours.get(index);
-            const area = OpenCV.contourArea(contour, false).value;
+            try {
+                const area = OpenCV.contourArea(contour, false).value;
 
-            // Tracked separately from `bestArea` so a contour that just missed
-            // the threshold is visible in the logs, rather than looking
-            // identical to finding nothing at all.
-            if (area > largestArea) largestArea = area;
+                // Tracked separately from `bestArea` so a contour that just missed
+                // the threshold is visible in the logs, rather than looking
+                // identical to finding nothing at all.
+                if (area > largestArea) largestArea = area;
 
-            if (area < minArea || area <= bestArea) continue;
+                if (area < minArea || area <= bestArea) continue;
 
-            const perimeter = OpenCV.arcLength(contour, true).value;
-            const approximated = track(PointVector.create());
-            OpenCV.approxPolyDP(
-                contour,
-                approximated,
-                APPROX_EPSILON_RATIO * perimeter,
-                true,
-            );
-
-            // The largest shape wins regardless of its corner count; four
-            // corners only upgrades it to something deskew could use.
-            // getAll() hands back native Point objects. Read them into plain
-            // numbers straight away and release them: a handful leaked per
-            // frame, six times a second, is what eventually exhausts memory.
-            const nativePoints = approximated.getAll();
-            const points = nativePoints.map((point) => ({
-                x: point.x,
-                y: point.y,
-            }));
-            for (const point of nativePoints) {
+                const perimeter = OpenCV.arcLength(contour, true).value;
+                const approximated = PointVector.create();
                 try {
-                    point.release();
-                } catch {
-                    // Owned elsewhere, or already gone.
+                    OpenCV.approxPolyDP(
+                        contour,
+                        approximated,
+                        APPROX_EPSILON_RATIO * perimeter,
+                        true,
+                    );
+
+                    // OpenCV already exposes the bounding-box operation. Using
+                    // it avoids allocating one native Point wrapper per corner
+                    // merely to find the min/max coordinates in JavaScript.
+                    const bounds = OpenCV.boundingRect(approximated);
+                    try {
+                        bestArea = area;
+                        bestPointCount = approximated.length;
+                        const bufferRatio =
+                            bounds.height > 0 ? bounds.width / bounds.height : 0;
+                        bestAspectRatio =
+                            rotated && bufferRatio > 0
+                                ? 1 / bufferRatio
+                                : bufferRatio;
+                    } finally {
+                        bounds.release();
+                    }
+                } finally {
+                    approximated.release();
                 }
+            } finally {
+                contour.release();
             }
-
-            // Iterated rather than spread into Math.max: a contour that fails
-            // to simplify can carry hundreds of points, and spreading that many
-            // arguments risks a stack overflow.
-            let minX = Infinity;
-            let maxX = -Infinity;
-            let minY = Infinity;
-            let maxY = -Infinity;
-            for (const point of points) {
-                if (point.x < minX) minX = point.x;
-                if (point.x > maxX) maxX = point.x;
-                if (point.y < minY) minY = point.y;
-                if (point.y > maxY) maxY = point.y;
-            }
-            const boxWidth = maxX - minX;
-            const boxHeight = maxY - minY;
-
-            bestArea = area;
-            // Our own copy, not `approximated.length` — its Points have been
-            // released by this point and reading back through it is unsafe.
-            bestPointCount = points.length;
-            // Reported in display space, not buffer space. A portrait page in
-            // a portrait phone arrives rotated 90°, so measuring the buffer
-            // directly makes an A4 form look landscape and fails the shape
-            // check that is meant to reject landscape things.
-            const bufferRatio = boxHeight > 0 ? boxWidth / boxHeight : 0;
-            bestAspectRatio =
-                rotated && bufferRatio > 0 ? 1 / bufferRatio : bufferRatio;
-            bestCorners =
-                points.length === 4
-                    ? points.map((point) => ({
-                          x: point.x / width,
-                          y: point.y / height,
-                      }))
-                    : null;
         }
 
         return {
-            corners: bestCorners,
             areaFraction: bestArea / frameArea,
             aspectRatio: bestAspectRatio,
             largestAreaFraction: largestArea / frameArea,
