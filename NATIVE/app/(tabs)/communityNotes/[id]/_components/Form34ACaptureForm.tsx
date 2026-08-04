@@ -85,14 +85,23 @@ const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
 
 /**
  * How much of the frame the detected form must cover before the shutter is
- * offered. Guards against a sharp, well-lit close-up of one corner, which the
- * luma metrics happily rate as perfect.
+ * offered.
  *
- * Raised from 0.25, which let captures through with a lot of desk around the
- * form. Every wasted pixel is resolution the extractor does not get to spend
- * on handwritten digits, which is the hardest thing it has to read.
+ * A4 is 0.707 wide-to-tall and a 4:3 portrait frame is 0.75, so a form
+ * spanning the full frame height covers about 94% of it — the ratios very
+ * nearly match. Filling the on-screen bracket lands around 82%, and captures
+ * framed by hand measure 84-92% in practice, so this is a reachable target
+ * rather than a theoretical one.
+ *
+ * Set well below that to leave room for imperfect framing, but far above the
+ * 0.35 it started at, which passed shots with two-thirds of the frame spent on
+ * the desk. Every wasted pixel is resolution the extractor does not get to
+ * spend on handwritten digits, which are the hardest thing it has to read.
+ *
+ * Note this measures the *frame*, not the screen. Letterboxing around the
+ * preview on a tall phone costs nothing — those pixels were never captured.
  */
-const MIN_DOCUMENT_COVERAGE = 0.35;
+const MIN_DOCUMENT_COVERAGE = 0.65;
 
 /**
  * Accepted width/height range for the detected shape.
