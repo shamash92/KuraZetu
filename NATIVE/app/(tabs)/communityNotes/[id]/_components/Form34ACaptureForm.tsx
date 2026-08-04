@@ -27,6 +27,11 @@ import {useSharedValue} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
 import {BracketState, FramingBracket} from "./FramingBracket";
+import {
+    CaptureReadiness,
+    INITIAL_CAPTURE_READINESS,
+    advanceCaptureReadiness,
+} from "./captureReadiness";
 import {DetectedDocument, detectDocument} from "./documentDetection";
 import {
     FrameQuality,
@@ -46,13 +51,11 @@ import {perk} from "@/app/_utils/colors";
  * for guidance a human is reacting to.
  */
 const FRAME_SAMPLE_INTERVAL = 5;
-const ASSUMED_CAMERA_FPS = 30;
 
-/**
- * Readings per second, derived rather than guessed — the readiness delay is
- * expressed in seconds and would quietly drift if these were independent.
- */
-const READINGS_PER_SECOND = ASSUMED_CAMERA_FPS / FRAME_SAMPLE_INTERVAL;
+// VisionCamera 5.2 exposes Android frame timestamps in nanoseconds and iOS
+// frame timestamps in seconds. Normalize at the camera boundary so readiness
+// measures wall-clock capture time consistently on both platforms.
+const FRAME_TIMESTAMP_TO_SECONDS = Platform.OS === "android" ? 1e-9 : 1;
 
 /**
  * Print every frame reading to the console.
@@ -62,19 +65,6 @@ const READINGS_PER_SECOND = ASSUMED_CAMERA_FPS / FRAME_SAMPLE_INTERVAL;
  * time, whereas a log captures the whole run.
  */
 const LOG_READINGS = false;
-
-/**
- * Consecutive good readings before the shutter is offered.
- *
- * The app never takes the photo itself. Auto-capture was built and removed:
- * it fired on frames the citizen would have rejected, and a wrong capture on
- * evidence is worse than a slower one. The camera judges whether the shot is
- * usable; the citizen decides when to take it.
- *
- * Two seconds, because a single good reading proves nothing — the camera is
- * continuously re-focusing and re-metering, and any one frame may be mid-sweep.
- */
-const READY_READINGS = READINGS_PER_SECOND * 2;
 
 /** Width the frame is reduced to before edge detection. */
 const DETECTION_WIDTH = 300;
@@ -231,14 +221,22 @@ export function Form34ACaptureForm({
     // React, so the preview never waits on us.
     const [quality, setQuality] = useState<FrameQuality | null>(null);
 
-    // Consecutive good readings. The camera is continuously auto-focusing and
-    // re-metering, so a single good frame proves nothing — it may be the middle
-    // of a focus sweep. Requiring a run of them is what stops the shutter
-    // appearing and vanishing. The streak lives in a ref as well as state: the
-    // ref is read as each reading lands, the state re-renders the UI.
-    const [steadyReadings, setSteadyReadings] = useState(0);
-    const steadyRef = React.useRef(0);
+    // The camera is continuously auto-focusing and re-metering, so a single
+    // good frame proves nothing. Camera timestamps measure a real two-second
+    // run even when devices deliver or analyse frames at different rates.
+    const [readiness, setReadiness] = useState<CaptureReadiness>(
+        INITIAL_CAPTURE_READINESS,
+    );
+    const readinessRef = React.useRef(INITIAL_CAPTURE_READINESS);
     const smoothedRef = React.useRef<FrameQuality | null>(null);
+
+    // At most one copied thumbnail may wait for the React Native thread. A
+    // monotonically increasing token prevents an old callback from clearing a
+    // newer session's in-flight marker after the camera is reopened.
+    const frameCounter = useSharedValue(0);
+    const analysisGeneration = useSharedValue(0);
+    const analysisRequestSequence = useSharedValue(0);
+    const analysisInFlightRequest = useSharedValue(0);
 
     // The form as OpenCV currently sees it, or null when no four-cornered
     // shape is in frame.
@@ -247,53 +245,75 @@ export function Form34ACaptureForm({
     // CALIBRATION — also stream readings to Metro so a run can be captured as
     // a series rather than read off the screen one frame at a time.
     const reportQuality = React.useCallback(
-        (measured: FrameQuality, thumbnail: LumaThumbnail) => {
-            // OpenCV cannot run in the worklet, so edge detection happens here
-            // on the JS thread, at the same throttled rate as the metrics.
-            const found = detectDocument(thumbnail);
-            setDocument(found);
+        (
+            measured: FrameQuality,
+            thumbnail: LumaThumbnail,
+            timestampSeconds: number,
+            generation: number,
+            requestId: number,
+        ) => {
+            try {
+                // A callback already queued when a camera session ended must
+                // not restore stale guidance in a new session.
+                if (generation !== analysisGeneration.get()) return;
 
-            // Smooth before judging: raw readings jitter enough to flip the
-            // banner several times a second.
-            const smoothed = smoothQuality(smoothedRef.current, measured);
-            smoothedRef.current = smoothed;
-            setQuality(smoothed);
+                // OpenCV cannot run in the worklet, so edge detection happens
+                // here on the JS thread, at the same throttled rate as metrics.
+                const found = detectDocument(thumbnail);
+                setDocument(found);
 
-            const covers =
-                !!found &&
-                found.areaFraction >= MIN_DOCUMENT_COVERAGE &&
-                found.aspectRatio >= MIN_DOCUMENT_ASPECT &&
-                found.aspectRatio <= MAX_DOCUMENT_ASPECT;
+                // Smooth before judging: raw readings jitter enough to flip the
+                // banner several times a second.
+                const smoothed = smoothQuality(smoothedRef.current, measured);
+                smoothedRef.current = smoothed;
+                setQuality(smoothed);
 
-            // Off by default. Frame readings are the only way to calibrate the
-            // thresholds against a real printed form, so the capability stays —
-            // but it prints several lines a second and buries everything else.
-            if (LOG_READINGS)
-                console.log(
-                    `[form34a] bright=${smoothed.brightness.toFixed(1)} ` +
-                        `sharp=${smoothed.sharpness.toFixed(1)} ` +
-                        `glare=${(smoothed.glare * 100).toFixed(2)}% ` +
-                        `doc=${found ? (found.areaFraction * 100).toFixed(1) + "%" : "none"} ` +
-                        `largest=${found ? (found.largestAreaFraction * 100).toFixed(1) + "%" : "-"} ` +
-                        `contours=${found?.contourCount ?? 0} ` +
-                        `corners=${found?.bestPointCount ?? 0} ` +
-                        `ratio=${found ? found.aspectRatio.toFixed(2) : "-"}`,
+                const covers =
+                    !!found &&
+                    found.areaFraction >= MIN_DOCUMENT_COVERAGE &&
+                    found.aspectRatio >= MIN_DOCUMENT_ASPECT &&
+                    found.aspectRatio <= MAX_DOCUMENT_ASPECT;
+
+                // Off by default. Frame readings are the only way to calibrate
+                // thresholds against a real printed form, so the capability
+                // stays — but it prints several lines a second.
+                if (LOG_READINGS)
+                    console.log(
+                        `[form34a] bright=${smoothed.brightness.toFixed(1)} ` +
+                            `sharp=${smoothed.sharpness.toFixed(1)} ` +
+                            `glare=${(smoothed.glare * 100).toFixed(2)}% ` +
+                            `doc=${found ? (found.areaFraction * 100).toFixed(1) + "%" : "none"} ` +
+                            `largest=${found ? (found.largestAreaFraction * 100).toFixed(1) + "%" : "-"} ` +
+                            `contours=${found?.contourCount ?? 0} ` +
+                            `corners=${found?.bestPointCount ?? 0} ` +
+                            `ratio=${found ? found.aspectRatio.toFixed(2) : "-"}`,
+                    );
+
+                // Both gates must hold: the image has to be legible *and* show
+                // the whole form. Either alone passes on a perfect close-up.
+                const transition = advanceCaptureReadiness(
+                    readinessRef.current,
+                    assessQuality(smoothed).ok && covers,
+                    timestampSeconds,
                 );
+                readinessRef.current = transition.state;
+                setReadiness(transition.state);
 
-            // Both gates must hold: the image has to be legible *and* show the
-            // whole form. Either alone passes on a perfect close-up.
-            const wasReady = steadyRef.current >= READY_READINGS;
-            steadyRef.current =
-                assessQuality(smoothed).ok && covers ? steadyRef.current + 1 : 0;
-            setSteadyReadings(steadyRef.current);
-
-            // A tap the moment the shutter appears, so it can be felt without
-            // watching the screen while holding a form steady.
-            if (!wasReady && steadyRef.current >= READY_READINGS) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                // A tap the moment the shutter appears, so it can be felt
+                // without watching the screen while holding a form steady.
+                if (transition.becameReady) {
+                    Haptics.notificationAsync(
+                        Haptics.NotificationFeedbackType.Success,
+                    );
+                }
+            } finally {
+                // An invalidated callback cannot clear a newer request's token.
+                if (analysisInFlightRequest.get() === requestId) {
+                    analysisInFlightRequest.set(0);
+                }
             }
         },
-        [],
+        [analysisGeneration, analysisInFlightRequest],
     );
 
     const rawAssessment = quality ? assessQuality(quality) : null;
@@ -318,7 +338,9 @@ export function Form34ACaptureForm({
                       : "Fit all four edges inside the brackets",
                   ok: false,
               }
-            : rawAssessment?.ok && steadyReadings > 0 && steadyReadings < READY_READINGS
+            : rawAssessment?.ok &&
+                readiness.goodSinceSeconds !== null &&
+                !readiness.ready
               ? {
                     ...rawAssessment,
                     label: "Hold still",
@@ -327,7 +349,7 @@ export function Form34ACaptureForm({
               : rawAssessment;
 
     /** The shutter is offered only once the shot has held up for a while. */
-    const readyToCapture = steadyReadings >= READY_READINGS;
+    const readyToCapture = readiness.ready;
 
     // Amber the moment the frame is usable, green once it has held long enough
     // that the shutter is available — so the colour and the button agree.
@@ -337,7 +359,6 @@ export function Form34ACaptureForm({
           ? "steady"
           : "ok";
 
-    const frameCounter = useSharedValue(0);
     const frameOutput = useFrameOutput({
         targetResolution: FRAME_RESOLUTION[aspect],
         pixelFormat: "yuv",
@@ -346,6 +367,7 @@ export function Form34ACaptureForm({
             try {
                 frameCounter.value += 1;
                 if (frameCounter.value % FRAME_SAMPLE_INTERVAL !== 0) return;
+                if (analysisInFlightRequest.value !== 0) return;
 
                 const planes = frame.getPlanes();
                 if (planes.length === 0) return;
@@ -369,7 +391,25 @@ export function Form34ACaptureForm({
                     DETECTION_WIDTH,
                     frame.orientation === "left" || frame.orientation === "right",
                 );
-                scheduleOnRN(reportQuality, measured, thumbnail);
+                analysisRequestSequence.value += 1;
+                const requestId = analysisRequestSequence.value;
+                const generation = analysisGeneration.value;
+                analysisInFlightRequest.value = requestId;
+                try {
+                    scheduleOnRN(
+                        reportQuality,
+                        measured,
+                        thumbnail,
+                        frame.timestamp * FRAME_TIMESTAMP_TO_SECONDS,
+                        generation,
+                        requestId,
+                    );
+                } catch (error) {
+                    if (analysisInFlightRequest.value === requestId) {
+                        analysisInFlightRequest.value = 0;
+                    }
+                    console.warn("[form34a] unable to schedule analysis", error);
+                }
             } finally {
                 // Must always release the frame or the pipeline stalls.
                 frame.dispose();
@@ -406,14 +446,28 @@ export function Form34ACaptureForm({
         : true;
     const submitEnabled = !!capturedImage && hasVotes && extraGate;
 
-    // Clear the previous run's readings so a stale good streak can't offer the
-    // shutter the instant the camera reopens for a retake.
-    const openCamera = () => {
+    const invalidateAnalysis = React.useCallback(() => {
+        analysisGeneration.set((generation) => generation + 1);
+        analysisInFlightRequest.set(0);
+    }, [analysisGeneration, analysisInFlightRequest]);
+
+    const resetAnalysis = React.useCallback(() => {
+        invalidateAnalysis();
         setQuality(null);
         setDocument(null);
         smoothedRef.current = null;
-        steadyRef.current = 0;
-        setSteadyReadings(0);
+        readinessRef.current = INITIAL_CAPTURE_READINESS;
+        setReadiness(INITIAL_CAPTURE_READINESS);
+    }, [invalidateAnalysis]);
+
+    React.useEffect(() => {
+        if (!visible || !showCamera) invalidateAnalysis();
+    }, [invalidateAnalysis, showCamera, visible]);
+
+    // Clear the previous run's readings so a stale good period can't offer the
+    // shutter the instant the camera reopens for a retake.
+    const openCamera = () => {
+        resetAnalysis();
         setShowCamera(true);
     };
 
