@@ -24,7 +24,12 @@ import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {scheduleOnRN} from "react-native-worklets";
 import {useSharedValue} from "react-native-reanimated";
+import {
+    NativeNitroImage,
+    type Image as NitroImageHandle,
+} from "react-native-nitro-image";
 
+import {File} from "expo-file-system";
 import * as Haptics from "expo-haptics";
 
 import {BracketState, FramingBracket} from "./FramingBracket";
@@ -96,6 +101,25 @@ const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
     "16:9": CommonResolutions.VGA_16_9,
     "4:3": CommonResolutions.VGA_4_3,
 };
+
+/** A bounded in-memory image for the full-screen review step. */
+const REVIEW_PREVIEW_RESOLUTION: Record<CaptureAspect, Size> = {
+    "16:9": CommonResolutions.HD_16_9,
+    "4:3": CommonResolutions.HD_4_3,
+};
+
+function deleteTemporaryPhoto(uri: string | null) {
+    if (!uri) return;
+
+    try {
+        const file = new File(uri);
+        if (file.exists) file.delete();
+    } catch (error) {
+        // Cleanup failure must not prevent closing or retaking. The OS can
+        // still reclaim VisionCamera's temporary directory later.
+        console.warn("[form34a] temporary photo cleanup failed", error);
+    }
+}
 
 /**
  * How much of the frame the detected form must cover before the shutter is
@@ -182,6 +206,8 @@ export function Form34ACaptureForm({
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     /** Captured but not yet accepted — shown full-screen for review. */
     const [pendingImage, setPendingImage] = useState<string | null>(null);
+    const [pendingPreview, setPendingPreview] =
+        useState<NitroImageHandle | null>(null);
     const [votes, setVotes] = useState<Record<string, number>>({});
     const [rejectedVotes, setRejectedVotes] = useState(0);
     const [disputedVotes, setDisputedVotes] = useState(0);
@@ -194,9 +220,30 @@ export function Form34ACaptureForm({
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
         qualityPrioritization: "quality",
+        previewImageTargetSize: REVIEW_PREVIEW_RESOLUTION[aspect],
     });
 
     const capturingRef = React.useRef(false);
+    const captureGenerationRef = React.useRef(0);
+    const pendingImageRef = React.useRef<string | null>(null);
+    const capturedImageRef = React.useRef<string | null>(null);
+
+    // A Nitro Image owns native memory. Release the previous preview only
+    // after React commits the replacement, so the native view never receives
+    // an already-disposed image.
+    React.useEffect(() => {
+        return () => pendingPreview?.dispose();
+    }, [pendingPreview]);
+
+    const releaseOwnedPhotos = React.useCallback(() => {
+        const pending = pendingImageRef.current;
+        const captured = capturedImageRef.current;
+        pendingImageRef.current = null;
+        capturedImageRef.current = null;
+
+        deleteTemporaryPhoto(pending);
+        if (captured !== pending) deleteTemporaryPhoto(captured);
+    }, []);
 
     const takePicture = React.useCallback(async () => {
         // A second capture while one is in flight throws, and the shutter is
@@ -204,22 +251,44 @@ export function Form34ACaptureForm({
         if (capturingRef.current) return;
         capturingRef.current = true;
         setCaptureError(null);
+        const captureGeneration = captureGenerationRef.current;
+        const preview = {current: null as NitroImageHandle | null};
         try {
             // VisionCamera returns a bare filesystem path; the rest of the app
             // (and expo-file-system's `File`) expects a `file://` URI.
             const {filePath} = await photoOutput.capturePhotoToFile(
                 {flashMode: "off"},
-                {},
+                {
+                    onPreviewImageAvailable(image) {
+                        preview.current?.dispose();
+                        preview.current = image;
+                    },
+                },
             );
+            const uri = `file://${filePath}`;
+
+            // The form may have closed or changed camera configuration while
+            // native capture was still finishing. Delete that late result
+            // rather than restoring it into an expired session.
+            if (captureGeneration !== captureGenerationRef.current) {
+                deleteTemporaryPhoto(uri);
+                return;
+            }
+
             // Held for review rather than accepted outright: the citizen is
             // still standing in front of the form and able to retake, which is
             // the cheapest moment to catch a bad shot.
-            setPendingImage(`file://${filePath}`);
+            deleteTemporaryPhoto(pendingImageRef.current);
+            pendingImageRef.current = uri;
+            setPendingImage(uri);
+            setPendingPreview(preview.current);
+            preview.current = null;
             setShowCamera(false);
         } catch (error) {
             console.warn("[form34a] photo capture failed", error);
             setCaptureError("The photo could not be saved. Please try again.");
         } finally {
+            preview.current?.dispose();
             capturingRef.current = false;
         }
     }, [photoOutput]);
@@ -434,6 +503,7 @@ export function Form34ACaptureForm({
         setDisputedVotes(0);
         setCapturedImage(null);
         setPendingImage(null);
+        setPendingPreview(null);
         setShowCamera(false);
         setPermissionError(null);
         setCameraError(null);
@@ -477,6 +547,20 @@ export function Form34ACaptureForm({
         if (!visible || !showCamera) invalidateAnalysis();
     }, [invalidateAnalysis, showCamera, visible]);
 
+    React.useEffect(() => {
+        if (!visible) {
+            captureGenerationRef.current += 1;
+            releaseOwnedPhotos();
+        }
+    }, [releaseOwnedPhotos, visible]);
+
+    React.useEffect(() => {
+        return () => {
+            captureGenerationRef.current += 1;
+            releaseOwnedPhotos();
+        };
+    }, [releaseOwnedPhotos]);
+
     // Clear the previous run's readings so a stale good period can't offer the
     // shutter the instant the camera reopens for a retake.
     const openCamera = () => {
@@ -486,7 +570,36 @@ export function Form34ACaptureForm({
         setShowCamera(true);
     };
 
+    const discardPendingPhoto = () => {
+        const uri = pendingImageRef.current;
+        pendingImageRef.current = null;
+        setPendingImage(null);
+        setPendingPreview(null);
+        deleteTemporaryPhoto(uri);
+        openCamera();
+    };
+
+    const acceptPendingPhoto = () => {
+        const uri = pendingImageRef.current;
+        if (!uri) return;
+
+        deleteTemporaryPhoto(capturedImageRef.current);
+        capturedImageRef.current = uri;
+        pendingImageRef.current = null;
+        setCapturedImage(uri);
+        setPendingImage(null);
+        setPendingPreview(null);
+    };
+
+    const closeForm = () => {
+        captureGenerationRef.current += 1;
+        setPendingPreview(null);
+        releaseOwnedPhotos();
+        onClose();
+    };
+
     const toggleAspect = () => {
+        captureGenerationRef.current += 1;
         resetAnalysis();
         setCaptureError(null);
         setAspect((current) => (current === "4:3" ? "16:9" : "4:3"));
@@ -495,6 +608,7 @@ export function Form34ACaptureForm({
     const handleCameraError = React.useCallback(
         (error: Error) => {
             console.warn("[form34a] camera session failed", error);
+            captureGenerationRef.current += 1;
             invalidateAnalysis();
             setCameraError("The camera stopped unexpectedly.");
             setCaptureError(null);
@@ -562,7 +676,7 @@ export function Form34ACaptureForm({
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.permissionCancelButton}
-                                        onPress={onClose}
+                                        onPress={closeForm}
                                     >
                                         <Text style={styles.cancelButtonText}>
                                             Cancel
@@ -588,7 +702,10 @@ export function Form34ACaptureForm({
                 <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
                     <View style={styles.header}>
                         <Text style={styles.title}>{title}</Text>
-                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                        <TouchableOpacity
+                            onPress={closeForm}
+                            style={styles.closeButton}
+                        >
                             <X size={16} color={perk.ink} />
                         </TouchableOpacity>
                     </View>
@@ -599,14 +716,25 @@ export function Form34ACaptureForm({
                                 shown at the framing the citizen just composed
                                 rather than rescaled into a taller container. */}
                             <View style={styles.reviewImageFrame}>
-                                <Image
-                                    source={{uri: pendingImage}}
-                                    style={[
-                                        styles.reviewImage,
-                                        {aspectRatio: previewAspect},
-                                    ]}
-                                    resizeMode="contain"
-                                />
+                                {pendingPreview ? (
+                                    <NativeNitroImage
+                                        image={pendingPreview}
+                                        style={[
+                                            styles.reviewImage,
+                                            {aspectRatio: previewAspect},
+                                        ]}
+                                        resizeMode="contain"
+                                    />
+                                ) : (
+                                    <Image
+                                        source={{uri: pendingImage}}
+                                        style={[
+                                            styles.reviewImage,
+                                            {aspectRatio: previewAspect},
+                                        ]}
+                                        resizeMode="contain"
+                                    />
+                                )}
                             </View>
                             <Text style={styles.reviewPrompt}>
                                 Can you read every vote number?
@@ -614,19 +742,13 @@ export function Form34ACaptureForm({
                             <View style={styles.reviewControls}>
                                 <TouchableOpacity
                                     style={styles.reviewRetake}
-                                    onPress={() => {
-                                        setPendingImage(null);
-                                        openCamera();
-                                    }}
+                                    onPress={discardPendingPhoto}
                                 >
                                     <Text style={styles.cancelButtonText}>Retake</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.reviewAccept}
-                                    onPress={() => {
-                                        setCapturedImage(pendingImage);
-                                        setPendingImage(null);
-                                    }}
+                                    onPress={acceptPendingPhoto}
                                 >
                                     <Check size={18} color={perk.limeInk} />
                                     <Text style={styles.submitButtonText}>
@@ -906,7 +1028,7 @@ export function Form34ACaptureForm({
                                 <View style={styles.footerButtons}>
                                     <TouchableOpacity
                                         style={styles.cancelButton}
-                                        onPress={onClose}
+                                        onPress={closeForm}
                                     >
                                         <Text style={styles.cancelButtonText}>
                                             Cancel
