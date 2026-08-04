@@ -38,19 +38,21 @@ import {
 } from "./frameQuality";
 import {perk} from "@/app/_utils/colors";
 
-/** Roughly how many readings arrive per second, for the countdown. */
+/** Roughly how many readings arrive per second. */
 const READINGS_PER_SECOND = 6;
 
 /**
- * Consecutive good readings required before auto-capture fires.
+ * Consecutive good readings before the shutter is offered.
  *
- * Three seconds, matching a familiar camera self-timer. Firing the moment the
- * frame settles is technically correct and horrible to use: the shutter goes
- * before the citizen has registered that anything is happening. The wait is
- * what makes the countdown readable, and gives time to adjust the framing
- * before the photo is taken.
+ * The app never takes the photo itself. Auto-capture was built and removed:
+ * it fired on frames the citizen would have rejected, and a wrong capture on
+ * evidence is worse than a slower one. The camera judges whether the shot is
+ * usable; the citizen decides when to take it.
+ *
+ * Two seconds, because a single good reading proves nothing — the camera is
+ * continuously re-focusing and re-metering, and any one frame may be mid-sweep.
  */
-const AUTO_CAPTURE_READINGS = READINGS_PER_SECOND * 3;
+const READY_READINGS = READINGS_PER_SECOND * 2;
 
 /** Width the frame is reduced to before edge detection. */
 const DETECTION_WIDTH = 300;
@@ -82,8 +84,8 @@ const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
 };
 
 /**
- * How much of the frame the detected form must cover before auto-capture is
- * allowed. Guards against a sharp, well-lit close-up of one corner, which the
+ * How much of the frame the detected form must cover before the shutter is
+ * offered. Guards against a sharp, well-lit close-up of one corner, which the
  * luma metrics happily rate as perfect.
  *
  * Raised from 0.25, which let captures through with a lot of desk around the
@@ -170,8 +172,8 @@ export function Form34ACaptureForm({
     const capturingRef = React.useRef(false);
 
     const takePicture = React.useCallback(async () => {
-        // Auto-capture and the shutter button race each other, and a second
-        // capture while one is in flight throws.
+        // A second capture while one is in flight throws, and the shutter is
+        // tappable again the moment the first press is registered.
         if (capturingRef.current) return;
         capturingRef.current = true;
         try {
@@ -181,9 +183,9 @@ export function Form34ACaptureForm({
                 {flashMode: "off"},
                 {},
             );
-            // Held for review rather than accepted outright. Auto-capture can
-            // fire on a frame the citizen would have rejected, and they are
-            // still standing in front of the form and able to retake.
+            // Held for review rather than accepted outright: the citizen is
+            // still standing in front of the form and able to retake, which is
+            // the cheapest moment to catch a bad shot.
             setPendingImage(`file://${filePath}`);
             setShowCamera(false);
         } catch {
@@ -200,13 +202,13 @@ export function Form34ACaptureForm({
 
     // Consecutive good readings. The camera is continuously auto-focusing and
     // re-metering, so a single good frame proves nothing — it may be the middle
-    // of a focus sweep. Requiring a run of them is what makes auto-capture fire
-    // on a settled image rather than a lucky one. The streak lives in a ref as
-    // well as state: the ref is what the capture decision reads as each reading
-    // lands, the state only exists to re-render the bracket.
+    // of a focus sweep. Requiring a run of them is what stops the shutter
+    // appearing and vanishing. The streak lives in a ref as well as state: the
+    // ref is read as each reading lands, the state re-renders the UI.
     const [steadyReadings, setSteadyReadings] = useState(0);
     const steadyRef = React.useRef(0);
     const smoothedRef = React.useRef<FrameQuality | null>(null);
+    const logTickRef = React.useRef(0);
 
     // The form as OpenCV currently sees it, or null when no four-cornered
     // shape is in frame.
@@ -222,7 +224,7 @@ export function Form34ACaptureForm({
             setDocument(found);
 
             // Smooth before judging: raw readings jitter enough to flip the
-            // banner several times a second and to trip auto-capture on noise.
+            // banner several times a second.
             const smoothed = smoothQuality(smoothedRef.current, measured);
             smoothedRef.current = smoothed;
             setQuality(smoothed);
@@ -233,33 +235,35 @@ export function Form34ACaptureForm({
                 found.aspectRatio >= MIN_DOCUMENT_ASPECT &&
                 found.aspectRatio <= MAX_DOCUMENT_ASPECT;
 
-            console.log(
-                `[form34a] bright=${smoothed.brightness.toFixed(1)} ` +
-                    `sharp=${smoothed.sharpness.toFixed(1)} ` +
-                    `glare=${(smoothed.glare * 100).toFixed(2)}% ` +
-                    `doc=${found ? (found.areaFraction * 100).toFixed(1) + "%" : "none"} ` +
-                    `largest=${found ? (found.largestAreaFraction * 100).toFixed(1) + "%" : "-"} ` +
-                    `contours=${found?.contourCount ?? 0} ` +
-                    `corners=${found?.bestPointCount ?? 0} ` +
-                    `ratio=${found ? found.aspectRatio.toFixed(2) : "-"}`,
-            );
+            // Throttled: six log lines a second crosses the bridge constantly
+            // and buries anything else in the Metro output.
+            logTickRef.current += 1;
+            if (logTickRef.current % READINGS_PER_SECOND === 0)
+                console.log(
+                    `[form34a] bright=${smoothed.brightness.toFixed(1)} ` +
+                        `sharp=${smoothed.sharpness.toFixed(1)} ` +
+                        `glare=${(smoothed.glare * 100).toFixed(2)}% ` +
+                        `doc=${found ? (found.areaFraction * 100).toFixed(1) + "%" : "none"} ` +
+                        `largest=${found ? (found.largestAreaFraction * 100).toFixed(1) + "%" : "-"} ` +
+                        `contours=${found?.contourCount ?? 0} ` +
+                        `corners=${found?.bestPointCount ?? 0} ` +
+                        `ratio=${found ? found.aspectRatio.toFixed(2) : "-"}`,
+                );
 
             // Both gates must hold: the image has to be legible *and* show the
             // whole form. Either alone passes on a perfect close-up.
+            const wasReady = steadyRef.current >= READY_READINGS;
             steadyRef.current =
                 assessQuality(smoothed).ok && covers ? steadyRef.current + 1 : 0;
             setSteadyReadings(steadyRef.current);
 
-            // Fired from here rather than an effect: this is the event that
-            // decides it, so there is nothing to synchronise after the fact.
-            // Readings only arrive while the session is active, so reaching
-            // here already implies the camera panel is open.
-            if (steadyRef.current >= AUTO_CAPTURE_READINGS) {
+            // A tap the moment the shutter appears, so it can be felt without
+            // watching the screen while holding a form steady.
+            if (!wasReady && steadyRef.current >= READY_READINGS) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                takePicture();
             }
         },
-        [takePicture],
+        [],
     );
 
     const rawAssessment = quality ? assessQuality(quality) : null;
@@ -274,10 +278,6 @@ export function Form34ACaptureForm({
     // Portrait: a 4:3 sensor frame shown upright is 3 wide by 4 tall.
     const previewAspect = aspect === "4:3" ? 3 / 4 : 9 / 16;
 
-    const secondsToCapture = Math.ceil(
-        (AUTO_CAPTURE_READINGS - steadyReadings) / READINGS_PER_SECOND,
-    );
-
     const assessment =
         rawAssessment && !covered
             ? {
@@ -288,27 +288,22 @@ export function Form34ACaptureForm({
                       : "Fit all four edges inside the brackets",
                   ok: false,
               }
-            : rawAssessment?.ok && steadyReadings > 0
+            : rawAssessment?.ok && steadyReadings > 0 && steadyReadings < READY_READINGS
               ? {
-                    // The countdown itself is the centred 3-2-1; the banner
-                    // only has to say why the numbers are running.
                     ...rawAssessment,
                     label: "Hold still",
                     hint: null,
                 }
               : rawAssessment;
 
-    // Only while a capture is actually pending, so the digits do not flash up
-    // for a single frame every time the form drifts in and out of focus.
-    const countdown =
-        showCamera && assessment?.ok && steadyReadings > 0 ? secondsToCapture : null;
+    /** The shutter is offered only once the shot has held up for a while. */
+    const readyToCapture = steadyReadings >= READY_READINGS;
 
-    // Amber the moment the frame is usable, green only once it has held long
-    // enough that auto-capture is about to fire — so the colour tells the
-    // citizen whether to keep holding still.
+    // Amber the moment the frame is usable, green once it has held long enough
+    // that the shutter is available — so the colour and the button agree.
     const bracketState: BracketState = !assessment?.ok
         ? "bad"
-        : steadyReadings >= AUTO_CAPTURE_READINGS - 1
+        : readyToCapture
           ? "steady"
           : "ok";
 
@@ -381,8 +376,8 @@ export function Form34ACaptureForm({
         : true;
     const submitEnabled = !!capturedImage && hasVotes && extraGate;
 
-    // Clear the previous run's readings so a stale good streak can't fire
-    // auto-capture the instant the camera reopens for a retake.
+    // Clear the previous run's readings so a stale good streak can't offer the
+    // shutter the instant the camera reopens for a retake.
     const openCamera = () => {
         setQuality(null);
         setDocument(null);
@@ -521,13 +516,6 @@ export function Form34ACaptureForm({
                                     />
                                 )}
                                 <FramingBracket state={bracketState} />
-                                {countdown !== null && (
-                                    <View style={styles.countdown} pointerEvents="none">
-                                        <Text style={styles.countdownNumber}>
-                                            {countdown}
-                                        </Text>
-                                    </View>
-                                )}
                             </View>
                             {assessment && (
                                 <View
@@ -571,13 +559,19 @@ export function Form34ACaptureForm({
                                 </View>
                             )}
                             <View style={styles.cameraControls}>
-                                <TouchableOpacity
-                                    style={styles.captureButton}
-                                    onPress={takePicture}
-                                    disabled={!device}
-                                >
-                                    <CameraIcon size={32} color={perk.limeInk} />
-                                </TouchableOpacity>
+                                {readyToCapture && !!device ? (
+                                    <TouchableOpacity
+                                        style={styles.captureButton}
+                                        onPress={takePicture}
+                                    >
+                                        <CameraIcon size={32} color={perk.limeInk} />
+                                    </TouchableOpacity>
+                                ) : (
+                                    // A placeholder rather than nothing, so the
+                                    // shutter appears in place instead of the
+                                    // controls jumping when it becomes available.
+                                    <View style={styles.captureButtonWaiting} />
+                                )}
                             </View>
                         </View>
                     ) : (
@@ -882,25 +876,6 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: perk.lime,
     },
-    countdown: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    countdownNumber: {
-        fontSize: 132,
-        fontWeight: "900",
-        color: perk.lime,
-        // Legible over both a bright form and a dark background, without a
-        // panel that would hide the very thing being framed.
-        textShadowColor: "rgba(13,13,13,0.55)",
-        textShadowOffset: {width: 0, height: 3},
-        textShadowRadius: 14,
-    },
     // Review
     reviewContainer: {
         flex: 1,
@@ -985,6 +960,13 @@ const styles = StyleSheet.create({
         backgroundColor: perk.lime,
         justifyContent: "center",
         alignItems: "center",
+    },
+    captureButtonWaiting: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.35)",
     },
     // Body
     body: {flex: 1},

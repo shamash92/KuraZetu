@@ -130,7 +130,11 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
         let largestArea = 0;
 
         for (let index = 0; index < contours.length; index++) {
-            const contour = track(contours.get(index));
+            // Deliberately not tracked for release. `get()` hands back a child
+            // owned by `contours`, so releasing it here and again when the
+            // parent is released is a double free — a native crash, and one
+            // that only shows up after the camera has been running a while.
+            const contour = contours.get(index);
             const area = OpenCV.contourArea(contour, false).value;
 
             // Tracked separately from `bestArea` so a contour that just missed
