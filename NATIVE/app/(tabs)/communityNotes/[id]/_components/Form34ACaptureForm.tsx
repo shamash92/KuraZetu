@@ -38,8 +38,30 @@ import {
 } from "./frameQuality";
 import {perk} from "@/app/_utils/colors";
 
-/** Roughly how many readings arrive per second. */
-const READINGS_PER_SECOND = 6;
+/**
+ * Measure one frame in every `FRAME_SAMPLE_INTERVAL`.
+ *
+ * Every frame would be wasteful and stall the camera pipeline; this lands
+ * around six readings a second on a 30fps stream, which is more than enough
+ * for guidance a human is reacting to.
+ */
+const FRAME_SAMPLE_INTERVAL = 5;
+const ASSUMED_CAMERA_FPS = 30;
+
+/**
+ * Readings per second, derived rather than guessed — the readiness delay is
+ * expressed in seconds and would quietly drift if these were independent.
+ */
+const READINGS_PER_SECOND = ASSUMED_CAMERA_FPS / FRAME_SAMPLE_INTERVAL;
+
+/**
+ * Print every frame reading to the console.
+ *
+ * Development only, and the switch for calibrating `THRESHOLDS` against a
+ * printed form under real light — the on-screen readout shows one frame at a
+ * time, whereas a log captures the whole run.
+ */
+const LOG_READINGS = false;
 
 /**
  * Consecutive good readings before the shutter is offered.
@@ -217,7 +239,6 @@ export function Form34ACaptureForm({
     const [steadyReadings, setSteadyReadings] = useState(0);
     const steadyRef = React.useRef(0);
     const smoothedRef = React.useRef<FrameQuality | null>(null);
-    const logTickRef = React.useRef(0);
 
     // The form as OpenCV currently sees it, or null when no four-cornered
     // shape is in frame.
@@ -244,10 +265,10 @@ export function Form34ACaptureForm({
                 found.aspectRatio >= MIN_DOCUMENT_ASPECT &&
                 found.aspectRatio <= MAX_DOCUMENT_ASPECT;
 
-            // Throttled: six log lines a second crosses the bridge constantly
-            // and buries anything else in the Metro output.
-            logTickRef.current += 1;
-            if (logTickRef.current % READINGS_PER_SECOND === 0)
+            // Off by default. Frame readings are the only way to calibrate the
+            // thresholds against a real printed form, so the capability stays —
+            // but it prints several lines a second and buries everything else.
+            if (LOG_READINGS)
                 console.log(
                     `[form34a] bright=${smoothed.brightness.toFixed(1)} ` +
                         `sharp=${smoothed.sharpness.toFixed(1)} ` +
@@ -324,7 +345,7 @@ export function Form34ACaptureForm({
             "worklet";
             try {
                 frameCounter.value += 1;
-                if (frameCounter.value % 5 !== 0) return;
+                if (frameCounter.value % FRAME_SAMPLE_INTERVAL !== 0) return;
 
                 const planes = frame.getPlanes();
                 if (planes.length === 0) return;

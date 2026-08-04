@@ -178,13 +178,26 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
                 }
             }
 
-            const xs = points.map((point) => point.x);
-            const ys = points.map((point) => point.y);
-            const boxWidth = Math.max(...xs) - Math.min(...xs);
-            const boxHeight = Math.max(...ys) - Math.min(...ys);
+            // Iterated rather than spread into Math.max: a contour that fails
+            // to simplify can carry hundreds of points, and spreading that many
+            // arguments risks a stack overflow.
+            let minX = Infinity;
+            let maxX = -Infinity;
+            let minY = Infinity;
+            let maxY = -Infinity;
+            for (const point of points) {
+                if (point.x < minX) minX = point.x;
+                if (point.x > maxX) maxX = point.x;
+                if (point.y < minY) minY = point.y;
+                if (point.y > maxY) maxY = point.y;
+            }
+            const boxWidth = maxX - minX;
+            const boxHeight = maxY - minY;
 
             bestArea = area;
-            bestPointCount = approximated.length;
+            // Our own copy, not `approximated.length` — its Points have been
+            // released by this point and reading back through it is unsafe.
+            bestPointCount = points.length;
             // Reported in display space, not buffer space. A portrait page in
             // a portrait phone arrives rotated 90°, so measuring the buffer
             // directly makes an A4 form look landscape and fails the shape
@@ -216,9 +229,11 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
         console.warn("[form34a] detection failed", error);
         return null;
     } finally {
-        for (const object of disposables) {
+        // Reverse order: objects are created parent-first, and releasing a
+        // parent before the things derived from it invites a use-after-free.
+        for (let index = disposables.length - 1; index >= 0; index--) {
             try {
-                object.release();
+                disposables[index].release();
             } catch {
                 // Already released, or never allocated.
             }
