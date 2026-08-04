@@ -30,6 +30,146 @@ interface LiveCameraPaneProps {
     onToggleAspect: () => void;
 }
 
+interface CameraSurfaceProps {
+    active: boolean;
+    available: boolean;
+    bracketState: BracketState;
+    error: string | null;
+    device: CameraDevice | undefined;
+    frameOutput: CameraFrameOutput;
+    photoOutput: CameraPhotoOutput;
+    previewAspect: number;
+    onCameraError: (error: Error) => void;
+    onRetry: () => void;
+}
+
+function CameraSurface({
+    active,
+    available,
+    bracketState,
+    error,
+    device,
+    frameOutput,
+    photoOutput,
+    previewAspect,
+    onCameraError,
+    onRetry,
+}: CameraSurfaceProps) {
+    return (
+        <View style={[styles.preview, {aspectRatio: previewAspect}]}>
+            {available && device ? (
+                <Camera
+                    style={styles.camera}
+                    device={device}
+                    isActive={active}
+                    outputs={[photoOutput, frameOutput]}
+                    resizeMode="contain"
+                    onError={onCameraError}
+                />
+            ) : (
+                <View style={styles.cameraFailure} accessibilityRole="alert">
+                    <Text
+                        style={styles.cameraFailureTitle}
+                        accessibilityRole="header"
+                    >
+                        Camera unavailable
+                    </Text>
+                    <Text style={styles.cameraFailureText}>
+                        {error ?? "No back camera is available on this device."}
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.cameraRetryButton}
+                        onPress={onRetry}
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.cameraRetryText}>Try again</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+            {available && <FramingBracket state={bracketState} />}
+        </View>
+    );
+}
+
+interface CaptureGuidanceProps {
+    assessment: QualityAssessment | null;
+    cameraAvailable: boolean;
+    captureError: string | null;
+}
+
+function CaptureGuidance({
+    assessment,
+    cameraAvailable,
+    captureError,
+}: CaptureGuidanceProps) {
+    if (captureError) {
+        return (
+            <View
+                style={[styles.qualityBanner, styles.qualityBannerBad]}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+            >
+                <Text style={[styles.qualityLabel, styles.qualityLabelBad]}>
+                    {captureError}
+                </Text>
+            </View>
+        );
+    }
+
+    if (!assessment || !cameraAvailable) return null;
+
+    return (
+        <View
+            style={[
+                styles.qualityBanner,
+                assessment.ok ? styles.qualityBannerOk : styles.qualityBannerBad,
+            ]}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+        >
+            <Text
+                style={[
+                    styles.qualityLabel,
+                    assessment.ok ? styles.qualityLabelOk : styles.qualityLabelBad,
+                ]}
+            >
+                {assessment.label}
+            </Text>
+            {!!assessment.hint && (
+                <Text style={styles.qualityHint}>{assessment.hint}</Text>
+            )}
+        </View>
+    );
+}
+
+interface CaptureControlProps {
+    enabled: boolean;
+    onCapture: () => void;
+}
+
+function CaptureControl({enabled, onCapture}: CaptureControlProps) {
+    return (
+        <View style={styles.cameraControls}>
+            {enabled ? (
+                <TouchableOpacity
+                    style={styles.captureButton}
+                    onPress={onCapture}
+                    accessibilityRole="button"
+                    accessibilityLabel="Take photo"
+                    accessibilityHint="Captures Form 34A for review"
+                >
+                    <CameraIcon size={32} color={perk.limeInk} />
+                </TouchableOpacity>
+            ) : (
+                <View
+                    style={styles.captureButtonWaiting}
+                    importantForAccessibility="no"
+                />
+            )}
+        </View>
+    );
+}
+
 /** The live camera and its guidance, kept separate from form orchestration. */
 export function LiveCameraPane({
     active,
@@ -65,95 +205,27 @@ export function LiveCameraPane({
                 </TouchableOpacity>
             )}
 
-            <View style={[styles.preview, {aspectRatio: previewAspect}]}>
-                {device && !cameraError ? (
-                    <Camera
-                        style={styles.camera}
-                        device={device}
-                        isActive={active}
-                        outputs={[photoOutput, frameOutput]}
-                        resizeMode="contain"
-                        onError={onCameraError}
-                    />
-                ) : (
-                    <View style={styles.cameraFailure} accessibilityRole="alert">
-                        <Text
-                            style={styles.cameraFailureTitle}
-                            accessibilityRole="header"
-                        >
-                            Camera unavailable
-                        </Text>
-                        <Text style={styles.cameraFailureText}>
-                            {cameraError ??
-                                "No back camera is available on this device."}
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.cameraRetryButton}
-                            onPress={onRetry}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.cameraRetryText}>Try again</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-                {cameraAvailable && <FramingBracket state={bracketState} />}
-            </View>
-
-            {captureError ? (
-                <View
-                    style={[styles.qualityBanner, styles.qualityBannerBad]}
-                    accessibilityRole="alert"
-                    accessibilityLiveRegion="polite"
-                >
-                    <Text style={[styles.qualityLabel, styles.qualityLabelBad]}>
-                        {captureError}
-                    </Text>
-                </View>
-            ) : assessment && cameraAvailable ? (
-                <View
-                    style={[
-                        styles.qualityBanner,
-                        assessment.ok
-                            ? styles.qualityBannerOk
-                            : styles.qualityBannerBad,
-                    ]}
-                    accessibilityRole="alert"
-                    accessibilityLiveRegion="polite"
-                >
-                    <Text
-                        style={[
-                            styles.qualityLabel,
-                            assessment.ok
-                                ? styles.qualityLabelOk
-                                : styles.qualityLabelBad,
-                        ]}
-                    >
-                        {assessment.label}
-                    </Text>
-                    {!!assessment.hint && (
-                        <Text style={styles.qualityHint}>{assessment.hint}</Text>
-                    )}
-                </View>
-            ) : null}
-
-            <View style={styles.cameraControls}>
-                {readyToCapture && cameraAvailable ? (
-                    <TouchableOpacity
-                        style={styles.captureButton}
-                        onPress={onCapture}
-                        accessibilityRole="button"
-                        accessibilityLabel="Take photo"
-                        accessibilityHint="Captures Form 34A for review"
-                    >
-                        <CameraIcon size={32} color={perk.limeInk} />
-                    </TouchableOpacity>
-                ) : (
-                    <View
-                        style={styles.captureButtonWaiting}
-                        importantForAccessibility="no"
-                    />
-                )}
-            </View>
+            <CameraSurface
+                active={active}
+                available={cameraAvailable}
+                bracketState={bracketState}
+                error={cameraError}
+                device={device}
+                frameOutput={frameOutput}
+                photoOutput={photoOutput}
+                previewAspect={previewAspect}
+                onCameraError={onCameraError}
+                onRetry={onRetry}
+            />
+            <CaptureGuidance
+                assessment={assessment}
+                cameraAvailable={cameraAvailable}
+                captureError={captureError}
+            />
+            <CaptureControl
+                enabled={readyToCapture && cameraAvailable}
+                onCapture={onCapture}
+            />
         </View>
     );
 }

@@ -1,15 +1,13 @@
 import {
-    Image,
     Linking,
     Modal,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
-import {Camera as CameraIcon, Check, X} from "lucide-react-native";
+import {X} from "lucide-react-native";
 import {
     CommonResolutions,
     Size,
@@ -19,15 +17,16 @@ import {
 } from "react-native-vision-camera";
 import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
-import {
-    NativeNitroImage,
-    type Image as NitroImageHandle,
-} from "react-native-nitro-image";
+import {type Image as NitroImageHandle} from "react-native-nitro-image";
 
 import {File} from "expo-file-system";
 
+import {
+    CameraPermissionModal,
+    PhotoReviewPane,
+    VoteEntryPane,
+} from "./CaptureFormViews";
 import {LiveCameraPane} from "./LiveCameraPane";
-import {VoteCountRow} from "./VoteCountRow";
 import {getCameraPermissionRecovery} from "./cameraPermission";
 import {
     CaptureAspect,
@@ -242,8 +241,6 @@ export function Form34ACaptureForm({
         setWasVisible(false);
     }
 
-    const getVote = (key: string) => votes[key] ?? 0;
-
     const setVote = (key: string, value: number) =>
         setVotes((prev) => ({...prev, [key]: value}));
 
@@ -257,6 +254,18 @@ export function Form34ACaptureForm({
         ? canSubmit({votes, rejectedVotes, disputedVotes, hasImage: !!capturedImage})
         : true;
     const submitEnabled = !!capturedImage && hasVotes && extraGate;
+
+    const submitForm = () => {
+        if (!capturedImage) return;
+
+        onSubmit({
+            image: capturedImage,
+            votes,
+            rejectedVotes,
+            disputedVotes,
+            total,
+        });
+    };
 
     React.useEffect(() => {
         if (!visible) {
@@ -353,52 +362,14 @@ export function Form34ACaptureForm({
 
     if (!hasPermission) {
         return (
-            <Modal
+            <CameraPermissionModal
                 visible={visible}
-                animationType="slide"
-                transparent
-                statusBarTranslucent
-            >
-                <SafeAreaProvider>
-                    <View style={styles.permissionOverlay}>
-                        <SafeAreaView style={styles.permissionSafeArea}>
-                            <View style={styles.permissionContainer}>
-                                <View style={styles.permissionCard}>
-                                    <Text style={styles.permissionText}>
-                                        {permissionRecovery.message}
-                                    </Text>
-                                    {!!permissionError && (
-                                        <Text
-                                            style={styles.permissionError}
-                                            accessibilityRole="alert"
-                                        >
-                                            {permissionError}
-                                        </Text>
-                                    )}
-                                    <TouchableOpacity
-                                        style={styles.permissionButton}
-                                        onPress={handlePermissionRecovery}
-                                        accessibilityRole="button"
-                                    >
-                                        <Text style={styles.permissionButtonText}>
-                                            {permissionRecovery.buttonLabel}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.permissionCancelButton}
-                                        onPress={closeForm}
-                                        accessibilityRole="button"
-                                    >
-                                        <Text style={styles.cancelButtonText}>
-                                            Cancel
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </SafeAreaView>
-                    </View>
-                </SafeAreaProvider>
-            </Modal>
+                actionLabel={permissionRecovery.buttonLabel}
+                error={permissionError}
+                message={permissionRecovery.message}
+                onClose={closeForm}
+                onRecover={handlePermissionRecovery}
+            />
         );
     }
 
@@ -427,58 +398,13 @@ export function Form34ACaptureForm({
                     </View>
 
                     {pendingImage ? (
-                        <View style={styles.reviewContainer}>
-                            {/* Same aspect box as the preview, so the photo is
-                                shown at the framing the citizen just composed
-                                rather than rescaled into a taller container. */}
-                            <View style={styles.reviewImageFrame}>
-                                {pendingPreview ? (
-                                    <NativeNitroImage
-                                        image={pendingPreview}
-                                        style={[
-                                            styles.reviewImage,
-                                            {aspectRatio: previewAspect},
-                                        ]}
-                                        resizeMode="contain"
-                                        accessible
-                                        accessibilityLabel="Captured Form 34A preview"
-                                    />
-                                ) : (
-                                    <Image
-                                        source={{uri: pendingImage}}
-                                        style={[
-                                            styles.reviewImage,
-                                            {aspectRatio: previewAspect},
-                                        ]}
-                                        resizeMode="contain"
-                                        accessible
-                                        accessibilityLabel="Captured Form 34A preview"
-                                    />
-                                )}
-                            </View>
-                            <Text style={styles.reviewPrompt}>
-                                Can you read every vote number?
-                            </Text>
-                            <View style={styles.reviewControls}>
-                                <TouchableOpacity
-                                    style={styles.reviewRetake}
-                                    onPress={discardPendingPhoto}
-                                    accessibilityRole="button"
-                                >
-                                    <Text style={styles.cancelButtonText}>Retake</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.reviewAccept}
-                                    onPress={acceptPendingPhoto}
-                                    accessibilityRole="button"
-                                >
-                                    <Check size={18} color={perk.limeInk} />
-                                    <Text style={styles.submitButtonText}>
-                                        Use this photo
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                        <PhotoReviewPane
+                            imageUri={pendingImage}
+                            preview={pendingPreview}
+                            previewAspect={previewAspect}
+                            onAccept={acceptPendingPhoto}
+                            onRetake={discardPendingPhoto}
+                        />
                     ) : showCamera ? (
                         <LiveCameraPane
                             active={visible && showCamera}
@@ -498,124 +424,22 @@ export function Form34ACaptureForm({
                             onToggleAspect={toggleAspect}
                         />
                     ) : (
-                        <View style={styles.body}>
-                            <ScrollView
-                                style={styles.content}
-                                contentContainerStyle={styles.contentInner}
-                                showsVerticalScrollIndicator={false}
-                            >
-                                <Text style={styles.sectionLabel}>
-                                    CAPTURE FORM 34A
-                                </Text>
-                                {capturedImage ? (
-                                    <View style={styles.capturedRow}>
-                                        <Text style={styles.capturedText}>
-                                            ✓ Form 34A captured
-                                        </Text>
-                                        <TouchableOpacity
-                                            onPress={openCamera}
-                                            accessibilityRole="button"
-                                            accessibilityLabel="Retake Form 34A photo"
-                                            hitSlop={8}
-                                        >
-                                            <Text style={styles.recaptureText}>
-                                                Retake
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    <TouchableOpacity
-                                        style={styles.cameraButton}
-                                        onPress={openCamera}
-                                        accessibilityRole="button"
-                                    >
-                                        <CameraIcon size={16} color={perk.lime} />
-                                        <Text style={styles.cameraButtonText}>
-                                            Capture Form 34A
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
-
-                                <Text style={[styles.sectionLabel, {marginTop: 18}]}>
-                                    ENTER VOTE DATA
-                                </Text>
-                                {candidates.map((candidate) => {
-                                    const value = getVote(candidate.key);
-                                    return (
-                                        <VoteCountRow
-                                            key={candidate.key}
-                                            label={candidate.name}
-                                            party={candidate.party}
-                                            value={value}
-                                            accessibilityLabel={`Votes for ${candidate.name}`}
-                                            onChange={(nextValue) =>
-                                                setVote(candidate.key, nextValue)
-                                            }
-                                        />
-                                    );
-                                })}
-
-                                <VoteCountRow
-                                    label="Rejected votes"
-                                    value={rejectedVotes}
-                                    accessibilityLabel="Rejected votes"
-                                    onChange={setRejectedVotes}
-                                />
-
-                                <VoteCountRow
-                                    label="Disputed votes"
-                                    value={disputedVotes}
-                                    accessibilityLabel="Disputed votes"
-                                    onChange={setDisputedVotes}
-                                />
-                            </ScrollView>
-
-                            {/* Floating footer sheet */}
-                            <View style={styles.footer}>
-                                <View style={styles.totalRow}>
-                                    <Text style={styles.totalLabel}>Total votes</Text>
-                                    <Text style={styles.totalValue}>
-                                        {total.toLocaleString()}
-                                    </Text>
-                                </View>
-                                <View style={styles.footerButtons}>
-                                    <TouchableOpacity
-                                        style={styles.cancelButton}
-                                        onPress={closeForm}
-                                        accessibilityRole="button"
-                                    >
-                                        <Text style={styles.cancelButtonText}>
-                                            Cancel
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.submitButton,
-                                            !submitEnabled && styles.disabledButton,
-                                        ]}
-                                        disabled={!submitEnabled}
-                                        accessibilityRole="button"
-                                        accessibilityState={{
-                                            disabled: !submitEnabled,
-                                        }}
-                                        onPress={() =>
-                                            onSubmit({
-                                                image: capturedImage as string,
-                                                votes,
-                                                rejectedVotes,
-                                                disputedVotes,
-                                                total,
-                                            })
-                                        }
-                                    >
-                                        <Check size={18} color={perk.limeInk} />
-                                        <Text style={styles.submitButtonText}>
-                                            {submitLabel}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
+                        <VoteEntryPane
+                            candidates={candidates}
+                            captured={!!capturedImage}
+                            disputedVotes={disputedVotes}
+                            rejectedVotes={rejectedVotes}
+                            submitEnabled={submitEnabled}
+                            submitLabel={submitLabel}
+                            total={total}
+                            votes={votes}
+                            onCapture={openCamera}
+                            onClose={closeForm}
+                            onDisputedVotesChange={setDisputedVotes}
+                            onRejectedVotesChange={setRejectedVotes}
+                            onSubmit={submitForm}
+                            onVoteChange={setVote}
+                        />
                     )}
                 </SafeAreaView>
             </SafeAreaProvider>
@@ -630,68 +454,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: perk.card,
     },
-    // Permission
-    permissionOverlay: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(13,13,13,0.85)",
-    },
-    permissionSafeArea: {flex: 1},
-    permissionContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 16,
-    },
-    permissionCard: {
-        width: "100%",
-        maxWidth: 400,
-        backgroundColor: perk.card,
-        borderRadius: 16,
-        padding: 24,
-        alignItems: "center",
-    },
-    permissionText: {
-        fontSize: 18,
-        color: perk.ink,
-        textAlign: "center",
-        marginBottom: 24,
-        lineHeight: 24,
-    },
-    permissionError: {
-        color: perk.coralDeep,
-        fontSize: 13,
-        fontWeight: "700",
-        lineHeight: 18,
-        marginTop: -12,
-        marginBottom: 16,
-        textAlign: "center",
-    },
-    permissionButton: {
-        backgroundColor: perk.lime,
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        borderRadius: 12,
-        marginBottom: 16,
-        width: "100%",
-        alignItems: "center",
-    },
-    permissionButtonText: {
-        color: perk.limeInk,
-        fontSize: 16,
-        fontWeight: "800",
-    },
-    permissionCancelButton: {
-        paddingVertical: 16,
-        borderRadius: 12,
-        backgroundColor: perk.surface,
-        alignItems: "center",
-        width: "100%",
-    },
-    // Header
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -713,168 +475,5 @@ const styles = StyleSheet.create({
         backgroundColor: perk.surface,
         alignItems: "center",
         justifyContent: "center",
-    },
-    // Review
-    reviewContainer: {
-        flex: 1,
-        paddingHorizontal: 12,
-        paddingBottom: 12,
-    },
-    reviewImageFrame: {
-        flex: 1,
-        justifyContent: "center",
-    },
-    reviewImage: {
-        width: "100%",
-        borderRadius: 12,
-        backgroundColor: perk.ink,
-    },
-    reviewPrompt: {
-        fontSize: 13,
-        fontWeight: "800",
-        color: perk.ink,
-        textAlign: "center",
-        marginTop: 12,
-    },
-    reviewControls: {
-        flexDirection: "row",
-        gap: 8,
-        marginTop: 10,
-    },
-    reviewRetake: {
-        flex: 0.7,
-        paddingVertical: 14,
-        borderRadius: 12,
-        backgroundColor: perk.surface,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    reviewAccept: {
-        flex: 1.3,
-        flexDirection: "row",
-        paddingVertical: 14,
-        borderRadius: 12,
-        backgroundColor: perk.lime,
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-    },
-    // Body
-    body: {flex: 1},
-    content: {flex: 1},
-    contentInner: {
-        paddingHorizontal: 16,
-        paddingTop: 4,
-        paddingBottom: 16,
-    },
-    sectionLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 10,
-        fontWeight: "700",
-        letterSpacing: 1.8,
-        color: perk.mute,
-        marginBottom: 10,
-    },
-    cameraButton: {
-        flexDirection: "row",
-        backgroundColor: perk.ink,
-        paddingVertical: 13,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 8,
-    },
-    cameraButtonText: {
-        color: perk.lime,
-        fontSize: 13,
-        fontWeight: "800",
-    },
-    capturedRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: perk.mint,
-        borderRadius: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-    },
-    capturedText: {
-        fontSize: 13,
-        color: perk.greenDeep,
-        fontWeight: "800",
-    },
-    recaptureText: {
-        color: perk.copperDeep,
-        fontSize: 13,
-        fontWeight: "800",
-        textDecorationLine: "underline",
-    },
-    // Floating footer
-    footer: {
-        backgroundColor: perk.card,
-        borderWidth: 1.5,
-        borderColor: perk.ink,
-        borderRadius: 16,
-        marginHorizontal: 12,
-        marginBottom: 12,
-        paddingHorizontal: 14,
-        paddingTop: 10,
-        paddingBottom: 12,
-        shadowColor: perk.ink,
-        shadowOffset: {width: 0, height: 10},
-        shadowOpacity: 0.12,
-        shadowRadius: 18,
-        elevation: 10,
-    },
-    totalRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    totalLabel: {
-        fontSize: 14,
-        fontWeight: "800",
-        color: perk.ink,
-    },
-    totalValue: {
-        fontSize: 20,
-        fontWeight: "900",
-        color: perk.coralDeep,
-    },
-    footerButtons: {
-        flexDirection: "row",
-        gap: 8,
-        marginTop: 10,
-    },
-    cancelButton: {
-        flex: 0.7,
-        paddingVertical: 13,
-        borderRadius: 12,
-        backgroundColor: perk.surface,
-        alignItems: "center",
-    },
-    cancelButtonText: {
-        color: perk.ink,
-        fontSize: 13,
-        fontWeight: "800",
-    },
-    submitButton: {
-        flex: 1.3,
-        flexDirection: "row",
-        paddingVertical: 13,
-        borderRadius: 12,
-        backgroundColor: perk.lime,
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 8,
-    },
-    submitButtonText: {
-        color: perk.limeInk,
-        fontSize: 13,
-        fontWeight: "800",
-    },
-    disabledButton: {
-        backgroundColor: perk.paperDeep,
     },
 });
