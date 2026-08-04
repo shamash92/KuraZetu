@@ -17,7 +17,6 @@
         "@shopify/react-native-skia": "2.6.2",
         "expo": "^57.0.0",
         "expo-blur": "~57.0.2",
-        "expo-camera": "~57.0.3",
         "expo-constants": "~57.0.6",
         "expo-dev-client": "~57.0.7",
         "expo-device": "~57.0.1",

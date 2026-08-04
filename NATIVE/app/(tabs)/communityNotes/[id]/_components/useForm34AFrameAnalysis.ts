@@ -35,7 +35,7 @@ const FRAME_TIMESTAMP_TO_SECONDS = Platform.OS === "android" ? 1e-9 : 1;
 const LOG_READINGS = false;
 
 /** Width the frame is reduced to before edge detection. */
-const DETECTION_WIDTH = 300;
+const DETECTION_WIDTH = 240;
 
 /** Frame-processing resolution stays small; only the shape needs to match. */
 const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
@@ -44,7 +44,7 @@ const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
 };
 
 /** The detected form must occupy enough pixels to preserve handwritten digits. */
-const MIN_DOCUMENT_COVERAGE = 0.65;
+const MIN_DOCUMENT_COVERAGE = 0.35;
 
 /** A wide range for a perspective-distorted A4 portrait page. */
 const MIN_DOCUMENT_ASPECT = 0.45;
@@ -251,9 +251,7 @@ export function useForm34AFrameAnalysis({
     return {
         assessment,
         bracketState,
-        document,
         frameOutput,
-        quality,
         readyToCapture,
         resetAnalysis,
     };

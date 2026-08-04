@@ -220,9 +220,7 @@ export function Form34ACaptureForm({
     const {
         assessment,
         bracketState,
-        document,
         frameOutput,
-        quality,
         readyToCapture,
         resetAnalysis,
     } = useForm34AFrameAnalysis({
@@ -598,21 +596,6 @@ export function Form34ACaptureForm({
                                     )}
                                 </View>
                             ) : null}
-                            {/* CALIBRATION readout — remove once thresholds are set. */}
-                            {quality && !cameraError && !!device && (
-                                <View style={styles.qualityReadout}>
-                                    <Text style={styles.qualityText}>
-                                        {`bright ${quality.brightness.toFixed(0)}  ` +
-                                            `sharp ${quality.sharpness.toFixed(0)}  ` +
-                                            `glare ${(quality.glare * 100).toFixed(1)}%  ` +
-                                            `doc ${
-                                                document
-                                                    ? `${(document.areaFraction * 100).toFixed(0)}%/${document.bestPointCount}pt`
-                                                    : "—"
-                                            }`}
-                                    </Text>
-                                </View>
-                            )}
                             <View style={styles.cameraControls}>
                                 {readyToCapture && !!device && !cameraError ? (
                                     <TouchableOpacity
@@ -877,22 +860,6 @@ const styles = StyleSheet.create({
         color: perk.card,
         marginTop: 2,
         textAlign: "center",
-    },
-    // CALIBRATION readout — remove once thresholds are set.
-    qualityReadout: {
-        position: "absolute",
-        top: 74,
-        alignSelf: "center",
-        backgroundColor: "rgba(13,13,13,0.75)",
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: 8,
-    },
-    qualityText: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 11,
-        fontWeight: "700",
-        color: perk.lime,
     },
     // Review
     reviewContainer: {

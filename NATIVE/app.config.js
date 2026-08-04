@@ -42,6 +42,9 @@ export default {
             },
         },
         android: {
+            // VisionCamera declares camera hardware support but deliberately
+            // leaves the runtime permission to the host application.
+            permissions: ["android.permission.CAMERA"],
             adaptiveIcon: {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#ffffff",
@@ -108,15 +111,6 @@ export default {
                             backgroundColor: "#29cfc1",
                         },
                     },
-                },
-            ],
-            [
-                "expo-camera",
-                {
-                    cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
-                    microphonePermission:
-                        "Allow $(PRODUCT_NAME) to access your microphone",
-                    recordAudioAndroid: true,
                 },
             ],
             "./plugins/withIosBuildFixes",
