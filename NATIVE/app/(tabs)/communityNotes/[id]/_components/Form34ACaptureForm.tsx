@@ -1,5 +1,6 @@
 import {
     Image,
+    Linking,
     Modal,
     Platform,
     ScrollView,
@@ -27,6 +28,7 @@ import {useSharedValue} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
 import {BracketState, FramingBracket} from "./FramingBracket";
+import {getCameraPermissionRecovery} from "./cameraPermission";
 import {
     CaptureReadiness,
     INITIAL_CAPTURE_READINESS,
@@ -174,7 +176,8 @@ export function Form34ACaptureForm({
     onSubmit,
     canSubmit,
 }: Form34ACaptureFormProps) {
-    const {hasPermission, requestPermission} = useCameraPermission();
+    const {hasPermission, canRequestPermission, requestPermission} =
+        useCameraPermission();
     const [showCamera, setShowCamera] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     /** Captured but not yet accepted — shown full-screen for review. */
@@ -185,6 +188,9 @@ export function Form34ACaptureForm({
     const [wasVisible, setWasVisible] = useState(false);
     const device = useCameraDevice("back");
     const [aspect, setAspect] = useState<CaptureAspect>(DEFAULT_ASPECT);
+    const [permissionError, setPermissionError] = useState<string | null>(null);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+    const [captureError, setCaptureError] = useState<string | null>(null);
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
         qualityPrioritization: "quality",
@@ -197,6 +203,7 @@ export function Form34ACaptureForm({
         // tappable again the moment the first press is registered.
         if (capturingRef.current) return;
         capturingRef.current = true;
+        setCaptureError(null);
         try {
             // VisionCamera returns a bare filesystem path; the rest of the app
             // (and expo-file-system's `File`) expects a `file://` URI.
@@ -209,8 +216,9 @@ export function Form34ACaptureForm({
             // the cheapest moment to catch a bad shot.
             setPendingImage(`file://${filePath}`);
             setShowCamera(false);
-        } catch {
-            // Swallow: the capture button stays available for a retry.
+        } catch (error) {
+            console.warn("[form34a] photo capture failed", error);
+            setCaptureError("The photo could not be saved. Please try again.");
         } finally {
             capturingRef.current = false;
         }
@@ -368,6 +376,7 @@ export function Form34ACaptureForm({
                 frameCounter.value += 1;
                 if (frameCounter.value % FRAME_SAMPLE_INTERVAL !== 0) return;
                 if (analysisInFlightRequest.value !== 0) return;
+                const generation = analysisGeneration.value;
 
                 const planes = frame.getPlanes();
                 if (planes.length === 0) return;
@@ -391,9 +400,9 @@ export function Form34ACaptureForm({
                     DETECTION_WIDTH,
                     frame.orientation === "left" || frame.orientation === "right",
                 );
+                if (generation !== analysisGeneration.value) return;
                 analysisRequestSequence.value += 1;
                 const requestId = analysisRequestSequence.value;
-                const generation = analysisGeneration.value;
                 analysisInFlightRequest.value = requestId;
                 try {
                     scheduleOnRN(
@@ -426,6 +435,9 @@ export function Form34ACaptureForm({
         setCapturedImage(null);
         setPendingImage(null);
         setShowCamera(false);
+        setPermissionError(null);
+        setCameraError(null);
+        setCaptureError(null);
     } else if (!visible && wasVisible) {
         setWasVisible(false);
     }
@@ -449,7 +461,8 @@ export function Form34ACaptureForm({
     const invalidateAnalysis = React.useCallback(() => {
         analysisGeneration.set((generation) => generation + 1);
         analysisInFlightRequest.set(0);
-    }, [analysisGeneration, analysisInFlightRequest]);
+        frameCounter.set(0);
+    }, [analysisGeneration, analysisInFlightRequest, frameCounter]);
 
     const resetAnalysis = React.useCallback(() => {
         invalidateAnalysis();
@@ -468,8 +481,50 @@ export function Form34ACaptureForm({
     // shutter the instant the camera reopens for a retake.
     const openCamera = () => {
         resetAnalysis();
+        setCameraError(null);
+        setCaptureError(null);
         setShowCamera(true);
     };
+
+    const toggleAspect = () => {
+        resetAnalysis();
+        setCaptureError(null);
+        setAspect((current) => (current === "4:3" ? "16:9" : "4:3"));
+    };
+
+    const handleCameraError = React.useCallback(
+        (error: Error) => {
+            console.warn("[form34a] camera session failed", error);
+            invalidateAnalysis();
+            setCameraError("The camera stopped unexpectedly.");
+            setCaptureError(null);
+        },
+        [invalidateAnalysis],
+    );
+
+    const permissionRecovery = getCameraPermissionRecovery(canRequestPermission);
+    const handlePermissionRecovery = React.useCallback(async () => {
+        setPermissionError(null);
+        try {
+            if (permissionRecovery.action === "request") {
+                const granted = await requestPermission();
+                if (!granted) {
+                    setPermissionError(
+                        "Camera permission was not granted. Open Settings to enable it.",
+                    );
+                }
+            } else {
+                await Linking.openSettings();
+            }
+        } catch (error) {
+            console.warn("[form34a] permission recovery failed", error);
+            setPermissionError(
+                permissionRecovery.action === "request"
+                    ? "The permission request could not be opened. Please try again."
+                    : "Settings could not be opened. Open this app in device Settings.",
+            );
+        }
+    }, [permissionRecovery.action, requestPermission]);
 
     const parseCount = (text: string) => {
         const clean = text.replace(/[^0-9]/g, "");
@@ -490,14 +545,19 @@ export function Form34ACaptureForm({
                             <View style={styles.permissionContainer}>
                                 <View style={styles.permissionCard}>
                                     <Text style={styles.permissionText}>
-                                        We need camera permission to capture Form 34A
+                                        {permissionRecovery.message}
                                     </Text>
+                                    {!!permissionError && (
+                                        <Text style={styles.permissionError}>
+                                            {permissionError}
+                                        </Text>
+                                    )}
                                     <TouchableOpacity
                                         style={styles.permissionButton}
-                                        onPress={requestPermission}
+                                        onPress={handlePermissionRecovery}
                                     >
                                         <Text style={styles.permissionButtonText}>
-                                            Grant Permission
+                                            {permissionRecovery.buttonLabel}
                                         </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
@@ -577,14 +637,16 @@ export function Form34ACaptureForm({
                         </View>
                     ) : showCamera ? (
                         <View style={styles.cameraContainer}>
-                            <TouchableOpacity
-                                style={styles.aspectToggle}
-                                onPress={() =>
-                                    setAspect(aspect === "4:3" ? "16:9" : "4:3")
-                                }
-                            >
-                                <Text style={styles.aspectToggleText}>{aspect}</Text>
-                            </TouchableOpacity>
+                            {!cameraError && !!device && (
+                                <TouchableOpacity
+                                    style={styles.aspectToggle}
+                                    onPress={toggleAspect}
+                                >
+                                    <Text style={styles.aspectToggleText}>
+                                        {aspect}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                             {/* Locked to the capture aspect so the brackets sit
                                 over the frame itself, not the letterboxing.
                                 Screen shapes vary widely between handsets; the
@@ -592,7 +654,7 @@ export function Form34ACaptureForm({
                             <View
                                 style={[styles.preview, {aspectRatio: previewAspect}]}
                             >
-                                {device && (
+                                {device && !cameraError ? (
                                     <Camera
                                         style={styles.camera}
                                         device={device}
@@ -605,11 +667,48 @@ export function Form34ACaptureForm({
                                         // of view is what makes the brackets mean
                                         // anything.
                                         resizeMode="contain"
+                                        onError={handleCameraError}
                                     />
+                                ) : (
+                                    <View style={styles.cameraFailure}>
+                                        <Text style={styles.cameraFailureTitle}>
+                                            Camera unavailable
+                                        </Text>
+                                        <Text style={styles.cameraFailureText}>
+                                            {cameraError ??
+                                                "No back camera is available on this device."}
+                                        </Text>
+                                        <TouchableOpacity
+                                            style={styles.cameraRetryButton}
+                                            onPress={openCamera}
+                                        >
+                                            <Text style={styles.cameraRetryText}>
+                                                Try again
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 )}
-                                <FramingBracket state={bracketState} />
+                                {!cameraError && !!device && (
+                                    <FramingBracket state={bracketState} />
+                                )}
                             </View>
-                            {assessment && (
+                            {captureError ? (
+                                <View
+                                    style={[
+                                        styles.qualityBanner,
+                                        styles.qualityBannerBad,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.qualityLabel,
+                                            styles.qualityLabelBad,
+                                        ]}
+                                    >
+                                        {captureError}
+                                    </Text>
+                                </View>
+                            ) : assessment && !cameraError && device ? (
                                 <View
                                     style={[
                                         styles.qualityBanner,
@@ -634,9 +733,9 @@ export function Form34ACaptureForm({
                                         </Text>
                                     )}
                                 </View>
-                            )}
+                            ) : null}
                             {/* CALIBRATION readout — remove once thresholds are set. */}
-                            {quality && (
+                            {quality && !cameraError && !!device && (
                                 <View style={styles.qualityReadout}>
                                     <Text style={styles.qualityText}>
                                         {`bright ${quality.brightness.toFixed(0)}  ` +
@@ -651,7 +750,7 @@ export function Form34ACaptureForm({
                                 </View>
                             )}
                             <View style={styles.cameraControls}>
-                                {readyToCapture && !!device ? (
+                                {readyToCapture && !!device && !cameraError ? (
                                     <TouchableOpacity
                                         style={styles.captureButton}
                                         onPress={takePicture}
@@ -882,6 +981,15 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         lineHeight: 24,
     },
+    permissionError: {
+        color: perk.coralDeep,
+        fontSize: 13,
+        fontWeight: "700",
+        lineHeight: 18,
+        marginTop: -12,
+        marginBottom: 16,
+        textAlign: "center",
+    },
     permissionButton: {
         backgroundColor: perk.lime,
         paddingVertical: 16,
@@ -1041,6 +1149,39 @@ const styles = StyleSheet.create({
         color: perk.lime,
     },
     camera: {flex: 1},
+    cameraFailure: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 28,
+        backgroundColor: perk.ink,
+    },
+    cameraFailureTitle: {
+        color: perk.card,
+        fontSize: 18,
+        fontWeight: "900",
+        textAlign: "center",
+    },
+    cameraFailureText: {
+        color: perk.paperDeep,
+        fontSize: 13,
+        fontWeight: "600",
+        lineHeight: 19,
+        marginTop: 8,
+        textAlign: "center",
+    },
+    cameraRetryButton: {
+        backgroundColor: perk.lime,
+        borderRadius: 12,
+        marginTop: 18,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+    },
+    cameraRetryText: {
+        color: perk.limeInk,
+        fontSize: 13,
+        fontWeight: "800",
+    },
     cameraControls: {
         position: "absolute",
         bottom: 50,
