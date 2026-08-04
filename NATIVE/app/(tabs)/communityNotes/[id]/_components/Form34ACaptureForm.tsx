@@ -36,8 +36,6 @@ import {
 } from "./useForm34AFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
 
-export type {CaptureAspect} from "./useForm34AFrameAnalysis";
-
 /**
  * Aspect the camera starts on.
  *

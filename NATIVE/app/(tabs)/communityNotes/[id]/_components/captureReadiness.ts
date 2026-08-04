@@ -1,5 +1,5 @@
 /** How long a usable frame must remain stable before capture is enabled. */
-export const CAPTURE_READY_SECONDS = 2;
+const CAPTURE_READY_SECONDS = 2;
 
 export interface CaptureReadiness {
     /** Camera timestamp of the first acceptable frame in the current run. */

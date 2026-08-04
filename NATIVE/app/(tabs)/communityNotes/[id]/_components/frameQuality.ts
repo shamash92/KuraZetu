@@ -131,7 +131,7 @@ export interface QualityAssessment {
  * `sharpness`. They must be re-measured against a printed form under ordinary
  * indoor light before this gate is trusted in the field.
  */
-export const THRESHOLDS = {
+const THRESHOLDS = {
     /** Below `dark` the page is unreadable; above `blown` it is washed out. */
     brightnessDark: 60,
     brightnessDim: 90,
