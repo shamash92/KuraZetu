@@ -7,7 +7,7 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/shamash92/KuraZetu)
 ![GitHub contributors](https://img.shields.io/github/contributors/shamash92/KuraZetu)
 
-**Kura Zetu** (https://kurazetu.com)is an open source platform with mobile application built by and for Kenyans to enable communities to track, verify, and tally election results at the polling station level.
+**Kura Zetu** (https://kurazetu.com) is an open source platform with mobile application built by and for Kenyans to enable communities to track, verify, and tally election results at the polling station level.
 
 Since every Kenyan voter has access to a smartphone and results announced at polling stations are legally final, citizens can serve as agents of electoral transparency. The platform implements crowd-sourced uploads, real-time tallies, and a community verification system that allows everyday citizens, developers, journalists, civil society organizations, and oversight bodies to participate in safeguarding electoral integrity from the ground up.
 
