@@ -32,9 +32,6 @@ module.exports = {
       }
     ]
   },
-  optimization: {
-    minimize: true
-  },
   watchOptions: {
     ignored: ['**/node_modules/**', '**/static/**']
   },

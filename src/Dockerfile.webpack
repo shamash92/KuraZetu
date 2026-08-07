@@ -11,8 +11,12 @@ USER node
 
 COPY --chown=node:node ui/package.json ui/pnpm-lock.yaml ui/pnpm-workspace.yaml ./
 
-RUN --mount=type=cache,id=pnpm,target=/home/node/.local/share/pnpm/store,uid=1000,gid=1000 \
-    pnpm install --frozen-lockfile
+RUN mkdir -p /app/.pnpm-store
+
+RUN --mount=type=cache,id=pnpm,target=/app/.pnpm-store,uid=1000,gid=1000 \
+    pnpm install --frozen-lockfile \
+    && sha256sum package.json pnpm-lock.yaml \
+        > node_modules/.pnpm-dependencies.checksum
 
 COPY --chown=node:node ui/ .
 

@@ -9,10 +9,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.webpack
-    command: sh -c "rm -f /app/static/ui/manifest.json && exec pnpm run dev"
+    command: >-
+      sh -ec "rm -f /app/static/ui/manifest.json;
+      if ! sha256sum -c node_modules/.pnpm-dependencies.checksum; then
+      pnpm install --frozen-lockfile;
+      sha256sum package.json pnpm-lock.yaml
+      > node_modules/.pnpm-dependencies.checksum;
+      fi;
+      exec pnpm run dev"
     volumes:
       - ./ui:/app
       - webpack_node_modules:/app/node_modules
+      - pnpm_store:/app/.pnpm-store
       - react_static_volume:/app/static/ui
     working_dir: /app
     environment:
@@ -125,6 +133,7 @@ services:
     mem_limit: 1g
 
 volumes:
+  pnpm_store:
   postgres_data:
   react_static_volume:
   webpack_node_modules:
