@@ -1,19 +1,21 @@
-FROM node:20-alpine
+FROM node:24-alpine
 
-RUN apk update && apk add --no-cache yarn
+RUN npm install --global corepack@0.34.5 \
+    && corepack enable
 
 WORKDIR /app
 
-COPY /ui/package.json ./package.json
+RUN chown node:node /app
 
-COPY /ui/ .
-COPY /ui/webpack.config.js ./webpack.config.js
+USER node
 
+COPY --chown=node:node ui/package.json ui/pnpm-lock.yaml ui/pnpm-workspace.yaml ./
 
-# RUN yarn global add webpack webpack-cli
+RUN --mount=type=cache,id=pnpm,target=/home/node/.local/share/pnpm/store,uid=1000,gid=1000 \
+    pnpm install --frozen-lockfile
 
-RUN yarn install --no-lockfile
-RUN yarn run build
+COPY --chown=node:node ui/ .
 
-CMD ["yarn", "run", "dev"]
+RUN pnpm run build
 
+CMD ["pnpm", "run", "dev"]

@@ -1,6 +1,7 @@
 {
     "name": "kurazetu-ui",
     "version": "1.0.0",
+    "packageManager": "pnpm@10.14.0",
     "main": "index.js",
     "license": "MIT",
     "scripts": {

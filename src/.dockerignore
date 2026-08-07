@@ -1,0 +1,46 @@
+# Local environment and secrets
+.env
+.env.*
+
+# Python environments and caches
+venv/
+.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# JavaScript dependencies and tool caches
+ui/node_modules/
+**/node_modules/
+.django_tailwind_cli/
+
+# Test and coverage output
+.coverage
+.coverage.*
+htmlcov/
+
+# Generated and runtime data
+staticfiles/
+ui/static/
+media/
+*.log
+
+# Large datasets used only by optional import scripts
+historical/scripts/raw_iebc_results_pdfs_2027/*.json
+historical/scripts/raw_iebc_results_pdfs_2027/raw_data/
+stations/scripts/*.csv
+stations/scripts/*.geojson
+stations/scripts/*.json
+stations/scripts/raw_iebc_pdfs_convertor/pdf.pdf
+
+# Editor and operating-system metadata
+.DS_Store
+.idea/
+.vscode/
+
+# Version-control metadata
+.git/
+.gitignore

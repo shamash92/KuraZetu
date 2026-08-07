@@ -1,12 +1,9 @@
 FROM python:3.12-slim-bookworm
 
-# Set environment varibles
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Set work directory
 WORKDIR /app
-
 
 RUN apt-get update && apt-get install -y \
     libgdal-dev \
@@ -14,24 +11,15 @@ RUN apt-get update && apt-get install -y \
     libproj-dev \
     gdal-bin
 
-
-COPY  requirements.txt ./
+COPY requirements.txt ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-ENV DEBUG="${DEBUG}" \
-    PYTHONUNBUFFERED="true" \
-    PATH="${PATH}:/home/python/.local/bin" \
-    USER="python"
+RUN groupadd --gid 1000 app \
+    && useradd --create-home --gid app --uid 1000 app
 
+COPY --chown=app:app . .
 
+USER app
 
-# Copy project files
-COPY / .
-
-# Run migrations automatically and then start the server
-# RUN python manage.py migrate --noinput
-
-RUN python manage.py collectstatic --noinput
-
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["gunicorn", "CommunityTally.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "60"]
