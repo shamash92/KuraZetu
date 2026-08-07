@@ -162,6 +162,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets")]
 
+TAILWIND_CLI_VERSION = config("TAILWIND_CLI_VERSION", default="4.3.3")
+TAILWIND_CLI_PATH = config(
+    "TAILWIND_CLI_PATH", default=os.path.join(BASE_DIR, ".django_tailwind_cli")
+)
+TAILWIND_CLI_SRC_CSS = os.path.join(BASE_DIR, "assets", "css", "tailwind-input.css")
+
 
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", cast=Csv())
 

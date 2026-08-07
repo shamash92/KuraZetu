@@ -63,6 +63,7 @@ services:
       - .env
     environment:
       DATABASE_HOST: db
+      LOG_FILE: /tmp/kurazetu/app.json
     depends_on:
       db:
         condition: service_healthy
@@ -75,13 +76,16 @@ services:
     command: sh -c "python manage.py tailwind build && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./:/app
+      - media_volume:/app/media
       - react_static_volume:/app/ui/static/ui
+      - tailwind_static_volume:/app/staticfiles/css
     ports:
       - "127.0.0.1:8000:8000"
     env_file:
       - .env
     environment:
       DATABASE_HOST: db
+      LOG_FILE: /tmp/kurazetu/app.json
     depends_on:
       db:
         condition: service_healthy
@@ -129,7 +133,9 @@ services:
     mem_limit: 1g
 
 volumes:
+  media_volume:
   pnpm_store:
   postgres_data:
   react_static_volume:
+  tailwind_static_volume:
   webpack_node_modules:
