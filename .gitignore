@@ -16,6 +16,7 @@ logs/
 
 # Virtual Environment
 venv/
+.venv/
 
 # OS Files
 .DS_Store
