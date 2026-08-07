@@ -10,13 +10,9 @@ services:
       context: .
       dockerfile: Dockerfile.webpack
     command: >-
-      sh -ec "rm -f /app/static/ui/manifest.json;
-      if ! sha256sum -c node_modules/.pnpm-dependencies.checksum; then
-      pnpm install --frozen-lockfile;
-      sha256sum package.json pnpm-lock.yaml
-      > node_modules/.pnpm-dependencies.checksum;
-      fi;
-      exec pnpm run dev"
+      sh -c "rm -f /app/static/ui/manifest.json
+      && pnpm install --frozen-lockfile
+      && exec pnpm run dev"
     volumes:
       - ./ui:/app
       - webpack_node_modules:/app/node_modules
