@@ -1,4 +1,4 @@
-import {Route, Routes} from "react-router-dom";
+import {Navigate, Route, Routes, useLocation} from "react-router-dom";
 
 import LandingPage from "../landing-pages";
 import React from "react";
@@ -27,6 +27,24 @@ export function NotFound() {
     );
 }
 
+/**
+ * Renders `children` only for someone who arrived by finishing signup.
+ *
+ * The signup form sets `justRegistered` when it navigates; opening the URL
+ * directly carries no such state, and there is no registration to confirm.
+ * React Router keeps the flag in `history.state`, so a refresh or a
+ * back/forward still counts as having arrived properly.
+ */
+function RequireJustRegistered({children}: {children: React.ReactElement}) {
+    const {state} = useLocation();
+
+    if ((state as {justRegistered?: boolean} | null)?.justRegistered !== true) {
+        return <Navigate to="/ui/signup/" replace />;
+    }
+
+    return children;
+}
+
 function RoutesApp() {
     const isAuthenticated = useAuth();
     console.log(JSON.stringify(isAuthenticated, null, 2));
@@ -52,7 +70,11 @@ function RoutesApp() {
                     />
                     <Route
                         path="/ui/signup/accounts/registration-success/"
-                        element={<RegistrationSuccessPage />}
+                        element={
+                            <RequireJustRegistered>
+                                <RegistrationSuccessPage />
+                            </RequireJustRegistered>
+                        }
                     />
                 </>
             )}
