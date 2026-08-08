@@ -66,8 +66,9 @@ answer beneath it with short bullets — one point each, no preamble:
 **A PR body describes the change, not your process** (`AG8`). No account of how you reached the
 change, no rules you followed, no caveats about yourself, no "worth deciding separately" or "you
 may also want to" suggestions. Reviewers did not ask for any of it, and it outlives the session.
-Raise those in the terminal instead. `Additional Notes` carries only facts the diff does not show —
-a known CI failure, a risk, a dependency on another PR — and otherwise says "Not applicable".
+Raise those in the terminal instead. A fact a reviewer genuinely needs — a known CI failure, a
+risk, a dependency on another PR — belongs in the template section it concerns, not in a note
+appended to the end.
 
 - Commit messages — [Commit messages (MSG)](./CONTRIBUTING.md#commit-messages-msg) and
   [Categories](./CONTRIBUTING.md#categories)
