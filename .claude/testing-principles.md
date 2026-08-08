@@ -1,3 +1,11 @@
+---
+inspiration:
+  name: Kody
+  author: Kent C. Dodds
+  repository: https://github.com/kentcdodds/kody
+  source: https://github.com/kentcdodds/kody/blob/main/docs/contributing/testing-principles.md
+---
+
 # React and React Native testing principles
 
 Apply these principles to tests for hand-written code in `src/ui/` and
@@ -64,8 +72,3 @@ change when a feature needs it.
 These are strong defaults, not absolute bans. Depart when the exception makes
 the test materially clearer or handles real cleanup, but keep the setup and
 behavior visible to the reader.
-
-## Reference
-
-Adapted for KuraZetu from Kody's
-[testing principles](https://github.com/kentcdodds/kody/blob/main/docs/contributing/testing-principles.md).

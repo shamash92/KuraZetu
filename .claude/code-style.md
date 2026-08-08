@@ -1,3 +1,11 @@
+---
+inspiration:
+  name: Kody
+  author: Kent C. Dodds
+  repository: https://github.com/kentcdodds/kody
+  source: https://github.com/kentcdodds/kody/blob/main/docs/contributing/code-style.md
+---
+
 # JavaScript and TypeScript code style
 
 Apply these rules to new or substantively edited hand-written JavaScript and
@@ -50,8 +58,3 @@ formatter and linter configured for that project.
 - Use `null` for an explicit "no value" in local state or an API response.
 - Use `undefined` for optional or omitted fields.
 - Do not mix `null` and `undefined` for the same meaning within one API.
-
-## References
-
-Adapted for KuraZetu from Kody's
-[code style](https://github.com/kentcdodds/kody/blob/main/docs/contributing/code-style.md).
