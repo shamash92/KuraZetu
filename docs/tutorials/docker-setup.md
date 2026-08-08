@@ -81,7 +81,7 @@ docker compose --profile docs up --build
 ```
 
 This runs the repository's `make run` target in the docs container. Open the
-documentation at <http://localhost:8001/>. Changes under `docs/` trigger a
+documentation at `http://localhost:8001/`. Changes under `docs/` trigger a
 rebuild.
 
 ## 6. Stop the services
