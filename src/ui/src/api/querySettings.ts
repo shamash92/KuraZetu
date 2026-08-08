@@ -47,4 +47,22 @@ export const querySettings = {
         refetchOnWindowFocus: false,
         retry: false,
     },
+
+    /**
+     * A random draw, which is the one kind of response caching cannot help
+     * with: its whole value is being different each time, so a cache hit would
+     * hand the volunteer a centre they have just dealt with. Nothing is kept
+     * between rounds, and the next round is an explicit refetch.
+     *
+     * `retry: false` overrides the client's global single retry. The endpoint
+     * behind this sorts the whole polling-centre table randomly on every call
+     * (#122), so a failed request is the worst possible one to repeat.
+     */
+    gameRound: {
+        staleTime: 0,
+        gcTime: 0,
+        refetchInterval: false,
+        refetchOnWindowFocus: false,
+        retry: false,
+    },
 } as const;
