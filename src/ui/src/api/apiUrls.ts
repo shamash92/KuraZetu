@@ -22,6 +22,18 @@ export const SIGNUP_URL = "/api/accounts/signup/";
 export const NATIONAL_PRESIDENTIAL_RESULTS_URL =
     "/api/results/total-votes/presidential/";
 
+/**
+ * One unverified polling centre to place, drawn at random.
+ *
+ * A `null` level is deliberate and is sent as the literal string "null": the
+ * backend matches "county", "constituency" and "ward", and treats anything
+ * else — including "null" — as nationwide scope. `game/index.tsx` relies on
+ * this to express its "random" mode.
+ */
+export function randomUnverifiedCenterUrl(level: string | null): string {
+    return `/api/stations/polling-centers/unverified/random/${level}/`;
+}
+
 export function countyResultsUrl(level: string): string {
     return `/api/results/county/${level}/`;
 }

@@ -30,6 +30,19 @@ export const boundaryKeys = {
     },
 };
 
+export const gameKeys = {
+    all: ["game"] as const,
+
+    /**
+     * The current round's polling centre. One key per level rather than one per
+     * round: the draw is random, so a past round is never worth reading again
+     * and the next one is fetched by refetching this key.
+     */
+    randomCenter(level: string | null) {
+        return [...gameKeys.all, "random-center", level] as const;
+    },
+};
+
 export const resultKeys = {
     all: ["results"] as const,
 

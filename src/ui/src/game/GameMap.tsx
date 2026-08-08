@@ -9,13 +9,17 @@ import {
     ThumbsUp,
     X,
 } from "lucide-react";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import {useQuery} from "@tanstack/react-query";
 import {IConsensus, IPollingCenterFeature, TLevel} from "./types";
 
 import cookie from "react-cookies";
 import {toast} from "sonner";
 import MapComponent from "./Map";
 import {useAuth} from "../App";
+import {randomUnverifiedCenterUrl} from "../api/apiUrls";
+import {gameKeys} from "../api/queryKeys";
+import {querySettings} from "../api/querySettings";
 import "./game-active.css";
 
 interface GameMapProps {
@@ -24,105 +28,121 @@ interface GameMapProps {
 
 type DraftPosition = {lat: number; lng: number};
 
+/**
+ * Three shapes come back on a 200: the anonymous one carries only `data`, and
+ * an authenticated caller gets the counts plus either `partially_verified` or,
+ * when they have already verified this centre, `error` and
+ * `user_verification`.
+ */
+type GameRoundResponse = {
+    data: IPollingCenterFeature | null;
+    error?: string;
+    user_verification?: IPollingCenterFeature | null;
+    partially_verified?: {features: IPollingCenterFeature[]};
+    total_stations_count?: number;
+    verified_stations_count?: number;
+};
+
 export default function GameMap({level}: GameMapProps) {
-    const [currentLocation, setCurrentLocation] =
-        useState<IPollingCenterFeature | null>(null);
-
-    const [partiallyVerifiedLocations, setPartiallyVerifiedLocations] = useState<
-        IPollingCenterFeature[] | null
-    >(null);
-
-    const [totalStationsCount, setTotalStationsCount] = useState<number>(0);
-    const [verifiedStationsCount, setVerifiedStationsCount] = useState<number>(0);
-
-    const [reload, setReload] = useState(false);
-
     const [consensus, setConsensus] = useState<IConsensus | null>(null);
 
     const [suggestedLocation, setSuggestedLocation] =
         useState<IPollingCenterFeature | null>(null);
 
-    const [alreadyVerifiedByUser, setAlreadyVerifiedByUser] = useState(false);
-    const [alreadyVerifiedData, setAlreadyVerifiedData] =
-        useState<IPollingCenterFeature | null>(null);
-    const [alreadyVerifiedSuggestion, setAlreadyVerifiedSuggestion] =
-        useState<IPollingCenterFeature | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [draftPosition, setDraftPosition] = useState<DraftPosition | null>(null);
     const [draftInsideWard, setDraftInsideWard] = useState(true);
     const [isSavingPin, setIsSavingPin] = useState(false);
 
-    const toggleReload = () => {
-        setReload((prev) => !prev);
-    };
-
     const csrfToken = cookie.load("csrftoken");
 
     const isAuthenticated = useAuth();
 
-    const handleAlreadyVerified = (
-        data: IPollingCenterFeature,
-        suggestion: IPollingCenterFeature | null,
-    ) => {
-        setAlreadyVerifiedByUser(true);
-        setAlreadyVerifiedData(data);
-        setAlreadyVerifiedSuggestion(
-            suggestion?.properties.is_upvote ? null : suggestion,
-        );
+    const roundQuery = useQuery({
+        queryKey: gameKeys.randomCenter(level),
+
+        queryFn: async ({signal}): Promise<GameRoundResponse> => {
+            // No `X-CSRFToken` here. Django enforces CSRF on unsafe methods
+            // only, so a GET never needed it, and the token cannot go in the
+            // query key: keys are held in memory and shown in devtools.
+            const response = await fetch(randomUnverifiedCenterUrl(level), {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                },
+                credentials: "include",
+                signal,
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw Object.assign(
+                    new Error(data?.error ?? "Could not load a polling center"),
+                    {
+                        status: response.status,
+                        payload: data,
+                    },
+                );
+            }
+
+            // `error` is not a failure on this endpoint. "You have already
+            // verified this polling center" arrives with the centre and the
+            // caller's own verification attached, and is a round the interface
+            // has a screen for.
+            return data;
+        },
+
+        ...querySettings.gameRound,
+    });
+
+    // Blank between rounds, the way clearing the location did: a refetch is a
+    // new draw, so the previous centre is gone the moment one is asked for.
+    const round = roundQuery.isFetching ? undefined : roundQuery.data;
+
+    const toggleReload = () => {
+        void roundQuery.refetch();
     };
+
+    const alreadyVerifiedByUser =
+        round?.error === "You have already verified this polling center";
+    const alreadyVerifiedData = alreadyVerifiedByUser ? (round?.data ?? null) : null;
+    const alreadyVerifiedSuggestion =
+        alreadyVerifiedByUser && !round?.user_verification?.properties.is_upvote
+            ? (round?.user_verification ?? null)
+            : null;
+
+    const currentLocation = round?.data ?? null;
+    const partiallyVerifiedLocations = round?.partially_verified?.features?.length
+        ? round.partially_verified.features
+        : null;
+    const totalStationsCount = round?.total_stations_count ?? 0;
+    const verifiedStationsCount = round?.verified_stations_count ?? 0;
 
     const isUnlocated = currentLocation?.properties.is_unlocated === true;
 
+    // Announce the already-verified round once per draw rather than on every
+    // render that reads the same cached response.
+    const announcedCenterId = useRef<number | null>(null);
     useEffect(() => {
+        if (!alreadyVerifiedByUser || currentLocation == null) return;
+        if (announcedCenterId.current === currentLocation.id) return;
+        announcedCenterId.current = currentLocation.id;
+        toast.error("You have already verified this polling center");
+    }, [alreadyVerifiedByUser, currentLocation]);
+
+    // A new centre is a fresh round, so the pin edit and the consensus read
+    // from the last one must not carry over.
+    const editedCenterId = useRef<number | null>(null);
+    useEffect(() => {
+        if (currentLocation == null) return;
+        if (editedCenterId.current === currentLocation.id) return;
+        editedCenterId.current = currentLocation.id;
         setConsensus(null);
         setIsEditing(false);
         setDraftPosition(null);
         setDraftInsideWard(true);
-        setAlreadyVerifiedByUser(false);
-        setAlreadyVerifiedData(null);
-        setAlreadyVerifiedSuggestion(null);
-        fetch(`/api/stations/polling-centers/unverified/random/${level}/`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken,
-            },
-            credentials: "include",
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data["error"] === "You have already verified this polling center") {
-                    toast.error("You have already verified this polling center");
-                    handleAlreadyVerified(
-                        data["data"],
-                        data["user_verification"] ?? null,
-                    );
-                }
-                let unverifiedPollingCenter = data["data"];
-
-                setTotalStationsCount(data["total_stations_count"]);
-                setVerifiedStationsCount(data["verified_stations_count"]);
-
-                let partiallyVerifiedPollingCenters = data["partially_verified"];
-
-                if (
-                    partiallyVerifiedPollingCenters !== undefined &&
-                    partiallyVerifiedPollingCenters.features.length > 0
-                ) {
-                    setPartiallyVerifiedLocations(
-                        partiallyVerifiedPollingCenters.features,
-                    );
-                } else {
-                    setPartiallyVerifiedLocations(null);
-                }
-                if (unverifiedPollingCenter !== null) {
-                    setCurrentLocation(unverifiedPollingCenter);
-                }
-            })
-            .catch((error) => {
-                console.error("Error fetching locations:", error);
-            });
-    }, [reload, level]);
+    }, [currentLocation]);
 
     const handlePinAPIPost = async (
         latitude: number,
@@ -171,7 +191,6 @@ export default function GameMap({level}: GameMapProps) {
         if (x.message === "Polling Center location upvoted successfully") {
             toast.success("Asante — your confirmation was recorded.");
             toggleReload();
-            setCurrentLocation(null);
         }
     };
 
@@ -242,7 +261,6 @@ export default function GameMap({level}: GameMapProps) {
     };
 
     const handleSkip = () => {
-        setCurrentLocation(null);
         toggleReload();
     };
 
@@ -339,12 +357,10 @@ export default function GameMap({level}: GameMapProps) {
             ).length ?? 0,
     };
 
+    // The already-verified state now derives from the round, so drawing the
+    // next one clears it.
     const nextLocation = () => {
         setSuggestedLocation(null);
-        setAlreadyVerifiedByUser(false);
-        setAlreadyVerifiedData(null);
-        setAlreadyVerifiedSuggestion(null);
-        setCurrentLocation(null);
         toggleReload();
     };
 
