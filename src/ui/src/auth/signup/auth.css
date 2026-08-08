@@ -614,6 +614,33 @@
   width: 16px;
   height: 16px;
 }
+/* Quiet secondary under the lime Register block — an exit, not a choice
+   competing with it. */
+.kz-auth .register .cancel {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px 22px;
+  border: 1px solid var(--rule-16);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--mute);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    color 140ms ease;
+}
+.kz-auth .register .cancel:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.kz-auth .register .cancel:disabled {
+  color: var(--mute-2);
+  cursor: not-allowed;
+}
 .kz-auth .register .terms {
   margin: 18px 0 0;
   font-family: var(--mono);

@@ -16,3 +16,5 @@ export function wardBoundariesUrl(constituencyNumber: number): string {
 export function pollingCenterPinsUrl(wardNumber: number): string {
     return `/api/stations/wards/${wardNumber}/polling-centers/pins/`;
 }
+
+export const SIGNUP_URL = "/api/accounts/signup/";

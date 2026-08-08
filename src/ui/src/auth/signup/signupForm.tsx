@@ -5,9 +5,12 @@ import {Controller, useForm} from "react-hook-form";
 import {useNavigate, useParams} from "react-router-dom";
 
 import cookie from "react-cookies";
-import {useState} from "react";
+import {useMutation} from "@tanstack/react-query";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
+
+import {SIGNUP_URL} from "../../api/apiUrls";
+import {clearSignupFlow} from "./useSignupFlow";
 
 // Defining the form validation schema
 const formSchema = z
@@ -61,10 +64,19 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function SignupForm() {
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+// The API answers 200 with an `error` key rather than an HTTP error status, so
+// the mutation throws one of these to put the response where `onError` and the
+// field-level messages below can read it.
+interface SignupFailure extends Error {
+    detail?: unknown;
+}
 
+interface SignupSuccess {
+    message?: string;
+    data?: {token?: string};
+}
+
+export default function SignupForm() {
     const navigate = useNavigate();
     let {wardCode, pollingCenterCode} = useParams();
 
@@ -84,71 +96,83 @@ export default function SignupForm() {
         },
     });
 
-    // Handling form submission
-    function onSubmit(data: FormValues) {
-        setSubmitting(true);
-        setError(null);
-
-        try {
-            console.log("Form submitted:", data);
-
-            data["polling_center"] = pollingCenterCode;
-
-            console.log(data);
-
-            fetch("/api/accounts/signup/", {
+    const signupMutation = useMutation({
+        mutationFn: async (values: FormValues): Promise<SignupSuccess> => {
+            const response = await fetch(SIGNUP_URL, {
                 method: "POST",
+                credentials: "same-origin",
                 headers: {
                     Accept: "application/json",
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrfToken,
                 },
                 body: JSON.stringify({
-                    data: data,
+                    data: {...values, polling_center: pollingCenterCode},
                     ward_code: wardCode,
                 }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    console.log(data, "data from server");
+            });
 
-                    if (data["error"]) {
-                        if (data["error"] === "Polling center not found") {
-                            setError(data["error"]);
-                        } else {
-                            setError(data["details"]);
-                        }
-                    } else if (data["message"] === "User signup successful") {
-                        let token = data["data"]["token"];
+            const data = await response.json().catch(() => null);
 
-                        console.log(token, "token from server");
+            if (!response.ok) {
+                // "Ward not found" is the one failure the API reports with a
+                // status rather than a 200 body, and it carries no `details`.
+                throw Object.assign(
+                    new Error(String(data?.error ?? "Could not complete registration")),
+                    {detail: data?.details ?? data?.error},
+                ) as SignupFailure;
+            }
 
-                        localStorage.setItem("token", token);
+            if (data?.error) {
+                // "Polling center not found" is shown as-is; anything else
+                // carries per-field messages under `details`.
+                throw Object.assign(new Error(String(data.error)), {
+                    detail:
+                        data.error === "Polling center not found"
+                            ? data.error
+                            : data.details,
+                }) as SignupFailure;
+            }
 
-                        if (typeof token === "string" && token.length > 0) {
-                            cookie.save("token", token, {
-                                path: "/",
-                                secure: true, // Ensures the cookie is sent over HTTPS only
-                                httpOnly: false, // Prevents JavaScript from accessing the cookie (set to true if possible)
-                                sameSite: "Strict", // Prevents the cookie from being sent with cross-site requests
-                            });
-                        } else {
-                            console.error("Invalid token format");
-                        }
+            return data;
+        },
 
-                        // The success page renders only for someone arriving
-                        // from here; without this it also renders for anyone
-                        // who opens the URL directly.
-                        navigate("/ui/signup/accounts/registration-success/", {
-                            state: {justRegistered: true},
-                        });
-                    }
-                });
-        } catch (err) {
-            setError("An error occurred during registration. Please try again.");
-        } finally {
-            setSubmitting(false);
-        }
+        onSuccess: (data) => {
+            if (data?.message !== "User signup successful") return;
+
+            const token = data.data?.token;
+            if (typeof token !== "string" || token.length === 0) return;
+
+            // The ladder has served its purpose; leaving it saved would drop a
+            // returning visitor back onto the summary of an account they have
+            // already created.
+            clearSignupFlow();
+
+            localStorage.setItem("token", token);
+            cookie.save("token", token, {
+                path: "/",
+                secure: true, // Ensures the cookie is sent over HTTPS only
+                httpOnly: false, // Prevents JavaScript from accessing the cookie (set to true if possible)
+                sameSite: "Strict", // Prevents the cookie from being sent with cross-site requests
+            });
+
+            // The success page renders only for someone arriving from here;
+            // without this it also renders for anyone who opens the URL
+            // directly.
+            navigate("/ui/signup/accounts/registration-success/", {
+                state: {justRegistered: true},
+            });
+        },
+    });
+
+    // What the markup below reads: a plain string for whole-form problems, or
+    // the per-field object the API returns under `details`.
+    const failure = signupMutation.error as SignupFailure | null;
+    const error = failure ? (failure.detail ?? failure.message) : null;
+    const submitting = signupMutation.isPending;
+
+    function onSubmit(data: FormValues) {
+        signupMutation.mutate(data);
     }
 
     // Strict gate: every required field must be valid before Register enables.
@@ -540,6 +564,20 @@ export default function SignupForm() {
                         >
                             <path d="M5 12h14M13 6l6 6-6 6" />
                         </svg>
+                    </button>
+
+                    {/* Abandon the flow: drop the saved ladder so a return
+                        visit starts fresh, then leave for the home page. */}
+                    <button
+                        className="cancel"
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => {
+                            clearSignupFlow();
+                            window.location.assign("/");
+                        }}
+                    >
+                        Cancel
                     </button>
 
                     {/* Legal note */}
