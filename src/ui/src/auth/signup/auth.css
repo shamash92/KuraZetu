@@ -639,6 +639,161 @@
   line-height: 1.5;
 }
 
+/* ── Done ──────────────────────────────────────────────────────────────
+   The end of the signup ladder. Ported from the `.welcome-screen` block in
+   claude-design/mobile-auth-perk.html, scaled up from the phone mock: the
+   lime pop and the display heading carry the moment, everything else stays
+   quiet. */
+.kz-auth .done {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 56px 22px;
+  background: linear-gradient(180deg, var(--card), var(--paper));
+  text-align: center;
+}
+
+/* Everything except the mesh sits above it. */
+.kz-auth .done > *:not(.mesh-layer) {
+  position: relative;
+  z-index: 1;
+}
+
+/* A blur over the middle, so nothing the corner patches throw inward lands
+   under the copy. Blur only — an earlier version also painted a white radial
+   gradient here, which read as a visible lighter disc with a detectable edge
+   rather than as depth. Sits above the mesh, below the content. */
+.kz-auth .done::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  /* 30vw radius, so a 60vw disc. Square, not 60vw x 60vh, or the mask
+     gradient stretches into an ellipse on non-square viewports. */
+  width: 60vw;
+  height: 60vw;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  /* Prefixed for Safari, which supports neither unprefixed. Without the mask
+     prefix it paints a hard-edged square instead of a soft disc.
+
+     The mask peaks at 0.6 rather than 1, so even dead centre the blur is mixed
+     with the sharp backdrop and the faint centre patch stays legible through
+     it. A softer radius does the rest: 4px veils the lines, 8px erased them. */
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.6) 42%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.6) 42%,
+    transparent 78%
+  );
+}
+
+/* ── Done: mesh backdrop ───────────────────────────────────────────────
+   Pattern A from claude-design/patterns.html, the hex mesh the design set
+   puts behind hero copy. `perk-mesh.js` draws into `.mesh-layer`; these
+   rules come from claude-design/src/perk.css, scoped under `.kz-auth` like
+   everything else in this file so the generic class names cannot collide. */
+.kz-auth .mesh-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.kz-auth .mesh-patch {
+  position: absolute;
+  overflow: visible;
+}
+.kz-auth .mesh-patch path {
+  fill: none;
+  stroke: var(--mesh-ink);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.kz-auth .mesh-patch circle {
+  fill: var(--mesh-dot);
+}
+/* The mesh is present from the first paint. `perk-mesh.js` sets up a
+   draw-in via stroke-dashoffset and an `is-drawn` class; this overrides
+   both, because the mesh here is scenery and should not animate. */
+.kz-auth .mesh-patch path,
+.kz-auth .mesh-patch circle {
+  opacity: 1;
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  transition: none;
+}
+
+.kz-auth .done-pop {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--lime);
+  color: var(--lime-ink);
+  /* The one piece of elevation on the page — it should feel like an arrival. */
+  box-shadow: 0 12px 28px rgba(196, 255, 94, 0.4);
+}
+.kz-auth .done-pop svg {
+  width: 42px;
+  height: 42px;
+}
+
+.kz-auth .done h2 {
+  margin: 26px 0 0;
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+}
+
+.kz-auth .done .sub {
+  max-width: 34ch;
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--mute);
+}
+
+.kz-auth .done .next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  max-width: 340px;
+  margin-top: 30px;
+  padding: 16px 22px;
+  border-radius: 14px;
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.kz-auth .done .next svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .kz-auth .geo {
@@ -661,5 +816,8 @@
   }
   .kz-auth .register {
     padding: 40px 22px 44px;
+  }
+  .kz-auth .done h2 {
+    font-size: 28px;
   }
 }
