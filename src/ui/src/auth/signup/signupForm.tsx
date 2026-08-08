@@ -566,6 +566,20 @@ export default function SignupForm() {
                         </svg>
                     </button>
 
+                    {/* Abandon the flow: drop the saved ladder so a return
+                        visit starts fresh, then leave for the home page. */}
+                    <button
+                        className="cancel"
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => {
+                            clearSignupFlow();
+                            window.location.assign("/");
+                        }}
+                    >
+                        Cancel
+                    </button>
+
                     {/* Legal note */}
                     <p className="terms">
                         By registering, you agree to our{" "}
