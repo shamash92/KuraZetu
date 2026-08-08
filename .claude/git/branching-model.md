@@ -506,8 +506,7 @@ Further constraints:
 - **Never delete a section.** If one does not apply, keep the heading and write
   "Not applicable" with a one-line reason. `Screenshots` on a backend-only
   change is the common case.
-- **Never invent sections** the template does not have, except inside
-  `Additional Notes`.
+- **Never invent sections** the template does not have.
 - **Never tick the "I am not an AI agent" checklist box.** You are one, so
   ticking it is a false attestation, and that line exists precisely to catch
   this. Leave it unticked and write nothing about it anywhere in the body — an
@@ -553,10 +552,11 @@ lockfile, do not tick the box that says you did.
   what you considered and rejected, which rules you followed, what you were or
   were not able to verify about yourself, and any "worth deciding separately"
   or "you may also want to" suggestions. Say those in the terminal, where the
-  user can act on them and they cost nobody else a read. `Additional Notes`
-  takes only facts a reviewer needs that the diff does not already show — a
-  known CI failure, a risk, a dependency on another PR. When there is no such
-  fact, write "Not applicable". Same for commit messages.
+  user can act on them and they cost nobody else a read. A fact a reviewer
+  genuinely needs — a known CI failure, a risk, a dependency on another PR —
+  goes in the template section it concerns. The template has no free-text
+  section at the end, because a body that has somewhere to put anything ends up
+  putting everything there. Same for commit messages.
 
 ## Rationale: why not git-flow
 
