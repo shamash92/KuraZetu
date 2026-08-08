@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.db.models import Sum
+from django.db.models import Count, Sum
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -14,17 +14,41 @@ from results.models import (
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
 )
-from stations.models import PollingCenter, PollingStation, Ward
+from stations.models import PollingStation
+
+# Per level: the model holding its results, the field on that model pointing at
+# the aspirant, and how far out the race is counted. "county" means every
+# station in the user's county, "constituency" and "ward" narrow it down.
+LEVEL_CONFIG = {
+    "president": (
+        PollingStationPresidentialResults,
+        "presidential_candidate",
+        "county",
+    ),
+    "governor": (PollingStationGovernorResults, "governor_candidate", "county"),
+    "senator": (PollingStationSenatorResults, "senator_candidate", "county"),
+    "women_rep": (PollingStationWomenRepResults, "woman_rep_candidate", "county"),
+    "mp": (PollingStationMpResults, "mp_candidate", "constituency"),
+    "mca": (PollingStationMCAResults, "mca_candidate", "ward"),
+}
 
 
 class CountyTotalResultsAPIView(APIView):
     """
-    API view to retrieve Presidential Results results for a specific polling station.
+    Totals for one race, counted across the signed-in user's county,
+    constituency or ward depending on the level.
     """
 
     def get(self, request, level):
         level = self.kwargs.get("level")
-        # Try to get cached results
+
+        if level not in LEVEL_CONFIG:
+            return Response(
+                {"error": "Unknown level"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        results_model, candidate_field, scope = LEVEL_CONFIG[level]
+
         user_ward = request.user.polling_center.ward
         user_constituency = user_ward.constituency
         user_county = user_constituency.county
@@ -36,114 +60,77 @@ class CountyTotalResultsAPIView(APIView):
         candidate_results = cache.get(cache_key)
 
         if candidate_results is None:
-            # get number of polling stations
-            if level == "mp":
-                polling_stations = PollingStation.objects.filter(
-                    polling_center__ward__constituency=user_constituency
-                )
-            elif level == "mca":
-                polling_stations = PollingStation.objects.filter(
-                    polling_center__ward=user_ward
-                )
+            if scope == "ward":
+                station_filter = {"polling_center__ward": user_ward}
+                results_filter = {"polling_station__polling_center__ward": user_ward}
+            elif scope == "constituency":
+                station_filter = {
+                    "polling_center__ward__constituency": user_constituency
+                }
+                results_filter = {
+                    "polling_station__polling_center__ward__constituency": (
+                        user_constituency
+                    )
+                }
             else:
-                polling_stations = PollingStation.objects.filter(
-                    polling_center__ward__constituency__county=user_county
-                )
-            county_polling_stations_count = polling_stations.count()
+                station_filter = {
+                    "polling_center__ward__constituency__county": user_county
+                }
+                results_filter = {
+                    "polling_station__polling_center__ward__constituency__county": (
+                        user_county
+                    )
+                }
 
-            # Get all aspirants
-            aspirants = Aspirant.objects.filter(
-                level=level,
+            county_polling_stations_count = PollingStation.objects.filter(
+                **station_filter
+            ).count()
+
+            # Group in the database rather than walking every aspirant at this
+            # level nationally. Only candidates with results appear, which is
+            # what the previous per-aspirant loop arrived at by skipping the
+            # rest after it had already queried for them.
+            totals = (
+                results_model.objects.filter(**results_filter)
+                .values(candidate_field)
+                .annotate(total_votes=Sum("votes"), counted_streams=Count("id"))
             )
 
-            if level == "president":
-                county_results_qs = PollingStationPresidentialResults.objects.filter(
-                    polling_station__polling_center__ward__constituency__county=user_county,
-                )
-            elif level == "governor":
-                county_results_qs = PollingStationGovernorResults.objects.filter(
-                    polling_station__polling_center__ward__constituency__county=user_county,
-                )
-            elif level == "senator":
-                county_results_qs = PollingStationSenatorResults.objects.filter(
-                    polling_station__polling_center__ward__constituency__county=user_county,
-                )
-            elif level == "women_rep":
-                county_results_qs = PollingStationWomenRepResults.objects.filter(
-                    polling_station__polling_center__ward__constituency__county=user_county,
-                )
-            elif level == "mp":
-                county_results_qs = PollingStationMpResults.objects.filter(
-                    polling_station__polling_center__ward__constituency=user_constituency,
-                )
-            elif level == "mca":
-                county_results_qs = PollingStationMCAResults.objects.filter(
-                    polling_station__polling_center__ward=user_ward,
-                )
+            aspirants_by_id = {
+                aspirant.id: aspirant
+                for aspirant in Aspirant.objects.filter(
+                    id__in=[row[candidate_field] for row in totals]
+                ).select_related("party")
+            }
 
             candidate_results = []
-            for aspirant in aspirants:
-                # Get the total votes for each aspirant
-                if level == "president":
-                    total_polling_stations_with_results = county_results_qs.filter(
-                        presidential_candidate=aspirant,
-                    )
-                elif level == "governor":
-                    total_polling_stations_with_results = county_results_qs.filter(
-                        governor_candidate=aspirant,
-                    )
-                elif level == "senator":
-                    total_polling_stations_with_results = county_results_qs.filter(
-                        senator_candidate=aspirant,
-                    )
-                elif level == "women_rep":
-                    total_polling_stations_with_results = county_results_qs.filter(
-                        woman_rep_candidate=aspirant,
-                    )
-                elif level == "mp":
-                    total_polling_stations_with_results = county_results_qs.filter(
-                        mp_candidate=aspirant,
-                    )
-                elif level == "mca":
-                    total_polling_stations_with_results = county_results_qs.filter(
-                        mca_candidate=aspirant,
-                    )
-
-                total_polling_stations_count = (
-                    total_polling_stations_with_results.count()
-                )
-
-                if total_polling_stations_count == 0:
+            for row in totals:
+                aspirant = aspirants_by_id.get(row[candidate_field])
+                if aspirant is None:
                     continue
 
-                total_votes = total_polling_stations_with_results.aggregate(
-                    Sum("votes")
-                ).get("votes__sum", 0)
-
-                full_name = aspirant.first_name + " " + aspirant.last_name
                 candidate_results.append(
                     {
-                        "fullName": full_name,
+                        "fullName": f"{aspirant.first_name} {aspirant.last_name}",
                         "party": aspirant.party.name,
                         "party_color": aspirant.party.party_colour_hex,
-                        "totalVotes": total_votes,
-                        "countedStreams": total_polling_stations_count,
+                        "totalVotes": row["total_votes"] or 0,
+                        "countedStreams": row["counted_streams"],
                         "county_polling_stations_count": county_polling_stations_count,
                     }
                 )
 
-            # calculate percentages and append to the list
+            total_votes = sum(
+                candidate["totalVotes"] for candidate in candidate_results
+            )
             for candidate in candidate_results:
-                total_votes = sum(
-                    candidate["totalVotes"] for candidate in candidate_results
-                )
                 if total_votes > 0:
                     candidate["percentage"] = round(
                         ((candidate["totalVotes"] / total_votes) * 100), 2
                     )
-
                 else:
                     candidate["percentage"] = 0
+
             # Sort the results by votes in descending order
             candidate_results = sorted(
                 candidate_results, key=lambda x: x["totalVotes"], reverse=True

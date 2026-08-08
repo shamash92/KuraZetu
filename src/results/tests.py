@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 import pytest
@@ -491,3 +492,105 @@ class TestPollingStationLevelResultsAPI:
         )
         second = client.get(self.url(polling_station.code, "governor"))
         assert len(second.data["data"]) == 1
+
+
+class TestCountyTotalResultsAPIView:
+    """
+    The view groups in the database. It used to walk every aspirant at a level
+    nationally, issuing a count, a sum and a party lookup for each, so its cost
+    grew with the size of the ballot rather than with the results actually
+    recorded. See #172.
+    """
+
+    def url(self, level):
+        return reverse("county-presidential-results", kwargs={"level": level})
+
+    @pytest.fixture
+    def signed_in(self, user, polling_center):
+        user.polling_center = polling_center
+        user.save()
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
+    def _governor(self, party, county, first_name):
+        return Aspirant.objects.create(
+            first_name=first_name,
+            last_name="Candidate",
+            party=party,
+            level="governor",
+            county=county,
+        )
+
+    def test_totals_are_summed_across_stations(
+        self, signed_in, party, county, polling_center, polling_station
+    ):
+        cache.clear()
+        candidate = self._governor(party, county, "Aggregated")
+        second_station = PollingStation.objects.create(
+            polling_center=polling_center,
+            code="989898902",
+            registered_voters=800,
+        )
+        PollingStationGovernorResults.objects.create(
+            polling_station=polling_station, governor_candidate=candidate, votes=30
+        )
+        PollingStationGovernorResults.objects.create(
+            polling_station=second_station, governor_candidate=candidate, votes=12
+        )
+
+        response = signed_in.get(self.url("governor"))
+
+        assert response.status_code == 200
+        assert len(response.data["results"]) == 1
+        row = response.data["results"][0]
+        assert row["fullName"] == "Aggregated Candidate"
+        assert row["totalVotes"] == 42
+        assert row["countedStreams"] == 2
+        assert row["percentage"] == 100
+
+    def test_candidates_without_results_are_absent(
+        self, signed_in, party, county, polling_station
+    ):
+        cache.clear()
+        counted = self._governor(party, county, "Counted")
+        self._governor(party, county, "Uncounted")
+        PollingStationGovernorResults.objects.create(
+            polling_station=polling_station, governor_candidate=counted, votes=5
+        )
+
+        response = signed_in.get(self.url("governor"))
+
+        names = [row["fullName"] for row in response.data["results"]]
+        assert names == ["Counted Candidate"]
+
+    def test_query_count_does_not_grow_with_the_ballot(
+        self, django_assert_num_queries, signed_in, party, county, polling_station
+    ):
+        """
+        Adding candidates who have no results must not cost anything. Under the
+        per-aspirant loop this test failed: each extra candidate added its own
+        count and sum before being discarded.
+        """
+        cache.clear()
+        counted = self._governor(party, county, "Counted")
+        PollingStationGovernorResults.objects.create(
+            polling_station=polling_station, governor_candidate=counted, votes=5
+        )
+
+        # Counting the stations, grouping the votes, and loading the aspirants
+        # that appear in that grouping with their parties.
+        with django_assert_num_queries(3):
+            signed_in.get(self.url("governor"))
+
+        for index in range(20):
+            self._governor(party, county, f"Extra{index}")
+
+        cache.clear()
+        with django_assert_num_queries(3):
+            signed_in.get(self.url("governor"))
+
+    def test_unknown_level_is_rejected(self, signed_in):
+        cache.clear()
+        response = signed_in.get(self.url("mayor"))
+        assert response.status_code == 400
