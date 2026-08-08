@@ -51,3 +51,22 @@ jobs:
     - name: Test
       working-directory: "src/ui"
       run: pnpm test
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v5
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: pnpm
+        cache-dependency-path: src/ui/pnpm-lock.yaml
+    - name: Install dependencies
+      working-directory: "src/ui"
+      run: pnpm install --frozen-lockfile
+    - name: Lint
+      working-directory: "src/ui"
+      run: pnpm lint
