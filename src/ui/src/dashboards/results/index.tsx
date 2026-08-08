@@ -9,7 +9,8 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import {useEffect, useState} from "react";
+import {useState} from "react";
+import {useQuery} from "@tanstack/react-query";
 
 import CountyResults from "./countyResults";
 import {IPresidentialNationalResults} from "./types";
@@ -17,13 +18,17 @@ import PlayGameCallToActionButton from "../../landing-pages/gameButton";
 import PollingCenterResults from "./pollingCenterResults";
 import {formatNumber, getResultPartyColor} from "./utils";
 import {useUser} from "../../App";
+import {NATIONAL_PRESIDENTIAL_RESULTS_URL} from "../../api/apiUrls";
+import {resultKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
+
+type NationalResultsResponse = {
+    results: Array<IPresidentialNationalResults>;
+};
 
 //TODO: split into smaller components for each administrative level
 export default function ResultsDashboard() {
     const [activeTab, setActiveTab] = useState("governor");
-    const [presidentialData, setPresidentialData] = useState<
-        IPresidentialNationalResults[]
-    >([]);
 
     const [showPinGameAlert, setShowPinGameAlert] = useState(true);
 
@@ -155,15 +160,42 @@ export default function ResultsDashboard() {
         ],
     };
 
-    useEffect(() => {
-        // Fetch data from the API
-        Example: fetch("/api/results/total-votes/presidential/")
-            .then((response) => response.json())
-            .then((data) => {
-                // console.log(data, "data");
-                setPresidentialData(data["results"]);
+    const nationalQuery = useQuery({
+        queryKey: resultKeys.national(),
+
+        queryFn: async ({signal}): Promise<NationalResultsResponse> => {
+            const response = await fetch(NATIONAL_PRESIDENTIAL_RESULTS_URL, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                    Accept: "application/json",
+                },
+                signal,
             });
-    }, []);
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw Object.assign(
+                    new Error(data?.error ?? "Could not load national results"),
+                    {
+                        status: response.status,
+                        payload: data,
+                    },
+                );
+            }
+
+            return data;
+        },
+
+        ...querySettings.national,
+    });
+
+    // Read straight off `data` so the reference stays stable between renders.
+    // The previous state defaulted to `[]`, which rendered the same empty
+    // dashboard whether the request was in flight, had failed, or had genuinely
+    // returned no counted votes.
+    const presidentialData = nationalQuery.data?.results ?? [];
 
     return (
         <div className="flex flex-col w-full min-h-screen p-4 bg-gray-100 ">
@@ -226,97 +258,122 @@ export default function ResultsDashboard() {
                         )}
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-6 mb-6">
-                    {presidentialData.map((candidate) => (
-                        <div
-                            key={candidate.name}
-                            className="flex flex-col items-center w-64 overflow-hidden border-t-4 border-gray-200 rounded-lg shadow-md"
+                {nationalQuery.isPending ? (
+                    <p className="py-8 text-center text-gray-500">
+                        Loading national results…
+                    </p>
+                ) : nationalQuery.isError ? (
+                    <div className="flex flex-col items-center gap-2 py-8">
+                        <p className="text-red-600">{nationalQuery.error.message}</p>
+                        <button
+                            type="button"
+                            className="px-3 py-1 text-sm border rounded"
+                            onClick={() => nationalQuery.refetch()}
                         >
-                            <div className="flex items-center justify-center w-full p-3 bg-gray-100">
-                                <div className="flex items-center gap-3">
-                                    {candidate.image ? (
-                                        <img
-                                            src={candidate.image}
-                                            alt={candidate.name}
-                                            className="object-cover w-16 h-16 rounded-full"
+                            Try again
+                        </button>
+                    </div>
+                ) : presidentialData.length === 0 ? (
+                    <p className="py-8 text-center text-gray-500">
+                        No presidential results have been counted yet.
+                    </p>
+                ) : (
+                    <>
+                        <div className="flex flex-wrap justify-center gap-6 mb-6">
+                            {presidentialData.map((candidate) => (
+                                <div
+                                    key={candidate.name}
+                                    className="flex flex-col items-center w-64 overflow-hidden border-t-4 border-gray-200 rounded-lg shadow-md"
+                                >
+                                    <div className="flex items-center justify-center w-full p-3 bg-gray-100">
+                                        <div className="flex items-center gap-3">
+                                            {candidate.image ? (
+                                                <img
+                                                    src={candidate.image}
+                                                    alt={candidate.name}
+                                                    className="object-cover w-16 h-16 rounded-full"
+                                                />
+                                            ) : (
+                                                <div className="w-16 h-16 bg-gray-300 rounded-full" />
+                                            )}
+
+                                            <div>
+                                                <h3 className="text-lg font-bold">
+                                                    {candidate.name}
+                                                </h3>
+                                                <p className="text-sm text-gray-600">
+                                                    {candidate.party}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full p-4 text-center">
+                                        <div className="text-3xl font-bold">
+                                            {candidate.percentage}%
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                            {formatNumber(candidate.votes)} votes
+                                        </div>
+                                        {candidate.percentage > 50 && (
+                                            <div className="inline-block px-2 py-1 mt-2 text-sm font-medium text-green-800 bg-green-100 rounded-full">
+                                                Leading
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* National Results Chart */}
+                        <div className="mt-6">
+                            <h3 className="mb-3 font-semibold text-center">
+                                National Vote Breakdown
+                            </h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={presidentialData}
+                                        layout="vertical"
+                                        margin={{
+                                            top: 5,
+                                            right: 30,
+                                            left: 20,
+                                            bottom: 5,
+                                        }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis type="number" />
+                                        <YAxis type="category" dataKey="name" />
+                                        <Tooltip
+                                            formatter={(value) => [
+                                                `${formatNumber(
+                                                    parseInt(value.toString()),
+                                                )} votes`,
+                                                "Votes",
+                                            ]}
+                                            labelFormatter={(name) =>
+                                                `Candidate: ${name}`
+                                            }
                                         />
-                                    ) : (
-                                        <div className="w-16 h-16 bg-gray-300 rounded-full" />
-                                    )}
-
-                                    <div>
-                                        <h3 className="text-lg font-bold">
-                                            {candidate.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-600">
-                                            {candidate.party}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="w-full p-4 text-center">
-                                <div className="text-3xl font-bold">
-                                    {candidate.percentage}%
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                    {formatNumber(candidate.votes)} votes
-                                </div>
-                                {candidate.percentage > 50 && (
-                                    <div className="inline-block px-2 py-1 mt-2 text-sm font-medium text-green-800 bg-green-100 rounded-full">
-                                        Leading
-                                    </div>
-                                )}
+                                        <Legend />
+                                        <Bar dataKey="votes" name="Votes">
+                                            {presidentialData.map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={getResultPartyColor(
+                                                        entry.party_color,
+                                                        index,
+                                                    )}
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
-                    ))}
-                </div>
-
-                {/* National Results Chart */}
-                <div className="mt-6">
-                    <h3 className="mb-3 font-semibold text-center">
-                        National Vote Breakdown
-                    </h3>
-                    <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={presidentialData}
-                                layout="vertical"
-                                margin={{
-                                    top: 5,
-                                    right: 30,
-                                    left: 20,
-                                    bottom: 5,
-                                }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" />
-                                <YAxis type="category" dataKey="name" />
-                                <Tooltip
-                                    formatter={(value) => [
-                                        `${formatNumber(
-                                            parseInt(value.toString()),
-                                        )} votes`,
-                                        "Votes",
-                                    ]}
-                                    labelFormatter={(name) => `Candidate: ${name}`}
-                                />
-                                <Legend />
-                                <Bar dataKey="votes" name="Votes">
-                                    {presidentialData.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={getResultPartyColor(
-                                                entry.party_color,
-                                                index,
-                                            )}
-                                        />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
             {/* County Results Section */}
             <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
