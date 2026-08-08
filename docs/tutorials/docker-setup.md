@@ -51,7 +51,7 @@ On an Apple Silicon computer, Docker may warn that the PostGIS image targets
 the AMD64 platform. The upstream image runs through Docker's emulation and may
 start more slowly. Linux and Windows AMD64 hosts do not need that emulation.
 
-The application is available at <http://localhost:8000/>. PostgreSQL is
+The application is available at `http://localhost:8000/`. PostgreSQL is
 available only on the local computer at port `5433`. Set `POSTGRES_PORT` before
 starting Compose if you need a different host port.
 
