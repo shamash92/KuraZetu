@@ -644,7 +644,7 @@
    claude-design/mobile-auth-perk.html, scaled up from the phone mock: the
    lime pop and the display heading carry the moment, everything else stays
    quiet. */
-.kz-auth .done {
+.kz-auth .done-screen {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -659,7 +659,7 @@
 }
 
 /* Everything except the mesh sits above it. */
-.kz-auth .done > *:not(.mesh-layer) {
+.kz-auth .done-screen > *:not(.mesh-layer) {
   position: relative;
   z-index: 1;
 }
@@ -668,7 +668,7 @@
    under the copy. Blur only — an earlier version also painted a white radial
    gradient here, which read as a visible lighter disc with a detectable edge
    rather than as depth. Sits above the mesh, below the content. */
-.kz-auth .done::before {
+.kz-auth .done-screen::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -755,7 +755,7 @@
   height: 42px;
 }
 
-.kz-auth .done h2 {
+.kz-auth .done-screen h2 {
   margin: 26px 0 0;
   font-family: var(--display);
   font-size: 34px;
@@ -764,7 +764,7 @@
   line-height: 1.04;
 }
 
-.kz-auth .done .sub {
+.kz-auth .done-screen .sub {
   max-width: 34ch;
   margin: 12px 0 0;
   font-size: 14px;
@@ -772,7 +772,7 @@
   color: var(--mute);
 }
 
-.kz-auth .done .next {
+.kz-auth .done-screen .next {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -789,7 +789,7 @@
   font-weight: 800;
   text-decoration: none;
 }
-.kz-auth .done .next svg {
+.kz-auth .done-screen .next svg {
   width: 16px;
   height: 16px;
 }
@@ -817,7 +817,7 @@
   .kz-auth .register {
     padding: 40px 22px 44px;
   }
-  .kz-auth .done h2 {
+  .kz-auth .done-screen h2 {
     font-size: 28px;
   }
 }

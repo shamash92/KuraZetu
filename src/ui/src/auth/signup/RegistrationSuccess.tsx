@@ -99,7 +99,7 @@ export default function RegistrationSuccessPage() {
 
     return (
         <div className="kz-auth">
-            <div className="done">
+            <div className="done-screen">
                 <div className="mesh-layer" id={MESH_LAYER_ID} aria-hidden="true" />
 
                 <div className="done-pop">
