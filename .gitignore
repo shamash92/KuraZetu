@@ -25,6 +25,10 @@ Thumbs.db
 .coverage
 .pytest_cache/
 
+# pnpm's content-addressable store, written here when it cannot share the
+# global one. Regenerated on install.
+.pnpm-store/
+
 
 static/
 staticfiles/css/
