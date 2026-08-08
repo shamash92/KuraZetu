@@ -1,5 +1,4 @@
 const path = require('path');
-const webpack = require('webpack');
 
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
@@ -33,14 +32,10 @@ module.exports = {
       }
     ]
   },
-  optimization: {
-    minimize: true
+  watchOptions: {
+    ignored: ['**/node_modules/**', '**/static/**']
   },
   plugins: [
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('development')
-    }),
-
     new WebpackManifestPlugin({
       fileName: 'manifest.json',
       publicPath: '/'

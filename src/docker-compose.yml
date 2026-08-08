@@ -1,58 +1,141 @@
+# Development only. This Compose application is not a production deployment.
+x-web-image: &web-image
+  build: .
+  image: kurazetu-web:dev
 
 services:
-
   webpack:
+    image: kurazetu-webpack:dev
     build:
       context: .
       dockerfile: Dockerfile.webpack
+    command: >-
+      sh -c "rm -f /app/static/ui/manifest.json
+      && pnpm install --frozen-lockfile
+      && exec pnpm run dev"
     volumes:
       - ./ui:/app
-      - react_static_volume:/app/staticfiles
+      - webpack_node_modules:/app/node_modules
+      - pnpm_store:/app/.pnpm-store
+      - react_static_volume:/app/static/ui
     working_dir: /app
     environment:
-      - NODE_ENV=development
-    command: yarn run dev
-    restart: "unless-stopped"
+      NODE_ENV: development
+      NODE_OPTIONS: --max-old-space-size=1536
+    healthcheck:
+      test: ["CMD", "test", "-f", "/app/static/ui/manifest.json"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    restart: unless-stopped
+    init: true
     tty: true
+    cpus: 2.0
+    mem_limit: 2g
 
   db:
     image: postgis/postgis:14-3.3
-    container_name: postgis
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_HOST: db
-
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    cpus: 1.0
+    mem_limit: 1g
 
-
-  web:
-    build: .
-    command: sh -c "python manage.py tailwind build && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+  migrate:
+    <<: *web-image
+    command: python manage.py migrate --noinput
     volumes:
       - ./:/app
-      - react_static_volume:/app/staticfiles/ui
-
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-      - webpack #This is because we need the js bundle and manifest to be created as they are needed in initial page load
+    env_file:
+      - .env
     environment:
-      - DEBUG=${DEBUG}
-      # - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - POSTGRES_DB=${DATABASE_NAME}
-      - POSTGRES_USER=${DATABASE_USER}
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-      - POSTGRES_HOST=${DATABASE_HOST}
+      DATABASE_HOST: db
+      LOG_FILE: /tmp/kurazetu/app.json
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    cpus: 1.0
+    mem_limit: 1g
 
+  web:
+    <<: *web-image
+    command: sh -c "python manage.py tailwind build && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./:/app
+      - media_volume:/app/media
+      - react_static_volume:/app/ui/static/ui
+      - tailwind_static_volume:/app/staticfiles/css
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: db
+      LOG_FILE: /tmp/kurazetu/app.json
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      webpack:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; socket.create_connection(("127.0.0.1", 8000), timeout=5).close()
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    restart: unless-stopped
+    init: true
+    cpus: 2.0
+    mem_limit: 2g
 
+  docs:
+    profiles:
+      - docs
+    build:
+      context: ../docs
+    image: kurazetu-docs:dev
+    volumes:
+      - ../:/workspace:ro
+    ports:
+      - "127.0.0.1:8001:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen("http://localhost:8000/", timeout=5)
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 1m
+    init: true
+    cpus: 1.0
+    mem_limit: 1g
 
 volumes:
+  media_volume:
+  pnpm_store:
   postgres_data:
   react_static_volume:
-
+  tailwind_static_volume:
+  webpack_node_modules:

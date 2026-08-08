@@ -1,70 +1,98 @@
-# Running the Project with Docker
+# Run the development project with Docker
 
-This guide will help you set up and run the project using Docker and Docker Compose.
+Use Docker Compose to run the Django backend, web assets, and PostgreSQL from
+one terminal command. You can also include the documentation server.
 
 ```{important}
-The documentation process has not been integrated in docker yet. You will need to run the documentation server separately.
+This Compose application is for local development only. It is not a production
+deployment configuration.
 ```
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-started/get-docker/) installed
-- [Docker Compose](https://docs.docker.com/compose/install/) installed
+Install [Docker](https://docs.docker.com/get-started/get-docker/) with the
+Docker Compose plugin.
 
-## 1. Clone the Repository
+## 1. Clone the repository
 
 ```bash
 git clone https://github.com/shamash92/KuraZetu.git
-cd KuraZetu
+cd KuraZetu/src
 ```
 
-## 2. Configure Environment Variables
+## 2. Configure the environment
 
-Copy the example `.env.local` file to `.env`:
+Create your local environment file:
 
 ```bash
-cd src
 cp .env.local .env
 ```
 
-Make sure to set the database host to `db` (matching the Docker Compose service name):
+Open `.env` and set `DATABASE_NAME`, `DATABASE_USER`, and
+`DATABASE_PASSWORD`. Compose sets `DATABASE_HOST=db` inside the Django
+containers, so you do not need to change the host in this file.
+
+## 3. Start the application
+
+Build and start the backend, frontend assets, and database:
 
 ```bash
-...
-DATABASE_HOST=db
-# Add other environment variables as needed
+docker compose up --build
 ```
 
-## 3. Start the Services
+The first build can take several minutes while Docker downloads the images and
+installs the Python, Node.js, and Tailwind dependencies. Later builds reuse the
+cache.
 
-Run the following command to build and start the containers in detached mode:
+The `migrate` service applies database migrations once and then exits with code
+`0`. This is expected. The web service starts after that migration succeeds.
 
-```bash
-docker compose build --progress=plain 
-docker compose up -d
-```
+On an Apple Silicon computer, Docker may warn that the PostGIS image targets
+the AMD64 platform. The upstream image runs through Docker's emulation and may
+start more slowly. Linux and Windows AMD64 hosts do not need that emulation.
 
-This will start all services defined in your `docker-compose.yml` file.
+The application is available at `http://localhost:8000/`. PostgreSQL is
+available only on the local computer at port `5433`. Set `POSTGRES_PORT` before
+starting Compose if you need a different host port.
 
-## 4. Create a Superuser
+## 4. Create a superuser
 
-After the containers are running, create a Django superuser:
+In another terminal, from the `src` directory, run:
 
 ```bash
 docker compose exec web python manage.py createsuperuser
 ```
 
-Follow the prompts to set up your admin credentials.
+Follow the prompts and choose a strong development password. For example, you
+can enter `0701234567` for the phone number; the application normalizes a local
+Kenyan number before saving it.
 
-## 5. Access the Application
+The real Django admin path is set by `ADMIN_URL_SUFFIX` in `.env`. With the
+example value, open `http://localhost:8000/backend/`. The `/admin/` path is a
+honeypot and is not the Django administration site.
 
-- The web application should be available at `http://localhost:8000` (or the port specified in your `docker-compose.yml`).
-- The admin panel is typically at `http://localhost:8000/admin/`.
+## 5. Include the documentation
 
----
+Stop the application with {kbd}`Ctrl+C`, then restart it with the `docs`
+profile:
 
-You are now running the project with Docker!
+```bash
+docker compose --profile docs up --build
+```
 
-> Next steps:
->
-> - [Load Boundaries Data](../how-to-guides/load_boundaries_data.md)
+This runs the repository's `make run` target in the docs container. Open the
+documentation at `http://localhost:8001/`. Changes under `docs/` trigger a
+rebuild.
+
+## 6. Stop the services
+
+Press {kbd}`Ctrl+C` in the Compose terminal. If you started the services in
+detached mode, run:
+
+```bash
+docker compose --profile docs down
+```
+
+This preserves the PostgreSQL and dependency volumes for the next run.
+
+> Next step: [Load boundaries data](../how-to-guides/load_boundaries_data.md)
