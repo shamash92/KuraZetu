@@ -2,7 +2,10 @@ import React, {createContext, useContext} from "react";
 
 import RoutesApp from "./routes";
 import {HelmetProvider} from "react-helmet-async";
+import {QueryClientProvider} from "@tanstack/react-query";
 import {Toaster} from "sonner";
+
+import {queryClient} from "./api/queryClient";
 
 let djangoAuth = {djangoAuthenticated: window.djangoAuthenticated || "false"}; //  this comes from the django html template inside the script tag
 
@@ -77,20 +80,22 @@ function App() {
     return (
         <div className="flex flex-col items-center justify-start w-full min-h-screen">
             <HelmetProvider context={helmetContext}>
-                <AuthProvider>
-                    <UserProvider>
-                        <Toaster
-                            icons={{
-                                success: null,
-                                info: null,
-                                warning: null,
-                                error: null,
-                                loading: null,
-                            }}
-                        />
-                        <RoutesApp />
-                    </UserProvider>
-                </AuthProvider>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider>
+                        <UserProvider>
+                            <Toaster
+                                icons={{
+                                    success: null,
+                                    info: null,
+                                    warning: null,
+                                    error: null,
+                                    loading: null,
+                                }}
+                            />
+                            <RoutesApp />
+                        </UserProvider>
+                    </AuthProvider>
+                </QueryClientProvider>
             </HelmetProvider>
         </div>
     );
