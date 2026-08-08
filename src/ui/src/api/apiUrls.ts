@@ -19,6 +19,9 @@ export function pollingCenterPinsUrl(wardNumber: number): string {
 
 export const SIGNUP_URL = "/api/accounts/signup/";
 
+export const NATIONAL_PRESIDENTIAL_RESULTS_URL =
+    "/api/results/total-votes/presidential/";
+
 export function countyResultsUrl(level: string): string {
     return `/api/results/county/${level}/`;
 }

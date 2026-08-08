@@ -34,6 +34,15 @@ export const resultKeys = {
     all: ["results"] as const,
 
     /**
+     * The national presidential tally. Nothing varies it: the endpoint takes no
+     * parameters and derives nothing from the session, so every client asks for
+     * the same resource.
+     */
+    national() {
+        return [...resultKeys.all, "national", "president"] as const;
+    },
+
+    /**
      * One race in the signed-in user's county. The level is part of the key, so
      * each tab caches separately and revisiting one is served from memory. The
      * county is too: the API derives it from the session, so without it a

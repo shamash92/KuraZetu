@@ -28,4 +28,23 @@ export const querySettings = {
         refetchInterval: false,
         refetchOnWindowFocus: false,
     },
+
+    /**
+     * The national presidential tally. This is the default destination for
+     * every visitor at once, so it is the one resource where a client-side
+     * refresh rule is a capacity decision rather than a UX one: a quarter of a
+     * million clients on a fixed interval is thousands of origin requests per
+     * second before anyone has polled deliberately.
+     *
+     * Until the load-test gate in the migration plan passes, the read is
+     * one-shot. `retry: false` overrides the client's global single retry for
+     * the same reason — a national outage must not be met with every client
+     * asking again.
+     */
+    national: {
+        staleTime: Infinity,
+        refetchInterval: false,
+        refetchOnWindowFocus: false,
+        retry: false,
+    },
 } as const;
