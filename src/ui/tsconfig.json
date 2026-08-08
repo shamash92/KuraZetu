@@ -16,7 +16,7 @@
     "isolatedModules": true,
     "noEmit": false,
     "jsx": "react-jsx",
-    "types": ["node"],
+    "types": ["node", "jest"],
     "typeRoots": ["./node_modules/@types", "./typings"]
   },
   "baseUrl": ".",

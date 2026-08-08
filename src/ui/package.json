@@ -6,7 +6,8 @@
     "license": "MIT",
     "scripts": {
         "dev": "webpack --mode development --watch",
-        "build": "webpack --mode production"
+        "build": "webpack --mode production",
+        "test": "jest"
     },
     "dependencies": {
         "@babel/runtime": "^7.29.7",
@@ -45,13 +46,21 @@
         "@babel/preset-react": "^7.16.7",
         "@babel/preset-typescript": "^7.16.7",
         "@tailwindcss/postcss": "^4",
+        "@testing-library/dom": "^10.4.1",
+        "@testing-library/jest-dom": "^7.0.0",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.3",
+        "@types/jest": "^30.0.0",
         "@types/leaflet": "^1.9.17",
         "@types/node": "^26.1.1",
         "@types/react": "^19.1.2",
         "@types/react-dom": "^19.1.2",
+        "babel-jest": "^30.4.1",
         "babel-loader": "^8.2.4",
         "css-loader": "^6.7.1",
         "html-webpack-plugin": "^5.5.0",
+        "jest": "^30.4.2",
+        "jest-environment-jsdom": "^30.4.1",
         "mini-css-extract-plugin": "^2.6.0",
         "postcss": "^8.4.31",
         "postcss-loader": "^7.3.3",
