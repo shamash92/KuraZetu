@@ -9,7 +9,6 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 
 import CountyResults from "./countyResults";
@@ -17,7 +16,6 @@ import {IPresidentialNationalResults} from "./types";
 import PlayGameCallToActionButton from "../../landing-pages/gameButton";
 import PollingCenterResults from "./pollingCenterResults";
 import {formatNumber, getResultPartyColor} from "./utils";
-import {useUser} from "../../App";
 import {NATIONAL_PRESIDENTIAL_RESULTS_URL} from "../../api/apiUrls";
 import {resultKeys} from "../../api/queryKeys";
 import {querySettings} from "../../api/querySettings";
@@ -28,138 +26,6 @@ type NationalResultsResponse = {
 
 //TODO: split into smaller components for each administrative level
 export default function ResultsDashboard() {
-    const [activeTab, setActiveTab] = useState("governor");
-
-    const [showPinGameAlert, setShowPinGameAlert] = useState(true);
-
-    const {
-        djangoUserPollingCenterCode,
-        djangoUserPollingCenterName,
-        djangoUserWardNumber,
-        djangoUserConstName,
-        djangoUserCountyName,
-        djangoUserWardName,
-    } = useUser();
-
-    // Mock data for county tabs
-    const countyData = {
-        governor: [
-            {
-                name: "Candidate 1",
-                party: "Party A",
-                votes: 230450,
-                percentage: 57.2,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party B",
-                votes: 172340,
-                percentage: 42.8,
-                color: "#E9141D",
-            },
-        ],
-        senator: [
-            {
-                name: "Candidate 1",
-                party: "Party A",
-                votes: 215670,
-                percentage: 53.6,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party B",
-                votes: 186590,
-                percentage: 46.4,
-                color: "#E9141D",
-            },
-        ],
-        womanRep: [
-            {
-                name: "Candidate 1",
-                party: "Party B",
-                votes: 195230,
-                percentage: 48.5,
-                color: "#E9141D",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party A",
-                votes: 207340,
-                percentage: 51.5,
-                color: "#0015BC",
-            },
-        ],
-        mp: [
-            {
-                name: "Candidate 1",
-                party: "Party B",
-                votes: 95230,
-                percentage: 48.5,
-                color: "#E9141D",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party A",
-                votes: 207340,
-                percentage: 51.5,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 3",
-                party: "Party A",
-                votes: 7340,
-                percentage: 51.5,
-                color: "#DEBEBC",
-            },
-            {
-                name: "Candidate 4",
-                party: "Party A",
-                votes: 57340,
-                percentage: 51.5,
-                color: "#fE19BC",
-            },
-            {
-                name: "Candidate 5",
-                party: "Party A",
-                votes: 107340,
-                percentage: 51.5,
-                color: "#19F5BC",
-            },
-            {
-                name: "Candidate 6",
-                party: "Party A",
-                votes: 340,
-                percentage: 51.5,
-                color: "#0F9BC3",
-            },
-        ],
-        wardMCAs: [
-            {
-                name: "Candidate 1",
-                party: "Party B",
-                votes: 45230,
-                percentage: 31.2,
-                color: "#E9141D",
-            },
-            {
-                name: "Candidate 2",
-                party: "Party A",
-                votes: 52170,
-                percentage: 36.0,
-                color: "#0015BC",
-            },
-            {
-                name: "Candidate 3",
-                party: "Independent",
-                votes: 47620,
-                percentage: 32.8,
-                color: "#FFB90F",
-            },
-        ],
-    };
-
     const nationalQuery = useQuery({
         queryKey: resultKeys.national(),
 
