@@ -62,6 +62,18 @@ const EMPTY: SignupFlowState = {
     pollingCenter: null,
 };
 
+/**
+ * Forget the saved flow. Called once registration succeeds, so returning to
+ * `/ui/signup/` starts over instead of resuming the completed ladder.
+ */
+export function clearSignupFlow() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+        // storage disabled — nothing was saved to begin with.
+    }
+}
+
 function isStep(value: unknown): value is SignupStep {
     return typeof value === "string" && (STEP_ORDER as string[]).includes(value);
 }

@@ -10,6 +10,7 @@ import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 
 import {SIGNUP_URL} from "../../api/apiUrls";
+import {clearSignupFlow} from "./useSignupFlow";
 
 // Defining the form validation schema
 const formSchema = z
@@ -141,6 +142,11 @@ export default function SignupForm() {
 
             const token = data.data?.token;
             if (typeof token !== "string" || token.length === 0) return;
+
+            // The ladder has served its purpose; leaving it saved would drop a
+            // returning visitor back onto the summary of an account they have
+            // already created.
+            clearSignupFlow();
 
             localStorage.setItem("token", token);
             cookie.save("token", token, {
