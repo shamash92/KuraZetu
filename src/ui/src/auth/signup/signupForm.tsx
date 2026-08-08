@@ -136,7 +136,12 @@ export default function SignupForm() {
                             console.error("Invalid token format");
                         }
 
-                        navigate("/ui/signup/accounts/registration-success/");
+                        // The success page renders only for someone arriving
+                        // from here; without this it also renders for anyone
+                        // who opens the URL directly.
+                        navigate("/ui/signup/accounts/registration-success/", {
+                            state: {justRegistered: true},
+                        });
                     }
                 });
         } catch (err) {
