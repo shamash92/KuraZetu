@@ -155,10 +155,7 @@ function CountyResults() {
                         </h3>
                         <div className="h-64">
                             {hasResults ? (
-                                <PollingStationCandidatePieChart
-                                    activeTab={activeTab}
-                                    data={results}
-                                />
+                                <PollingStationCandidatePieChart data={results} />
                             ) : (
                                 <p className="text-center text-gray-500">
                                     No data available for the selected tab.

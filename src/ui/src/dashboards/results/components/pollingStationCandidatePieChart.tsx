@@ -13,7 +13,7 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import {IPollingCenterResultsProcessed, TLevelDjango} from "../types";
+import {IPollingCenterResultsProcessed} from "../types";
 
 import React from "react";
 import {formatNumber, getResultPartyColor} from "../utils";
@@ -23,46 +23,12 @@ import {formatNumber, getResultPartyColor} from "../utils";
 // TODO: add types for props
 
 function PollingStationCandidatePieChart({
-    activeTab,
     data,
-    presResultsProcessed,
-    govResultsProcessed,
-    senatorResultsProcessed,
-    womenRepResultsProcessed,
-    mpResultsProcessed,
-    mcaResultsProcessed,
 }: {
-    activeTab: TLevelDjango;
-    /**
-     * The active race's results. A caller holding one query per tab passes this
-     * and omits the six below, which exist for callers that still keep a
-     * separate state slot per race.
-     */
+    /** The active race's results. Callers hold one query per tab. */
     data?: IPollingCenterResultsProcessed[] | null;
-    presResultsProcessed?: IPollingCenterResultsProcessed[] | null;
-    govResultsProcessed?: IPollingCenterResultsProcessed[] | null;
-    senatorResultsProcessed?: IPollingCenterResultsProcessed[] | null;
-    womenRepResultsProcessed?: IPollingCenterResultsProcessed[] | null;
-    mpResultsProcessed?: IPollingCenterResultsProcessed[] | null;
-    mcaResultsProcessed?: IPollingCenterResultsProcessed[] | null;
 }) {
-    // Determine which data to use based on the active tab
-    let activeData: IPollingCenterResultsProcessed[] = [];
-    if (data) {
-        activeData = data;
-    } else if (activeTab === "president" && presResultsProcessed) {
-        activeData = presResultsProcessed;
-    } else if (activeTab === "governor" && govResultsProcessed) {
-        activeData = govResultsProcessed;
-    } else if (activeTab === "senator" && senatorResultsProcessed) {
-        activeData = senatorResultsProcessed;
-    } else if (activeTab === "women_rep" && womenRepResultsProcessed) {
-        activeData = womenRepResultsProcessed;
-    } else if (activeTab === "mp" && mpResultsProcessed) {
-        activeData = mpResultsProcessed;
-    } else if (activeTab === "mca" && mcaResultsProcessed) {
-        activeData = mcaResultsProcessed;
-    }
+    const activeData: IPollingCenterResultsProcessed[] = data ?? [];
 
     return (
         <ResponsiveContainer width="100%" height={300}>

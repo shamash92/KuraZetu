@@ -1,16 +1,20 @@
 import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import {
+    IAggregatedResults,
     IPollingCenterCandidateResults,
-    IPollingCenterResultsProcessed,
     TLevelDjango,
 } from "./types";
 import {aggregateCandidateResults, formatNumber} from "./utils";
-import {useEffect, useState} from "react";
+import {useState} from "react";
+import {useQuery} from "@tanstack/react-query";
 
 import NoResultsComponent from "./components/noResults";
 import PollingCandidateResults from "./components/pollingCandidateResults";
 import PollingStationCandidatePieChart from "./components/pollingStationCandidatePieChart";
 import {useUser} from "../../App";
+import {pollingCenterResultsUrl} from "../../api/apiUrls";
+import {resultKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
 const levelsArray: TLevelDjango[] = [
     "president",
@@ -21,229 +25,102 @@ const levelsArray: TLevelDjango[] = [
     "mca",
 ];
 
+interface PollingCenterResultsResponse {
+    data: IPollingCenterCandidateResults[];
+    streams: number;
+    /** The API reports a missing ward or centre in the body of a 200. */
+    error?: string;
+}
+
+interface PollingCenterResults extends IAggregatedResults {
+    /**
+     * Every stream at the centre, whether or not it has reported. The
+     * aggregate's own `totalStreams` counts only streams already present in the
+     * response, which cannot express outstanding ones — the county tab uses the
+     * equivalent full count for the same "x/y streams" display.
+     */
+    centerStreams: number;
+}
+
 function PollingCenterResults() {
     const [activeTab, setActiveTab] = useState<TLevelDjango>("president");
-
-    const [presResults, setPresResults] = useState<
-        IPollingCenterCandidateResults[] | null
-    >(null);
-
-    const [presResultsProcessed, setPresResultsProcessed] = useState<
-        IPollingCenterResultsProcessed[] | null
-    >(null);
-
-    const [streamsNumber, setStreamsNumber] = useState<number>(0);
-    const [totalPresVotes, setTotalPresVotes] = useState<number>(0);
-
-    // governor results
-    const [governorResults, setGovernorResults] = useState<
-        IPollingCenterCandidateResults[] | null
-    >(null);
-    const [totalGovernorVotes, setTotalGovernorVotes] = useState<number>(0);
-    const [govResultsProcessed, setGovResultsProcessed] = useState<
-        IPollingCenterResultsProcessed[] | null
-    >(null);
-
-    // senator results
-    const [senatorResults, setSenatorResults] = useState<
-        IPollingCenterCandidateResults[] | null
-    >(null);
-    const [totalSenatorVotes, setTotalSenatorVotes] = useState<number>(0);
-    const [senatorResultsProcessed, setSenatorResultsProcessed] = useState<
-        IPollingCenterResultsProcessed[] | null
-    >(null);
-
-    // women rep results
-    const [womenRepResults, setWomenRepResults] = useState<
-        IPollingCenterCandidateResults[] | null
-    >(null);
-    const [totalWomenRepVotes, setTotalWomenRepVotes] = useState<number>(0);
-    const [womenRepResultsProcessed, setWomenRepResultsProcessed] = useState<
-        IPollingCenterResultsProcessed[] | null
-    >(null);
-
-    // mp results
-    const [mpResults, setMpResults] = useState<IPollingCenterCandidateResults[] | null>(
-        null,
-    );
-    const [totalMpVotes, setTotalMpVotes] = useState<number>(0);
-    const [mpResultsProcessed, setMpResultsProcessed] = useState<
-        IPollingCenterResultsProcessed[] | null
-    >(null);
-
-    // mca results
-    const [mcaResults, setMcaResults] = useState<
-        IPollingCenterCandidateResults[] | null
-    >(null);
-    const [totalMcaVotes, setTotalMcaVotes] = useState<number>(0);
-    const [mcaResultsProcessed, setMcaResultsProcessed] = useState<
-        IPollingCenterResultsProcessed[] | null
-    >(null);
 
     const {
         djangoUserPollingCenterCode,
         djangoUserPollingCenterName,
         djangoUserWardNumber,
-        djangoUserConstName,
-        djangoUserCountyName,
-        djangoUserWardName,
     } = useUser();
 
-    useEffect(() => {
-        // console.log("useEffect to call data");
+    const hasPollingCenter =
+        djangoUserWardNumber !== null && djangoUserPollingCenterCode !== null;
 
-        if (presResults === null && activeTab === "president") {
-            fetch(
-                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/presidential/`,
+    // One query for whichever tab is open. Switching tabs changes the key, so a
+    // race is fetched the first time it is opened and served from cache
+    // afterwards — the six near-identical branches this replaced each guarded
+    // themselves with a `=== null` check, which never held because the value
+    // they tested was never assigned, so every revisit refetched.
+    const resultsQuery = useQuery({
+        queryKey: resultKeys.pollingCenter(
+            djangoUserWardNumber,
+            djangoUserPollingCenterCode,
+            activeTab,
+        ),
+
+        queryFn: async ({signal}): Promise<PollingCenterResults> => {
+            // `enabled` below already holds this, but the check is what narrows
+            // both values away from `null` for the URL builder.
+            if (djangoUserWardNumber === null || djangoUserPollingCenterCode === null) {
+                throw new Error("No polling center is linked to this account");
+            }
+
+            const response = await fetch(
+                pollingCenterResultsUrl(
+                    djangoUserWardNumber,
+                    djangoUserPollingCenterCode,
+                    activeTab,
+                ),
                 {
                     method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        Accept: "application/json",
+                    },
+                    signal,
                 },
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "data");
+            );
 
-                    if (data.length > 0) {
-                        setPresResults(data["data"]);
-                        setStreamsNumber(data["totalStreams"]);
-                    }
+            const body: PollingCenterResultsResponse | null = await response
+                .json()
+                .catch(() => null);
 
-                    let y = aggregateCandidateResults(data["data"], "president");
-                    // console.log(y, 'y');
+            // A missing ward or centre comes back as a 200 carrying `error`, so
+            // the status alone does not tell us whether there is data to read.
+            if (!response.ok || body?.error || !body?.data) {
+                throw Object.assign(
+                    new Error(body?.error ?? "Could not load results"),
+                    {
+                        status: response.status,
+                        payload: body,
+                    },
+                );
+            }
 
-                    setTotalPresVotes(y.totalVotes);
-                    setStreamsNumber(y.totalStreams);
+            // Aggregating here rather than in the component keeps one processed
+            // object in the cache, with a reference that is stable between
+            // renders.
+            return {
+                ...aggregateCandidateResults(body.data, activeTab),
+                centerStreams: body.streams,
+            };
+        },
 
-                    setPresResultsProcessed(y.candidates);
-                });
-        }
+        enabled: hasPollingCenter,
 
-        if (activeTab === "governor" && governorResults === null) {
-            fetch(
-                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/governor/`,
-                {
-                    method: "GET",
-                },
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "gov data");
+        ...querySettings.results,
+    });
 
-                    if (data.length > 0) {
-                        setGovernorResults(data["data"]);
-                        // setStreamsNumber(data['totalStreams']);
-                    }
-
-                    let y = aggregateCandidateResults(data["data"], "governor");
-                    // console.log(y, "y governor");
-
-                    setTotalGovernorVotes(y.totalVotes);
-                    // setStreamsNumber(y.totalStreams);
-
-                    setGovResultsProcessed(y.candidates);
-                });
-        }
-
-        if (activeTab === "senator" && senatorResults === null) {
-            fetch(
-                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/senator/`,
-                {
-                    method: "GET",
-                },
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "senator data");
-
-                    if (data.length > 0) {
-                        setSenatorResults(data["data"]);
-                        // setStreamsNumber(data['totalStreams']);
-                    }
-
-                    let y = aggregateCandidateResults(data["data"], "senator");
-                    // console.log(y, "y senator");
-
-                    setTotalSenatorVotes(y.totalVotes);
-                    // setStreamsNumber(y.totalStreams);
-
-                    setSenatorResultsProcessed(y.candidates);
-                });
-        }
-
-        if (activeTab === "women_rep" && womenRepResults === null) {
-            fetch(
-                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/women-rep/`,
-                {
-                    method: "GET",
-                },
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "women rep data");
-
-                    if (data.length > 0) {
-                        setWomenRepResults(data["data"]);
-                        // setStreamsNumber(data['totalStreams']);
-                    }
-
-                    let y = aggregateCandidateResults(data["data"], "women_rep");
-                    // console.log(y, "y women rep");
-
-                    setTotalWomenRepVotes(y.totalVotes);
-                    // setStreamsNumber(y.totalStreams);
-
-                    setWomenRepResultsProcessed(y.candidates);
-                });
-        }
-
-        if (activeTab === "mp" && mpResults === null) {
-            fetch(
-                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/mp/`,
-                {
-                    method: "GET",
-                },
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "mp data");
-
-                    if (data.length > 0) {
-                        setMpResults(data["data"]);
-                    }
-
-                    let y = aggregateCandidateResults(data["data"], "mp");
-                    // console.log(y, "y mp");
-
-                    setTotalMpVotes(y.totalVotes);
-
-                    setMpResultsProcessed(y.candidates);
-                });
-        }
-
-        if (activeTab === "mca" && mcaResults === null) {
-            fetch(
-                `/api/results/polling-center/${djangoUserWardNumber}/${djangoUserPollingCenterCode}/mca/`,
-                {
-                    method: "GET",
-                },
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "mca data");
-
-                    if (data.length > 0) {
-                        setMcaResults(data["data"]);
-                    }
-
-                    let y = aggregateCandidateResults(data["data"], "mca");
-                    // console.log(y, "y mca");
-
-                    setTotalMcaVotes(y.totalVotes);
-
-                    setMcaResultsProcessed(y.candidates);
-                });
-        }
-    }, [activeTab]);
+    const aggregate = resultsQuery.data;
+    const hasResults = aggregate !== undefined && aggregate.totalVotes > 0;
 
     return (
         <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
@@ -281,89 +158,36 @@ function PollingCenterResults() {
                         <h3 className="mb-3 font-semibold">Candidates</h3>
 
                         <div className="space-y-3">
-                            {activeTab === "president" &&
-                            totalPresVotes > 0 &&
-                            presResultsProcessed !== null ? (
-                                presResultsProcessed.map((candidate) => (
+                            {!hasPollingCenter ? (
+                                <p className="text-gray-500">
+                                    No polling center is linked to this account yet.
+                                </p>
+                            ) : resultsQuery.isPending ? (
+                                <p className="text-gray-500">Loading results…</p>
+                            ) : resultsQuery.isError ? (
+                                <div className="space-y-2">
+                                    <p className="text-red-600">
+                                        {resultsQuery.error.message}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className="px-3 py-1 text-sm border rounded"
+                                        onClick={() => resultsQuery.refetch()}
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            ) : hasResults ? (
+                                aggregate.candidates.map((candidate) => (
                                     <PollingCandidateResults
                                         key={candidate.fullName}
                                         candidate={candidate}
-                                        streamsNumber={streamsNumber}
+                                        streamsNumber={aggregate.centerStreams}
                                     />
                                 ))
-                            ) : activeTab === "president" ? (
+                            ) : (
                                 <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "governor" &&
-                            totalGovernorVotes > 0 &&
-                            govResultsProcessed !== null ? (
-                                govResultsProcessed.map((candidate, index) => (
-                                    <PollingCandidateResults
-                                        key={index}
-                                        candidate={candidate}
-                                        streamsNumber={streamsNumber}
-                                    />
-                                ))
-                            ) : activeTab === "governor" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "senator" &&
-                            totalSenatorVotes > 0 &&
-                            senatorResultsProcessed !== null ? (
-                                senatorResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={streamsNumber}
-                                    />
-                                ))
-                            ) : activeTab === "senator" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "women_rep" &&
-                            totalWomenRepVotes > 0 &&
-                            womenRepResultsProcessed !== null ? (
-                                womenRepResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={streamsNumber}
-                                    />
-                                ))
-                            ) : activeTab === "women_rep" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "mp" &&
-                            totalMpVotes > 0 &&
-                            mpResultsProcessed !== null ? (
-                                mpResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={streamsNumber}
-                                    />
-                                ))
-                            ) : activeTab === "mp" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "mca" &&
-                            totalMcaVotes > 0 &&
-                            mcaResultsProcessed !== null ? (
-                                mcaResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={streamsNumber}
-                                    />
-                                ))
-                            ) : activeTab === "mca" ? (
-                                <NoResultsComponent />
-                            ) : null}
+                            )}
                         </div>
                     </div>
 
@@ -373,20 +197,9 @@ function PollingCenterResults() {
                             Vote Distribution
                         </h3>
                         <div className="h-64">
-                            {presResultsProcessed !== null ||
-                            governorResults !== null ||
-                            senatorResults !== null ||
-                            womenRepResults !== null ||
-                            mpResultsProcessed !== null ||
-                            mcaResultsProcessed !== null ? (
+                            {hasResults ? (
                                 <PollingStationCandidatePieChart
-                                    activeTab={activeTab}
-                                    presResultsProcessed={presResultsProcessed}
-                                    govResultsProcessed={govResultsProcessed}
-                                    senatorResultsProcessed={senatorResultsProcessed}
-                                    womenRepResultsProcessed={womenRepResultsProcessed}
-                                    mpResultsProcessed={mpResultsProcessed}
-                                    mcaResultsProcessed={mcaResultsProcessed}
+                                    data={aggregate.candidates}
                                 />
                             ) : (
                                 <p className="text-center text-gray-500">

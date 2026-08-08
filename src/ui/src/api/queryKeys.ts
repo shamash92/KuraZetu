@@ -42,4 +42,23 @@ export const resultKeys = {
     county(countyNumber: number | null, level: string) {
         return [...resultKeys.all, "county", countyNumber, level] as const;
     },
+
+    /**
+     * One race in one polling centre. Centre codes are only unique within a
+     * ward, so the ward belongs in the key too — the URL carries both for the
+     * same reason.
+     */
+    pollingCenter(
+        wardNumber: number | null,
+        pollingCenterCode: string | null,
+        level: string,
+    ) {
+        return [
+            ...resultKeys.all,
+            "polling-center",
+            wardNumber,
+            pollingCenterCode,
+            level,
+        ] as const;
+    },
 };
