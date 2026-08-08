@@ -22,10 +22,11 @@ RUN groupadd --gid 1000 app \
 
 COPY --chown=app:app . .
 
+RUN install -d --owner=app --group=app /app/staticfiles/css /app/media
+
 USER app
 
-RUN mkdir -p /app/staticfiles/css /app/media \
-    && SECRET_KEY=docker-build-only \
+RUN SECRET_KEY=docker-build-only \
     DEBUG=True \
     ALLOWED_HOSTS=localhost \
     DATABASE_NAME=unused \
