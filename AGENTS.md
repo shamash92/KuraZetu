@@ -24,13 +24,17 @@ pre-commit install --hook-type pre-commit --hook-type commit-msg
 
 Hooks live in `.git/hooks/`, which is never cloned, so every new working copy needs this once.
 
-## Project instructions
+## Scoped instructions
 
-We have a few agent instructions living in various CLAUDE.md files in the project. These are for specific agents and are not shared with all agents. Please read and follow them as appropriate.
+Before changing a project area, read its scoped instructions. These files bind
+all agents despite their `CLAUDE.md` names. For changes spanning multiple
+areas, read every applicable file.
 
-- For any android/ios related wotk, use the NATIVE/CLAUDE.md file for instructions.
-- For any frontend/web-ui related work, use the src/ui/CLAUDE.md file for instructions.
-- For any backend related work, use the src/CLAUDE.md file for instructions.
+- Expo and React Native under `NATIVE/`: [NATIVE/CLAUDE.md](./NATIVE/CLAUDE.md)
+- React web application under `src/ui/`:
+  [src/ui/CLAUDE.md](./src/ui/CLAUDE.md)
+- Django and Python under `src/`, excluding `src/ui/`:
+  [src/CLAUDE.md](./src/CLAUDE.md)
 
 ## Git
 
