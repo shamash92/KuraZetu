@@ -18,3 +18,7 @@ export function pollingCenterPinsUrl(wardNumber: number): string {
 }
 
 export const SIGNUP_URL = "/api/accounts/signup/";
+
+export function countyResultsUrl(level: string): string {
+    return `/api/results/county/${level}/`;
+}

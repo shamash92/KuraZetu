@@ -6,12 +6,16 @@ import {
     TLevelDjango,
 } from "./types";
 import {aggregateCandidateResults, formatNumber} from "./utils";
-import {useEffect, useState} from "react";
+import {useState} from "react";
+import {useQuery} from "@tanstack/react-query";
 
 import NoResultsComponent from "./components/noResults";
 import PollingCandidateResults from "./components/pollingCandidateResults";
 import PollingStationCandidatePieChart from "./components/pollingStationCandidatePieChart";
 import {useUser} from "../../App";
+import {countyResultsUrl} from "../../api/apiUrls";
+import {resultKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
 const levelsArray: TLevelDjango[] = [
     "president",
@@ -22,48 +26,12 @@ const levelsArray: TLevelDjango[] = [
     "mca",
 ];
 
-export function getAPIUrl(level: TLevelDjango) {
-    return `/api/results/county/${level}/`;
+interface CountyResultsResponse {
+    results: ICountyPresResults[];
 }
 
 function CountyResults() {
     const [activeTab, setActiveTab] = useState<TLevelDjango>("president");
-
-    const [presResultsProcessed, setPresResultsProcessed] = useState<
-        ICountyPresResults[] | null
-    >(null);
-
-    const [streamsNumber, setStreamsNumber] = useState<number>(0);
-
-    // governor results
-
-    const [govResultsProcessed, setGovResultsProcessed] = useState<
-        ICountyPresResults[] | null
-    >(null);
-
-    // senator results
-
-    const [senatorResultsProcessed, setSenatorResultsProcessed] = useState<
-        ICountyPresResults[] | null
-    >(null);
-
-    // women rep results
-
-    const [womenRepResultsProcessed, setWomenRepResultsProcessed] = useState<
-        ICountyPresResults[] | null
-    >(null);
-
-    // mp results
-
-    const [mpResultsProcessed, setMpResultsProcessed] = useState<
-        ICountyPresResults[] | null
-    >(null);
-
-    // mca results
-
-    const [mcaResultsProcessed, setMcaResultsProcessed] = useState<
-        ICountyPresResults[] | null
-    >(null);
 
     const {
         djangoUserPollingCenterCode,
@@ -71,105 +39,48 @@ function CountyResults() {
         djangoUserWardNumber,
         djangoUserConstName,
         djangoUserCountyName,
+        djangoUserCountyNumber,
         djangoUserWardName,
     } = useUser();
 
-    useEffect(() => {
-        console.log("useEffect to call county data");
+    // One query for whichever tab is open. Switching tabs changes the key, so
+    // a race is fetched the first time it is opened and served from cache
+    // afterwards — the six near-identical branches this replaced each guarded
+    // themselves with a `=== null` check to get the same effect.
+    const resultsQuery = useQuery({
+        queryKey: resultKeys.county(djangoUserCountyNumber, activeTab),
 
-        let apiUrl = getAPIUrl("president");
-
-        if (activeTab === "president" && presResultsProcessed === null) {
-            fetch(apiUrl, {
+        queryFn: async ({signal}): Promise<CountyResultsResponse> => {
+            const response = await fetch(countyResultsUrl(activeTab), {
                 method: "GET",
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "data");
+                credentials: "same-origin",
+                headers: {
+                    Accept: "application/json",
+                },
+                signal,
+            });
 
-                    if (data["results"].length > 0) {
-                        setPresResultsProcessed(data["results"]);
-                    }
-                });
-        }
+            const data = await response.json().catch(() => null);
 
-        if (activeTab === "governor" && govResultsProcessed === null) {
-            let apiUrl = getAPIUrl("governor");
+            if (!response.ok) {
+                throw Object.assign(
+                    new Error(data?.error ?? "Could not load results"),
+                    {
+                        status: response.status,
+                        payload: data,
+                    },
+                );
+            }
 
-            fetch(apiUrl, {
-                method: "GET",
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "gov data");
+            return data;
+        },
 
-                    if (data["results"].length > 0) {
-                        setGovResultsProcessed(data["results"]);
-                    }
-                });
-        }
+        ...querySettings.results,
+    });
 
-        if (activeTab === "senator" && senatorResultsProcessed === null) {
-            let apiUrl = getAPIUrl("senator");
-
-            fetch(apiUrl, {
-                method: "GET",
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "senator data");
-
-                    if (data["results"].length > 0) {
-                        setSenatorResultsProcessed(data["results"]);
-                    }
-                });
-        }
-
-        if (activeTab === "women_rep" && womenRepResultsProcessed === null) {
-            let apiUrl = getAPIUrl("women_rep");
-
-            fetch(apiUrl, {
-                method: "GET",
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "women rep data");
-                    if (data["results"].length > 0) {
-                        setWomenRepResultsProcessed(data["results"]);
-                    }
-                });
-        }
-
-        if (activeTab === "mp" && mpResultsProcessed === null) {
-            let apiUrl = getAPIUrl("mp");
-
-            fetch(apiUrl, {
-                method: "GET",
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "mp  data");
-                    if (data["results"].length > 0) {
-                        setMpResultsProcessed(data["results"]);
-                    }
-                });
-        }
-
-        if (activeTab === "mca" && mcaResultsProcessed === null) {
-            let apiUrl = getAPIUrl("mca");
-
-            fetch(apiUrl, {
-                method: "GET",
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    // console.log(data, "mp  data");
-                    if (data["results"].length > 0) {
-                        setMcaResultsProcessed(data["results"]);
-                    }
-                });
-        }
-    }, [activeTab]);
+    // Read straight off `data` so the reference stays stable between renders.
+    const results = resultsQuery.data?.results;
+    const hasResults = results !== undefined && results.length > 0;
 
     return (
         <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
@@ -206,9 +117,23 @@ function CountyResults() {
                         <h3 className="mb-3 font-semibold">Candidates</h3>
 
                         <div className="space-y-3">
-                            {activeTab === "president" &&
-                            presResultsProcessed !== null ? (
-                                presResultsProcessed.map((candidate) => (
+                            {resultsQuery.isPending ? (
+                                <p className="text-gray-500">Loading results…</p>
+                            ) : resultsQuery.isError ? (
+                                <div className="space-y-2">
+                                    <p className="text-red-600">
+                                        {resultsQuery.error.message}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className="px-3 py-1 text-sm border rounded"
+                                        onClick={() => resultsQuery.refetch()}
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            ) : hasResults ? (
+                                results.map((candidate) => (
                                     <PollingCandidateResults
                                         key={candidate.fullName}
                                         candidate={candidate}
@@ -217,82 +142,9 @@ function CountyResults() {
                                         }
                                     />
                                 ))
-                            ) : activeTab === "president" ? (
+                            ) : (
                                 <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "governor" &&
-                            govResultsProcessed !== null ? (
-                                govResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={
-                                            candidate.county_polling_stations_count
-                                        }
-                                    />
-                                ))
-                            ) : activeTab === "governor" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "senator" &&
-                            senatorResultsProcessed !== null ? (
-                                senatorResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={
-                                            candidate.county_polling_stations_count
-                                        }
-                                    />
-                                ))
-                            ) : activeTab === "senator" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "women_rep" &&
-                            womenRepResultsProcessed !== null ? (
-                                womenRepResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={
-                                            candidate.county_polling_stations_count
-                                        }
-                                    />
-                                ))
-                            ) : activeTab === "women_rep" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "mp" && mpResultsProcessed !== null ? (
-                                mpResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={
-                                            candidate.county_polling_stations_count
-                                        }
-                                    />
-                                ))
-                            ) : activeTab === "mp" ? (
-                                <NoResultsComponent />
-                            ) : null}
-
-                            {activeTab === "mca" && mcaResultsProcessed !== null ? (
-                                mcaResultsProcessed.map((candidate) => (
-                                    <PollingCandidateResults
-                                        key={candidate.fullName}
-                                        candidate={candidate}
-                                        streamsNumber={
-                                            candidate.county_polling_stations_count
-                                        }
-                                    />
-                                ))
-                            ) : activeTab === "mca" ? (
-                                <NoResultsComponent />
-                            ) : null}
+                            )}
                         </div>
                     </div>
 
@@ -302,20 +154,10 @@ function CountyResults() {
                             Vote Distribution
                         </h3>
                         <div className="h-64">
-                            {presResultsProcessed !== null ||
-                            govResultsProcessed !== null ||
-                            senatorResultsProcessed !== null ||
-                            womenRepResultsProcessed !== null ||
-                            mpResultsProcessed !== null ||
-                            mcaResultsProcessed !== null ? (
+                            {hasResults ? (
                                 <PollingStationCandidatePieChart
                                     activeTab={activeTab}
-                                    presResultsProcessed={presResultsProcessed}
-                                    govResultsProcessed={govResultsProcessed}
-                                    senatorResultsProcessed={senatorResultsProcessed}
-                                    womenRepResultsProcessed={womenRepResultsProcessed}
-                                    mpResultsProcessed={mpResultsProcessed}
-                                    mcaResultsProcessed={mcaResultsProcessed}
+                                    data={results}
                                 />
                             ) : (
                                 <p className="text-center text-gray-500">

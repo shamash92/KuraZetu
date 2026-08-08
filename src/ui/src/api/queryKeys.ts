@@ -29,3 +29,17 @@ export const boundaryKeys = {
         return [...boundaryKeys.all, "polling-centers", wardNumber] as const;
     },
 };
+
+export const resultKeys = {
+    all: ["results"] as const,
+
+    /**
+     * One race in the signed-in user's county. The level is part of the key, so
+     * each tab caches separately and revisiting one is served from memory. The
+     * county is too: the API derives it from the session, so without it a
+     * second account would read the first one's totals out of the cache.
+     */
+    county(countyNumber: number | null, level: string) {
+        return [...resultKeys.all, "county", countyNumber, level] as const;
+    },
+};

@@ -15,4 +15,17 @@ export const querySettings = {
         gcTime: Infinity,
         refetchInterval: false,
     },
+
+    /**
+     * Election results. Deliberately not polled: the migration plan gates live
+     * refresh behind a measured performance run, and refetching on window focus
+     * would let every open tab stampede the origin the moment people look back
+     * at it. Until that gate passes, results refresh when the component asks.
+     */
+    results: {
+        staleTime: 60_000,
+        gcTime: 10 * 60_000,
+        refetchInterval: false,
+        refetchOnWindowFocus: false,
+    },
 } as const;

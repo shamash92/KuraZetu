@@ -24,6 +24,7 @@ import {formatNumber, getResultPartyColor} from "../utils";
 
 function PollingStationCandidatePieChart({
     activeTab,
+    data,
     presResultsProcessed,
     govResultsProcessed,
     senatorResultsProcessed,
@@ -32,16 +33,24 @@ function PollingStationCandidatePieChart({
     mcaResultsProcessed,
 }: {
     activeTab: TLevelDjango;
-    presResultsProcessed: IPollingCenterResultsProcessed[] | null;
-    govResultsProcessed: IPollingCenterResultsProcessed[] | null;
-    senatorResultsProcessed: IPollingCenterResultsProcessed[] | null;
-    womenRepResultsProcessed: IPollingCenterResultsProcessed[] | null;
-    mpResultsProcessed: IPollingCenterResultsProcessed[] | null;
-    mcaResultsProcessed: IPollingCenterResultsProcessed[] | null;
+    /**
+     * The active race's results. A caller holding one query per tab passes this
+     * and omits the six below, which exist for callers that still keep a
+     * separate state slot per race.
+     */
+    data?: IPollingCenterResultsProcessed[] | null;
+    presResultsProcessed?: IPollingCenterResultsProcessed[] | null;
+    govResultsProcessed?: IPollingCenterResultsProcessed[] | null;
+    senatorResultsProcessed?: IPollingCenterResultsProcessed[] | null;
+    womenRepResultsProcessed?: IPollingCenterResultsProcessed[] | null;
+    mpResultsProcessed?: IPollingCenterResultsProcessed[] | null;
+    mcaResultsProcessed?: IPollingCenterResultsProcessed[] | null;
 }) {
     // Determine which data to use based on the active tab
     let activeData: IPollingCenterResultsProcessed[] = [];
-    if (activeTab === "president" && presResultsProcessed) {
+    if (data) {
+        activeData = data;
+    } else if (activeTab === "president" && presResultsProcessed) {
         activeData = presResultsProcessed;
     } else if (activeTab === "governor" && govResultsProcessed) {
         activeData = govResultsProcessed;
