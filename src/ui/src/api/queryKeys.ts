@@ -11,4 +11,21 @@ export const boundaryKeys = {
     counties() {
         return [...boundaryKeys.all, "counties"] as const;
     },
+
+    constituencies(countyNumber: number) {
+        return [...boundaryKeys.all, "constituencies", countyNumber] as const;
+    },
+
+    /**
+     * Wards in a constituency. The polling-centre step reuses this exact key to
+     * read one ward's geometry, so it is served from cache rather than
+     * fetched again.
+     */
+    wards(constituencyNumber: number) {
+        return [...boundaryKeys.all, "wards", constituencyNumber] as const;
+    },
+
+    pollingCenters(wardNumber: number) {
+        return [...boundaryKeys.all, "polling-centers", wardNumber] as const;
+    },
 };
