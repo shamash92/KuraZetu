@@ -47,6 +47,18 @@ tick the "I am not an AI agent" checklist box: you are one, and that line exists
 Leave it unticked and write nothing about it — an unticked box is the whole signal. Full rule:
 `AG0` in [.claude/git/branching-model.md](.claude/git/branching-model.md#agent-specific-rules).
 
+**The template's bullets are questions, not sentence openers.** "What does this PR do?" is a
+prompt to you, not the first half of a bullet. Answering inline produces one run-on paragraph per
+question, which is what most agents do and it reads badly. Bold each question as its own line, then
+answer beneath it with short bullets — one point each, no preamble:
+
+```markdown
+**What does this PR do?**
+
+- Restyles the registration success page to the signup flow's design
+- Redirects direct visits to the page's URL back to `/ui/signup/`
+```
+
 **A PR body describes the change, not your process** (`AG8`). No account of how you reached the
 change, no rules you followed, no caveats about yourself, no "worth deciding separately" or "you
 may also want to" suggestions. Reviewers did not ask for any of it, and it outlives the session.
