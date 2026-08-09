@@ -217,7 +217,6 @@ extensions = [
     "sphinx_terminal",
     "sphinx_ubuntu_images",
     "sphinx_youtube_links",
-    "sphinxcontrib.cairosvgconverter",
     "sphinx_last_updated_by_git",
     "sphinx.ext.intersphinx",
     "sphinx_sitemap",

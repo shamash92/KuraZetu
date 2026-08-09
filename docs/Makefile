@@ -15,7 +15,6 @@ DOCS_VENVDIR     ?= .venv
 DOCS_VENV        ?= $(DOCS_VENVDIR)/bin/activate
 DOCS_SOURCEDIR   ?= .
 DOCS_BUILDDIR    ?= _build
-DOCS_PDFPACKAGES ?= latexmk fonts-freefont-otf texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-font-utils texlive-lang-cjk texlive-xetex plantuml xindy tex-gyre dvipng
 DOCS_VOCAB       ?= $(DEV_DIR)/styles/config/vocabularies/Canonical
 VALE_DIR         ?= $(DOCS_VENVDIR)/lib/python*/site-packages/vale
 VALE_CONFIG      ?= $(DEV_DIR)/vale.ini
@@ -44,9 +43,9 @@ help:
 	@echo "-------------------------------------------------------------"
 	@echo
 
-.PHONY: help full-help html epub pdf linkcheck spelling spellcheck woke \
+.PHONY: help full-help html epub linkcheck spelling spellcheck woke \
         vale pa11y run serve install pa11y-install   \
-        vale-install pdf-prep pdf-prep-force clean clean-doc \
+        vale-install clean clean-doc \
         update lint-md
 
 full-help: $(DOCS_VENVDIR)
@@ -160,28 +159,6 @@ spelling: vale-install
 
 spellcheck: spelling
 	@echo "Please note that the \`make spellcheck\` command is being deprecated in favor of \`make spelling\`"
-
-pdf-prep: install
-	@for packageName in $(DOCS_PDFPACKAGES); do (dpkg-query -W -f='$${Status}' $$packageName 2>/dev/null | \
-        grep -c "ok installed" >/dev/null && echo "Package $$packageName is installed") && continue || \
-        (echo; echo "PDF generation requires the installation of the following packages: $(DOCS_PDFPACKAGES)" && \
-        echo "" && echo "Run 'sudo make pdf-prep-force' to install these packages" && echo "" && echo \
-        "Please be aware these packages will be installed to your system") && exit 1 ; done
-
-pdf-prep-force:
-	apt-get update
-	apt-get upgrade -y
-	apt-get install --no-install-recommends -y $(DOCS_PDFPACKAGES) \
-
-pdf: pdf-prep
-	@. $(DOCS_VENV); $(SPHINX_BUILD) -M latexpdf "$(DOCS_SOURCEDIR)" "$(DOCS_BUILDDIR)" $(SPHINX_OPTS)
-	@rm ./$(DOCS_BUILDDIR)/latex/front-page-light.pdf || true
-	@rm ./$(DOCS_BUILDDIR)/latex/normal-page-footer.pdf || true
-	@find ./$(DOCS_BUILDDIR)/latex -name "*.pdf" -exec mv -t ./$(DOCS_BUILDDIR) {} +
-	@rm -r $(DOCS_BUILDDIR)/latex
-	@echo
-	@echo "Output can be found in ./$(DOCS_BUILDDIR)"
-	@echo
 
 update: install
 	@. $(DOCS_VENV); _dev/update_sp.py
