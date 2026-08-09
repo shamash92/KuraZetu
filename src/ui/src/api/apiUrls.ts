@@ -34,6 +34,19 @@ export function randomUnverifiedCenterUrl(level: string | null): string {
     return `/api/stations/polling-centers/unverified/random/${level}/`;
 }
 
+/**
+ * A volunteer's verdict on a centre's pin: either an upvote of the pin as
+ * drawn, or a suggested position for it.
+ */
+export const POLLING_CENTER_VERIFY_URL = "/api/stations/polling-centers/verify/";
+
+/**
+ * The caller's own suggestion for a centre, read back after it is saved so the
+ * map can show where it landed.
+ */
+export const POLLING_CENTER_PARTIALLY_VERIFIED_URL =
+    "/api/stations/polling-centers/partially-verified/";
+
 export function countyResultsUrl(level: string): string {
     return `/api/results/county/${level}/`;
 }

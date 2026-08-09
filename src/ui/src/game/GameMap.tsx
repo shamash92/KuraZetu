@@ -10,14 +10,18 @@ import {
     X,
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {IConsensus, IPollingCenterFeature, TLevel} from "./types";
 
 import cookie from "react-cookies";
 import {toast} from "sonner";
 import MapComponent from "./Map";
 import {useAuth} from "../App";
-import {randomUnverifiedCenterUrl} from "../api/apiUrls";
+import {
+    POLLING_CENTER_PARTIALLY_VERIFIED_URL,
+    POLLING_CENTER_VERIFY_URL,
+    randomUnverifiedCenterUrl,
+} from "../api/apiUrls";
 import {gameKeys} from "../api/queryKeys";
 import {querySettings} from "../api/querySettings";
 import "./game-active.css";
@@ -43,6 +47,25 @@ type GameRoundResponse = {
     verified_stations_count?: number;
 };
 
+/**
+ * A verdict on the drawn centre's pin. An upvote agrees with the pin as it
+ * stands, so it carries the centre's own coordinates back; a suggestion
+ * carries the volunteer's.
+ */
+type VerifyVariables = {
+    latitude: number;
+    longitude: number;
+    pollingCenterDBId: number;
+    isUpvote: boolean;
+};
+
+type VerifyResponse = {
+    error?: string;
+    message?: string;
+    consensus?: IConsensus;
+    location_upvotes?: number;
+};
+
 export default function GameMap({level}: GameMapProps) {
     const [consensus, setConsensus] = useState<IConsensus | null>(null);
 
@@ -52,11 +75,11 @@ export default function GameMap({level}: GameMapProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [draftPosition, setDraftPosition] = useState<DraftPosition | null>(null);
     const [draftInsideWard, setDraftInsideWard] = useState(true);
-    const [isSavingPin, setIsSavingPin] = useState(false);
 
     const csrfToken = cookie.load("csrftoken");
 
     const isAuthenticated = useAuth();
+    const queryClient = useQueryClient();
 
     const roundQuery = useQuery({
         queryKey: gameKeys.randomCenter(level),
@@ -144,120 +167,126 @@ export default function GameMap({level}: GameMapProps) {
         setDraftInsideWard(true);
     }, [currentLocation]);
 
-    const handlePinAPIPost = async (
-        latitude: number,
-        longitude: number,
-        pollingCenterDBId: number,
-        isUpvote: boolean,
-    ) => {
-        const response = await fetch(`/api/stations/polling-centers/verify/`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken,
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                latitude: latitude,
-                longitude: longitude,
-                pollingCenterDBId: pollingCenterDBId,
-                isUpvote: isUpvote,
-            }),
-        });
+    // The volunteer's own suggestion, read back after it is saved so the map
+    // can show where it landed. A POST that only reads; it is a mutation here
+    // because it runs once as the tail of a write, not because of its verb.
+    const suggestionMutation = useMutation({
+        mutationFn: async (pollingCenterDBId: number) => {
+            const response = await fetch(POLLING_CENTER_PARTIALLY_VERIFIED_URL, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                credentials: "include",
+                body: JSON.stringify({pollingCenterDBId}),
+            });
 
-        // The ward guard returns 400 with an {error} body — surface it instead
-        // of throwing a generic network error.
-        const data = await response.json();
-        return data;
-    };
+            const data = await response.json().catch(() => null);
 
-    const handleYes = async () => {
+            if (!response.ok || data?.error) {
+                throw Object.assign(
+                    new Error(data?.error ?? "Could not load your suggested pin"),
+                    {
+                        status: response.status,
+                        payload: data,
+                    },
+                );
+            }
+
+            return data as {data: IPollingCenterFeature};
+        },
+
+        onSuccess(data) {
+            setSuggestedLocation(data.data);
+        },
+
+        onError(error: Error) {
+            toast.error(error.message);
+        },
+    });
+
+    const verifyMutation = useMutation({
+        mutationFn: async (variables: VerifyVariables): Promise<VerifyResponse> => {
+            const response = await fetch(POLLING_CENTER_VERIFY_URL, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                credentials: "include",
+                body: JSON.stringify(variables),
+            });
+
+            const data = await response.json().catch(() => null);
+
+            // This endpoint refuses in two shapes: the ward guard is a 400,
+            // and everything else — an unknown centre, a second verification
+            // of the same one — is `{error}` inside a 200. Neither saved
+            // anything, so both throw.
+            if (!response.ok || data?.error) {
+                throw Object.assign(
+                    new Error(data?.error ?? "Your verification could not be saved"),
+                    {
+                        status: response.status,
+                        payload: data,
+                    },
+                );
+            }
+
+            return data;
+        },
+
+        onSuccess(data, variables) {
+            if (variables.isUpvote) {
+                toast.success("Asante — your confirmation was recorded.");
+                // This centre now carries the volunteer's vote, so their round
+                // is spent. Invalidating the key draws the next one.
+                void queryClient.invalidateQueries({
+                    queryKey: gameKeys.randomCenter(level),
+                });
+                return;
+            }
+
+            if (data.consensus) {
+                setConsensus(data.consensus);
+            }
+            toast.success(
+                data.consensus?.verified
+                    ? "Asante — enough neighbours agreed. Center verified."
+                    : "Asante — your pin was recorded.",
+            );
+
+            setIsEditing(false);
+            setDraftPosition(null);
+
+            // Deliberately no invalidation: a suggestion leaves the volunteer
+            // on this centre to see their pin, and they draw the next one
+            // themselves.
+            suggestionMutation.mutate(variables.pollingCenterDBId);
+        },
+
+        onError(error: Error) {
+            toast.error(error.message);
+        },
+    });
+
+    const isSavingPin = verifyMutation.isPending || suggestionMutation.isPending;
+
+    const handleYes = () => {
         if (!currentLocation) {
             toast.error("No current location to verify");
             return;
         }
 
-        let x = await handlePinAPIPost(
-            currentLocation?.properties.pin_location.coordinates[1],
-            currentLocation?.properties.pin_location.coordinates[0],
-            currentLocation?.id,
-            true,
-        );
-
-        if (x.error) {
-            toast.error(x.error);
-            return;
-        }
-        if (x.message === "Polling Center location upvoted successfully") {
-            toast.success("Asante — your confirmation was recorded.");
-            toggleReload();
-        }
-    };
-
-    const handleUpdatedPinAndBoundary = async (pollingCenterDBId: number) => {
-        const csrfToken = cookie.load("csrftoken");
-
-        try {
-            const response = await fetch(
-                `/api/stations/polling-centers/partially-verified/`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": csrfToken,
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        pollingCenterDBId: pollingCenterDBId,
-                    }),
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-
-            const data = await response.json();
-            setSuggestedLocation(data["data"]);
-            return data;
-        } catch (error) {
-            console.error("Error updating pin and boundary:", error);
-            throw error;
-        }
-    };
-
-    const handlePinUpdate = async (lat: number, lng: number) => {
-        setIsSavingPin(true);
-        try {
-            const data = await handlePinAPIPost(
-                lat,
-                lng,
-                currentLocation?.id || 0,
-                false,
-            );
-            if (data.error) {
-                toast.error(data.error);
-                return;
-            }
-
-            if (data.consensus) {
-                setConsensus(data.consensus as IConsensus);
-            }
-            if (data.consensus?.verified) {
-                toast.success("Asante — enough neighbours agreed. Center verified.");
-            } else {
-                toast.success("Asante — your pin was recorded.");
-            }
-
-            setIsEditing(false);
-            setDraftPosition(null);
-
-            if (currentLocation) {
-                await handleUpdatedPinAndBoundary(currentLocation.id);
-            }
-        } finally {
-            setIsSavingPin(false);
-        }
+        verifyMutation.mutate({
+            latitude: currentLocation.properties.pin_location.coordinates[1],
+            longitude: currentLocation.properties.pin_location.coordinates[0],
+            pollingCenterDBId: currentLocation.id,
+            isUpvote: true,
+        });
     };
 
     const handleSkip = () => {
@@ -285,7 +314,7 @@ export default function GameMap({level}: GameMapProps) {
         setDraftInsideWard(isInsideWard);
     };
 
-    const saveDraftPosition = async () => {
+    const saveDraftPosition = () => {
         if (!draftPosition) {
             toast.error("Pan the map and choose Put pin here before saving.");
             return;
@@ -296,7 +325,14 @@ export default function GameMap({level}: GameMapProps) {
             );
             return;
         }
-        await handlePinUpdate(draftPosition.lat, draftPosition.lng);
+        if (!currentLocation) return;
+
+        verifyMutation.mutate({
+            latitude: draftPosition.lat,
+            longitude: draftPosition.lng,
+            pollingCenterDBId: currentLocation.id,
+            isUpvote: false,
+        });
     };
 
     useEffect(() => {
@@ -314,9 +350,10 @@ export default function GameMap({level}: GameMapProps) {
                 event.key.toLowerCase() === "y" &&
                 currentLocation &&
                 !isUnlocated &&
-                !isEditing
+                !isEditing &&
+                !isSavingPin
             ) {
-                void handleYes();
+                handleYes();
             }
             if (
                 event.key.toLowerCase() === "m" &&
@@ -330,7 +367,7 @@ export default function GameMap({level}: GameMapProps) {
             }
             if (event.key.toLowerCase() === "s" && currentLocation) {
                 if (isEditing) {
-                    void saveDraftPosition();
+                    if (!isSavingPin) saveDraftPosition();
                 } else if (!isUnlocated) {
                     handleSkip();
                 }
@@ -344,6 +381,7 @@ export default function GameMap({level}: GameMapProps) {
         draftInsideWard,
         draftPosition,
         isEditing,
+        isSavingPin,
         isUnlocated,
     ]);
 
@@ -631,7 +669,7 @@ export default function GameMap({level}: GameMapProps) {
                                         <button
                                             className="pv-inline-save"
                                             type="button"
-                                            onClick={() => void saveDraftPosition()}
+                                            onClick={saveDraftPosition}
                                             disabled={
                                                 !draftPosition ||
                                                 !draftInsideWard ||
@@ -654,6 +692,7 @@ export default function GameMap({level}: GameMapProps) {
                                         className="pv-decision-button is-yes"
                                         type="button"
                                         onClick={handleYes}
+                                        disabled={isSavingPin}
                                     >
                                         <span className="pv-decision-icon">
                                             <ThumbsUp size={16} />
