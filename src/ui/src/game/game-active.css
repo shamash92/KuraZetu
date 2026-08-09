@@ -734,9 +734,14 @@
   transition: transform 140ms ease, filter 140ms ease;
 }
 
-.pv-decision-button:hover {
+.pv-decision-button:hover:not(:disabled) {
   filter: brightness(0.98);
   transform: translateY(-1px);
+}
+
+.pv-decision-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .pv-decision-button.is-yes {

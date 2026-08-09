@@ -28,6 +28,7 @@ jest.mock("sonner", () => ({
 }));
 
 const RANDOM_URL = "/api/stations/polling-centers/unverified/random/ward/";
+const VERIFY_URL = "/api/stations/polling-centers/verify/";
 
 function pollingCenter(id: number, name: string): IPollingCenterFeature {
     return {
@@ -60,11 +61,23 @@ function round(center: IPollingCenterFeature, extra: Record<string, unknown> = {
 
 /**
  * Installs a `fetch` that answers the draw endpoint with each queued body in
- * turn, and reports how many draws were requested.
+ * turn, and every write with the upvote endpoint's success body. Reports how
+ * many draws and verifications were requested.
  */
 function mockDraws(...bodies: Array<unknown>) {
     let call = 0;
-    const fetchMock = jest.fn((_input: RequestInfo | URL) => {
+    const fetchMock = jest.fn((input: RequestInfo | URL) => {
+        if (String(input) !== RANDOM_URL) {
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () =>
+                    Promise.resolve({
+                        message: "Polling Center location upvoted successfully",
+                    }),
+            });
+        }
+
         const body = bodies[Math.min(call, bodies.length - 1)];
         call += 1;
         return Promise.resolve({ok: true, json: () => Promise.resolve(body)});
@@ -72,10 +85,12 @@ function mockDraws(...bodies: Array<unknown>) {
 
     global.fetch = fetchMock as unknown as typeof fetch;
 
+    const countCalls = (url: string) =>
+        fetchMock.mock.calls.filter(([input]) => String(input) === url).length;
+
     return {
-        countDraws: () =>
-            fetchMock.mock.calls.filter(([input]) => String(input) === RANDOM_URL)
-                .length,
+        countDraws: () => countCalls(RANDOM_URL),
+        countVerifications: () => countCalls(VERIFY_URL),
     };
 }
 
@@ -114,6 +129,69 @@ test("skipping draws a different polling center", async () => {
     expect(await screen.findByText("Mnarani Academy")).toBeInTheDocument();
     expect(screen.queryByText("Kaloleni Primary School")).not.toBeInTheDocument();
     expect(countDraws()).toBe(2);
+});
+
+test("confirming the pin records the verification and draws the next center", async () => {
+    const user = userEvent.setup();
+    const {countDraws, countVerifications} = mockDraws(
+        round(pollingCenter(1, "Kaloleni Primary School")),
+        round(pollingCenter(2, "Mnarani Academy")),
+    );
+
+    renderGame();
+
+    await screen.findByText("Kaloleni Primary School");
+
+    await user.click(screen.getByRole("button", {name: /yes — this pin is right/i}));
+
+    expect(await screen.findByText("Mnarani Academy")).toBeInTheDocument();
+    expect(countVerifications()).toBe(1);
+    expect(countDraws()).toBe(2);
+});
+
+test("a verification refused inside a 200 is shown and keeps the same center", async () => {
+    mockToastError.mockClear();
+    const user = userEvent.setup();
+
+    // The verify endpoint reports most refusals as `{error}` with a 200, so a
+    // successful status is not a saved verification.
+    const fetchMock = jest.fn((input: RequestInfo | URL) => {
+        if (String(input) === RANDOM_URL) {
+            return Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve(
+                        round(pollingCenter(1, "Kaloleni Primary School")),
+                    ),
+            });
+        }
+
+        return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () =>
+                Promise.resolve({
+                    error: "You have already verified this polling center",
+                }),
+        });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    renderGame();
+
+    await screen.findByText("Kaloleni Primary School");
+
+    await user.click(screen.getByRole("button", {name: /yes — this pin is right/i}));
+
+    await waitFor(() =>
+        expect(mockToastError).toHaveBeenCalledWith(
+            "You have already verified this polling center",
+        ),
+    );
+    expect(screen.getByText("Kaloleni Primary School")).toBeInTheDocument();
+    expect(
+        fetchMock.mock.calls.filter(([input]) => String(input) === RANDOM_URL),
+    ).toHaveLength(1);
 });
 
 test("a center the volunteer already verified is announced once, not treated as an error", async () => {
