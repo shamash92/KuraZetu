@@ -35,6 +35,8 @@ schema below are the readable sources.
   browsable.
 - [ReDoc](https://kurazetu.com/api/schema/redoc/): an alternative rendering of
   the schema.
+- [RapiDoc](https://kurazetu.com/api/schema/rapidoc/): the interactive,
+  Kura Zetu-themed API reference.
 
 Data endpoints under `/api/` are disallowed in
 [robots.txt](https://kurazetu.com/robots.txt) to keep crawlers from overloading
