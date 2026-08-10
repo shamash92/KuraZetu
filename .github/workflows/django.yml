@@ -1,10 +1,23 @@
 name: Backend tests
 
 on:
+    # The four `paths` entries below are order-dependent: GitHub applies them
+    # in sequence and the last one to match a file decides. Keep them in this
+    # order. Reordering silently changes which files run the backend tests.
     push:
         branches: [main]
+        paths:
+            - 'src/**' # The Django project
+            - '!src/ui/**' # ...minus the web frontend's JS/TS assets
+            - 'src/ui/**.py' # ...but src/ui is a Django app too, so keep its Python
+            - '.github/workflows/django.yml'
     pull_request:
-        branches: [main]
+        branches: ['*']
+        paths:
+            - 'src/**'
+            - '!src/ui/**'
+            - 'src/ui/**.py' # Order-dependent; see the comment above
+            - '.github/workflows/django.yml'
 
 jobs:
     build:
