@@ -44,6 +44,11 @@ urlpatterns = [
         "robots.txt",
         TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
     ),
+    path(
+        "llms.txt",
+        TemplateView.as_view(template_name="llms.txt", content_type="text/plain"),
+        name="llms_txt",
+    ),
     path("api/schema/yaml/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger/",
