@@ -88,9 +88,9 @@ delete, force-push, or tag a shared branch (`AG1`, `AG2`). `main` is the trunk; 
 
 Two rules that are yours specifically, not the contributor's:
 
-- You cannot count characters. Run `git-hooks/commit-msg.py` on every draft message and fix what it
-  reports — see [Checking a message](./CONTRIBUTING.md#checking-a-message). Never assert a subject
-  fits in 50 characters without having run it.
+- You cannot count characters. Run `.github/scripts/commit-msg.py` on every draft message and fix
+  what it reports — see [Checking a message](./CONTRIBUTING.md#checking-a-message). Never assert a
+  subject fits in 50 characters without having run it.
 - Never advertise agent tooling in a commit message or PR body: no `Co-Authored-By` lines for
   agents, no "generated with" footers. Write as the human author.
 

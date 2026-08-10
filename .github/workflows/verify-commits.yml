@@ -35,7 +35,7 @@ jobs:
                     MSG=$(git log -n1 --format=%B "$SHA")
                     echo "$MSG"
 
-                    if printf '%s\n' "$MSG" | ./git-hooks/commit-msg.py --strict -; then
+                    if printf '%s\n' "$MSG" | ./.github/scripts/commit-msg.py --strict -; then
                       echo "PASS"
                     else
                       echo "FAIL"
@@ -46,7 +46,7 @@ jobs:
 
                   if [ "$FAILED" -eq 1 ]; then
                     echo "One or more commit messages failed validation."
-                    echo "See CONTRIBUTING.md, and run git-hooks/commit-msg.py locally."
+                    echo "See CONTRIBUTING.md, and run .github/scripts/commit-msg.py locally."
                     exit 1
                   fi
 
