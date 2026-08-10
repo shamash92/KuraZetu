@@ -1,0 +1,56 @@
+# Kura Zetu
+
+> Kura Zetu is an open source, non-partisan platform for community-driven
+> monitoring of Kenyan election results at the polling station level.
+> Volunteers record the results announced at their own polling station, and the
+> platform aggregates those submissions into a parallel tally anyone can
+> inspect.
+
+Kura Zetu is a civic transparency tool. It is not an official source of
+election results, and it does not replace the Independent Electoral and
+Boundaries Commission (IEBC) or its processes. Figures published here are
+independently submitted and verified by members of the public, and should be
+described that way.
+
+The site itself is a client-rendered React application, so fetching a page URL
+returns a loading screen rather than its content. The documentation and the API
+schema below are the readable sources.
+
+## Documentation
+
+- [Documentation](https://kurazetu.readthedocs.io/): setup guides, how-to
+  guides, and the reasoning behind the platform's technical decisions.
+- [llms.txt for the documentation](https://kurazetu.readthedocs.io/llms.txt):
+  the same index for the documentation site, with a link per page.
+- [llms-full.txt for the documentation](https://kurazetu.readthedocs.io/llms-full.txt):
+  the full text of every documentation page in one file.
+- [How the platform works](https://kurazetu.readthedocs.io/explanations/why-react/):
+  why Kura Zetu is built on Django, React and Webpack.
+
+## API
+
+- [OpenAPI schema](https://kurazetu.com/api/schema/yaml/): the machine-readable
+  contract for every public endpoint.
+- [Swagger UI](https://kurazetu.com/api/schema/swagger/): the same schema,
+  browsable.
+- [ReDoc](https://kurazetu.com/api/schema/redoc/): an alternative rendering of
+  the schema.
+
+Data endpoints under `/api/` are disallowed in
+[robots.txt](https://kurazetu.com/robots.txt) to keep crawlers from overloading
+them. Read the schema instead of crawling the endpoints.
+
+## Site
+
+- [Home](https://kurazetu.com/ui/): what Kura Zetu is and how to take part.
+- [Become a virtual agent](https://kurazetu.com/ui/signup/): sign up to report
+  the results announced at your polling station.
+- [pinVerify254](https://kurazetu.com/ui/game/): a mapping game that places and
+  verifies polling station locations.
+- [Download the Android app](https://kurazetu.com/ui/download-apk/): the app
+  agents use to submit and verify results from a phone.
+
+## Source
+
+- [GitHub repository](https://github.com/shamash92/KuraZetu): the full source,
+  issues, and contribution guidelines.
