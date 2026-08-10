@@ -123,4 +123,5 @@ in `docs/contributing.md`.
   `docs/tutorials/`, `docs/how-to-guides/`, `docs/reference/`, or `docs/explanations/` according to
   what it is, and do not mix the four kinds within one page.
 - Code changes that make the documentation wrong or incomplete must update it in the same change.
-- Run `make spelling`, `make linkcheck`, and `make woke` from `docs/` before handing work over.
+- If any file under `docs/` changes, run `make spelling`, `make linkcheck`, and
+  `make woke` from `docs/` before handing work over.

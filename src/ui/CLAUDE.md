@@ -15,7 +15,8 @@ These instructions apply to the React web application under `src/ui/`.
 
 - Use `pnpm` and the scripts in `package.json`; do not substitute another
   package manager.
-- Run `pnpm lint` for linting and `pnpm test` for Jest tests.
+- If a code file under `src/ui/` changes, run `pnpm lint`. Run `pnpm test` when
+  the change affects behavior covered by Jest tests.
 - Visible UI changes require the repository's
   [Impeccable UI QA guidance](../../.claude/design/impeccable.md).
 - Prefer the configured `@/...` alias for imports outside the current folder.
