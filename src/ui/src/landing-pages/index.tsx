@@ -291,7 +291,7 @@ function LandingNav() {
                     >
                         Docs
                     </a>
-                    <a href="/api/schema/swagger/">API</a>
+                    <a href="/api/schema/rapidoc/">API</a>
                 </nav>
                 <div className="kz-nav-actions">
                     {isAuthenticated ? (
@@ -325,7 +325,7 @@ function LandingNav() {
                             Contribute
                         </a>
                         <a href="https://kurazetu.readthedocs.io/">Docs</a>
-                        <a href="/api/schema/swagger/">API</a>
+                        <a href="/api/schema/rapidoc/">API</a>
                         {isAuthenticated ? (
                             <a href="/accounts/logout/">Log out</a>
                         ) : (

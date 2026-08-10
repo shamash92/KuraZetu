@@ -5,6 +5,7 @@ Allow: /
 Allow: /api/schema/
 Allow: /api/schema/swagger/
 Allow: /api/schema/redoc/
+Allow: /api/schema/rapidoc/
 
 # Disallow actual API data endpoints to prevent overloading
 Disallow: /api/stations/

@@ -1,0 +1,15 @@
+/* Loaded inside RapiDoc's shadow root via its css-file hook. */
+.nav-scroll {
+  padding-bottom: 24px;
+  scroll-padding-block: 24px;
+}
+
+.nav-bar-tag-and-paths.expanded > .nav-bar-paths-under-tag {
+  max-height: none !important;
+  padding-bottom: 12px;
+}
+
+.nav-bar-tag-and-paths.collapsed > .nav-bar-paths-under-tag {
+  max-height: 0 !important;
+  padding-bottom: 0;
+}

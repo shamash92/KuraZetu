@@ -44,6 +44,7 @@ THIRD_PARTY_APPS = [
     "crispy_tailwind",
     "django_browser_reload",
     "drf_spectacular",
+    "drf_spectacular_sidecar",
     "admin_honeypot",
     "django_otp",
     "django_otp.plugins.otp_totp",
@@ -160,7 +161,11 @@ USE_L10N = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets")]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "staticfiles"),
+    os.path.join(BASE_DIR, "ui/static"),
+    os.path.join(BASE_DIR, "assets"),
+]
 
 TAILWIND_CLI_VERSION = config("TAILWIND_CLI_VERSION", default="4.3.3")
 TAILWIND_CLI_PATH = config(
@@ -190,9 +195,9 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Comprehensive API for accessing Kenyan election data, including presidential, parliamentary, and local government results. Features real-time data, historical archives, and interactive documentation.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SWAGGER_UI_DIST": "SIDECAR",  # Serve Swagger UI from CDN
+    "SWAGGER_UI_DIST": "SIDECAR",
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
-    "REDOC_DIST": "SIDECAR",  # Serve Redoc from CDN
+    "REDOC_DIST": "SIDECAR",
     # Custom templates for SEO
     "SWAGGER_UI_TEMPLATE": "drf_spectacular/swagger_ui.html",
     "REDOC_UI_TEMPLATE": "drf_spectacular/redoc.html",

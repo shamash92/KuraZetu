@@ -1,0 +1,171 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title|default:"Kura Zetu API" }} · RapiDoc</title>
+    <meta
+      name="description"
+      content="Interactive OpenAPI documentation for Kura Zetu election data, geography, historical records, and accounts."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ request.build_absolute_uri }}" />
+    <meta property="og:title" content="Kura Zetu API Documentation · RapiDoc" />
+    <meta
+      property="og:description"
+      content="Interactive OpenAPI documentation for exploring Kura Zetu's election-data API."
+    />
+    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Public+Sans:wght@400;500;600;700;800;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'api-docs/rapidoc.css' %}" />
+    <link rel="stylesheet" href="{% static 'api-docs/rapidoc-shadow.css' %}" />
+    <script type="module" src="{{ rapidoc_dist }}"></script>
+  </head>
+  <body>
+    <div class="api-shell">
+      <div class="api-disclaimer">
+        <span><span aria-hidden="true">●</span> Citizen tally · Not an IEBC system</span>
+        <span class="api-disclaimer__meta">Developer API · OpenAPI</span>
+      </div>
+
+      <nav class="api-nav" aria-label="API documentation formats">
+        <a class="api-brand" href="/" aria-label="Kura Zetu home">
+          <span class="api-brand__name">Kura Zetu<span aria-hidden="true">.</span></span>
+          <span class="api-brand__tag">Our votes · Our record</span>
+        </a>
+        <div class="api-nav__links">
+          <a class="is-current" href="{% url 'rapidoc' %}" aria-current="page">RapiDoc</a>
+          <a href="{% url 'swagger' %}">Swagger</a>
+          <a href="{% url 'redoc' %}">Redoc</a>
+          <a href="{% url 'schema' %}">OpenAPI YAML</a>
+        </div>
+      </nav>
+
+      <section class="api-intro" aria-labelledby="api-intro-title">
+        <div class="api-intro__copy">
+          <h1 id="api-intro-title">Read the record.<br />Query the API.</h1>
+          <p class="api-intro__lede">
+            Explore election geography, results, historical records, and accounts
+            through one interactive OpenAPI reference.
+          </p>
+        </div>
+        <aside class="api-meta" aria-label="API reference details">
+          <div class="api-meta__head">
+            <span>Schema source</span>
+            <small>OpenAPI</small>
+          </div>
+          <div class="api-meta__row">
+            <span>Spec</span>
+            <strong><a href="{% url 'schema' %}">/api/schema/yaml/</a></strong>
+          </div>
+          <div class="api-meta__row">
+            <span>Host</span>
+            <strong>{{ request.get_host }}</strong>
+          </div>
+          <div class="api-meta__row">
+            <span>Access</span>
+            <strong>
+              Endpoint-specific
+              <small>Authorize from the reference when required.</small>
+            </strong>
+          </div>
+          <div class="api-meta__actions">
+            <a class="api-button api-button--lime" href="{% url 'schema' %}">
+              View raw OpenAPI <span aria-hidden="true">↗</span>
+            </a>
+            <a class="api-button" href="#reference">Jump to reference</a>
+          </div>
+        </aside>
+
+        <svg class="api-mesh" viewBox="0 0 620 280" aria-hidden="true">
+          <g class="api-mesh__lines" pathLength="1">
+            <path pathLength="1" d="M30 206C92 155 134 74 216 82s99 101 180 87 113-91 194-54" />
+            <path pathLength="1" d="M13 153c75-3 111-58 184-47s95 84 169 81 121-62 239-29" />
+            <path pathLength="1" d="M58 252c67-77 127-86 189-39s118 43 176-9 104-76 174-38" />
+            <path pathLength="1" d="M88 38c35 70 88 102 159 89s127-64 198-38 87 91 128 163" />
+            <path pathLength="1" d="M177 14c-10 60 15 117 68 152s104 38 145 15 72-80 79-161" />
+          </g>
+          <g class="api-mesh__dots">
+            <circle cx="216" cy="82" r="3" />
+            <circle cx="366" cy="187" r="3" />
+            <circle cx="445" cy="89" r="3" />
+            <circle cx="247" cy="213" r="3" />
+            <circle cx="469" cy="20" r="3" />
+          </g>
+        </svg>
+      </section>
+      <main class="api-content">
+        <section class="api-reference" id="reference" aria-label="Interactive API reference">
+          <div class="api-reference__bar">
+            <span class="api-reference__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <strong>API reference</strong>
+            <span>Search · Authorize · Try it live</span>
+          </div>
+          <rapi-doc
+            id="kura-zetu-api"
+            spec-url="{{ schema_url }}"
+            theme="light"
+            render-style="focused"
+            layout="column"
+            schema-style="table"
+            schema-expand-level="2"
+            schema-description-expanded="true"
+            default-schema-tab="schema"
+            response-area-height="320px"
+            font-size="large"
+            bg-color="#ffffff"
+            text-color="#0d0d0d"
+            primary-color="#8a4a25"
+            regular-font="Public Sans, system-ui, -apple-system, Segoe UI, sans-serif"
+            mono-font="IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+            load-fonts="false"
+            css-file="{% static 'api-docs/rapidoc-shadow.css' %}"
+            show-header="false"
+            show-info="true"
+            show-components="true"
+            show-method-in-nav-bar="as-colored-text"
+            use-path-in-nav-bar="false"
+            nav-bg-color="#f7f6f3"
+            nav-text-color="#6b6d72"
+            nav-hover-bg-color="#efeeea"
+            nav-hover-text-color="#0d0d0d"
+            nav-accent-color="#c4ff5e"
+            nav-accent-text-color="#0d0d0d"
+            nav-active-item-marker="colored-block"
+            nav-item-spacing="relaxed"
+            allow-search="true"
+            allow-advanced-search="false"
+            allow-authentication="true"
+            allow-server-selection="true"
+            allow-try="true"
+            show-curl-before-try="true"
+            persist-auth="false"
+            fetch-credentials="same-origin"
+            allow-spec-url-load="false"
+            allow-spec-file-load="false"
+            allow-spec-file-download="true"
+            sort-tags="false"
+            sort-endpoints-by="path"
+            update-route="true"
+          >
+            <div slot="nav-logo" class="rapidoc-nav-logo">
+              <span>Kura Zetu<span aria-hidden="true">.</span></span>
+              <small>API field ledger</small>
+            </div>
+            <p slot="footer" class="rapidoc-footer">
+              Citizen-led parallel tally · Not an official source of election results
+            </p>
+          </rapi-doc>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

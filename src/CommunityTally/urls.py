@@ -17,6 +17,7 @@ from drf_spectacular.views import (
 from rest_framework import permissions
 
 from accounts.views import home_view
+from CommunityTally.schema_views import SpectacularRapiDocView
 from ui.views import react_view
 
 # Django admin customizations
@@ -59,6 +60,11 @@ urlpatterns = [
         "api/schema/redoc/",
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
+    ),
+    path(
+        "api/schema/rapidoc/",
+        SpectacularRapiDocView.as_view(url_name="schema"),
+        name="rapidoc",
     ),
     path("api-auth/", include("rest_framework.urls")),
     path("api/stations/", include("stations.api.urls")),
