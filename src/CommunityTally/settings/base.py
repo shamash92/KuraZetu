@@ -161,7 +161,11 @@ USE_L10N = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets")]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "staticfiles"),
+    os.path.join(BASE_DIR, "ui/static"),
+    os.path.join(BASE_DIR, "assets"),
+]
 
 TAILWIND_CLI_VERSION = config("TAILWIND_CLI_VERSION", default="4.3.3")
 TAILWIND_CLI_PATH = config(
