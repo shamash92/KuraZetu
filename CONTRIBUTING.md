@@ -72,19 +72,20 @@ code injection (now or in the future).
 ### Checking a message
 
 Do not eyeball the character limits — count them with
-[`git-hooks/commit-msg.py`](./git-hooks/commit-msg.py). It checks `MSG1`, `MSG2`, `MSG4`, `MSG5`,
-`MSG6`, `MSG8`, `MSG10`, and `MSG12`, printing `OK` or one line per violation, and exits non-zero
-when anything fails. Contributors and agents alike are expected to run it before committing.
+[`.github/scripts/commit-msg.py`](.github/scripts/commit-msg.py). It checks `MSG1`, `MSG2`, `MSG4`,
+`MSG5`, `MSG6`, `MSG8`, `MSG10`, and `MSG12`, printing `OK` or one line per violation, and exits
+non-zero when anything fails. Contributors and agents alike are expected to run it before
+committing.
 
 ```bash
 # a message you are drafting
-git-hooks/commit-msg.py commit-msg.txt
+.github/scripts/commit-msg.py commit-msg.txt
 
 # the commit you just made
-git log -1 --pretty=%B | git-hooks/commit-msg.py -
+git log -1 --pretty=%B | .github/scripts/commit-msg.py -
 
 # the message being written, from a commit-msg hook
-git-hooks/commit-msg.py "$1"
+.github/scripts/commit-msg.py "$1"
 ```
 
 Example output:

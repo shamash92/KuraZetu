@@ -535,7 +535,7 @@ lockfile, do not tick the box that says you did.
   sentences: the slices you identified, whether each passes the Slice Test, and
   the resulting branch shape. This lets the user correct you before the work
   exists, not after.
-- **`AG5`. You cannot count characters.** Run `git-hooks/commit-msg.py` on
+- **`AG5`. You cannot count characters.** Run `.github/scripts/commit-msg.py` on
   every draft commit message — see
   [Checking a message](../../CONTRIBUTING.md#checking-a-message). Never assert a
   subject fits in 50 characters without having run it.

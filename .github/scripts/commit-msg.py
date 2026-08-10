@@ -3,8 +3,8 @@
 
 Used two ways, so that local checks and CI cannot drift apart:
 
-    git-hooks/commit-msg.py .git/COMMIT_EDITMSG   # as a commit-msg hook
-    git log -1 --pretty=%B | git-hooks/commit-msg.py --strict -   # in CI
+    .github/scripts/commit-msg.py .git/COMMIT_EDITMSG   # as a commit-msg hook
+    git log -1 --pretty=%B | .github/scripts/commit-msg.py --strict -   # in CI
 
 Exits 0 when the message passes, 1 when it does not, 2 when the message
 cannot be read. Rules needing human judgement (MSG3, MSG7, MSG13-MSG16)

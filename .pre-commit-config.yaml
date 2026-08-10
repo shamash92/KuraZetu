@@ -23,6 +23,6 @@ repos:
     hooks:
       - id: commit-msg
         name: Check commit message
-        entry: git-hooks/commit-msg.py
+        entry: .github/scripts/commit-msg.py
         language: system
         stages: [commit-msg]
