@@ -6,6 +6,16 @@
 
 adaptive
 
+## Product Purpose
+
+Kura Zetu is an open source, citizen-led parallel tallying platform for Kenyan elections. Results
+announced at each polling station are legally final and posted publicly on Form 34A, so ordinary
+voters can act as agents of electoral transparency. The platform crowd-sources those station-level
+results, lets the public cross-verify them, and publishes live tallies.
+
+Success is a result that a citizen submitted, another citizen verified, and an observer can trace
+back to a photograph of the form posted at a named station.
+
 ## Users
 
 Three audiences, in priority order. When their needs conflict, the submitter wins.
@@ -20,16 +30,6 @@ Three audiences, in priority order. When their needs conflict, the submitter win
 3. **Observers — civil society, journalists, and oversight bodies reading aggregated tallies.** They
    scan results across wards, constituencies, and counties looking for anomalies at scale rather
    than entering data.
-
-## Product Purpose
-
-Kura Zetu is an open source, citizen-led parallel tallying platform for Kenyan elections. Results
-announced at each polling station are legally final and posted publicly on Form 34A, so ordinary
-voters can act as agents of electoral transparency. The platform crowd-sources those station-level
-results, lets the public cross-verify them, and publishes live tallies.
-
-Success is a result that a citizen submitted, another citizen verified, and an observer can trace
-back to a photograph of the form posted at a named station.
 
 ## Positioning
 
