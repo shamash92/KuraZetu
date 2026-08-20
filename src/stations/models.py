@@ -109,18 +109,40 @@ class PollingCenter(gis_models.Model):
     def __str__(self):
         return str(self.name)
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        # Snapshot the persisted values so save() can diff pin_location and
+        # boundary against them instead of re-fetching the row. A field that
+        # was deferred at load time is left unsnapshotted, and save() falls
+        # back to fetching the row.
+        if "pin_location" in field_names:
+            instance._db_pin_location = instance.pin_location
+        if "boundary" in field_names:
+            instance._db_boundary = instance.boundary
+        return instance
+
     def save(self, *args, **kwargs):
         creating = self._state.adding
         update_boundary = False
 
         if not creating:
-            old = type(self).objects.get(pk=self.pk)
+            if hasattr(self, "_db_pin_location") and hasattr(self, "_db_boundary"):
+                old_pin_location = self._db_pin_location
+                old_boundary = self._db_boundary
+            else:
+                # The instance was not loaded through the ORM (or one of the
+                # fields was deferred), so the persisted values are unknown.
+                old = type(self).objects.get(pk=self.pk)
+                old_pin_location = old.pin_location
+                old_boundary = old.boundary
+
             # Only update if pin_location changed and not if boundary changed directly
-            if old.pin_location != self.pin_location:
+            if old_pin_location != self.pin_location:
                 update_boundary = True
             if self.pin_location and self.boundary is None:
                 update_boundary = True
-            if old.boundary != self.boundary:
+            if old_boundary != self.boundary:
                 if self.boundary is None:
                     pass
                 else:
@@ -138,6 +160,11 @@ class PollingCenter(gis_models.Model):
             self.pin_location = self.boundary.centroid
 
         super().save(*args, **kwargs)
+
+        # The persisted values now match the instance, so a second save() on
+        # it must diff against these, not the values from the original load.
+        self._db_pin_location = self.pin_location
+        self._db_boundary = self.boundary
 
 
 class PollingStation(models.Model):
