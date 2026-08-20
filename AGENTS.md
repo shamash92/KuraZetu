@@ -59,10 +59,15 @@ has several independent parts, not for slicing one change into topics:
 ```markdown
 # Description
 
-Anyone could POST `staff: true` to signup and mint an admin account with a working API token,
-which is the only guard on the presidential results endpoint. Signup now validates against an
-identity-only allow-list, so authority flags cannot come from client input.
+Anyone could POST `staff: true` to signup and mint an admin account with a working API token, which is the only guard on the presidential results endpoint. Signup now validates against an identity-only allow-list, so authority flags cannot come from client input.
 ```
+
+**Never hard-wrap a PR or issue body** (`AG10`). One paragraph is one long line, as in the example
+above. GitHub renders issue and PR bodies with soft line breaks turned into `<br>`, so a body
+wrapped at 72 or 80 columns is frozen at your column width instead of reflowing — it renders as a
+narrow ragged block that ignores the reader's window. The 72-column limit is `MSG12` and applies to
+commit messages only, because those are read in a terminal. A `--body-file` is no exception: the
+wrapping in the file is the wrapping GitHub renders.
 
 **Use the words the work came in with.** The user's prompts, and the issue if one is linked,
 already describe the problem in the terms the project uses — reuse that framing and register

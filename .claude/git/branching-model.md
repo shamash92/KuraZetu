@@ -10,7 +10,7 @@ Read the whole page before you cut a branch, split work into PRs, or open a
 PR. Cite rule IDs (`BR3`, `BR6`) when explaining a choice, the same way
 `AGENTS.md` requires for `MSG`/`GIT`/`PR`.
 
-Five rules are the ones agents get wrong. If you read nothing else, read
+These are the ones agents get wrong. If you read nothing else, read
 these:
 
 - **[`AG0`](#agent-specific-rules)** — **always** build a PR body from
@@ -22,6 +22,9 @@ these:
 - **[`AG9`](#the-rest)** — the PR Description is short prose in the user's own
   framing. No bolded question headings, no file inventory, no out-of-scope
   section.
+- **[`AG10`](#the-rest)** — never hard-wrap a PR or issue body. GitHub renders
+  every newline as a line break, so a wrapped body is frozen at your column
+  width. One paragraph is one line.
 - **[Sizing](#sizing-one-pr-stacked-prs-or-a-feature-branch)** — how to decide
   between one PR, stacked PRs, and a `feature/*` branch. Run the Slice Test.
   Never guess.
@@ -571,6 +574,17 @@ lockfile, do not tick the box that says you did.
   Write it in the words the work arrived in — the user's prompts and the linked
   issue already frame the problem in the project's terms, so reuse that framing
   and register instead of restating your diff in your own summary voice.
+- **`AG10`. Never hard-wrap a PR or issue body.** Write one paragraph as one
+  long line and let the browser wrap it. GitHub renders issue, PR and comment
+  bodies with soft line breaks turned into `<br>`, so a body wrapped at 72 or
+  80 columns is not reflowed — it is frozen at your column width, and renders
+  as a narrow ragged block that ignores the reader's window and looks broken on
+  a wide screen. The 72-column rule is `MSG12`, and it applies to commit
+  messages only, because those are read in a terminal by `git log`. Nothing you
+  type into `gh pr create`, `gh issue create`, or a review comment is a commit
+  message. This also applies to `--body-file` content: the wrapping in the file
+  is the wrapping GitHub renders. Markdown line breaks that are load-bearing —
+  list items, table rows, fenced code — stay on their own lines as usual.
 
 ## Rationale: why not git-flow
 

@@ -3,6 +3,9 @@
 This file covers how we use git: commit messages, history, and pull requests. Each rule has an ID
 (`MSG3`, `GIT6`, `PR2`) so it can be referenced in reviews and in agent instructions.
 
+A rule marked **[agents-only]** describes a mistake only an agent makes. It binds every agent
+working in this repository; human contributors can skip it.
+
 For the contribution workflow itself — anonymity and safety, issues before PRs, testing and
 documentation standards, pre-commit hooks — see [docs/contributing.md](./docs/contributing.md).
 
@@ -155,3 +158,6 @@ Guidelines for how we use and handle pull requests.
 - **PR10.** PRs should include descriptions and/or point to appropriate context (within reason).
 - **PR11.** When authoring a PR, make sure to test it.
 - **PR12.** When authoring a PR, make sure to review its diff.
+- **PR13.** **[agents-only]** Do not hard-wrap a PR or issue body — write one paragraph as one long
+  line. GitHub renders these bodies with soft line breaks turned into `<br>`, so a wrapped body
+  never reflows to the reader's window. `MSG12`'s 72-column limit is for commit messages only.
