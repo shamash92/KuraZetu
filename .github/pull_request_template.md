@@ -1,9 +1,14 @@
 # Description
 
-<!-- Summarize the change and the motivation. -->
-- What does this PR do?
-- Why is this change needed?
-- What is intentionally out of scope?
+<!--
+A few sentences: what the change is and why it matters. Write it the way you
+would explain it to a teammate, in your own words.
+
+Bullets only when the change genuinely has several independent parts. Do not
+list files, do not walk through the diff, and do not add an out-of-scope
+section — a reviewer reads the diff for what changed and this section for why
+it was worth changing.
+-->
 
 ## Related Issue(s)
 
