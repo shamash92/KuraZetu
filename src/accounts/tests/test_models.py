@@ -122,12 +122,26 @@ class TestUserModel:
         )
         assert str(user) == "+254700000000"
 
-    def test_user_permissions(self):
+    def test_user_permissions_plain_user_denied(self):
         user = User.objects.create_user(
             phone_number="+254700000000", password="testpassword"
         )
-        assert user.has_perm(None)
-        assert user.has_module_perms(None)
+        assert not user.has_perm("accounts.add_user")
+        assert not user.has_module_perms("accounts")
+
+    def test_user_permissions_admin_granted(self):
+        user = User.objects.create_superuser(
+            phone_number="+254700000000", password="testpassword"
+        )
+        assert user.has_perm("accounts.add_user")
+        assert user.has_module_perms("accounts")
+
+    def test_staff_flag_alone_grants_no_permissions(self):
+        user = User.objects.create_staffuser(
+            phone_number="+254700000000", password="testpassword"
+        )
+        assert not user.has_perm("accounts.add_user")
+        assert not user.has_module_perms("accounts")
 
     def test_user_is_active(self):
         user = User.objects.create_user(
