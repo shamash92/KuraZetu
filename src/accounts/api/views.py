@@ -8,7 +8,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.api.serializers import PhoneNumberSerializer, UserSerializer
+from accounts.api.serializers import (
+    PhoneNumberSerializer,
+    SignupSerializer,
+    UserSerializer,
+)
 from accounts.models import User
 from stations.models import PollingCenter, Ward
 
@@ -40,7 +44,7 @@ class SignupView(APIView):
                 {"error": "Ward not found"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = UserSerializer(data=data["data"])
+        serializer = SignupSerializer(data=data["data"])
 
         if serializer.is_valid():
             try:
@@ -90,7 +94,7 @@ class SignupView(APIView):
                     {
                         "message": "User signup successful",
                         "data": {
-                            "user": serializer.data,
+                            "user": UserSerializer(user).data,
                             "token": token.key,
                         },
                     },
