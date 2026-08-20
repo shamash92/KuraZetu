@@ -1,4 +1,4 @@
-# How to customize Multipass for Kurazetu
+# How to customize Multipass for KuraZetu
 
 ```bash
 multipass stop kurazetu-vm

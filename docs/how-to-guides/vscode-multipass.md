@@ -23,8 +23,8 @@ You can press Enter to accept the default file name and leave the passphrase emp
 
 Generating public/private rsa key pair.
 Enter file in which to save the key (/Users/shamash/.ssh/id_rsa): kurazetu_key
-Enter passphrase for "kurazetu_key" (empty for no passphrase): 
-Enter same passphrase again: 
+Enter passphrase for "kurazetu_key" (empty for no passphrase):
+Enter same passphrase again:
 Your identification has been saved in kurazetu_key
 Your public key has been saved in kurazetu_key.pub
 The key fingerprint is:
@@ -78,7 +78,7 @@ To create a new Multipass instance with the `cloud-init` configuration, run the 
 multipass launch noble --name kurazetu-vm --cpus 2 --disk 20G --memory 4G --cloud-init vscode.yaml
 ```
 
-Note: `noble` is the name of the Ubuntu release you want to use, in this case Ubuntu 24.04. You can replace it with any other supported Ubuntu release (e.g., `focal`, `jammy`, etc.).
+Note: `noble` is the name of the Ubuntu release you want to use, in this case Ubuntu 24.04 LTS. You can replace it with any other supported Ubuntu release (e.g., `focal`, `jammy`, etc.).
 
 For customizing the instance, you can specify additional parameters such as CPU, memory, and disk size.
 > See more: [How to customize Multipass instances](./customize-multipass.md)
@@ -149,7 +149,6 @@ To connect to your Multipass instance using VS Code, follow these steps:
    - Navigate to the **Remote Explorer** view in the sidebar. If you have done the configuration in step 4, you should see your Multipass instance listed there.
 
    - Click on the "+" icon (number 2 on the image below) to add a new SSH target.
-  
+
    - Enter the SSH connection string in the format `ssh ubuntu@<your-vm-ip>`, where `<your-vm-ip>` is the IP address of your Multipass instance. You can find this IP address by running `multipass list` in your terminal, or by looking at the instance details in the Multipass GUI. You can also get it by running the command `multipass info kurazetu-vm` in your terminal.
    -
-  
