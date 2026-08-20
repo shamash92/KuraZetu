@@ -51,17 +51,23 @@ tick the "I am not an AI agent" checklist box: you are one, and that line exists
 Leave it unticked and write nothing about it — an unticked box is the whole signal. Full rule:
 `AG0` in [.claude/git/branching-model.md](.claude/git/branching-model.md#agent-specific-rules).
 
-**The template's bullets are questions, not sentence openers.** "What does this PR do?" is a
-prompt to you, not the first half of a bullet. Answering inline produces one run-on paragraph per
-question, which is what most agents do and it reads badly. Bold each question as its own line, then
-answer beneath it with short bullets — one point each, no preamble:
+**Write the Description as short prose, not as answered questions** (`AG9`). A few sentences
+saying what the change is and why it matters. No bolded question headings, no per-topic bullet
+split, no file-by-file inventory, no out-of-scope section. Bullets are for a change that genuinely
+has several independent parts, not for slicing one change into topics:
 
 ```markdown
-**What does this PR do?**
+# Description
 
-- Restyles the registration success page to the signup flow's design
-- Redirects direct visits to the page's URL back to `/ui/signup/`
+Anyone could POST `staff: true` to signup and mint an admin account with a working API token,
+which is the only guard on the presidential results endpoint. Signup now validates against an
+identity-only allow-list, so authority flags cannot come from client input.
 ```
+
+**Use the words the work came in with.** The user's prompts, and the issue if one is linked,
+already describe the problem in the terms the project uses — reuse that framing and register
+rather than translating it into a summary of your diff. If a reviewer would not recognise the
+problem from your first sentence, you have described the patch instead of the bug.
 
 **A PR body describes the change, not your process** (`AG8`). No account of how you reached the
 change, no rules you followed, no caveats about yourself, no "worth deciding separately" or "you

@@ -19,6 +19,9 @@ these:
 - **[`AG8`](#the-rest)** — a PR body describes the change, not your process.
   No reasoning, no caveats about yourself, no unsolicited suggestions. Those
   go in the terminal.
+- **[`AG9`](#the-rest)** — the PR Description is short prose in the user's own
+  framing. No bolded question headings, no file inventory, no out-of-scope
+  section.
 - **[Sizing](#sizing-one-pr-stacked-prs-or-a-feature-branch)** — how to decide
   between one PR, stacked PRs, and a `feature/*` branch. Run the Slice Test.
   Never guess.
@@ -557,6 +560,17 @@ lockfile, do not tick the box that says you did.
   goes in the template section it concerns. The template has no free-text
   section at the end, because a body that has somewhere to put anything ends up
   putting everything there. Same for commit messages.
+- **`AG9`. The Description section is short prose, not answered questions.**
+  A few sentences saying what the change is and why it matters — nothing more.
+  The template's prompt is guidance to you, not a set of headings to bold and
+  answer one by one, and there is no out-of-scope section: nobody needs a list
+  of what you did not do. Do not inventory the files you touched or walk the
+  reviewer through the diff; they have the diff, and they read this section to
+  learn why it was worth writing. Bullets are for a change with several
+  genuinely independent parts, never for slicing one change into topics.
+  Write it in the words the work arrived in — the user's prompts and the linked
+  issue already frame the problem in the project's terms, so reuse that framing
+  and register instead of restating your diff in your own summary voice.
 
 ## Rationale: why not git-flow
 
