@@ -5,6 +5,35 @@
     <title>{{ post.title }} — Kura Zetu</title>
 {% endblock %}
 
+{% block head %}
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="{{ post.description }}" />
+    <meta name="author" content="@{{ post.author }}" />
+    <link rel="icon" href="https://kurazetu.s3.eu-west-1.amazonaws.com/static/images/logo/favicon.ico" type="image/x-icon" />
+    <link rel="canonical" href="{{ canonical_url }}" />
+
+    <meta property="og:site_name" content="Kura Zetu" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ canonical_url }}" />
+    <meta property="og:title" content="{{ post.title }}" />
+    <meta property="og:description" content="{{ post.description }}" />
+    <meta property="og:image" content="{{ social_image_url }}" />
+    <meta property="og:image:alt" content="{{ post.title }}" />
+    <meta property="article:published_time" content="{{ post.date|date:'Y-m-d' }}" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="{{ canonical_url }}" />
+    <meta name="twitter:title" content="{{ post.title }}" />
+    <meta name="twitter:description" content="{{ post.description }}" />
+    <meta name="twitter:image" content="{{ social_image_url }}" />
+    <meta name="twitter:image:alt" content="{{ post.title }}" />
+    <meta name="twitter:site" content="@shamash92_" />
+
+    {{ article_json_ld_script }}
+{% endblock %}
+
 {% block blog_content %}
     <div class="blog-wrap">
         <div class="blog-crumb">
