@@ -1,0 +1,55 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>{{ post.title }} — Kura Zetu</title>
+{% endblock %}
+
+{% block blog_content %}
+    <div class="blog-wrap">
+        <div class="blog-crumb">
+            <a href="{% url 'blog:list' %}">← The blog</a>
+        </div>
+
+        <header class="blog-hero{% if not post.image %} blog-hero--wide{% endif %}">
+            <div>
+                <h1>{{ post.title }}</h1>
+                <p class="dek">{{ post.description }}</p>
+                <div class="blog-byline">
+                    <span class="blog-avatar">{{ post.initial }}</span>
+                    <b>@{{ post.author }}</b>
+                    <span class="dot">·</span>
+                    <time datetime="{{ post.date|date:'Y-m-d' }}">{{ post.date|date:"j M Y" }}</time>
+                    <span class="dot">·</span>
+                    <span>{{ post.reading_time }} min read</span>
+                    {% if post.draft %}
+                        <span class="blog-draft">Draft</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if post.image %}
+                <div class="art">
+                    <img src="{% static post.image %}" alt="" />
+                </div>
+            {% endif %}
+        </header>
+
+        <article class="blog-prose">
+            {{ post.body|safe }}
+        </article>
+
+        <div class="blog-author">
+            <span class="av">{{ post.initial }}</span>
+            <div>
+                <div class="k">Written by</div>
+                <div class="n">@{{ post.author }}</div>
+            </div>
+        </div>
+
+        <div class="blog-foot">
+            <div class="blog-crumb">
+                <a href="{% url 'blog:list' %}">← All posts</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

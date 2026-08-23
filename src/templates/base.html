@@ -35,6 +35,8 @@
             <meta name="twitter:site" content="@shamash92_" />
         {% endblock %}
 
+        {% block extra_head %}{% endblock %}
+
         {% tailwind_css %}
     </head>
     <!-- Google tag (gtag.js) -->
@@ -45,7 +47,7 @@
             dataLayer.push(arguments)
         }
         gtag('js', new Date())
-        
+
         gtag('config', 'G-09WKQEW8RW')
     </script>
     <body class="flex w-full min-h-screen bg-white">
