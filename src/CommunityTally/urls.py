@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path, re_path
 from django.views.generic import TemplateView
 
@@ -17,6 +18,7 @@ from drf_spectacular.views import (
 from rest_framework import permissions
 
 from accounts.views import home_view
+from blog.sitemaps import BlogSitemap, StaticViewSitemap
 from CommunityTally.schema_views import SpectacularRapiDocView
 from ui.views import react_view
 
@@ -37,9 +39,9 @@ urlpatterns = [
     path("admin/", include("admin_honeypot.urls")),
     path(
         "sitemap.xml",
-        TemplateView.as_view(
-            template_name="sitemap.xml", content_type="application/xml"
-        ),
+        sitemap,
+        {"sitemaps": {"static": StaticViewSitemap, "blog": BlogSitemap}},
+        name="sitemap",
     ),
     path(
         "robots.txt",

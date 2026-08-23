@@ -13,6 +13,7 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
+DEFAULT_SOCIAL_IMAGE = config("DEFAULT_SOCIAL_IMAGE")
 
 INTERNAL_IPS = [
     # ...
@@ -30,6 +31,7 @@ DEFAULT_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",  # required for serving swagger ui's css/js files
     "django.contrib.sites",
+    "django.contrib.sitemaps",
     "django.contrib.gis",
     "django.contrib.humanize",
 ]
