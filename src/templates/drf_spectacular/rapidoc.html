@@ -26,6 +26,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{% static 'api-docs/rapidoc.css' %}" />
+    <link rel="stylesheet" href="{% static 'shared/site-nav.css' %}" />
     <link rel="stylesheet" href="{% static 'api-docs/rapidoc-shadow.css' %}" />
     <script type="module" src="{{ rapidoc_dist }}"></script>
   </head>
@@ -36,18 +37,7 @@
         <span class="api-disclaimer__meta">Developer API · OpenAPI</span>
       </div>
 
-      <nav class="api-nav" aria-label="API documentation formats">
-        <a class="api-brand" href="/" aria-label="Kura Zetu home">
-          <span class="api-brand__name">Kura Zetu<span aria-hidden="true">.</span></span>
-          <span class="api-brand__tag">Our votes · Our record</span>
-        </a>
-        <div class="api-nav__links">
-          <a class="is-current" href="{% url 'rapidoc' %}" aria-current="page">RapiDoc</a>
-          <a href="{% url 'swagger' %}">Swagger</a>
-          <a href="{% url 'redoc' %}">Redoc</a>
-          <a href="{% url 'schema' %}">OpenAPI YAML</a>
-        </div>
-      </nav>
+      {% include "shared/site_nav.html" with current_nav="rapidoc" api_formats=True %}
 
       <section class="api-intro" aria-labelledby="api-intro-title">
         <div class="api-intro__copy">
