@@ -1,0 +1,18 @@
+<nav class="site-nav{% if sticky_nav %} site-nav--sticky{% endif %}" aria-label="Primary navigation">
+  <a class="site-brand" href="/" aria-label="Kura Zetu home">
+    <span class="site-brand__name">Kura Zetu<span aria-hidden="true">.</span></span>
+    <span class="site-brand__tag">Our votes · Our record</span>
+  </a>
+  <div class="site-nav__links">
+    <a href="/ui/"{% if current_nav == "results" %} class="is-current" aria-current="page"{% endif %}>Results</a>
+    <a href="{% url 'blog:list' %}"{% if current_nav == "blog" %} class="is-current" aria-current="page"{% endif %}>Blog</a>
+    {% if api_formats %}
+      <a href="{% url 'rapidoc' %}"{% if current_nav == "rapidoc" %} class="is-current" aria-current="page"{% endif %}>RapiDoc</a>
+      <a href="{% url 'swagger' %}"{% if current_nav == "swagger" %} class="is-current" aria-current="page"{% endif %}>Swagger</a>
+      <a href="{% url 'redoc' %}"{% if current_nav == "redoc" %} class="is-current" aria-current="page"{% endif %}>Redoc</a>
+      <a href="{% url 'schema' %}"{% if current_nav == "schema" %} class="is-current" aria-current="page"{% endif %}>OpenAPI YAML</a>
+    {% else %}
+      <a href="{% url 'rapidoc' %}"{% if current_nav == "api" %} class="is-current" aria-current="page"{% endif %}>API</a>
+    {% endif %}
+  </div>
+</nav>
