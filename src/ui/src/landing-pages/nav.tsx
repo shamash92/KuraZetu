@@ -47,6 +47,12 @@ export default function NavComponent() {
                             About
                         </a>
                         <a
+                            href="/blog/"
+                            className="font-medium transition-colors text-stone-700 hover:text-stone-900"
+                        >
+                            Blog
+                        </a>
+                        <a
                             href="/api/schema/swagger/"
                             className="font-medium transition-colors text-stone-700 hover:text-stone-900"
                         >
@@ -108,6 +114,9 @@ export default function NavComponent() {
                         </a>
                         <a href="#" className="block font-medium text-stone-700">
                             About
+                        </a>
+                        <a href="/blog/" className="block font-medium text-stone-700">
+                            Blog
                         </a>
                         <a
                             href="/api/schema/swagger/"
