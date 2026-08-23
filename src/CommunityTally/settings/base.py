@@ -51,7 +51,7 @@ THIRD_PARTY_APPS = [
     "django_tailwind_cli",
 ]
 
-MY_APPS = ["accounts", "stations", "ui", "results", "historical"]
+MY_APPS = ["accounts", "stations", "ui", "results", "historical", "blog"]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + MY_APPS
 

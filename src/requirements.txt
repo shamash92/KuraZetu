@@ -22,12 +22,14 @@ pandas
 phonenumbers
 pre-commit
 psycopg2-binary
+pygments
 pytest == 8.3.5
 pytest-black==0.6.0
 pytest-cov
 pytest-django
 pytest-sugar
 python-decouple
+python-frontmatter
 qrcode
 requests
 tqdm

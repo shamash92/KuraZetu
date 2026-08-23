@@ -1,0 +1,80 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Blog — Kura Zetu</title>
+{% endblock %}
+
+{% block blog_content %}
+    <div class="blog-wrap">
+        <header class="blog-masthead">
+            <h1>Blog</h1>
+            {% if posts %}
+                <div class="side">
+                    <div>
+                        <div class="l">Posts</div>
+                        <div class="v">{{ posts|length }}</div>
+                    </div>
+                    <div>
+                        <div class="l">Latest</div>
+                        <div class="v">{{ posts.0.date|date:"M Y" }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        </header>
+
+        {% for post in posts|slice:":1" %}
+            <a class="blog-lead" href="{% url 'blog:detail' post.slug %}">
+                {% if post.image %}
+                    <div class="band"><img src="{% static post.image %}" alt="" /></div>
+                {% endif %}
+                <div class="body">
+                    <h2>{{ post.title }}</h2>
+                    <div>
+                        <p>{{ post.description }}</p>
+                        <div class="blog-byline">
+                            <span class="blog-avatar">{{ post.initial }}</span>
+                            <b>@{{ post.author }}</b>
+                            <span class="dot">·</span>
+                            <time datetime="{{ post.date|date:'Y-m-d' }}">{{ post.date|date:"j M Y" }}</time>
+                            <span class="dot">·</span>
+                            <span>{{ post.reading_time }} min read</span>
+                            {% if post.draft %}
+                                <span class="blog-draft">Draft</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+
+        {% if posts|length > 1 %}
+            <div class="blog-sechead">
+                <h2>More posts</h2>
+                <span class="rule"></span>
+                <span class="m">{{ posts|length|add:"-1" }} more</span>
+            </div>
+            <div class="blog-cards">
+                {% for post in posts|slice:"1:" %}
+                    <a class="blog-card" href="{% url 'blog:detail' post.slug %}">
+                        <h3>{{ post.title }}</h3>
+                        <p>{{ post.description }}</p>
+                        <div class="foot">
+                            <span>@{{ post.author }}</span>
+                            <span>
+                                {{ post.date|date:"j M Y" }}
+                                {% if post.draft %}<span class="blog-draft">Draft</span>{% endif %}
+                            </span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if not posts %}
+            <p class="blog-empty">
+                No posts published yet. Check back soon.
+            </p>
+        {% endif %}
+    </div>
+{% endblock %}
