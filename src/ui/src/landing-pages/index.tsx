@@ -263,7 +263,7 @@ function AtlasBackground() {
     );
 }
 
-function LandingNav() {
+export function LandingNav() {
     const [open, setOpen] = useState(false);
     const isAuthenticated = useAuth();
 
@@ -291,6 +291,7 @@ function LandingNav() {
                     >
                         Docs
                     </a>
+                    <a href="/blog/">Blog</a>
                     <a href="/api/schema/rapidoc/">API</a>
                 </nav>
                 <div className="kz-nav-actions">
@@ -325,6 +326,7 @@ function LandingNav() {
                             Contribute
                         </a>
                         <a href="https://kurazetu.readthedocs.io/">Docs</a>
+                        <a href="/blog/">Blog</a>
                         <a href="/api/schema/rapidoc/">API</a>
                         {isAuthenticated ? (
                             <a href="/accounts/logout/">Log out</a>
