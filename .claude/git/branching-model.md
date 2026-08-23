@@ -94,7 +94,7 @@ from it.
 | `release/YYYY.MM` | Release line, tagged `vYYYY.MM.N` | `main` | never merged anywhere | no, kept for patches |
 
 `category` is the `MSG2` commit vocabulary: `native/`, `ios/`, `android/`,
-`django/`, `ui/`, `docs/`, `ci/`, `test/`, `bug/`, `format/`.
+`django/`, `blog/`, `ui/`, `docs/`, `ci/`, `test/`, `bug/`, `format/`.
 
 There is **no `develop` branch** and **no `hotfix/` prefix**. If you find a
 document referring to either, it is stale — see `BR2` and `BR6`.
@@ -363,7 +363,7 @@ Consequence: **there is no `hotfix/*` prefix.** A fix for `main` is a normal
 ### `BR7` — branch names are `category/kebab-name`
 
 `category` is the `MSG2` commit vocabulary — `native/`, `ios/`, `android/`,
-`django/`, `ui/`, `docs/`, `ci/`, `test/`, `bug/`, `format/`. One vocabulary for
+`django/`, `blog/`, `ui/`, `docs/`, `ci/`, `test/`, `bug/`, `format/`. One vocabulary for
 both commits and branches instead of two overlapping ones. This widens `GIT8`,
 which currently says only "kebab-case".
 

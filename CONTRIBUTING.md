@@ -47,7 +47,8 @@ Categories follow the area of the repository you touched:
 | --- | --- |
 | `[native]` | The Expo/React Native app in `NATIVE/` |
 | `[ios]`, `[android]` | Platform-specific native work |
-| `[django]` | The backend in `src/` |
+| `[django]` | The backend in `src/`, excluding `src/ui/` and `src/blog/posts/` |
+| `[blog]` | Published Markdown in `src/blog/posts/` |
 | `[ui]` | The web frontend in `src/ui/` |
 | `[docs]` | Documentation in `docs/` |
 | `[ci]` | Workflows and automation |
