@@ -1,8 +1,11 @@
 ---
-title: "Lessons from a Security Incident: Transparency and Hardening at KuraZetu"
+title: "Lessons from a Security Incident"
 author: shamash92
 date: 2026-08-23
+updated: 2026-08-24
 description: "What we learned after a signup flaw allowed unauthorized privileged accounts, and how we are hardening KuraZetu."
+image: blog/images/security-incident-hardening.png
+social_image: blog/images/security-incident-hardening.png
 draft: false
 ---
 During an investigation on August 23, 2026, we discovered that someone had been creating unauthorized accounts on KuraZetu. We want to share what happened, what we learned, and how we're changing our approach to security.
@@ -11,7 +14,7 @@ This wasn't a sophisticated attack. It didn't require zero-day exploits or advan
 
 ## What happened
 
-Between late December 2025 and mid-August 2026, an individual or group used our public signup API to create **81 unauthorized accounts**. Seventy-nine had `staff` or `admin` privileges; two had only the `is_verified` flag set. They did this by including `staff=True` and `admin=True` flags in their signup requests—flags that our API incorrectly accepted and honored.
+Between late December 2025 and mid-August 2026, an individual or group used our public signup API to create **81 unauthorized accounts**. Seventy-nine had `staff` or `admin` privileges; two had only the `is_verified` flag set. They did this by including `staff=True` and `admin=True` flags in their signup requests, which our API incorrectly accepted and honored.
 
 Here's what the attacker was able to do:
 
@@ -62,7 +65,7 @@ def has_module_perms(self, app_label):
     return True  # Always yes
 ```
 
-The attacker likely used ordinary tools—Postman, curl, or a simple Python script—to send crafted signup requests. We cannot know the exact client from the evidence available, but exploiting this flaw required no VPS access or password brute-forcing—only a public API that trusted client input too much.
+The attacker likely used ordinary tools such as Postman, curl, or a simple Python script to send crafted signup requests. We cannot know the exact client from the evidence available, but exploiting this flaw required no VPS access or password brute-forcing, only a public API that trusted client input too much.
 
 ## What we did
 
@@ -76,7 +79,7 @@ Once we understood the scope, we acted quickly:
 | Legitimate admin accounts | 1 | [x] Verified safe |
 | VPS compromise | 0 | [x] Ruled out via SSH audit |
 
-We disabled all rogue accounts (set `active=False`, `staff=False`, `admin=False`), deleted their API tokens, and removed the fabricated election data they'd submitted. We also verified that our server itself was never compromised—all SSH logins came from known IP addresses, and there were no unauthorized users on the system.
+We disabled all rogue accounts (set `active=False`, `staff=False`, `admin=False`), deleted their API tokens, and removed the fabricated election data they'd submitted. We also verified that our server itself was never compromised. All SSH logins came from known IP addresses, and there were no unauthorized users on the system.
 
 ## What we're changing
 
@@ -96,21 +99,21 @@ This incident exposed a gap in how we think about security. We were treating it 
 
 **Looking ahead:**
 
-We're exploring **agentic security monitoring**—automated systems that periodically review logs, flag anomalies, and surface potential issues before they become incidents. Think of it as an automated security researcher that never sleeps.
+We're exploring **agentic security monitoring**: automated systems that periodically review logs, flag anomalies, and surface potential issues before they become incidents. Think of it as an automated security researcher that never sleeps.
 
 ## A note on timing
 
-You might notice that some of these unauthorized accounts existed for months before we caught them. That's fair criticism. We should have found this sooner. The issues that enabled this (#82 and #83) were actually identified and filed in our security backlog days before we discovered the breach—but we hadn't prioritized fixing them yet. That was a mistake.
+You might notice that some of these unauthorized accounts existed for months before we caught them. That's fair criticism. We should have found this sooner. The issues that enabled this (#82 and #83) were actually identified and filed in our security backlog days before we discovered the breach, but we hadn't prioritized fixing them yet. That was a mistake.
 
 We're learning that security can't be something we "get to eventually." It has to be part of the development process from day one, with active monitoring, not just passive logging.
 
 ## Thank you
 
-To everyone who has contributed to KuraZetu—whether through code, testing, feedback, or just using the platform—thank you. Your trust matters, and we're working hard to earn it.
+To everyone who has contributed to KuraZetu, whether through code, testing, feedback, or just using the platform, thank you. Your trust matters, and we're working hard to earn it.
 
 We believe transparency about security incidents, even uncomfortable ones, makes us all safer. If you have questions about this incident or our security practices, please reach out.
 
-We'll be sharing more updates as we implement additional hardening measures. This isn't the end of the conversation—it's the beginning of a more security-conscious chapter for KuraZetu.
+We'll be sharing more updates as we implement additional hardening measures. This isn't the end of the conversation. It's the beginning of a more security-conscious chapter for KuraZetu.
 
 ---
 

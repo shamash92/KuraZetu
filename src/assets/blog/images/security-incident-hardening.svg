@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf9f6" />
+      <stop offset="1" stop-color="#efeeea" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#28323c" stroke-opacity=".055" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#paper)" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+
+  <g font-family="Inter, Arial, sans-serif" fill="#0d0d0d">
+    <text x="72" y="112" font-size="52" font-weight="800" letter-spacing="-2">KuraZetu</text>
+    <circle cx="294" cy="100" r="7" fill="#c44539" />
+    <path d="M73 126 C118 116 167 134 220 123" fill="none" stroke="#c4ff5e" stroke-width="8" stroke-linecap="round" />
+    <text x="74" y="164" font-family="IBM Plex Mono, Menlo, monospace" font-size="16" font-weight="600" letter-spacing="6" fill="#6b6d72">BLOG</text>
+
+    <text x="70" y="315" font-size="72" font-weight="800" letter-spacing="-4">Lessons from a</text>
+    <text x="70" y="392" font-size="72" font-weight="800" letter-spacing="-4">security incident.</text>
+  </g>
+
+  <g transform="translate(735 136)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-6 255 C34 244 57 226 64 205 C71 184 55 171 42 179 C29 188 39 207 61 212 C91 220 118 245 151 252" stroke="#6b6d72" stroke-width="1.25" />
+    <path d="M444 38 C411 26 382 38 387 58 C392 75 412 74 416 59 C420 42 397 34 372 41" stroke="#6b6d72" stroke-width="1" />
+
+    <path d="M82 71 L82 235" stroke="#0d0d0d" stroke-width="1.5" />
+    <path d="M82 71 L40 92 L40 214 L82 235" stroke="#6b6d72" stroke-opacity=".55" stroke-width="1.25" stroke-dasharray="5 6" />
+    <circle cx="82" cy="71" r="5" stroke="#0d0d0d" stroke-width="1.5" />
+
+    <g stroke="#6b6d72" stroke-width="1.25">
+      <rect x="-4" y="92" width="54" height="30" rx="4" />
+      <circle cx="10" cy="107" r="5" />
+      <path d="M20 103 H40 M20 111 H35" />
+      <rect x="-18" y="142" width="54" height="30" rx="4" />
+      <circle cx="-4" cy="157" r="5" />
+      <path d="M6 153 H26 M6 161 H21" />
+      <path d="M50 107 C85 107 103 123 126 126 C147 129 160 112 179 108" />
+      <path d="M36 157 C78 157 112 154 150 157 C162 158 171 159 181 159" />
+    </g>
+
+    <g stroke="#c44539" stroke-width="1.5">
+      <rect x="6" y="200" width="58" height="32" rx="4" />
+      <path d="M35 207 L43 212 L42 222 L35 227 L28 222 L27 212 Z" />
+      <circle cx="35" cy="217" r="3.5" />
+      <path d="M64 216 C99 214 122 194 148 188 C163 184 174 187 184 190" />
+    </g>
+
+    <g stroke="#6b6d72" stroke-width="1.25">
+      <rect x="181" y="93" width="54" height="30" rx="4" />
+      <circle cx="195" cy="108" r="5" />
+      <path d="M205 104 H225 M205 112 H220 M235 108 H249" />
+      <rect x="181" y="144" width="54" height="30" rx="4" />
+      <circle cx="195" cy="159" r="5" />
+      <path d="M205 155 H225 M205 163 H220 M235 159 H249" />
+    </g>
+    <g stroke="#c44539" stroke-width="1.5">
+      <rect x="184" y="181" width="58" height="32" rx="4" />
+      <path d="M213 188 L221 193 L220 203 L213 208 L206 203 L205 193 Z" />
+      <circle cx="213" cy="198" r="3.5" />
+    </g>
+
+    <circle cx="267" cy="154" r="2.5" fill="#9a9da3" stroke="none" />
+    <circle cx="278" cy="154" r="2.5" fill="#9a9da3" stroke="none" />
+    <circle cx="289" cy="154" r="2.5" fill="#9a9da3" stroke="none" />
+
+    <path d="M332 77 L404 111 L404 241 L332 207 Z" stroke="#0d0d0d" stroke-width="1.5" />
+    <circle cx="332" cy="77" r="5" stroke="#0d0d0d" stroke-width="1.5" />
+
+    <g stroke="#6b6d72" stroke-opacity=".72" stroke-width="1">
+      <circle cx="349" cy="111" r="3" /><circle cx="367" cy="119" r="3" /><circle cx="385" cy="128" r="3" />
+      <circle cx="349" cy="137" r="3" /><circle cx="367" cy="145" r="3" /><circle cx="385" cy="154" r="3" />
+      <circle cx="349" cy="163" r="3" /><circle cx="367" cy="171" r="3" /><circle cx="385" cy="180" r="3" />
+      <circle cx="349" cy="189" r="3" /><circle cx="367" cy="197" r="3" /><circle cx="385" cy="206" r="3" />
+    </g>
+    <g stroke="#c4ff5e" stroke-width="1.5">
+      <circle cx="367" cy="132" r="3" /><circle cx="367" cy="158" r="3" /><circle cx="367" cy="184" r="3" />
+    </g>
+
+    <g stroke="#c44539" stroke-width="1.5">
+      <rect x="267" y="98" width="56" height="32" rx="4" />
+      <path d="M295 105 L303 110 L302 120 L295 125 L288 120 L287 110 Z" />
+      <circle cx="295" cy="115" r="3.5" />
+      <path d="M323 114 H330" stroke-dasharray="4 5" />
+      <path d="M324 128 L335 139 M335 128 L324 139" stroke-width="2" />
+    </g>
+
+    <g stroke="#6b6d72" stroke-width="1.25">
+      <rect x="271" y="215" width="54" height="30" rx="4" />
+      <circle cx="285" cy="230" r="5" />
+      <path d="M295 226 H315 M295 234 H310 M325 230 H332" />
+    </g>
+    <path d="M332 230 H404" stroke="#6b6d72" stroke-width="1.25" />
+    <path d="M404 230 H428" stroke="#c4ff5e" stroke-width="2" />
+    <path d="M423 225 L429 230 L423 235" stroke="#c4ff5e" stroke-width="2" />
+
+    <path d="M431 86 C434 91 438 94 441 94 C438 96 434 99 431 104 C429 99 425 96 422 94 C425 92 429 89 431 86 Z" stroke="#6b6d72" stroke-width="1" />
+  </g>
+
+  <path d="M70 542 H1130" stroke="#0d0d0d" stroke-opacity=".14" />
+  <text x="70" y="580" font-family="IBM Plex Mono, Menlo, monospace" font-size="15" font-weight="600" letter-spacing="3" fill="#6b6d72">KURAZETU.COM/BLOG · CITIZEN TALLY · NOT AN IEBC SYSTEM</text>
+</svg>
