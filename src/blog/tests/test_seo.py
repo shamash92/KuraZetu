@@ -3,6 +3,7 @@ import re
 import xml.etree.ElementTree as ElementTree
 from types import SimpleNamespace
 
+from django.contrib.staticfiles import finders
 from django.core.cache import cache
 from django.urls import reverse
 
@@ -112,6 +113,27 @@ def test_detail_uses_post_image_in_social_metadata(client, posts_dir):
     ) in response.content.decode()
 
 
+def test_detail_prefers_social_image_over_post_image(client, posts_dir):
+    path = posts_dir / "a-shipped-title.md"
+    path.write_text(
+        VALID.replace(
+            "---\nBody",
+            (
+                "image: blog/hero.png\n"
+                "social_image: blog/social-card.png\n"
+                "---\nBody"
+            ),
+        )
+    )
+
+    response = client.get(reverse("blog:detail", args=["a-shipped-title"]))
+
+    assert (
+        '<meta property="og:image" '
+        'content="http://testserver/static/blog/social-card.png" />'
+    ) in response.content.decode()
+
+
 def test_detail_uses_configured_default_social_image(client, posts_dir, settings):
     settings.DEFAULT_SOCIAL_IMAGE = "https://cdn.example.test/blog/card.png"
 
@@ -121,6 +143,23 @@ def test_detail_uses_configured_default_social_image(client, posts_dir, settings
         '<meta property="og:image" '
         'content="https://cdn.example.test/blog/card.png" />'
     ) in response.content.decode()
+
+
+def test_detail_resolves_default_social_image_from_static_storage(
+    client, posts_dir, settings
+):
+    settings.DEFAULT_SOCIAL_IMAGE = "blog/images/social-default.png"
+
+    response = client.get(reverse("blog:detail", args=["a-shipped-title"]))
+
+    assert (
+        '<meta property="og:image" '
+        'content="http://testserver/static/blog/images/social-default.png" />'
+    ) in response.content.decode()
+
+
+def test_default_social_image_exists(settings):
+    assert finders.find(settings.DEFAULT_SOCIAL_IMAGE) is not None
 
 
 def test_detail_has_article_json_ld(client, posts_dir):
@@ -139,6 +178,21 @@ def test_detail_has_article_json_ld(client, posts_dir):
     assert article["mainEntityOfPage"]["@id"] == (
         "http://testserver/blog/a-shipped-title/"
     )
+
+
+def test_detail_exposes_updated_date(client, posts_dir):
+    path = posts_dir / "a-shipped-title.md"
+    path.write_text(
+        VALID.replace("date: 2026-08-23", "date: 2026-08-23\nupdated: 2026-08-24")
+    )
+
+    response = client.get(reverse("blog:detail", args=["a-shipped-title"]))
+
+    content = response.content.decode()
+    assert '<meta property="article:modified_time" content="2026-08-24" />' in content
+    match = re.search(r'<script type="application/ld\+json">(.*?)</script>', content)
+    assert match is not None
+    assert json.loads(match.group(1))["dateModified"] == "2026-08-24"
 
 
 def test_article_json_ld_escapes_script_closing_tags(client, posts_dir):

@@ -50,8 +50,15 @@ def validate_post(repository, status, path, pull_request_author):
         return f"{path}: missing required frontmatter: {', '.join(missing)}"
     if not isinstance(document["date"], datetime.date):
         return f"{path}: date must be ISO 8601"
-    image = document.get("image")
-    if image:
+    updated = document.get("updated")
+    if updated is not None and not isinstance(updated, datetime.date):
+        return f"{path}: updated must be ISO 8601"
+    if updated is not None and updated < document["date"]:
+        return f"{path}: updated must not be before date"
+    for field in ("image", "social_image"):
+        image = document.get(field)
+        if not image:
+            continue
         image_path = Path(image)
         static_roots = [
             repository / "src" / "staticfiles",
@@ -63,7 +70,7 @@ def validate_post(repository, status, path, pull_request_author):
         if escapes_static or not any(
             (root / image_path).is_file() for root in static_roots
         ):
-            return f"{path}: image does not resolve to a static file: {image}"
+            return f"{path}: {field} does not resolve to a static file: {image}"
     if status == "A" and document["author"] != pull_request_author:
         return (
             f"{path}: author must match pull request author: "

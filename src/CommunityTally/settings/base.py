@@ -13,7 +13,10 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
-DEFAULT_SOCIAL_IMAGE = config("DEFAULT_SOCIAL_IMAGE")
+DEFAULT_SOCIAL_IMAGE = config(
+    "DEFAULT_SOCIAL_IMAGE",
+    default="blog/images/social-default.png",
+)
 
 INTERNAL_IPS = [
     # ...

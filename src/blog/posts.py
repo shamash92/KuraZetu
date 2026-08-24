@@ -26,8 +26,10 @@ class Post:
     title: str
     author: str
     date: datetime.date
+    updated: datetime.date | None
     description: str
     image: str
+    social_image: str
     draft: bool
     body: str
     reading_time: int
@@ -52,13 +54,25 @@ def _build(path):
     if not isinstance(date, datetime.date):
         raise InvalidPost(f"{path.name} has a date that is not ISO 8601: {date!r}")
 
+    updated = document.get("updated")
+    if updated is not None and not isinstance(updated, datetime.date):
+        raise InvalidPost(
+            f"{path.name} has an updated date that is not ISO 8601: {updated!r}"
+        )
+    if updated is not None and updated < date:
+        raise InvalidPost(
+            f"{path.name} has an updated date before its publication date"
+        )
+
     return Post(
         slug=path.stem,
         title=document["title"],
         author=document["author"],
         date=date,
+        updated=updated,
         description=document["description"],
         image=document.get("image", ""),
+        social_image=document.get("social_image", ""),
         draft=bool(document.get("draft", False)),
         body=render(document.content),
         reading_time=_reading_time(document.content),

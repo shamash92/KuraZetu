@@ -54,4 +54,4 @@ class BlogSitemap(Sitemap):
         return reverse("blog:detail", args=[post.slug])
 
     def lastmod(self, post):
-        return post.date
+        return post.updated or post.date

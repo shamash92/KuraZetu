@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf9f6" />
+      <stop offset="1" stop-color="#efeeea" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#28323c" stroke-opacity=".055" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#paper)" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+
+  <g font-family="Inter, Arial, sans-serif" fill="#0d0d0d">
+    <text x="72" y="112" font-size="52" font-weight="800" letter-spacing="-2">KuraZetu</text>
+    <circle cx="294" cy="100" r="7" fill="#c44539" />
+    <path d="M73 126 C118 116 167 134 220 123" fill="none" stroke="#c4ff5e" stroke-width="8" stroke-linecap="round" />
+    <text x="74" y="164" font-family="IBM Plex Mono, Menlo, monospace" font-size="16" font-weight="600" letter-spacing="6" fill="#6b6d72">BLOG</text>
+
+    <text x="70" y="320" font-size="78" font-weight="800" letter-spacing="-4">Field notes from</text>
+    <text x="70" y="402" font-size="78" font-weight="800" letter-spacing="-4">a citizen tally.</text>
+  </g>
+
+  <g transform="translate(744 104) scale(1.05)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-10 252 C36 250 58 232 68 208 C78 184 62 162 46 170 C30 178 38 202 60 210 C96 224 122 252 164 260 C214 269 262 262 302 250 C342 238 380 246 412 262" stroke="#6b6d72" stroke-width="1.25" />
+    <path d="M412 44 C374 32 342 48 350 68 C356 83 376 80 378 66 C380 48 356 40 330 47 C304 54 286 70 274 90" stroke="#6b6d72" stroke-width="1" />
+    <path d="M150 175 L275 175 L275 240 L150 240 Z" stroke="#0d0d0d" stroke-width="1.5" />
+    <path d="M150 175 L178 152 L303 152 L275 175 Z" stroke="#0d0d0d" stroke-width="1.5" />
+    <path d="M275 175 L303 152 L303 217 L275 240 Z" stroke="#0d0d0d" stroke-width="1.5" />
+    <path d="M198 170 L258 170 L268 162 L208 162 Z" stroke="#0d0d0d" stroke-width="1.25" />
+    <path d="M212 168 L248 163 L258 106 L222 111 Z" stroke="#c4ff5e" stroke-width="2.5" />
+    <path d="M0 82 C46 86 100 96 148 108 L142 132 C96 120 44 110 0 106 Z" stroke="#0d0d0d" stroke-width="1.5" />
+    <path d="M40 86 C36 94 36 100 35 107" stroke="#0d0d0d" stroke-width="1.25" />
+    <path d="M148 108 C166 106 186 108 198 116 C206 121 206 130 198 134 C186 140 164 138 142 132 Z" stroke="#0d0d0d" stroke-width="1.5" />
+    <path d="M196 114 C208 112 220 114 228 119 C233 122 233 128 227 129 C220 130 212 126 204 122" stroke="#0d0d0d" stroke-width="1.25" />
+    <path d="M170 108 C176 98 188 94 196 98 C201 100 200 107 194 110" stroke="#0d0d0d" stroke-width="1.25" />
+    <path d="M186 134 C190 128 190 122 186 117 M170 136 C174 130 174 124 170 119" stroke="#0d0d0d" stroke-width="1" />
+    <path d="M332 88 C334 93 338 96 340 96 C338 97 334 100 332 104 C330 100 326 97 324 96 C326 95 330 92 332 88 Z" stroke="#6b6d72" stroke-width="1" />
+    <path d="M104 200 C106 204 109 206 111 206 C109 207 106 210 104 212 C102 210 99 207 97 206 C99 205 102 202 104 200 Z" stroke="#6b6d72" stroke-width="1" />
+  </g>
+
+  <path d="M70 542 H1130" stroke="#0d0d0d" stroke-opacity=".14" />
+  <text x="70" y="580" font-family="IBM Plex Mono, Menlo, monospace" font-size="15" font-weight="600" letter-spacing="3" fill="#6b6d72">KURAZETU.COM/BLOG · CITIZEN TALLY · NOT AN IEBC SYSTEM</text>
+</svg>

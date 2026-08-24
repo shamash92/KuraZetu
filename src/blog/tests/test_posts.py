@@ -28,6 +28,7 @@ def test_build_reads_frontmatter(tmp_path):
     assert post.title == "A title"
     assert post.author == "shamash92"
     assert post.date == datetime.date(2026, 8, 23)
+    assert post.updated is None
     assert post.draft is False
     assert "Body text here." in post.body
 
@@ -47,6 +48,28 @@ def test_build_rejects_unparsed_date(tmp_path):
 
     with pytest.raises(InvalidPost, match="ISO 8601"):
         _build(write(tmp_path, "bad-date.md", text))
+
+
+def test_build_reads_updated_date(tmp_path):
+    text = VALID.replace("date: 2026-08-23", "date: 2026-08-23\nupdated: 2026-08-24")
+
+    post = _build(write(tmp_path, "updated.md", text))
+
+    assert post.updated == datetime.date(2026, 8, 24)
+
+
+def test_build_rejects_unparsed_updated_date(tmp_path):
+    text = VALID.replace("date: 2026-08-23", 'date: 2026-08-23\nupdated: "today"')
+
+    with pytest.raises(InvalidPost, match="updated date that is not ISO 8601"):
+        _build(write(tmp_path, "bad-updated-date.md", text))
+
+
+def test_build_rejects_updated_date_before_publication(tmp_path):
+    text = VALID.replace("date: 2026-08-23", "date: 2026-08-23\nupdated: 2026-08-22")
+
+    with pytest.raises(InvalidPost, match="updated date before"):
+        _build(write(tmp_path, "early-updated-date.md", text))
 
 
 def test_slug_comes_from_filename(tmp_path):
@@ -107,8 +130,10 @@ def test_initial_is_first_letter_of_author():
         title="t",
         author="shamash92",
         date=datetime.date(2026, 1, 1),
+        updated=None,
         description="d",
         image="",
+        social_image="",
         draft=False,
         body="",
         reading_time=1,

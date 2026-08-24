@@ -50,6 +50,37 @@ def test_detail_renders_post(client, posts_dir):
     assert b"@shamash92" in response.content
 
 
+def test_detail_renders_post_image_in_hero(client, posts_dir):
+    path = posts_dir / "a-shipped-title.md"
+    path.write_text(
+        VALID.replace(
+            "---\nBody",
+            "image: blog/images/article.png\n---\nBody",
+        )
+    )
+
+    response = client.get(reverse("blog:detail", args=["a-shipped-title"]))
+
+    content = response.content.decode()
+    image = '<img src="/static/blog/images/article.png" alt="" />'
+    assert "blog-hero--with-image" in content
+    assert image in content
+    assert content.index(image) < content.index("<h1>A shipped title</h1>")
+
+
+def test_detail_shows_updated_date(client, posts_dir):
+    path = posts_dir / "a-shipped-title.md"
+    path.write_text(
+        VALID.replace("date: 2026-08-23", "date: 2026-08-23\nupdated: 2026-08-24")
+    )
+
+    response = client.get(reverse("blog:detail", args=["a-shipped-title"]))
+
+    assert 'Updated <time datetime="2026-08-24">24 Aug 2026</time>' in (
+        response.content.decode()
+    )
+
+
 def test_detail_404s_for_draft(client, posts_dir):
     assert client.get(reverse("blog:detail", args=["a-draft"])).status_code == 404
 
