@@ -45,7 +45,9 @@ def _json_ld_script(value):
 
 def _detail_context(request, post):
     canonical_url = request.build_absolute_uri(reverse("blog:detail", args=[post.slug]))
-    image = static(post.image) if post.image else settings.DEFAULT_SOCIAL_IMAGE
+    image = post.social_image or post.image or settings.DEFAULT_SOCIAL_IMAGE
+    if not image.startswith(("http://", "https://", "//")):
+        image = static(image)
     social_image_url = request.build_absolute_uri(image)
     article = {
         "@context": "https://schema.org",
@@ -69,6 +71,8 @@ def _detail_context(request, post):
             "url": request.build_absolute_uri(reverse("home")),
         },
     }
+    if post.updated:
+        article["dateModified"] = post.updated.isoformat()
     return {
         "post": post,
         "canonical_url": canonical_url,

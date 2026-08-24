@@ -127,6 +127,38 @@ def test_post_date_must_be_iso_8601(repository):
     assert result.stderr == "src/blog/posts/bad-date.md: date must be ISO 8601\n"
 
 
+def test_post_updated_date_must_be_iso_8601(repository):
+    base = run(repository, "git", "rev-parse", "HEAD")
+    post = repository / "src" / "blog" / "posts" / "bad-updated-date.md"
+    post.write_text(
+        VALID_POST.replace("date: 2026-08-24", 'date: 2026-08-24\nupdated: "today"')
+    )
+    commit(repository, "Add invalid updated date")
+
+    result = check(repository, base)
+
+    assert result.returncode == 1
+    assert result.stderr == (
+        "src/blog/posts/bad-updated-date.md: updated must be ISO 8601\n"
+    )
+
+
+def test_post_updated_date_cannot_precede_publication(repository):
+    base = run(repository, "git", "rev-parse", "HEAD")
+    post = repository / "src" / "blog" / "posts" / "early-updated-date.md"
+    post.write_text(
+        VALID_POST.replace("date: 2026-08-24", "date: 2026-08-24\nupdated: 2026-08-23")
+    )
+    commit(repository, "Add early updated date")
+
+    result = check(repository, base)
+
+    assert result.returncode == 1
+    assert result.stderr == (
+        "src/blog/posts/early-updated-date.md: updated must not be before date\n"
+    )
+
+
 def test_post_filename_must_be_a_url_slug(repository):
     base = run(repository, "git", "rev-parse", "HEAD")
     post = repository / "src" / "blog" / "posts" / "Not A Slug.md"
@@ -166,6 +198,26 @@ def test_post_image_is_optional(repository):
 
     assert result.returncode == 0, result.stderr
     assert result.stdout == "Validated 1 blog post.\n"
+
+
+def test_post_social_image_must_resolve_to_static_file(repository):
+    base = run(repository, "git", "rev-parse", "HEAD")
+    post = repository / "src" / "blog" / "posts" / "missing-social-image.md"
+    post.write_text(
+        VALID_POST.replace(
+            "image: blog/card.png",
+            "social_image: blog/missing.png",
+        )
+    )
+    commit(repository, "Add missing social image")
+
+    result = check(repository, base)
+
+    assert result.returncode == 1
+    assert result.stderr == (
+        "src/blog/posts/missing-social-image.md: social_image does not resolve "
+        "to a static file: blog/missing.png\n"
+    )
 
 
 def test_post_image_cannot_escape_static_roots(repository):

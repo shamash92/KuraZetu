@@ -22,6 +22,9 @@
     <meta property="og:image" content="{{ social_image_url }}" />
     <meta property="og:image:alt" content="{{ post.title }}" />
     <meta property="article:published_time" content="{{ post.date|date:'Y-m-d' }}" />
+    {% if post.updated %}
+        <meta property="article:modified_time" content="{{ post.updated|date:'Y-m-d' }}" />
+    {% endif %}
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="{{ canonical_url }}" />
@@ -40,8 +43,13 @@
             <a href="{% url 'blog:list' %}">← The blog</a>
         </div>
 
-        <header class="blog-hero{% if not post.image %} blog-hero--wide{% endif %}">
-            <div>
+        <header class="blog-hero{% if post.image %} blog-hero--with-image{% else %} blog-hero--wide{% endif %}">
+            {% if post.image %}
+                <div class="art">
+                    <img src="{% static post.image %}" alt="" />
+                </div>
+            {% endif %}
+            <div class="blog-hero-copy">
                 <h1>{{ post.title }}</h1>
                 <p class="dek">{{ post.description }}</p>
                 <div class="blog-byline">
@@ -49,6 +57,10 @@
                     <b>@{{ post.author }}</b>
                     <span class="dot">·</span>
                     <time datetime="{{ post.date|date:'Y-m-d' }}">{{ post.date|date:"j M Y" }}</time>
+                    {% if post.updated %}
+                        <span class="dot">·</span>
+                        <span>Updated <time datetime="{{ post.updated|date:'Y-m-d' }}">{{ post.updated|date:"j M Y" }}</time></span>
+                    {% endif %}
                     <span class="dot">·</span>
                     <span>{{ post.reading_time }} min read</span>
                     {% if post.draft %}
@@ -56,11 +68,6 @@
                     {% endif %}
                 </div>
             </div>
-            {% if post.image %}
-                <div class="art">
-                    <img src="{% static post.image %}" alt="" />
-                </div>
-            {% endif %}
         </header>
 
         <article class="blog-prose">
