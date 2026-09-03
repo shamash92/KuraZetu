@@ -1,0 +1,111 @@
+.site-nav {
+  --site-nav-ink: var(--ink, var(--color-ink, #0d0d0d));
+  --site-nav-paper: var(--paper, var(--color-paper, #f7f6f3));
+  --site-nav-glass: var(--glass, var(--color-glass, rgba(255, 255, 255, 0.88)));
+  --site-nav-surface: var(--surface, var(--color-surface, #f1f0eb));
+  --site-nav-mute: var(--mute, var(--color-mute, #6b6d72));
+  --site-nav-red: var(--red, var(--color-red, #c44539));
+  --site-nav-focus: var(--lime-deep, var(--color-lime-deep, #a8e63a));
+
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 20px 32px;
+  color: var(--site-nav-ink);
+  background: var(--site-nav-glass);
+  border-bottom: 1px solid rgba(13, 13, 13, 0.07);
+  font-family: var(--sans, var(--font-kz-display, "Public Sans", system-ui, sans-serif));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.site-nav--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.site-brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  color: inherit;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.site-brand__name {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.site-brand__name > span {
+  color: var(--site-nav-red);
+  font-weight: 900;
+}
+
+.site-brand__tag {
+  color: var(--site-nav-mute);
+  font-family: var(--mono, var(--font-kz-mono, "IBM Plex Mono", ui-monospace, monospace));
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.site-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.site-nav__links a {
+  padding: 8px 14px;
+  color: inherit;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.site-nav__links a:hover {
+  background: var(--site-nav-surface);
+}
+
+.site-nav__links a:focus-visible,
+.site-brand:focus-visible {
+  outline: 3px solid var(--site-nav-focus);
+  outline-offset: 3px;
+}
+
+.site-nav__links .is-current {
+  color: var(--site-nav-paper);
+  background: var(--site-nav-ink);
+}
+
+@media (max-width: 780px) {
+  .site-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .site-nav__links {
+    width: 100%;
+    margin-left: 0;
+    padding-bottom: 2px;
+    overflow-x: auto;
+  }
+
+  .site-nav__links a {
+    white-space: nowrap;
+  }
+}
