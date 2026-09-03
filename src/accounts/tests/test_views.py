@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.staticfiles import finders
 from django.urls import reverse
 
 import pytest
@@ -112,3 +113,16 @@ class TestLoginView:
             {"phone_number": "+254712345678", "password": "wrongpw"},
         )
         assert response.status_code == 400
+
+
+class TestSocialCard:
+    def test_the_card_asset_ships_with_the_static_files(self):
+        assert finders.find("images/social/social-site.png") is not None
+
+    def test_the_login_page_points_at_the_card(self, client):
+        response = client.get(reverse("login"))
+
+        content = response.content.decode()
+        assert 'content="summary_large_image"' in content
+        assert content.count("static/images/social/social-site.png") == 2
+        assert "static/images/logo/icon.png" not in content
