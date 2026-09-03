@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf9f6" />
+      <stop offset="1" stop-color="#efeeea" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#28323c" stroke-opacity=".055" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#paper)" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+
+  <g font-family="Inter, Arial, sans-serif" fill="#0d0d0d">
+    <text x="72" y="112" font-size="52" font-weight="800" letter-spacing="-2">KuraZetu</text>
+    <circle cx="294" cy="100" r="7" fill="#c44539" />
+    <path d="M73 126 C118 116 167 134 220 123" fill="none" stroke="#c4ff5e" stroke-width="8" stroke-linecap="round" />
+    <text x="74" y="164" font-family="IBM Plex Mono, Menlo, monospace" font-size="16" font-weight="600" letter-spacing="6" fill="#6b6d72">OPEN SOURCE · KENYA</text>
+
+    <text x="70" y="320" font-size="78" font-weight="800" letter-spacing="-4">Protect the vote,</text>
+    <text x="70" y="402" font-size="78" font-weight="800" letter-spacing="-4">station by station.</text>
+  </g>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="806" cy="306" r="12" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M785 404 C785 356 790 330 806 330 C822 330 827 356 827 404" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M823 337 Q842 306 833 270" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M789 337 Q780 363 785 389" stroke="#a9abb0" stroke-width="1.1" />
+    <g transform="translate(833 261) rotate(-9)"><rect x="-7" y="-13" width="15" height="26" rx="2" fill="none" stroke="#a9abb0" stroke-width="1.1" /><path d="M-4 9 H4" stroke="#a9abb0" stroke-width="0.88" stroke-opacity=".55" /></g>
+    <circle cx="924" cy="306" r="12" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M904 398 C904 353 909 328 924 328 C939 328 944 353 944 398" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M908 335 Q890 306 898 273" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M940 335 Q948 360 944 384" stroke="#a9abb0" stroke-width="1.1" />
+    <g transform="translate(898 264) rotate(8)"><rect x="-7" y="-12" width="14" height="24" rx="2" fill="none" stroke="#a9abb0" stroke-width="1.1" /><path d="M-4 9 H4" stroke="#a9abb0" stroke-width="0.88" stroke-opacity=".55" /></g>
+    <circle cx="1042" cy="308" r="12" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M1021 406 C1021 358 1026 332 1042 332 C1058 332 1063 358 1063 406" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M1059 339 Q1078 308 1069 272" stroke="#a9abb0" stroke-width="1.1" />
+    <path d="M1025 339 Q1016 365 1021 391" stroke="#a9abb0" stroke-width="1.1" />
+    <g transform="translate(1069 263) rotate(-7)"><rect x="-7" y="-13" width="15" height="26" rx="2" fill="none" stroke="#a9abb0" stroke-width="1.1" /><path d="M-4 9 H4" stroke="#a9abb0" stroke-width="0.88" stroke-opacity=".55" /></g>
+    <circle cx="752" cy="303" r="18" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M721 448 C721 376 728 338 752 338 C776 338 783 376 783 448" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M726 349 Q699 303 712 249" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M778 349 Q791 387 783 426" stroke="#0d0d0d" stroke-width="1.6" />
+    <g transform="translate(712 235) rotate(8)"><rect x="-11" y="-19" width="22" height="39" rx="4" fill="none" stroke="#0d0d0d" stroke-width="1.6" /><path d="M-6 14 H6" stroke="#0d0d0d" stroke-width="1.28" stroke-opacity=".55" /></g>
+    <circle cx="884" cy="290" r="20" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M850 448 C850 370 858 328 884 328 C910 328 918 370 918 448" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M912 340 Q942 290 928 232" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M856 340 Q842 382 850 424" stroke="#0d0d0d" stroke-width="1.6" />
+    <g transform="translate(928 217) rotate(-7)"><rect x="-12" y="-21" width="24" height="42" rx="4" fill="#c4ff5e" stroke="#0d0d0d" stroke-width="1.6" /><path d="M-7 15 H7" stroke="#0d0d0d" stroke-width="1.28" stroke-opacity=".55" /></g>
+    <circle cx="1014" cy="306" r="18" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M983 448 C983 378 991 340 1014 340 C1037 340 1045 378 1045 448" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M989 351 Q962 306 974 254" stroke="#0d0d0d" stroke-width="1.6" />
+    <path d="M1039 351 Q1052 389 1045 426" stroke="#0d0d0d" stroke-width="1.6" />
+    <g transform="translate(974 240) rotate(9)"><rect x="-11" y="-19" width="22" height="38" rx="4" fill="none" stroke="#0d0d0d" stroke-width="1.6" /><path d="M-6 14 H6" stroke="#0d0d0d" stroke-width="1.28" stroke-opacity=".55" /></g>
+    <path d="M706 448 H1136" stroke="#0d0d0d" stroke-opacity=".12" stroke-width="1.25" />
+  </g>
+
+  <path d="M70 542 H1130" stroke="#0d0d0d" stroke-opacity=".14" />
+  <text x="70" y="580" font-family="IBM Plex Mono, Menlo, monospace" font-size="15" font-weight="600" letter-spacing="3" fill="#6b6d72">KURAZETU.COM · TALLY · VERIFY · TRACK · NOT AN IEBC SYSTEM</text>
+</svg>
