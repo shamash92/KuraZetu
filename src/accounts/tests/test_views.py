@@ -126,3 +126,23 @@ class TestSocialCard:
         assert 'content="summary_large_image"' in content
         assert content.count("static/images/social/social-site.png") == 2
         assert "static/images/logo/icon.png" not in content
+
+
+class TestBrandAssets:
+    @pytest.mark.parametrize(
+        "asset",
+        [
+            "images/logo/mark.svg",
+            "images/logo/favicon.ico",
+            "images/logo/icon.png",
+            "images/logo/apple-touch-icon.png",
+        ],
+    )
+    def test_the_logo_assets_ship_with_the_static_files(self, asset):
+        assert finders.find(asset) is not None
+
+    def test_the_pages_link_the_icons(self, client):
+        content = client.get(reverse("login")).content.decode()
+
+        assert 'rel="icon"' in content
+        assert "static/images/logo/apple-touch-icon.png" in content
