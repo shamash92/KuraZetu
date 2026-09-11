@@ -1,7 +1,7 @@
 import logging
 
 from django import forms
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.contrib.auth.forms import AdminPasswordChangeForm, ReadOnlyPasswordHashField
 
 from phonenumber_field.formfields import PhoneNumberField
@@ -24,61 +24,24 @@ class LoginForm(forms.Form):
         required=True,
     )
 
-    def clean_phone_number(self):
-        phone_number = self.cleaned_data.get("phone_number")
-        qs = User.objects.filter(phone_number=phone_number)
+    def __init__(self, *args, request=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.request = request
+        self.user = None
 
-        if qs.exists():
-            logger.debug("Phone Number found in registered users")
-
-        if not qs.exists():
-            raise forms.ValidationError("This Phone Number is not registered")
-
-        return phone_number
-
-    def clean_password(self):
-        logger.debug("Validating Password")
-        phone_number = self.cleaned_data.get("phone_number")
-        password = self.cleaned_data.get("password")
-        qs = User.objects.filter(phone_number=phone_number)
-
-        logger.debug("User lookup count: %s", qs.count())
-        if qs.exists():
-            logger.debug("Phone Number Exists")
-
-        if qs.count() == 1 and self.cleaned_data.get("password"):
-            try:
-                user = authenticate(
-                    phone_number=self.cleaned_data["phone_number"],
-                    password=self.cleaned_data["password"],
-                )
-                if user is None:
-                    raise forms.ValidationError("Invalid  Password")
-            except Exception as e:
-                logger.error("Password Validation Failed: %s", e)
-                raise forms.ValidationError("Invalid Phone Number or Password")
-        else:
-            pass
-        return password
-
-    def save(self, commit=False):
-        logger.debug("Saving Login Form...")
-        user = super(LoginForm, self).save(commit=False)
-
-        # login the user
-        try:
-            user = authenticate(
-                phone_number=self.cleaned_data["phone_number"],
-                password=self.cleaned_data["password"],
+    def clean(self):
+        cleaned = super().clean()
+        phone_number = cleaned.get("phone_number")
+        password = cleaned.get("password")
+        if phone_number and password:
+            self.user = authenticate(
+                request=self.request,
+                phone_number=str(phone_number),
+                password=password,
             )
-
-        except Exception as e:
-            logger.error("Login save failed: %s", e)
-
-        if user is not None:
-            if user.is_active:
-                login(self.request, user)
-        return user
+            if self.user is None:
+                raise forms.ValidationError("Invalid phone number or password.")
+        return cleaned
 
 
 class UserUpdateForm(forms.ModelForm):

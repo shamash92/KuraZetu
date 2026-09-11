@@ -13,6 +13,7 @@ from accounts.api.serializers import (
     SignupSerializer,
     UserSerializer,
 )
+from accounts.auth_security import log_event
 from accounts.models import User
 from stations.models import PollingCenter, Ward
 
@@ -72,9 +73,9 @@ class SignupView(APIView):
                 phone_number=data["data"]["phone_number"],
             )
             if user:
-                token, created = Token.objects.get_or_create(user=user)
                 #  authenticate
                 user = authenticate(
+                    request=request._request,
                     username=data["data"]["phone_number"],
                     password=data["data"]["password"],
                 )
@@ -86,8 +87,9 @@ class SignupView(APIView):
                 else:
                     # login the user
                     if user.is_active:
-                        login(request, user)
+                        login(request._request, user)
 
+                token, created = Token.objects.get_or_create(user=user)
                 logger.debug("User authenticated: user_id=%s", user.id)
 
                 return Response(
@@ -129,12 +131,22 @@ class LoginView(APIView):
         Handle POST request for user login.
         """
         data = request.data
+        if (
+            not isinstance(data, dict)
+            or not isinstance(data.get("password"), str)
+            or not data["password"]
+        ):
+            log_event(request._request, "auth.login_rejected")
+            return Response(
+                {"error": "Phone number and password are required"}, status=400
+            )
 
         phone_serializer = PhoneNumberSerializer(
             data={"number": data.get("phone_number", "")}
         )
 
         if not phone_serializer.is_valid(raise_exception=False):
+            log_event(request._request, "auth.login_rejected")
             logger.debug(
                 "Phone number validation errors: %s",
                 phone_serializer.errors.get("number"),
@@ -148,7 +160,8 @@ class LoginView(APIView):
             )
 
         user = authenticate(
-            username=data["phone_number"],
+            request=request._request,
+            phone_number=str(phone_serializer.validated_data["number"]),
             password=data["password"],
         )
 
@@ -165,7 +178,7 @@ class LoginView(APIView):
                     logger.debug("Expo push token updated for user_id=%s:", user.id)
 
             token, created = Token.objects.get_or_create(user=user)
-            login(request, user)
+            login(request._request, user)
             return Response(
                 {
                     "message": "User login successful",

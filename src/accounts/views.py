@@ -1,7 +1,7 @@
 import logging
 import os
 
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.views import generic
@@ -28,22 +28,11 @@ class LoginView(generic.FormView):
             return redirect("/accounts/already-logged-in/")
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "request": self.request}
+
     def form_valid(self, form):
-        user = User.objects.get(phone_number=form.cleaned_data["phone_number"])
-
-        try:
-            user = authenticate(
-                phone_number=form.cleaned_data["phone_number"],
-                password=form.cleaned_data["password"],
-            )
-
-        except Exception as e:
-            logger.error("Exception: %s", e)
-
-        if user is not None:
-            if user.is_active:
-                login(self.request, user)
-
+        login(self.request, form.user)
         return super().form_valid(form)
 
 

@@ -259,8 +259,6 @@ export default function LoginScreen() {
             expo_push_token: expoPushToken, // so that we update the notifications for this user for the current device.
         };
 
-        console.log(apiBaseURL, "API Base URL");
-
         fetch(`${apiBaseURL}/api/accounts/login/`, {
             method: "POST",
             headers: {
@@ -271,11 +269,13 @@ export default function LoginScreen() {
         })
             .then((response) => response.json())
             .then((data) => {
-                console.log(data, "data from server");
                 setIsLoading(false);
 
                 if (data["error"]) {
-                    if (data["error"] === "Invalid credentials") {
+                    if (data["code"] === "login_temporarily_blocked") {
+                        setError(data["error"]);
+                        Alert.alert("Please try again later", data["error"]);
+                    } else if (data["error"] === "Invalid credentials") {
                         console.log("Invalid credentials");
                         setError(data["error"]);
                         Alert.alert(
@@ -293,14 +293,11 @@ export default function LoginScreen() {
                             data["details"]["phone_number"][0],
                         );
                     } else {
-                        // setError(data["details"]);
-                        console.log("Error: ", data["details"]);
-                        Alert.alert(JSON.stringify(data["details"]));
+                        setError(data["error"]);
+                        Alert.alert("Unable to log in", data["error"]);
                     }
                 } else if (data["message"] === "User login successful") {
                     let token = data["data"]["token"];
-
-                    console.log(token, "token from server");
 
                     if (typeof token === "string" && token.length > 0) {
                         console.log("login you in");
@@ -316,6 +313,10 @@ export default function LoginScreen() {
                         console.error("Invalid token format");
                     }
                 }
+            })
+            .catch(() => {
+                setIsLoading(false);
+                Alert.alert("Unable to log in", "Check your connection and try again.");
             });
     };
 

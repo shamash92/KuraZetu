@@ -140,8 +140,10 @@
                 <form method="post" novalidate>
                     {% csrf_token %}
 
-                    {% if form.non_field_errors %}
-                        <div class="kz-nonfield">{{ form.non_field_errors|join:", " }}</div>
+                    {% if lockout_message %}
+                        <div class="kz-nonfield" role="alert">{{ lockout_message }}</div>
+                    {% elif form.non_field_errors %}
+                        <div class="kz-nonfield" role="alert">{{ form.non_field_errors|join:", " }}</div>
                     {% endif %}
 
                     <div class="kz-field">
