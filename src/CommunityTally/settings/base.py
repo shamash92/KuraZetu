@@ -139,22 +139,22 @@ LOGIN_REDIRECT_URL = "/"
 
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
-    # Needed to login by username in Django admin, regardless of `allauth`
+    # Axes checks lockouts; ModelBackend performs authentication.
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-# All password entry points share a counter for the normalized account and IP.
+# Password entry points share a counter for each normalized account and IP.
 AXES_FAILURE_LIMIT = config("AXES_FAILURE_LIMIT", default=5, cast=int)
 AXES_COOLOFF_TIME = timedelta(
     minutes=config("AXES_COOLOFF_MINUTES", default=15, cast=int)
 )
-# "username" is Axes' internal account key, not a field on our User model.
-# AXES_USERNAME_CALLABLE supplies a keyed hash of the normalized phone number.
+# "username" is Axes' internal account key, not a User-model field.
 AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
 AXES_RESET_ON_SUCCESS = True
 AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
 AXES_USE_ATTEMPT_EXPIRATION = False
 AXES_HANDLER = "accounts.auth_security.PrivateAxesHandler"
+# Store a keyed hash of the normalized phone number as Axes' account key.
 AXES_USERNAME_CALLABLE = "accounts.auth_security.account_reference"
 AXES_CLIENT_IP_CALLABLE = "accounts.auth_security.client_ip"
 AXES_LOCKOUT_CALLABLE = "accounts.auth_security.lockout_response"
@@ -165,12 +165,12 @@ AXES_SENSITIVE_PARAMETERS = ["username", "phone_number", "ip_address"]
 AUTH_TRUSTED_PROXY_NETWORKS = config(
     "AUTH_TRUSTED_PROXY_NETWORKS", default="", cast=Csv()
 )
-# Optional single-IP header, overwritten by the trusted immediate proxy.
+# Read this single-IP header only from a trusted immediate proxy.
 AUTH_CLIENT_IP_HEADER = config("AUTH_CLIENT_IP_HEADER", default="")
 if AXES_FAILURE_LIMIT < 1 or AXES_COOLOFF_TIME <= timedelta(0):
     raise ImproperlyConfigured("Axes failure limit and cool-off must be positive.")
 for _network in AUTH_TRUSTED_PROXY_NETWORKS:
-    ip_network(_network)  # Reject malformed proxy networks at startup.
+    ip_network(_network)
 if AUTH_CLIENT_IP_HEADER and not AUTH_TRUSTED_PROXY_NETWORKS:
     raise ImproperlyConfigured(
         "An auth client IP header requires trusted proxy networks."
