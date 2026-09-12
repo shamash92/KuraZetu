@@ -3,6 +3,7 @@ import {INK, LIME_DEEP} from "../../app/_utils/colors";
 
 import Animated from "react-native-reanimated";
 import {StyleSheet} from "react-native";
+import {useEffect} from "react";
 import Svg from "react-native-svg";
 
 // Ported from claude-design/mobile-auth-perk.html — three groups of five, four
@@ -50,9 +51,21 @@ const STROKES: IStroke[] = GROUP_ORIGINS.flatMap((originX) => {
     return [...uprights, fifth];
 });
 
-export default function TallyScene() {
+type TallySceneProps = {
+    onTallyAnimationComplete?: () => void;
+};
+
+export default function TallyScene({onTallyAnimationComplete}: TallySceneProps) {
     const {clock, durationMs} = useStrokeCycle(STROKES.length);
     const fade = useCycleFade(clock, durationMs, STROKES.length);
+
+    useEffect(() => {
+        if (!onTallyAnimationComplete) return;
+
+        const completionTimer = setTimeout(onTallyAnimationComplete, durationMs);
+
+        return () => clearTimeout(completionTimer);
+    }, [durationMs, onTallyAnimationComplete]);
 
     return (
         <Animated.View style={[styles.host, fade]}>

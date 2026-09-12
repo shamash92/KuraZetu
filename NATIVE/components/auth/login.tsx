@@ -6,11 +6,17 @@ import TallyScene from "./tallyScene";
 // progress we cannot promise.
 const STATUS_LINES = ["Counted by citizens", "Your ward, your tally", "Open count"];
 
+type LoginLoadingProps = {
+    onTallyAnimationComplete?: () => void;
+};
+
 /** Shown for the whole of the sign-in handshake. */
-export default function LoginLoading() {
+export default function LoginLoading({
+    onTallyAnimationComplete,
+}: LoginLoadingProps) {
     return (
         <AuthLoading
-            scene={<TallyScene />}
+            scene={<TallyScene onTallyAnimationComplete={onTallyAnimationComplete} />}
             caption="Counting you in"
             statusLines={STATUS_LINES}
             note="Not an IEBC system"
