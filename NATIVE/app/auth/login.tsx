@@ -32,14 +32,20 @@ import {
     SURFACE,
 } from "../_utils/colors";
 import {Link, router} from "expo-router";
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
 import LottieComponent from "@/components/lottieLoading";
+import LoginLockout from "@/components/auth/lockout";
 import RegisterPushNotifications from "../_utils/registerPushNotifications";
 import LoginLoading from "@/components/auth/login";
 import UpdateCheckerModal from "../_utils/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
+import {
+    deleteFromSecureStore,
+    getFromSecureStore,
+    saveToSecureStore,
+} from "../_utils/secureStore";
 import useAuthStore from "../_utils/authStore";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {windowHeight} from "../_utils/screenDimensions";
@@ -56,6 +62,11 @@ const SWAP_MS = 480;
 const CHAR_STAGGER_MS = 22;
 const HOLD_MS = 1800;
 const LONGEST_GREETING = Math.max(...GREETINGS.map((g) => g.length));
+const PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY = "passwordLoginLockoutExpiry";
+
+function getRemainingLockoutSeconds(lockoutExpiresAt: number) {
+    return Math.max(0, Math.ceil((lockoutExpiresAt - Date.now()) / 1000));
+}
 
 // Offsets are in mask heights: 1 is parked below the clip, 0 is on screen, -1
 // has left through the top.
@@ -177,15 +188,83 @@ export default function LoginScreen() {
     const [phoneNumber, setPhoneNumber] = useState("+254");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isTallyAnimationVisible, setIsTallyAnimationVisible] = useState(false);
 
     const [error, setError] = useState<string | null>(null);
 
     const [shouldRedirect, setShouldRedirect] = useState(false);
+    const [isTallyAnimationComplete, setIsTallyAnimationComplete] = useState(false);
+    const [successfulPasswordToken, setSuccessfulPasswordToken] = useState<string | null>(
+        null,
+    );
+    const [lockoutExpiresAt, setLockoutExpiresAt] = useState<number | null>(null);
+    const [isLockoutRestored, setIsLockoutRestored] = useState(false);
 
     const {logIn, hasSavedUserToken, userToken, expoPushToken} = useAuthStore();
 
     const insets = useSafeAreaInsets();
+    const hasCommittedPasswordSignIn = useRef(false);
+
+    const handleTallyAnimationComplete = useCallback(() => {
+        setIsTallyAnimationComplete(true);
+    }, []);
+
+    const handleLockoutComplete = useCallback(() => {
+        setLockoutExpiresAt(null);
+        void deleteFromSecureStore(PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY);
+    }, []);
+
+    const showLockout = useCallback((retryAfterSeconds: number) => {
+        const expiresAt = Date.now() + retryAfterSeconds * 1000;
+
+        setLockoutExpiresAt(expiresAt);
+        void saveToSecureStore(PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY, String(expiresAt));
+    }, []);
+
+    useEffect(() => {
+        let isCurrent = true;
+
+        async function restoreLockout() {
+            try {
+                const storedExpiry = await getFromSecureStore(
+                    PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY,
+                );
+                const lockoutExpiry = Number(storedExpiry);
+
+                if (
+                    Number.isSafeInteger(lockoutExpiry) &&
+                    getRemainingLockoutSeconds(lockoutExpiry) > 0
+                ) {
+                    if (isCurrent) setLockoutExpiresAt(lockoutExpiry);
+                } else {
+                    await deleteFromSecureStore(PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY);
+                }
+            } finally {
+                if (isCurrent) setIsLockoutRestored(true);
+            }
+        }
+
+        void restoreLockout();
+
+        return () => {
+            isCurrent = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (
+            !successfulPasswordToken ||
+            !isTallyAnimationComplete ||
+            hasCommittedPasswordSignIn.current
+        ) {
+            return;
+        }
+
+        hasCommittedPasswordSignIn.current = true;
+        logIn(successfulPasswordToken);
+        router.replace("/(tabs)");
+    }, [isTallyAnimationComplete, logIn, successfulPasswordToken]);
 
     const handleBiometricAuth = async (userTokenValue: string) => {
         if (Platform.OS === "web") {
@@ -251,7 +330,10 @@ export default function LoginScreen() {
             return;
         }
 
-        setIsLoading(true);
+        hasCommittedPasswordSignIn.current = false;
+        setIsTallyAnimationComplete(false);
+        setSuccessfulPasswordToken(null);
+        setIsSubmitting(true);
 
         let data = {
             phone_number: phoneNumber,
@@ -269,10 +351,21 @@ export default function LoginScreen() {
         })
             .then((response) => response.json())
             .then((data) => {
-                setIsLoading(false);
-
                 if (data["error"]) {
+                    setIsSubmitting(false);
+
                     if (data["code"] === "login_temporarily_blocked") {
+                        const retryAfterSeconds = data["retry_after_seconds"];
+
+                        if (
+                            typeof retryAfterSeconds === "number" &&
+                            Number.isInteger(retryAfterSeconds) &&
+                            retryAfterSeconds > 0
+                        ) {
+                            showLockout(retryAfterSeconds);
+                            return;
+                        }
+
                         setError(data["error"]);
                         Alert.alert("Please try again later", data["error"]);
                     } else if (data["error"] === "Invalid credentials") {
@@ -300,22 +393,22 @@ export default function LoginScreen() {
                     let token = data["data"]["token"];
 
                     if (typeof token === "string" && token.length > 0) {
-                        console.log("login you in");
-                        logIn(token);
-
-                        setTimeout(() => {
-                            setIsLoading(false);
-
-                            router.replace("/(tabs)");
-                        }, 3000); // just to create a delay for the animation
+                        setIsSubmitting(false);
+                        setIsTallyAnimationVisible(true);
+                        setSuccessfulPasswordToken(token);
                     } else if (typeof token === "object" && token !== null) {
+                        setIsSubmitting(false);
                     } else {
                         console.error("Invalid token format");
+                        setIsSubmitting(false);
                     }
+                } else {
+                    setIsSubmitting(false);
+                    Alert.alert("Unable to log in", "Please try again.");
                 }
             })
             .catch(() => {
-                setIsLoading(false);
+                setIsSubmitting(false);
                 Alert.alert("Unable to log in", "Check your connection and try again.");
             });
     };
@@ -329,8 +422,19 @@ export default function LoginScreen() {
 
     useEffect(() => {}, [shouldRedirect]);
 
-    if ((isLoading || PREVIEW_SIGNING_IN) && !shouldRedirect) {
-        return <LoginLoading />;
+    if (!isLockoutRestored) return null;
+
+    if (lockoutExpiresAt !== null) {
+        return (
+            <LoginLockout
+                lockoutExpiresAt={lockoutExpiresAt}
+                onComplete={handleLockoutComplete}
+            />
+        );
+    }
+
+    if ((isTallyAnimationVisible || PREVIEW_SIGNING_IN) && !shouldRedirect) {
+        return <LoginLoading onTallyAnimationComplete={handleTallyAnimationComplete} />;
     }
 
     return (
@@ -444,13 +548,13 @@ export default function LoginScreen() {
                 </Link>
 
                 <TouchableOpacity
-                    style={[styles.primary, isLoading && styles.disabled]}
+                    style={[styles.primary, isSubmitting && styles.disabled]}
                     onPress={() => handleLogin()}
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     activeOpacity={0.85}
                 >
                     <Text style={styles.primaryText}>
-                        {isLoading ? "Signing in…" : "Sign in"}
+                        {isSubmitting ? "Signing in…" : "Sign in"}
                     </Text>
                     <ArrowRight size={18} color={LIME_INK} strokeWidth={2.4} />
                 </TouchableOpacity>

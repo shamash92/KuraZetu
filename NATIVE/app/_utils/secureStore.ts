@@ -1,29 +1,24 @@
 import * as SecureStore from "expo-secure-store";
 
-export type TSaveSecureStore =
+export type SecureStoreKey =
     | "userID"
     | "userFirstName"
     | "userLastName"
     | "userToken"
-    | "expoPushToken";
+    | "expoPushToken"
+    | "passwordLoginLockoutExpiry";
 
-export async function saveToSecureStore(key: TSaveSecureStore, value: any) {
+export async function saveToSecureStore(key: SecureStoreKey, value: string) {
     await SecureStore.setItemAsync(key, value);
 }
 
 export async function getFromSecureStore(
-    key: TSaveSecureStore,
-): Promise<TSaveSecureStore | null> {
-    let result = await SecureStore.getItemAsync(key);
-
-    if (result !== null) {
-        return result as TSaveSecureStore; // Cast the string result to TSaveSecureStore
-    } else {
-        return null;
-    }
+    key: SecureStoreKey,
+): Promise<string | null> {
+    return SecureStore.getItemAsync(key);
 }
 
-export async function deleteFromSecureStore(key: TSaveSecureStore) {
+export async function deleteFromSecureStore(key: SecureStoreKey) {
     await SecureStore.deleteItemAsync(key);
 }
 
