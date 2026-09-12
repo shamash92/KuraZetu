@@ -53,13 +53,20 @@ class TestCreateUserPhoneNumbers:
         assert str(user.phone_number) == "+254712345678"
 
     @pytest.mark.parametrize("attempt", EQUIVALENT)
-    def test_login_works_with_any_spelling_of_the_stored_number(self, attempt):
+    def test_login_works_with_any_spelling_of_the_stored_number(self, attempt, rf):
         """The account is stored as +254712345678. Before the default region
         was set, only that exact spelling authenticated, so the login endpoint
         could accept a number as valid and then reject the credentials."""
         User.objects.create_user(phone_number="+254712345678", password="pw12345")
 
-        assert authenticate(username=attempt, password="pw12345") is not None
+        assert (
+            authenticate(
+                request=rf.post("/accounts/login/"),
+                username=attempt,
+                password="pw12345",
+            )
+            is not None
+        )
 
     def test_rejects_an_unparseable_number_with_guidance(self):
         with pytest.raises(ValidationError) as excinfo:

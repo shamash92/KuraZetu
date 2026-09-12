@@ -15,6 +15,7 @@ import logging
 import re
 
 REDACTED = "[redacted]"
+_RECORD_FIELDS = frozenset(logging.makeLogRecord({}).__dict__) | {"message", "asctime"}
 
 # Matched against mapping keys, case-insensitively, as substrings: "password"
 # also covers "new_password1" and "confirm_password".
@@ -147,5 +148,10 @@ class RedactionFilter(logging.Filter):
 
         if record.args:
             record.args = scrub(record.args)
+
+        # Structured JSON fields arrive through extra=, outside msg and args.
+        for key, value in tuple(record.__dict__.items()):
+            if key not in _RECORD_FIELDS:
+                record.__dict__[key] = scrub({key: value})[key]
 
         return True

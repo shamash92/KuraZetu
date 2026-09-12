@@ -261,6 +261,34 @@ class TestRedactionFilter:
 class TestEndToEnd:
     """Through a real handler, which is the only path that matters."""
 
+    def test_structured_json_fields_are_redacted(self):
+        import io
+        import json
+
+        from CommunityTally.logging_utils.formatters import JSONFormatter
+
+        stream = io.StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.setFormatter(JSONFormatter())
+        handler.addFilter(RedactionFilter())
+        record = logging.makeLogRecord(
+            {
+                "msg": "auth.login_failed",
+                "event": "auth.login_failed",
+                "password": "do-not-log-this",
+                "details": {"otp_token": "do-not-log-that"},
+                "phone_number": "+254700000001",
+                "client_ip": "192.0.2.1",
+            }
+        )
+        handler.handle(record)
+        result = json.loads(stream.getvalue())
+        assert result["password"] == "[redacted]"
+        assert result["details"]["otp_token"] == "[redacted]"
+        assert result["phone_number"] == "[redacted]"
+        assert result["client_ip"] == "192.0.2.1"
+        assert result["event"] == "auth.login_failed"
+
     def test_secrets_do_not_reach_the_stream(self, caplog):
         logger = logging.getLogger("CommunityTally.tests.redaction")
         handler = logging.StreamHandler()

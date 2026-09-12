@@ -1,5 +1,9 @@
 import os
 import sys
+from datetime import timedelta
+from ipaddress import ip_network
+
+from django.core.exceptions import ImproperlyConfigured
 
 from decouple import Csv, config
 
@@ -40,6 +44,7 @@ DEFAULT_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "axes",
     "corsheaders",
     "leaflet",
     "rest_framework",
@@ -87,6 +92,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",
     "CommunityTally.logging_utils.request_id.RequestIDMiddleware",
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "CommunityTally.urls"
@@ -132,9 +138,43 @@ LOGIN_REDIRECT_URL = "/"
 
 
 AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
     # Needed to login by username in Django admin, regardless of `allauth`
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+# All password entry points share a counter for the normalized account and IP.
+AXES_FAILURE_LIMIT = config("AXES_FAILURE_LIMIT", default=5, cast=int)
+AXES_COOLOFF_TIME = timedelta(
+    minutes=config("AXES_COOLOFF_MINUTES", default=15, cast=int)
+)
+# "username" is Axes' internal account key, not a field on our User model.
+# AXES_USERNAME_CALLABLE supplies a keyed hash of the normalized phone number.
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_RESET_ON_SUCCESS = True
+AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
+AXES_USE_ATTEMPT_EXPIRATION = False
+AXES_HANDLER = "accounts.auth_security.PrivateAxesHandler"
+AXES_USERNAME_CALLABLE = "accounts.auth_security.account_reference"
+AXES_CLIENT_IP_CALLABLE = "accounts.auth_security.client_ip"
+AXES_LOCKOUT_CALLABLE = "accounts.auth_security.lockout_response"
+# Success/failure history belongs in the bounded auth log, not a second DB log.
+AXES_DISABLE_ACCESS_LOG = True
+AXES_ENABLE_ACCESS_FAILURE_LOG = False
+AXES_SENSITIVE_PARAMETERS = ["username", "phone_number", "ip_address"]
+AUTH_TRUSTED_PROXY_NETWORKS = config(
+    "AUTH_TRUSTED_PROXY_NETWORKS", default="", cast=Csv()
+)
+# Optional single-IP header, overwritten by the trusted immediate proxy.
+AUTH_CLIENT_IP_HEADER = config("AUTH_CLIENT_IP_HEADER", default="")
+if AXES_FAILURE_LIMIT < 1 or AXES_COOLOFF_TIME <= timedelta(0):
+    raise ImproperlyConfigured("Axes failure limit and cool-off must be positive.")
+for _network in AUTH_TRUSTED_PROXY_NETWORKS:
+    ip_network(_network)  # Reject malformed proxy networks at startup.
+if AUTH_CLIENT_IP_HEADER and not AUTH_TRUSTED_PROXY_NETWORKS:
+    raise ImproperlyConfigured(
+        "An auth client IP header requires trusted proxy networks."
+    )
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -411,3 +451,41 @@ if LOG_FILE:
     LOGGING["root"]["handlers"].append("logfile")
     for _logger in LOGGING["loggers"].values():
         _logger["handlers"].append("logfile")
+
+# Auth records have their own JSON destination and do not propagate to app.json.
+# They still reach stdout/journald, including when the file is unavailable.
+AUTH_LOG_FILE = config("AUTH_LOG_FILE", default="logs/auth_logs.log")
+if AUTH_LOG_FILE:
+    if not os.path.isabs(AUTH_LOG_FILE):
+        AUTH_LOG_FILE = os.path.join(BASE_DIR, AUTH_LOG_FILE)
+    try:
+        os.makedirs(os.path.dirname(AUTH_LOG_FILE), exist_ok=True)
+        fd = os.open(AUTH_LOG_FILE, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o600)
+        os.close(fd)
+    except OSError as exc:
+        sys.stderr.write(
+            f"AUTH_LOG_FILE is not writable ({exc.strerror}); "
+            "auth logging to stdout only.\n"
+        )
+        AUTH_LOG_FILE = ""
+
+LOGGING["handlers"]["auth_console"] = {
+    "class": "logging.StreamHandler",
+    "stream": "ext://sys.stdout",
+    "formatter": "json",
+    "filters": ["redaction", "request_context"],
+}
+LOGGING["loggers"]["accounts.security"] = {
+    "level": "INFO",
+    "handlers": ["auth_console"],
+    "propagate": False,
+}
+if AUTH_LOG_FILE:
+    LOGGING["handlers"]["auth_file"] = {
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": AUTH_LOG_FILE,
+        "encoding": "utf-8",
+        "formatter": "json",
+        "filters": ["redaction", "request_context"],
+    }
+    LOGGING["loggers"]["accounts.security"]["handlers"].append("auth_file")
