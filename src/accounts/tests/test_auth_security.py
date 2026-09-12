@@ -64,6 +64,7 @@ def test_web_and_api_share_counter_and_expiry(user, client):
     response = api_login(api)
     assert response.status_code == 429
     assert response.json()["code"] == "login_temporarily_blocked"
+    assert response.json()["retry_after_seconds"] == int(response["Retry-After"])
     assert 1 <= int(response["Retry-After"]) <= 900
     assert not Token.objects.filter(user=user).exists()
     assert api_login(api, password=PASSWORD).status_code == 429

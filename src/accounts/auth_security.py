@@ -110,7 +110,11 @@ def lockout_response(request, original_response=None, credentials=None):
     seconds = max(1, math.ceil(remaining.total_seconds()))
     if request.path_info.startswith("/api/"):
         response = JsonResponse(
-            {"code": "login_temporarily_blocked", "error": LOCKOUT_MESSAGE},
+            {
+                "code": "login_temporarily_blocked",
+                "error": LOCKOUT_MESSAGE,
+                "retry_after_seconds": seconds,
+            },
             status=429,
         )
     elif request.path_info == "/accounts/login/":
