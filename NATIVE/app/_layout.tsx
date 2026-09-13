@@ -1,22 +1,36 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 
+import * as Location from "expo-location";
 import * as QuickActions from "expo-quick-actions";
 import * as SplashScreen from "expo-splash-screen";
 
-import {Image, PermissionsAndroid, Platform, StyleSheet, Text, useColorScheme, View} from "react-native";
-import React, {useEffect} from "react";
-import {windowWidth} from "./_utils/screenDimensions";
+import {InteractionManager, Platform, useColorScheme} from "react-native";
+import React, {useCallback, useEffect, useState} from "react";
 
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import LottieComponent from "@/components/lottieLoading";
+import LaunchContinuation from "@/components/splash/launchContinuation";
 import {DarkTheme, DefaultTheme, Stack, ThemeProvider} from "expo-router";
 import {useAuthStore} from "./_utils/authStore";
 import {useFonts} from "expo-font";
 import {useQuickActionRouting} from "expo-quick-actions/router";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+// Cross-fade the splash out rather than cutting to the first screen.
+SplashScreen.setOptions({duration: 320, fade: true});
+
+function AppLocationPermission() {
+    useEffect(() => {
+        if (Platform.OS === "web") return;
+
+        const interaction = InteractionManager.runAfterInteractions(() => {
+            void Location.requestForegroundPermissionsAsync();
+        });
+
+        return () => interaction.cancel();
+    }, []);
+
+    return null;
+}
 
 function RootLayoutNav() {
     const {isLoggedIn, shouldCreateAccount} = useAuthStore();
@@ -24,6 +38,7 @@ function RootLayoutNav() {
 
     return (
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+            <AppLocationPermission />
             <Stack>
                 <Stack.Protected guard={!isLoggedIn}>
                     <Stack.Screen
@@ -44,33 +59,36 @@ function RootLayoutNav() {
 
 // Export the complete component with provider
 export default function AuthenticatedLayout() {
-    const [loading, setLoading] = React.useState(false);
+    const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
+    const [continuationReady, setContinuationReady] = useState(false);
+    const [continuationComplete, setContinuationComplete] = useState(false);
 
     const [fontsLoaded, fontError] = useFonts({
         "SpaceMono-Regular": require("../assets/fonts/SpaceMono-Regular.ttf"),
         "Inter-Black": require("../assets/fonts/Inter-Regular.ttf"),
         "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
         "Sora-Regular": require("../assets/fonts/Sora-Regular.ttf"),
+        "PublicSans-ExtraBold": require("../assets/fonts/PublicSans-ExtraBold.ttf"),
     });
 
     useEffect(() => {
-        setLoading(true);
+        if ((!fontsLoaded && !fontError) || !continuationReady) return;
 
-        setTimeout(() => {
-            setLoading(false);
-        }, 3000);
-    }, []);
-    useEffect(() => {
-        SplashScreen.preventAutoHideAsync();
+        let mounted = true;
+        const revealFrame = requestAnimationFrame(() => {
+            void SplashScreen.hideAsync().then(() => {
+                if (mounted) setNativeSplashHidden(true);
+            });
+        });
 
-        if (fontsLoaded || fontError) {
-            SplashScreen.hideAsync();
-        }
-    }, [fontsLoaded, fontError]);
+        return () => {
+            mounted = false;
+            cancelAnimationFrame(revealFrame);
+        };
+    }, [continuationReady, fontError, fontsLoaded]);
 
-    useEffect(() => {
-        SplashScreen.preventAutoHideAsync();
-    }, []);
+    const completeContinuation = useCallback(() => setContinuationComplete(true), []);
+    const revealContinuation = useCallback(() => setContinuationReady(true), []);
 
     useQuickActionRouting();
     useEffect(() => {
@@ -88,118 +106,20 @@ export default function AuthenticatedLayout() {
         ]);
     }, []);
 
-    useEffect(() => {
-        const run = async () => {
-            if (Platform.OS === "android") {
-                await PermissionsAndroid.requestMultiple([
-                    "android.permission.POST_NOTIFICATIONS",
-                    "android.permission.ACCESS_FINE_LOCATION",
-                ]);
-            }
-        };
-
-        run();
-    }, []);
-
-    if (loading) {
-        return (
-            <View style={styles.splash}>
-                <View style={styles.splashAroma} pointerEvents="none">
-                    <LottieComponent
-                        name="wave"
-                        backgroundColor="transparent"
-                        width={1.45 * windowWidth}
-                    />
-                </View>
-
-                <View style={styles.splashContent}>
-                    <LottieComponent
-                        name="tea"
-                        backgroundColor="transparent"
-                        width={0.36 * windowWidth}
-                    />
-                    <Text style={styles.splashCaption}>Things are boiling nicely …</Text>
-                </View>
-
-                <View style={styles.splashBrand}>
-                    <Image
-                        source={require("../assets/images/icon.png")}
-                        style={styles.splashLogo}
-                    />
-                    <View>
-                        <Text style={styles.splashBrandName}>KURAZETU</Text>
-                        <Text style={styles.splashTagline}>TUZILINDE</Text>
-                    </View>
-                </View>
-            </View>
-        );
-    }
-
     if (!fontsLoaded && !fontError) {
         return null;
     }
     return (
         <GestureHandlerRootView style={{flex: 1}}>
-            <RootLayoutNav />
+            {continuationComplete ? (
+                <RootLayoutNav />
+            ) : (
+                <LaunchContinuation
+                    nativeSplashHidden={nativeSplashHidden}
+                    onComplete={completeContinuation}
+                    onReadyToReveal={revealContinuation}
+                />
+            )}
         </GestureHandlerRootView>
     );
 }
-
-const styles = StyleSheet.create({
-    splash: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "flex-end",
-        overflow: "hidden",
-        backgroundColor: "#ffffff",
-        paddingHorizontal: 22,
-        paddingBottom: 46,
-    },
-    splashAroma: {
-        position: "absolute",
-        top: -104,
-        width: 1.45 * windowWidth,
-        alignItems: "center",
-        opacity: 0.98,
-    },
-    splashContent: {
-        position: "absolute",
-        top: "59%",
-        width: "100%",
-        alignItems: "center",
-        transform: [{translateX: -0.05 * windowWidth}],
-    },
-    splashCaption: {
-        marginTop: 0,
-        fontSize: 15,
-        fontWeight: "600",
-        fontStyle: "italic",
-        color: "#8a4a25",
-        letterSpacing: 0.15,
-    },
-    splashBrand: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-    },
-    splashLogo: {
-        width: 54,
-        height: 54,
-        borderRadius: 15,
-    },
-    splashBrandName: {
-        fontSize: 23,
-        lineHeight: 25,
-        fontWeight: "900",
-        letterSpacing: 1.1,
-        color: "#2532a8",
-    },
-    splashTagline: {
-        marginTop: 3,
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 10,
-        fontWeight: "700",
-        letterSpacing: 3.1,
-        color: "#8a4a25",
-    },
-});

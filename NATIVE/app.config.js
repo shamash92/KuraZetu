@@ -8,16 +8,12 @@ export default {
         scheme: "kurazetu",
         userInterfaceStyle: "automatic",
         newArchEnabled: true,
-        splash: {
-            image: "./assets/images/splash.png",
-            resizeMode: "contain",
-            backgroundColor: "#ffffff",
-        },
         ios: {
             supportsTablet: true,
             bundleIdentifier: "com.kurazetu.app",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
+                CADisableMinimumFrameDurationOnPhone: true,
                 // react-native-vision-camera ships no config plugin, so its
                 // permission strings are declared here rather than generated.
                 NSCameraUsageDescription:
@@ -72,7 +68,11 @@ export default {
                     image: "./assets/images/splash-icon.png",
                     imageWidth: 200,
                     resizeMode: "contain",
-                    backgroundColor: "#ffffff",
+                    backgroundColor: "#f7f6f3",
+                    dark: {
+                        image: "./assets/images/splash-icon-dark.png",
+                        backgroundColor: "#0d0d0d",
+                    },
                 },
             ],
             [
