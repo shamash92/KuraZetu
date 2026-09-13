@@ -3,8 +3,9 @@ import logging
 from django.contrib.auth import authenticate, login
 
 from rest_framework import status
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -195,3 +196,20 @@ class LoginView(APIView):
                 {"error": "Invalid credentials"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class PushTokenView(APIView):
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        expo_push_token = request.data.get("expo_push_token")
+        if not isinstance(expo_push_token, str) or not expo_push_token.strip():
+            return Response(
+                {"error": "A push token is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.expo_push_token = expo_push_token.strip()
+        request.user.save(update_fields=["expo_push_token"])
+        return Response(status=status.HTTP_200_OK)

@@ -115,6 +115,45 @@ class TestLoginView:
         assert response.status_code == 400
 
 
+class TestPushTokenView:
+    def test_authenticated_user_can_update_their_push_token(self):
+        user = User.objects.create_user(
+            phone_number="+254712345678", password="pw12345"
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.post(
+            reverse("push_token_api"),
+            {"expo_push_token": "ExponentPushToken[example]"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assert user.expo_push_token == "ExponentPushToken[example]"
+
+    def test_push_token_update_requires_authentication(self):
+        response = APIClient().post(
+            reverse("push_token_api"),
+            {"expo_push_token": "ExponentPushToken[example]"},
+            format="json",
+        )
+
+        assert response.status_code == 401
+
+    def test_push_token_update_rejects_a_missing_token(self):
+        user = User.objects.create_user(
+            phone_number="+254712345678", password="pw12345"
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.post(reverse("push_token_api"), {}, format="json")
+
+        assert response.status_code == 400
+
+
 class TestSocialCard:
     def test_the_card_asset_ships_with_the_static_files(self):
         assert finders.find("images/social/social-site.png") is not None

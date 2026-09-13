@@ -37,7 +37,6 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
 import LottieComponent from "@/components/lottieLoading";
 import LoginLockout from "@/components/auth/lockout";
-import RegisterPushNotifications from "../_utils/registerPushNotifications";
 import LoginLoading from "@/components/auth/login";
 import UpdateCheckerModal from "../_utils/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
@@ -201,7 +200,7 @@ export default function LoginScreen() {
     const [lockoutExpiresAt, setLockoutExpiresAt] = useState<number | null>(null);
     const [isLockoutRestored, setIsLockoutRestored] = useState(false);
 
-    const {logIn, hasSavedUserToken, userToken, expoPushToken} = useAuthStore();
+    const {logIn, hasSavedUserToken, userToken} = useAuthStore();
 
     const insets = useSafeAreaInsets();
     const hasCommittedPasswordSignIn = useRef(false);
@@ -338,7 +337,6 @@ export default function LoginScreen() {
         let data = {
             phone_number: phoneNumber,
             password: password,
-            expo_push_token: expoPushToken, // so that we update the notifications for this user for the current device.
         };
 
         fetch(`${apiBaseURL}/api/accounts/login/`, {
@@ -439,8 +437,6 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.screen}>
-            <RegisterPushNotifications />
-
             <UpdateCheckerModal />
 
             <Modal
