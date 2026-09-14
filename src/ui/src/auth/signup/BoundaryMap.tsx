@@ -3,9 +3,14 @@ import React, {useEffect} from "react";
 
 import type {LatLngBounds} from "leaflet";
 
+const googleBasemapUrls = {
+    satellite: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    street: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+} as const;
+
 interface BoundaryMapProps {
     bounds: LatLngBounds | null;
-    tileProvider: "Google" | "OpenStreetMap";
+    basemap?: keyof typeof googleBasemapUrls;
     errorMessage?: string | null;
     children?: React.ReactNode;
 }
@@ -26,7 +31,7 @@ function FitBoundsMap({bounds}: {bounds: LatLngBounds | null}) {
 
 export default function BoundaryMap({
     bounds,
-    tileProvider,
+    basemap = "street",
     errorMessage,
     children,
 }: BoundaryMapProps) {
@@ -49,17 +54,10 @@ export default function BoundaryMap({
             >
                 <FitBoundsMap bounds={bounds} />
 
-                {tileProvider === "Google" ? (
-                    <TileLayer
-                        url="http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-                        attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
-                    />
-                ) : (
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                )}
+                <TileLayer
+                    url={googleBasemapUrls[basemap]}
+                    attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+                />
 
                 {children}
             </MapContainer>
