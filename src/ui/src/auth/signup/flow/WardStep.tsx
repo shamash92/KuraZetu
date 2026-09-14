@@ -125,7 +125,7 @@ export default function WardStep({flow}: WardStepProps) {
     }));
 
     const mapElement = (
-        <BoundaryMap bounds={bounds} tileProvider="OpenStreetMap">
+        <BoundaryMap bounds={bounds}>
             {wards.map((ward) => (
                 <GeoJSON
                     key={ward.id}

@@ -29,9 +29,6 @@ export default function PollingStep({flow}: PollingStepProps) {
     // Where the user has zoomed to. `null` means "no pin picked", and the map
     // falls back to the ward's own bounds below.
     const [zoomBounds, setZoomBounds] = useState<LatLngBounds | null>(null);
-    const [tileProvider, setTileProvider] = useState<"Google" | "OpenStreetMap">(
-        "OpenStreetMap",
-    );
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
@@ -177,13 +174,11 @@ export default function PollingStep({flow}: PollingStepProps) {
         setErrorMessage(pollingCenter.properties.pin_location_error);
 
         if (geometry !== null && geometry.coordinates[0] !== 0) {
-            setTileProvider("Google");
             const latLng = new LatLng(geometry.coordinates[1], geometry.coordinates[0]);
             const mapBounds = L.latLngBounds(latLng, latLng);
             setZoomBounds(mapBounds.isValid() ? mapBounds : null);
         } else {
             // Reset zoom and bounds back to the ward if pin location is not present
-            setTileProvider("OpenStreetMap");
             setZoomBounds(null);
         }
     };
@@ -196,7 +191,7 @@ export default function PollingStep({flow}: PollingStepProps) {
     const mapElement = (
         <BoundaryMap
             bounds={bounds}
-            tileProvider={tileProvider}
+            basemap="satellite"
             errorMessage={errorMessage}
         >
             {pollingCenters.map((pollingCenter) => {
@@ -228,13 +223,11 @@ export default function PollingStep({flow}: PollingStepProps) {
                             <p>{pollingCenter.properties.code}</p>
                         </Popup>
 
-                        {tileProvider === "Google" && (
-                            <Tooltip permanent>
-                                <p className="text-xs text-gray-700">
-                                    {pollingCenter.properties.name}
-                                </p>
-                            </Tooltip>
-                        )}
+                        <Tooltip permanent>
+                            <p className="text-xs text-gray-700">
+                                {pollingCenter.properties.name}
+                            </p>
+                        </Tooltip>
                     </Marker>
                 ) : null;
             })}

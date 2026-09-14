@@ -128,7 +128,7 @@ export default function ConstituencyStep({flow}: ConstituencyStepProps) {
     }));
 
     const mapElement = (
-        <BoundaryMap bounds={bounds} tileProvider="OpenStreetMap">
+        <BoundaryMap bounds={bounds}>
             {constituencies.map((constituency) => (
                 <GeoJSON
                     key={constituency.id}

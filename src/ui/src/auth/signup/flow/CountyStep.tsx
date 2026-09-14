@@ -109,7 +109,7 @@ export default function CountyStep({flow}: CountyStepProps) {
     }));
 
     const mapElement = (
-        <BoundaryMap bounds={bounds} tileProvider="OpenStreetMap">
+        <BoundaryMap bounds={bounds}>
             {counties.map((county) => (
                 <GeoJSON
                     key={county.id}
