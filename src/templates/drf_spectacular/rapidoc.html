@@ -37,7 +37,7 @@
         <span class="api-disclaimer__meta">Developer API · OpenAPI</span>
       </div>
 
-      {% include "shared/site_nav.html" with current_nav="rapidoc" api_formats=True %}
+      {% include "shared/site_nav.html" with current_nav="api" %}
 
       <section class="api-intro" aria-labelledby="api-intro-title">
         <div class="api-intro__copy">
@@ -68,6 +68,9 @@
             </strong>
           </div>
           <div class="api-meta__actions">
+            <a class="api-button" href="{% url 'rapidoc' %}">RapiDoc</a>
+            <a class="api-button" href="{% url 'swagger' %}">Swagger</a>
+            <a class="api-button" href="{% url 'redoc' %}">Redoc</a>
             <a class="api-button api-button--lime" href="{% url 'schema' %}">
               View raw OpenAPI <span aria-hidden="true">↗</span>
             </a>

@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.html import json_script
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 
 from blog.posts import all_posts, get_post
 
@@ -28,6 +29,7 @@ def cached(view):
 
 
 @cached
+@vary_on_cookie
 def post_list(request):
     return render(request, "blog/list.html", {"posts": all_posts()})
 
@@ -82,6 +84,7 @@ def _detail_context(request, post):
 
 
 @cached
+@vary_on_cookie
 def post_detail(request, slug):
     post = get_post(slug)
     if post is None:
