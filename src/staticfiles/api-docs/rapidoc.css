@@ -85,77 +85,14 @@ a {
   color: var(--mute);
 }
 
-.api-nav {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  padding: 20px 32px;
-  background: var(--glass);
-  border-bottom: 1px solid var(--rule-08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.api-brand {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 3px;
-  line-height: 1;
-  text-decoration: none;
-}
-
-.api-brand__name {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.035em;
-}
-
-.api-brand__name > span,
 .rapidoc-nav-logo > span > span {
   color: var(--red);
   font-weight: 900;
 }
 
-.api-brand__tag {
-  color: var(--mute);
-  font-family: var(--mono);
-  font-size: 9.5px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.api-nav__links {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.api-nav__links a {
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 140ms ease, color 140ms ease;
-}
-
-.api-nav__links a:hover {
-  background: var(--surface);
-}
-
-.api-nav__links a:focus-visible,
 .api-button:focus-visible {
   outline: 3px solid var(--lime-deep);
   outline-offset: 3px;
-}
-
-.api-nav__links .is-current {
-  color: var(--paper);
-  background: var(--ink);
 }
 
 .api-intro {
@@ -607,7 +544,7 @@ rapi-doc::part(tab-btn) {
 
 @media (max-width: 780px) {
   .api-disclaimer,
-  .api-nav,
+  .site-nav,
   .api-intro,
   .api-content {
     padding-right: 20px;
@@ -616,23 +553,6 @@ rapi-doc::part(tab-btn) {
 
   .api-disclaimer__meta {
     display: none;
-  }
-
-  .api-nav {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .api-nav__links {
-    width: 100%;
-    margin-left: 0;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-
-  .api-nav__links a {
-    white-space: nowrap;
   }
 
   .api-intro {
