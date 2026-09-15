@@ -6,15 +6,14 @@ export type SecureStoreKey =
     | "userLastName"
     | "userToken"
     | "expoPushToken"
-    | "passwordLoginLockoutExpiry";
+    | "passwordLoginLockoutExpiry"
+    | "lastLaunchAnimation";
 
 export async function saveToSecureStore(key: SecureStoreKey, value: string) {
     await SecureStore.setItemAsync(key, value);
 }
 
-export async function getFromSecureStore(
-    key: SecureStoreKey,
-): Promise<string | null> {
+export async function getFromSecureStore(key: SecureStoreKey): Promise<string | null> {
     return SecureStore.getItemAsync(key);
 }
 
