@@ -1,5 +1,7 @@
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+
 from decouple import Csv, config
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -47,3 +49,10 @@ from CommunityTally.aws.conf import *
 
 IS_PROD = True
 AWS_QUERYSTRING_AUTH = False
+
+# Production must never silently fall back to a fake SMS adapter.
+OTP_SMS_BACKEND = "africastalking"
+if not config("AT_USERNAME", default="") or not config("AT_API_KEY", default=""):
+    raise ImproperlyConfigured(
+        "AT_USERNAME and AT_API_KEY are required when OTP SMS is live."
+    )

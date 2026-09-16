@@ -1,3 +1,6 @@
+import uuid
+
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -104,6 +107,7 @@ class User(AbstractBaseUser):
     )
 
     is_verified = models.BooleanField(default=False)
+    is_phone_verified = models.BooleanField(default=False)
 
     active = models.BooleanField(default=True)
     staff = models.BooleanField(default=False)  # a admin user; non super-user
@@ -164,3 +168,120 @@ class User(AbstractBaseUser):
         return self.active
 
     objects = UserManager()
+
+
+class PhoneVerificationChallenge(models.Model):
+    class Purpose(models.TextChoices):
+        SIGNUP = "signup", "Signup"
+        EXISTING_ACCOUNT_LOGIN = "existing_account_login", "Existing account login"
+        PASSWORD_RESET = "password_reset", "Password reset"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    phone_number = PhoneNumberField()
+    purpose = models.CharField(max_length=32, choices=Purpose.choices)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name="phone_verification_challenges",
+    )
+    # A 64-character HMAC of this challenge ID and the submitted six-digit code.
+    # Django compares HMACs on verification, so a database leak cannot reveal a
+    # usable OTP. The blank value means no code is currently valid.
+    code_digest = models.CharField(max_length=64, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("phone_number", "purpose"),
+                name="accounts_phone_verification_challenge_phone_purpose",
+            )
+        ]
+
+
+class PhoneVerificationSend(models.Model):
+    class Outcome(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        SUPPRESSED = "suppressed", "Suppressed"
+        FAILED = "failed", "Failed"
+
+    challenge = models.ForeignKey(
+        PhoneVerificationChallenge,
+        on_delete=models.CASCADE,
+        related_name="send_events",
+    )
+    purpose = models.CharField(
+        max_length=32, choices=PhoneVerificationChallenge.Purpose.choices
+    )
+    phone_reference = models.CharField(max_length=64, db_index=True)
+    client_ip_reference = models.CharField(max_length=64, db_index=True)
+    outcome = models.CharField(
+        max_length=16, choices=Outcome.choices, default=Outcome.PENDING
+    )
+    provider_message_id = models.CharField(max_length=128, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=("phone_reference", "purpose", "created_at"),
+                name="accounts_otp_send_phone_time",
+            ),
+            models.Index(
+                fields=("client_ip_reference", "created_at"),
+                name="accounts_otp_send_ip_created",
+            ),
+        ]
+
+
+class PhoneVerificationRateScope(models.Model):
+    """Row-level lock for a phone/purpose or client-IP rate-limit scope."""
+
+    class Kind(models.TextChoices):
+        PHONE = "phone", "Phone"
+        IP = "ip", "IP"
+
+    kind = models.CharField(max_length=8, choices=Kind.choices)
+    reference = models.CharField(max_length=64)
+    purpose = models.CharField(max_length=32, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("kind", "reference", "purpose"),
+                name="accounts_phone_verification_rate_scope",
+            )
+        ]
+
+
+class PhoneVerificationTicket(models.Model):
+    # A 64-character HMAC of the opaque ticket returned once to the client.
+    # Django hashes a submitted ticket before comparison, so the database never
+    # stores a reusable ticket value.
+    token_digest = models.CharField(max_length=64, unique=True)
+    challenge = models.ForeignKey(
+        PhoneVerificationChallenge,
+        on_delete=models.CASCADE,
+        related_name="tickets",
+    )
+    purpose = models.CharField(
+        max_length=32, choices=PhoneVerificationChallenge.Purpose.choices
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name="phone_verification_tickets",
+    )
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
