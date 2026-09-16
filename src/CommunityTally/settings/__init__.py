@@ -3,6 +3,7 @@
 from decouple import config
 
 from .base import *
+from .otp_settings import *
 
 # Local development must not load the S3-only production configuration.  In
 # particular, the production uploader requires credentials that are not used
