@@ -125,7 +125,7 @@ class PhoneVerificationCodeView(PhoneVerificationAPIView):
         serializer = PhoneVerificationCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            ticket = verify_code(**serializer.validated_data)
+            verification = verify_code(**serializer.validated_data)
         except PhoneVerificationRateLimited as error:
             return self.rate_limited_response(error)
         except InvalidPhoneVerificationCode:
@@ -136,12 +136,21 @@ class PhoneVerificationCodeView(PhoneVerificationAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if verification.existing_account:
+            return Response(
+                {
+                    "message": "Phone number verified.",
+                    "data": {"outcome": "existing_account"},
+                },
+                status=status.HTTP_200_OK,
+            )
         return Response(
             {
                 "message": "Phone number verified.",
                 "data": {
-                    "verification_ticket": ticket.token,
-                    "expires_in_seconds": ticket.expires_in_seconds,
+                    "outcome": "verified",
+                    "verification_ticket": verification.token,
+                    "expires_in_seconds": verification.expires_in_seconds,
                 },
             },
             status=status.HTTP_200_OK,
