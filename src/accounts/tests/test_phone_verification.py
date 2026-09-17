@@ -9,7 +9,11 @@ from django.utils import timezone
 import pytest
 from rest_framework.test import APIClient
 
-from accounts.models import PhoneVerificationChallenge, PhoneVerificationSend
+from accounts.models import (
+    PhoneVerificationChallenge,
+    PhoneVerificationSend,
+    PhoneVerificationTicket,
+)
 from accounts.phone_verification import (
     InvalidPhoneVerificationCode,
     PhoneVerificationRateLimited,
@@ -181,6 +185,31 @@ def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_cente
         ).status_code
         == 400
     )
+
+
+def test_verified_signup_code_for_existing_user_returns_existing_account():
+    User.objects.create_user(
+        phone_number=NUMBER,
+        password="Old-long-unique-password-123!",
+    )
+    client = APIClient()
+    start = client.post(
+        reverse("signup_phone_verification_start_api"),
+        {"phone_number": NUMBER},
+        format="json",
+    )
+
+    verified = client.post(
+        reverse("phone_verification_code_api"),
+        {"challenge_id": start.data["data"]["challenge_id"], "code": latest_code()},
+        format="json",
+    )
+
+    assert verified.status_code == 200
+    assert verified.data["data"] == {"outcome": "existing_account"}
+    assert PhoneVerificationTicket.objects.count() == 0
+    challenge = PhoneVerificationChallenge.objects.get()
+    assert challenge.code_digest == ""
 
 
 def test_verified_reset_ticket_changes_the_existing_password():

@@ -18,6 +18,7 @@ from accounts.models import (
     PhoneVerificationRateScope,
     PhoneVerificationSend,
     PhoneVerificationTicket,
+    User,
 )
 
 
@@ -51,9 +52,10 @@ class VerificationStart:
 
 
 @dataclass(frozen=True)
-class VerificationTicket:
-    token: str
-    expires_in_seconds: int
+class VerificationResult:
+    token: str | None = None
+    expires_in_seconds: int | None = None
+    existing_account: bool = False
 
 
 @dataclass(frozen=True)
@@ -282,7 +284,7 @@ def start_verification(*, phone_number, purpose, request, user=None, send_sms=Tr
 
 
 def verify_code(*, challenge_id, code):
-    """Consume a valid code and return a short-lived ticket for the next step."""
+    """Consume a valid code and return its purpose-specific next step."""
     now = timezone.now()
     invalid_code = False
     with transaction.atomic():
@@ -321,14 +323,19 @@ def verify_code(*, challenge_id, code):
             )
             invalid_code = True
         else:
-            token = secrets.token_urlsafe(32)
-            PhoneVerificationTicket.objects.create(
-                token_digest=_ticket_digest(token),
-                challenge=challenge,
-                purpose=challenge.purpose,
-                user=challenge.user,
-                expires_at=now + timedelta(seconds=settings.OTP_TICKET_TTL_SECONDS),
+            existing_account = (
+                challenge.purpose == PhoneVerificationChallenge.Purpose.SIGNUP
+                and User.objects.filter(phone_number=challenge.phone_number).exists()
             )
+            if not existing_account:
+                token = secrets.token_urlsafe(32)
+                PhoneVerificationTicket.objects.create(
+                    token_digest=_ticket_digest(token),
+                    challenge=challenge,
+                    purpose=challenge.purpose,
+                    user=challenge.user,
+                    expires_at=now + timedelta(seconds=settings.OTP_TICKET_TTL_SECONDS),
+                )
             challenge.code_digest = ""
             challenge.expires_at = now
             challenge.save(update_fields=("code_digest", "expires_at", "updated_at"))
@@ -336,7 +343,9 @@ def verify_code(*, challenge_id, code):
     if invalid_code:
         raise InvalidPhoneVerificationCode()
 
-    return VerificationTicket(
+    if existing_account:
+        return VerificationResult(existing_account=True)
+    return VerificationResult(
         token=token,
         expires_in_seconds=settings.OTP_TICKET_TTL_SECONDS,
     )
