@@ -1,10 +1,12 @@
-import {Navigate, Route, Routes, useLocation} from "react-router-dom";
+import {Navigate, Outlet, Route, Routes, useLocation} from "react-router-dom";
 
 import LandingPage from "../landing-pages";
 import React from "react";
 import RegistrationSuccessPage from "../auth/signup/RegistrationSuccess";
 import SignupComponent from "../auth/signup/index";
 import SignupForm from "../auth/signup/signupForm";
+import PhoneVerification from "../auth/signup/PhoneVerification";
+import {SignupVerificationSessionProvider} from "../auth/signup/SignupVerificationSession";
 import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
@@ -28,6 +30,20 @@ export function NotFound() {
 }
 
 /**
+ * Leaves the React router for a Django-rendered page.
+ *
+ * `Navigate` only moves within this route table, and the site root is served by
+ * Django, so a signed-in visitor sent there needs a real page load.
+ */
+function RedirectToSite({to}: {to: string}) {
+    React.useEffect(() => {
+        window.location.replace(to);
+    }, [to]);
+
+    return null;
+}
+
+/**
  * Renders `children` only for someone who arrived by finishing signup.
  *
  * The signup form sets `justRegistered` when it navigates; opening the URL
@@ -45,6 +61,15 @@ function RequireJustRegistered({children}: {children: React.ReactElement}) {
     return children;
 }
 
+/** Keeps a verified signup ticket in memory only while completing signup. */
+function SignupVerificationLayout() {
+    return (
+        <SignupVerificationSessionProvider>
+            <Outlet />
+        </SignupVerificationSessionProvider>
+    );
+}
+
 function RoutesApp() {
     const isAuthenticated = useAuth();
     console.log(JSON.stringify(isAuthenticated, null, 2));
@@ -60,14 +85,22 @@ function RoutesApp() {
             {isAuthenticated ? (
                 <>
                     <Route path="/ui/dashboards/user/" element={<UserDashBoard />} />
+                    {/* Signing up again is not a thing an account holder does. */}
+                    <Route path="/ui/signup/*" element={<RedirectToSite to="/" />} />
                 </>
             ) : (
                 <>
-                    <Route path="/ui/signup/" element={<SignupComponent />} />
+                    <Route element={<SignupVerificationLayout />}>
+                        <Route path="/ui/signup/" element={<SignupComponent />} />
+                    <Route
+                        path="/ui/signup/verify/:wardCode/:pollingCenterCode/"
+                        element={<PhoneVerification />}
+                    />
                     <Route
                         path="/ui/signup/accounts/:wardCode/:pollingCenterCode/"
                         element={<SignupForm />}
                     />
+                    </Route>
                     <Route
                         path="/ui/signup/accounts/registration-success/"
                         element={
