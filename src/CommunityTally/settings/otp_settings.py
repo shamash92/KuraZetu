@@ -14,9 +14,9 @@ OTP_CODE_LENGTH = 6
 OTP_CODE_TTL_SECONDS = config("OTP_CODE_TTL_SECONDS", default=120, cast=int)
 # A verified signup/reset ticket can be used once within ten minutes.
 OTP_TICKET_TTL_SECONDS = config("OTP_TICKET_TTL_SECONDS", default=600, cast=int)
-# The server prevents another SMS to this phone/purpose for 30 seconds.
+# A new SMS is allowed only after the current two-minute code has expired.
 OTP_RESEND_COOLDOWN_SECONDS = config(
-    "OTP_RESEND_COOLDOWN_SECONDS", default=30, cast=int
+    "OTP_RESEND_COOLDOWN_SECONDS", default=120, cast=int
 )
 # No more than three SMS requests for one phone and purpose per rolling window.
 OTP_SEND_LIMIT = config("OTP_SEND_LIMIT", default=3, cast=int)

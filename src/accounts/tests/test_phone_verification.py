@@ -85,14 +85,14 @@ def test_resend_cooldown_then_three_send_cap(otp_request):
     with pytest.raises(PhoneVerificationRateLimited) as error:
         start_signup_verification(otp_request)
     assert error.value.code == "phone_verification_resend_cooldown"
-    assert 1 <= error.value.retry_after_seconds <= 30
+    assert 1 <= error.value.retry_after_seconds <= 120
 
     PhoneVerificationSend.objects.update(
-        created_at=timezone.now() - timedelta(seconds=31)
+        created_at=timezone.now() - timedelta(seconds=121)
     )
     start_signup_verification(otp_request)
     PhoneVerificationSend.objects.update(
-        created_at=timezone.now() - timedelta(seconds=31)
+        created_at=timezone.now() - timedelta(seconds=121)
     )
     start_signup_verification(otp_request)
 
