@@ -3,6 +3,7 @@ import {INK, LIME_DEEP} from "../../app/_utils/colors";
 
 import Animated from "react-native-reanimated";
 import {StyleSheet} from "react-native";
+import React, {useEffect} from "react";
 import Svg from "react-native-svg";
 
 // A hand and pen dropping a ballot into the box, redrawn by hand from the
@@ -118,9 +119,20 @@ const STROKES: IStroke[] = [
     },
 ];
 
-export default function BallotScene() {
+type BallotSceneProps = {
+    onAnimationComplete?: () => void;
+};
+
+export default function BallotScene({onAnimationComplete}: BallotSceneProps) {
     const {clock, durationMs} = useStrokeCycle(STROKES.length);
     const fade = useCycleFade(clock, durationMs, STROKES.length);
+
+    useEffect(() => {
+        if (!onAnimationComplete) return;
+
+        const completionTimer = setTimeout(onAnimationComplete, durationMs);
+        return () => clearTimeout(completionTimer);
+    }, [durationMs, onAnimationComplete]);
 
     return (
         <Animated.View style={[styles.host, fade]}>

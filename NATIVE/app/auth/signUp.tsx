@@ -199,7 +199,7 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
 
     const finish = () =>
         router.replace(
-            `/auth/signUpForm?ward=${params.ward}&pollingCenter=${selectedPollingCenter}`,
+            `/auth/phoneVerification?ward=${params.ward}&pollingCenter=${selectedPollingCenter}`,
         );
     const proceed = () => {
         if (step === "county" && selectedCounty) {

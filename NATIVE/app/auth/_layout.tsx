@@ -27,6 +27,7 @@ export default function ExamLayout() {
                 }}
             />
             <Stack.Screen name="signup/[step]" options={{headerShown: false}} />
+            <Stack.Screen name="phoneVerification" options={{headerShown: false}} />
             <Stack.Screen
                 name="signUpForm"
                 options={{
