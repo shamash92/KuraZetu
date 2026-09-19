@@ -1,17 +1,9 @@
-import logging
-import os
-
 from django.contrib.auth import login, logout
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.views import generic
 
-from accounts.forms import LoginForm, PasswordResetForm
-from accounts.models import User
-
-BASE_DIR = os.path.dirname((os.path.dirname(os.path.abspath(__file__))))
-
-logger = logging.getLogger(__name__)
+from accounts.forms import LoginForm
 
 
 def home_view(request):
@@ -41,24 +33,11 @@ def logout_view(request):
     return HttpResponseRedirect("/")
 
 
-class PasswordResetView(generic.FormView):
-    form_class = PasswordResetForm
-    success_url = "/accounts/login/"
-    template_name = "accounts/password_reset.html"
+class PasswordResetView(generic.RedirectView):
+    """Send legacy reset links to the OTP-protected client flow."""
 
-    def form_valid(self, form):
-        # TODO: How do we confirm the phone number first via OTP?
-
-        # This method is called when valid form data has been POSTed.
-
-        try:
-            user = User.objects.get(phone_number=form.cleaned_data.get("phone_number"))
-            user.set_password(form.cleaned_data.get("password"))
-            user.save()
-
-        except Exception as e:
-            logger.error("Exception: %s", e)
-        return super().form_valid(form)
+    def get_redirect_url(self, *args, **kwargs):
+        return "/ui/password-reset/"
 
 
 class AlreadyLoggedInView(generic.TemplateView):

@@ -115,6 +115,13 @@ class TestLoginView:
         assert response.status_code == 400
 
 
+def test_legacy_password_reset_route_redirects_to_otp_flow(client):
+    response = client.get(reverse("password_reset"))
+
+    assert response.status_code == 302
+    assert response["Location"] == "/ui/password-reset/"
+
+
 class TestPushTokenView:
     def test_authenticated_user_can_update_their_push_token(self):
         user = User.objects.create_user(

@@ -1,5 +1,3 @@
-import logging
-
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import AdminPasswordChangeForm, ReadOnlyPasswordHashField
@@ -7,8 +5,6 @@ from django.contrib.auth.forms import AdminPasswordChangeForm, ReadOnlyPasswordH
 from phonenumber_field.formfields import PhoneNumberField
 
 from accounts.models import User
-
-logger = logging.getLogger(__name__)
 
 
 class LoginForm(forms.Form):
@@ -137,32 +133,3 @@ class UserAdminChangeForm(forms.ModelForm):
         # This is done here, rather than on the field, because the
         # field does not have access to the initial value
         return self.initial["password"]
-
-
-class PasswordResetForm(forms.Form):
-    # get user field
-    phone_number = PhoneNumberField(
-        initial="+254",
-        help_text="Enter your phone number in +254",
-        required=True,
-    )
-    password = forms.CharField(
-        help_text="Enter your new password",
-        widget=forms.PasswordInput,
-        required=True,
-    )
-
-    def clean_phone_number(self):
-        logger.debug("Validating Phone Number for password reset")
-        phone_number = self.cleaned_data.get("phone_number")
-        qs = User.objects.filter(phone_number=phone_number)
-
-        if not qs.exists():
-            raise forms.ValidationError("This Phone Number is not registered")
-        return phone_number
-
-    def save(self, commit=False):
-        logger.debug("Saving Password Reset form")
-        user = super(PasswordResetForm, self).save(commit=False)
-
-        return user

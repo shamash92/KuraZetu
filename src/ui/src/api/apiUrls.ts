@@ -21,6 +21,10 @@ export const SIGNUP_PHONE_VERIFICATION_START_URL =
     "/api/accounts/phone-verification/signup/start/";
 export const PHONE_VERIFICATION_CODE_URL = "/api/accounts/phone-verification/verify/";
 export const SIGNUP_COMPLETION_URL = "/api/accounts/phone-verification/signup/complete/";
+export const PASSWORD_RESET_PHONE_VERIFICATION_START_URL =
+    "/api/accounts/phone-verification/password-reset/start/";
+export const PASSWORD_RESET_COMPLETION_URL =
+    "/api/accounts/phone-verification/password-reset/complete/";
 
 export const NATIONAL_PRESIDENTIAL_RESULTS_URL =
     "/api/results/total-votes/presidential/";

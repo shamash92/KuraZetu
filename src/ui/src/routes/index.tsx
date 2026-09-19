@@ -7,6 +7,7 @@ import SignupComponent from "../auth/signup/index";
 import SignupForm from "../auth/signup/signupForm";
 import PhoneVerification from "../auth/signup/PhoneVerification";
 import {SignupVerificationSessionProvider} from "../auth/signup/SignupVerificationSession";
+import PasswordReset from "../auth/passwordReset/PasswordReset";
 import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
@@ -79,6 +80,7 @@ function RoutesApp() {
             <Route path="/ui/" element={<LandingPage />} />
             <Route path="/ui/download-apk/" element={<APKDownloadPage />} />
             <Route path="/ui/game/" element={<GameLandingPage />} />
+            <Route path="/ui/password-reset/" element={<PasswordReset />} />
 
             {/* Public Routes */}
 

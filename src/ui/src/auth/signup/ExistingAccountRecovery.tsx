@@ -21,7 +21,7 @@ export function ExistingAccountRecovery({onUseAnotherNumber}: ExistingAccountRec
                     <ArrowRight />
                 </a>
                 <span className="account-recovery-or" aria-hidden="true">or</span>
-                <a className="account-recovery-choice account-recovery-choice--reset" href="/accounts/password-reset/">
+                <a className="account-recovery-choice account-recovery-choice--reset" href="/ui/password-reset/">
                     Reset password
                 </a>
             </div>

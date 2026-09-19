@@ -1,6 +1,11 @@
 import cookie from "react-cookies";
 
-import {PHONE_VERIFICATION_CODE_URL, SIGNUP_PHONE_VERIFICATION_START_URL} from "./apiUrls";
+import {
+    PASSWORD_RESET_COMPLETION_URL,
+    PASSWORD_RESET_PHONE_VERIFICATION_START_URL,
+    PHONE_VERIFICATION_CODE_URL,
+    SIGNUP_PHONE_VERIFICATION_START_URL,
+} from "./apiUrls";
 
 type ApiErrorBody = {
     code?: unknown;
@@ -55,7 +60,7 @@ export class PhoneVerificationRequestError extends Error {
     }
 }
 
-async function post<T>(url: string, body: Record<string, string>): Promise<T> {
+async function post(url: string, body: Record<string, string>) {
     let response: Response;
     try {
         response = await fetch(url, {
@@ -75,9 +80,9 @@ async function post<T>(url: string, body: Record<string, string>): Promise<T> {
     }
 
     const data = (await response.json().catch(() => ({}))) as ApiErrorBody & {
-        data?: T;
+        data?: unknown;
     };
-    if (!response.ok || !data.data) {
+    if (!response.ok) {
         throw new PhoneVerificationRequestError({
             message:
                 data.error ??
@@ -87,18 +92,41 @@ async function post<T>(url: string, body: Record<string, string>): Promise<T> {
             retryAfterSeconds: data.retry_after_seconds ?? null,
         });
     }
-    return data.data;
+    return data;
+}
+
+async function postWithData<T>(url: string, body: Record<string, string>): Promise<T> {
+    const response = await post(url, body);
+    if (!response.data) {
+        throw new PhoneVerificationRequestError({
+            message: "We could not complete phone verification. Try again.",
+        });
+    }
+    return response.data as T;
 }
 
 export function startSignupPhoneVerification(phoneNumber: string) {
-    return post<StartPayload>(SIGNUP_PHONE_VERIFICATION_START_URL, {
+    return postWithData<StartPayload>(SIGNUP_PHONE_VERIFICATION_START_URL, {
         phone_number: phoneNumber,
     });
 }
 
 export function verifyPhoneCode(challengeId: string, code: string) {
-    return post<VerifyPayload>(PHONE_VERIFICATION_CODE_URL, {
+    return postWithData<VerifyPayload>(PHONE_VERIFICATION_CODE_URL, {
         challenge_id: challengeId,
         code,
+    });
+}
+
+export function startPasswordResetVerification(phoneNumber: string) {
+    return postWithData<StartPayload>(PASSWORD_RESET_PHONE_VERIFICATION_START_URL, {
+        phone_number: phoneNumber,
+    });
+}
+
+export async function completePasswordReset(verificationTicket: string, newPassword: string) {
+    await post(PASSWORD_RESET_COMPLETION_URL, {
+        verification_ticket: verificationTicket,
+        new_password: newPassword,
     });
 }
