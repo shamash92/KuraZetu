@@ -3,6 +3,7 @@ import os
 from decouple import config
 
 from CommunityTally.settings.base import *
+from CommunityTally.settings.otp_settings import *
 
 SECRET_KEY = "!8ytp74y4!l5x%rw6*mx4fmuzi&o14v$_x&^))$jyajl6py356"
 DATABASES = {
@@ -35,3 +36,6 @@ SECURE_FRAME_DENY = False
 
 
 IS_TESTING = True
+
+# Tests never send real SMS, even if a developer has opted into it locally.
+OTP_SMS_BACKEND = "fake"
