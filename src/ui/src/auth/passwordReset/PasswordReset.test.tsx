@@ -72,3 +72,24 @@ test("a person resets a password after proving control of their phone", async ()
         }),
     );
 });
+
+test("an unverified phone has a verification-specific entry point", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({data: {phone_number: "+254700000001"}}),
+    }) as unknown as typeof fetch;
+
+    render(
+        <MemoryRouter initialEntries={["/ui/password-reset/?reason=phone_unverified"]}>
+            <PasswordReset />
+        </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("heading", {name: "Verify your phone."})).toBeVisible();
+    expect(
+        screen.getByText(
+            "We’ll send a six-digit code, then you’ll set a new password to continue.",
+        ),
+    ).toBeVisible();
+    expect(await screen.findByDisplayValue("700000001")).toBeVisible();
+});

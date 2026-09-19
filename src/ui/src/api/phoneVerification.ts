@@ -2,6 +2,7 @@ import cookie from "react-cookies";
 
 import {
     PASSWORD_RESET_COMPLETION_URL,
+    PASSWORD_RESET_PHONE_PREFILL_URL,
     PASSWORD_RESET_PHONE_VERIFICATION_START_URL,
     PHONE_VERIFICATION_CODE_URL,
     SIGNUP_PHONE_VERIFICATION_START_URL,
@@ -122,6 +123,24 @@ export function startPasswordResetVerification(phoneNumber: string) {
     return postWithData<StartPayload>(PASSWORD_RESET_PHONE_VERIFICATION_START_URL, {
         phone_number: phoneNumber,
     });
+}
+
+export async function getPasswordResetPhonePrefill() {
+    try {
+        const response = await fetch(PASSWORD_RESET_PHONE_PREFILL_URL, {
+            credentials: "same-origin",
+            headers: {Accept: "application/json"},
+        });
+        if (!response.ok) return null;
+        const data = (await response.json()) as {
+            data?: {phone_number?: unknown};
+        };
+        return typeof data.data?.phone_number === "string"
+            ? data.data.phone_number
+            : null;
+    } catch {
+        return null;
+    }
 }
 
 export async function completePasswordReset(verificationTicket: string, newPassword: string) {

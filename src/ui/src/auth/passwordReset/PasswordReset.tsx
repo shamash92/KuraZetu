@@ -3,9 +3,11 @@ import "../signup/auth.css";
 
 import {ArrowLeft, ArrowRight} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
+import {useSearchParams} from "react-router-dom";
 
 import {
     completePasswordReset,
+    getPasswordResetPhonePrefill,
     PhoneVerificationRequestError,
     startPasswordResetVerification,
     verifyPhoneCode,
@@ -46,6 +48,8 @@ function maskedPhone(phoneDigits: string) {
 }
 
 export default function PasswordReset() {
+    const [searchParams] = useSearchParams();
+    const phoneVerificationRequired = searchParams.get("reason") === "phone_unverified";
     const [step, setStep] = useState<Step>("phone");
     const [phoneDigits, setPhoneDigits] = useState("");
     const [challenge, setChallenge] = useState<Challenge | null>(null);
@@ -66,6 +70,21 @@ export default function PasswordReset() {
         if (step === "phone") phoneInput.current?.focus();
         if (step === "code") codeInput.current?.focus();
     }, [step]);
+
+    useEffect(() => {
+        if (!phoneVerificationRequired) return;
+        let current = true;
+
+        async function prefillPhoneNumber() {
+            const phoneNumber = await getPasswordResetPhonePrefill();
+            if (current && phoneNumber) setPhoneDigits(nationalDigits(phoneNumber));
+        }
+
+        void prefillPhoneNumber();
+        return () => {
+            current = false;
+        };
+    }, [phoneVerificationRequired]);
 
     const sendCode = async () => {
         if (phoneDigits.length !== 9) {
@@ -288,10 +307,15 @@ export default function PasswordReset() {
                     </>
                 ) : (
                     <>
-                        <h1>Reset your password.</h1>
+                        <h1>
+                            {phoneVerificationRequired
+                                ? "Verify your phone."
+                                : "Reset your password."}
+                        </h1>
                         <p className="lede">
-                            Enter your number and we&rsquo;ll send a six-digit code if it has an
-                            account.
+                            {phoneVerificationRequired
+                                ? "We’ll send a six-digit code, then you’ll set a new password to continue."
+                                : "Enter your number and we’ll send a six-digit code if it has an account."}
                         </p>
                         <form
                             onSubmit={(event) => {
