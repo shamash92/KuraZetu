@@ -12,7 +12,7 @@ type UserState = {
     expoPushToken: string | null;
     setExpoPushToken: (expoPushToken: string | null) => void;
     logIn: (userToken: string) => void;
-    logOut: () => void;
+    logOut: () => Promise<void>;
 };
 
 // TODO: not sure if having both userToken and hasSavedUserToken is necessary.
@@ -52,13 +52,16 @@ export const useAuthStore = create(
                     };
                 });
             },
-            logOut: () => {
+            logOut: async () => {
                 set((state) => {
                     return {
                         ...state,
                         isLoggedIn: false,
+                        hasSavedUserToken: false,
+                        userToken: null,
                     };
                 });
+                await deleteItemAsync("userToken");
             },
         }),
         {

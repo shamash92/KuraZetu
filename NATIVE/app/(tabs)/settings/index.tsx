@@ -19,7 +19,6 @@ import {
 import {NEUTRAL, PRIMARY} from "../../_utils/colors";
 import React, {useState} from "react";
 
-import {deleteFromSecureStore} from "@/app/_utils/secureStore";
 import {router} from "expo-router";
 import {statusBarHeight} from "@/app/_utils/screenDimensions";
 import useAuthStore from "@/app/_utils/authStore";
@@ -101,9 +100,7 @@ export default function ProfileScreen() {
 
     const handleLogout = async () => {
         try {
-            logOut();
-
-            await deleteFromSecureStore("userToken");
+            await logOut();
 
             router.replace("/auth/login");
         } catch (error) {
