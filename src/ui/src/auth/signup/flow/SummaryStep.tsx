@@ -42,14 +42,14 @@ export default function SummaryStep({flow}: SummaryStepProps) {
                 </div>
             </div>
 
-            <p className="note">Proceed below to share your information.</p>
+            <p className="note">Confirm your phone number before sharing your account details.</p>
 
             <div className="cta-stack">
                 <a
                     className="submit"
-                    href={`/ui/signup/accounts/${flow.ward.number}/${flow.pollingCenter.code}/`}
+                    href={`/ui/signup/verify/${flow.ward.number}/${flow.pollingCenter.code}/`}
                 >
-                    Proceed to registration <ArrowRight />
+                    Confirm phone number <ArrowRight />
                 </a>
                 <button type="button" className="geo-back" onClick={flow.back}>
                     Back

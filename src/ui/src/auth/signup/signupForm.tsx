@@ -2,6 +2,7 @@ import "../../landing-pages/landing.css";
 import "./auth.css";
 
 import {Controller, useForm} from "react-hook-form";
+import {useEffect, useRef} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 
 import cookie from "react-cookies";
@@ -9,19 +10,13 @@ import {useMutation} from "@tanstack/react-query";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 
-import {SIGNUP_URL} from "../../api/apiUrls";
+import {SIGNUP_COMPLETION_URL} from "../../api/apiUrls";
 import {clearSignupFlow} from "./useSignupFlow";
+import {useSignupVerificationSession} from "./SignupVerificationSession";
 
 // Defining the form validation schema
 const formSchema = z
     .object({
-        phone_number: z
-            .string()
-            .min(1, "Phone number is required")
-            .regex(
-                /^\+254[0-9]{9}$/,
-                "Must be a valid Kenyan phone number starting with +254 followed by 9 digits",
-            ),
         first_name: z
             .string()
             .min(2, "First name is required, min 2 characters")
@@ -52,10 +47,10 @@ const formSchema = z
                 required_error: "Please select a role",
             },
         ),
-        password: z.string().min(4, "Password must be at least 8 characters long"),
+        password: z.string().min(8, "Password must be at least 8 characters long"),
         confirm_password: z
             .string()
-            .min(4, "Password confirmation must be at least 8 characters long"),
+            .min(8, "Password confirmation must be at least 8 characters long"),
     })
     .refine((data) => data.password === data.confirm_password, {
         message: "Passwords do not match",
@@ -78,7 +73,9 @@ interface SignupSuccess {
 
 export default function SignupForm() {
     const navigate = useNavigate();
-    let {wardCode, pollingCenterCode} = useParams();
+    const {wardCode, pollingCenterCode} = useParams();
+    const {clearVerificationTicket, verificationTicket} = useSignupVerificationSession();
+    const hasRegistered = useRef(false);
 
     const csrfToken = cookie.load("csrftoken");
 
@@ -86,7 +83,6 @@ export default function SignupForm() {
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            phone_number: "+254",
             first_name: "",
             last_name: "",
             age: undefined,
@@ -98,7 +94,7 @@ export default function SignupForm() {
 
     const signupMutation = useMutation({
         mutationFn: async (values: FormValues): Promise<SignupSuccess> => {
-            const response = await fetch(SIGNUP_URL, {
+            const response = await fetch(SIGNUP_COMPLETION_URL, {
                 method: "POST",
                 credentials: "same-origin",
                 headers: {
@@ -107,8 +103,10 @@ export default function SignupForm() {
                     "X-CSRFToken": csrfToken,
                 },
                 body: JSON.stringify({
-                    data: {...values, polling_center: pollingCenterCode},
+                    ...values,
+                    verification_ticket: verificationTicket,
                     ward_code: wardCode,
+                    polling_center: pollingCenterCode,
                 }),
             });
 
@@ -143,10 +141,17 @@ export default function SignupForm() {
             const token = data.data?.token;
             if (typeof token !== "string" || token.length === 0) return;
 
+            // Clearing the ticket below empties the state this screen's own
+            // guard watches. Without this the guard reads the cleared ticket as
+            // "never verified", sends the new account back to the code screen,
+            // and the cleared ladder bounces it on to the start of signup.
+            hasRegistered.current = true;
+
             // The ladder has served its purpose; leaving it saved would drop a
             // returning visitor back onto the summary of an account they have
             // already created.
             clearSignupFlow();
+            clearVerificationTicket();
 
             localStorage.setItem("token", token);
             cookie.save("token", token, {
@@ -165,6 +170,15 @@ export default function SignupForm() {
         },
     });
 
+    useEffect(() => {
+        if (hasRegistered.current) return;
+        if (!verificationTicket && wardCode && pollingCenterCode) {
+            navigate(`/ui/signup/verify/${wardCode}/${pollingCenterCode}/`, {
+                replace: true,
+            });
+        }
+    }, [navigate, pollingCenterCode, verificationTicket, wardCode]);
+
     // What the markup below reads: a plain string for whole-form problems, or
     // the per-field object the API returns under `details`.
     const failure = signupMutation.error as SignupFailure | null;
@@ -177,7 +191,6 @@ export default function SignupForm() {
 
     // Strict gate: every required field must be valid before Register enables.
     // Age is the only optional field.
-    const phone = form.watch("phone_number");
     const firstName = form.watch("first_name");
     const lastName = form.watch("last_name");
     const gender = form.watch("gender");
@@ -187,7 +200,6 @@ export default function SignupForm() {
 
     const isFormIncomplete =
         submitting ||
-        !/^\+254[0-9]{9}$/.test(phone ?? "") ||
         !firstName ||
         firstName.length < 2 ||
         !lastName ||
@@ -195,7 +207,7 @@ export default function SignupForm() {
         gender === undefined ||
         !role ||
         !password ||
-        password.length < 4 ||
+        password.length < 8 ||
         !confirmPassword ||
         password !== confirmPassword;
 
@@ -205,12 +217,14 @@ export default function SignupForm() {
         formState: {errors},
     } = form;
 
+    if (!verificationTicket) return null;
+
     return (
         <div className="kz-auth">
             <div className="register">
                 <h2>Create an Account</h2>
                 <p className="lede">
-                    Join Kura Zetu to help ensure election transparency in Kenya
+                    Your phone is confirmed. Finish setting up your Kura Zetu account.
                 </p>
 
                 {/* Error alert for polling center / ward not found */}
@@ -226,70 +240,16 @@ export default function SignupForm() {
                             </p>
                         </div>
                     )}
+                {error &&
+                    typeof error === "string" &&
+                    !error.includes("Polling center not found") &&
+                    !error.includes("Ward not found") && (
+                        <p className="otp-error" role="alert">
+                            {error}
+                        </p>
+                    )}
 
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    {/* Phone Number */}
-                    <div className="field">
-                        <span className="label">Phone Number</span>
-                        <div className="phone-input">
-                            <div className="prefix">
-                                <span className="flag" />
-                                +254
-                            </div>
-                            <Controller
-                                control={form.control}
-                                name="phone_number"
-                                render={({field}) => (
-                                    <input
-                                        placeholder="712 345 678"
-                                        inputMode="numeric"
-                                        value={field.value.replace(/^\+254/, "")}
-                                        onChange={(e) => {
-                                            const digits = e.target.value
-                                                .replace(/\D/g, "")
-                                                .slice(0, 9);
-                                            field.onChange("+254" + digits);
-                                        }}
-                                    />
-                                )}
-                            />
-                        </div>
-                        <div className="note-box">
-                            <b>NOTE:</b> You can use any number for now if you want. We
-                            are deliberately not using OTP. Just know at some point in
-                            future, your account number will have to be verified.
-                        </div>
-                        {errors.phone_number && (
-                            <span
-                                style={{
-                                    fontStyle: "italic",
-                                    color: "var(--red)",
-                                    fontSize: "12px",
-                                }}
-                            >
-                                {errors.phone_number.message}
-                            </span>
-                        )}
-                        {error &&
-                            (error as unknown as Record<string, string>)[
-                                "phone_number"
-                            ] && (
-                                <p
-                                    style={{
-                                        fontSize: "13px",
-                                        color: "var(--red)",
-                                        margin: 0,
-                                    }}
-                                >
-                                    {
-                                        (error as unknown as Record<string, string>)[
-                                            "phone_number"
-                                        ]
-                                    }
-                                </p>
-                            )}
-                    </div>
-
                     {/* First + Last Name */}
                     <div className="field-2">
                         <div className="field">
@@ -574,6 +534,7 @@ export default function SignupForm() {
                         disabled={submitting}
                         onClick={() => {
                             clearSignupFlow();
+                            clearVerificationTicket();
                             window.location.assign("/");
                         }}
                     >

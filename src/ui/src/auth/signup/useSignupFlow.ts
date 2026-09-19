@@ -63,12 +63,12 @@ const EMPTY: SignupFlowState = {
 };
 
 /**
- * Forget the saved flow. Called once registration succeeds, so returning to
+ * Forget the session-scoped flow. Called once registration succeeds, so returning to
  * `/ui/signup/` starts over instead of resuming the completed ladder.
  */
 export function clearSignupFlow() {
     try {
-        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
     } catch {
         // storage disabled — nothing was saved to begin with.
     }
@@ -80,7 +80,7 @@ function isStep(value: unknown): value is SignupStep {
 
 function loadState(): SignupFlowState {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = sessionStorage.getItem(STORAGE_KEY);
         if (!raw) return EMPTY;
         const parsed = JSON.parse(raw) as Partial<SignupFlowState>;
         return {
@@ -98,10 +98,11 @@ function loadState(): SignupFlowState {
 export function useSignupFlow() {
     const [state, setState] = useState<SignupFlowState>(loadState);
 
-    // Persist every change so refresh/back restores the same step + selections.
+    // Keep only location selections for this browser tab. OTPs, signup tickets,
+    // passwords, and profile fields are never written to browser storage.
     useEffect(() => {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         } catch {
             // storage full / disabled — flow still works in-memory.
         }

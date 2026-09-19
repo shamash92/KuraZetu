@@ -32,7 +32,7 @@
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--copper);
+  color: var(--copper-deep);
 }
 
 /* ── STEP 1 · Welcome / choice ─────────────────────────────────────── */
@@ -448,7 +448,7 @@
   display: block;
   text-align: center;
 }
-.kz-auth .register h2 {
+.kz-auth .register :is(h1, h2) {
   margin: 10px 0 6px;
   font-family: var(--display);
   font-size: clamp(30px, 3vw, 40px);
@@ -471,7 +471,7 @@
 }
 .kz-auth .field .label {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -533,6 +533,10 @@
   border: 1.5px solid var(--ink);
   border-radius: 12px;
 }
+.kz-auth .phone-input:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
 .kz-auth .phone-input .prefix {
   display: flex;
   align-items: center;
@@ -588,6 +592,227 @@
 .kz-auth .note-box b {
   font-weight: 800;
 }
+
+/* ── Phone verification ─────────────────────────────────────────────── */
+.kz-auth .otp-verification {
+  max-width: 540px;
+}
+.kz-auth .otp-verification form {
+  max-width: 390px;
+  margin-inline: auto;
+}
+.kz-auth .otp-control {
+  position: relative;
+}
+.kz-auth .otp-code-input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  border: 0;
+  font-size: 16px;
+  opacity: 0;
+  cursor: text;
+}
+.kz-auth .otp-cells {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+.kz-auth .otp-cell {
+  display: grid;
+  min-height: 56px;
+  place-items: center;
+  border: 1.5px solid var(--rule-16);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.kz-auth .otp-control:focus-within .otp-cells {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+  border-radius: 15px;
+}
+.kz-auth .otp-cell.filled {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+.kz-auth .otp-cell.cursor {
+  border-color: var(--green);
+}
+.kz-auth .otp-help,
+.kz-auth .otp-actions,
+.kz-auth .text-action {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+}
+.kz-auth .otp-help {
+  margin: 12px 0 0;
+  color: var(--mute);
+}
+.kz-auth .otp-error {
+  margin: 14px 0 0;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.kz-auth .otp-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 390px;
+  margin-top: 18px;
+  margin-inline: auto;
+}
+.kz-auth .text-action {
+  margin: -12px 0;
+  padding: 12px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.kz-auth .text-action:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.kz-auth .text-action:disabled {
+  color: var(--mute);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+.kz-auth .register.otp-verification .cancel {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 16px;
+  max-width: 390px;
+  margin-inline: auto;
+  align-items: center;
+  text-align: center;
+}
+.kz-auth .otp-verification .cancel svg {
+  justify-self: start;
+  width: 16px;
+  height: 16px;
+}
+.kz-auth .account-recovery {
+  width: 100%;
+  max-width: 390px;
+  margin-inline: auto;
+  text-align: center;
+}
+.kz-auth .account-recovery-illustration {
+  display: block;
+  width: min(100%, 300px);
+  height: auto;
+  margin-inline: auto;
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.kz-auth .account-recovery-illustration .recovery-muted-line {
+  stroke: var(--mute);
+  stroke-width: 1;
+}
+.kz-auth .account-recovery-illustration .recovery-muted-arrow {
+  stroke: var(--mute);
+  stroke-width: 1.25;
+}
+.kz-auth .account-recovery-illustration .recovery-lime-line {
+  stroke: var(--lime);
+}
+.kz-auth .account-recovery-illustration .recovery-copper-line {
+  stroke: var(--copper);
+}
+.kz-auth .account-recovery-warning {
+  color: var(--red);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.kz-auth .account-recovery-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.kz-auth .account-recovery-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 14px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+.kz-auth .account-recovery-choice--sign-in {
+  background: var(--lime);
+  color: var(--lime-ink);
+}
+.kz-auth .account-recovery-choice--sign-in:hover {
+  background: var(--lime-deep);
+}
+.kz-auth .account-recovery-choice--reset {
+  justify-content: center;
+  background: var(--coral);
+  color: var(--ink);
+}
+.kz-auth .account-recovery-choice--reset:hover {
+  background: #f4bda9;
+}
+.kz-auth .account-recovery-choice:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.kz-auth .account-recovery-choice svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+}
+.kz-auth .account-recovery-or {
+  color: var(--mute);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.kz-auth .account-recovery .text-action {
+  justify-self: center;
+  margin: 0;
+  padding: 12px;
+}
+.kz-auth .account-recovery .text-action:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.kz-auth .account-recovery .text-action:disabled {
+  color: var(--mute);
+  cursor: not-allowed;
+  text-decoration: none;
+}
 .kz-auth .register .submit {
   display: flex;
   align-items: center;
@@ -602,13 +827,28 @@
   font-family: var(--sans);
   font-size: 15px;
   font-weight: 800;
+  text-decoration: none;
   cursor: pointer;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+.kz-auth .register .submit:hover:not(:disabled) {
+  background: var(--lime-deep);
+}
+.kz-auth .register .submit:active:not(:disabled) {
+  background: var(--lime-deep);
+  box-shadow: inset 0 2px 6px rgba(13, 13, 13, 0.14);
+}
+.kz-auth .register .submit:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
 }
 .kz-auth .register .submit:disabled {
   background: var(--surface);
-  color: var(--mute-2);
+  box-shadow: inset 0 0 0 1.5px var(--rule-16);
+  color: var(--mute);
   cursor: not-allowed;
-  border: 1.5px solid var(--rule-16);
 }
 .kz-auth .register .submit svg {
   width: 16px;
@@ -843,6 +1083,10 @@
   }
   .kz-auth .register {
     padding: 40px 22px 44px;
+  }
+  .kz-auth .otp-cell {
+    min-height: 48px;
+    font-size: 19px;
   }
   .kz-auth .done-screen h2 {
     font-size: 28px;
