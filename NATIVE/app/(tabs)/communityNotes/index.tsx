@@ -13,6 +13,7 @@ import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
 import {router} from "expo-router";
 import useAuthStore from "@/app/_utils/authStore";
+import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
 import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 
 export interface IPollingCenterInfo {
@@ -51,26 +52,31 @@ const ElectionResultsApp = () => {
     useEffect(() => {
         if (!userToken) return;
 
-        fetch(`${apiBaseURL}/api/stations/community-notes/polling-center-info/`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Token ${userToken}`,
-            },
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                // console.log(data);
+        const fetchPollingCenter = async () => {
+            try {
+                const response = await fetch(
+                    `${apiBaseURL}/api/stations/community-notes/polling-center-info/`,
+                    {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Token ${userToken}`,
+                        },
+                    },
+                );
+                if (await handleUnauthorized(response)) return;
+                const data = await response.json();
                 if (data && data.data) {
-                    // console.log(data.data, "data.data");
                     setPollingCenterInfo(data.data);
                     setCurrentCenter(data.data);
                     setStations(data.stations || []);
                 }
-            })
-            .catch((error) => {
+            } catch (error) {
                 console.error("Error fetching polling center info:", error);
-            });
+            }
+        };
+
+        void fetchPollingCenter();
     }, [userToken]);
 
     const totalVoters = stations?.reduce(

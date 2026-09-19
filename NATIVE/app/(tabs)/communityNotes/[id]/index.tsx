@@ -14,6 +14,7 @@ import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
 import useAuthStore from "@/app/_utils/authStore";
+import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
 import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 
 const PollingStationResultsSummaryList = () => {
@@ -47,11 +48,10 @@ const PollingStationResultsSummaryList = () => {
                 const response = await fetch(
                     `${apiBaseURL}/api/stations/community-notes/polling-stations/${id}/info/`,
                     {
-                        headers: {
-                            Authorization: `Token ${userToken}`,
-                        },
+                        headers: {Authorization: `Token ${userToken}`},
                     },
                 );
+                if (await handleUnauthorized(response)) return;
                 const data = await response.json();
                 setCurrentStationInfo(data);
             } catch (error) {

@@ -1,5 +1,4 @@
 import {Alert} from "react-native";
-import {fetch} from "expo/fetch";
 import {File} from "expo-file-system";
 import {useEffect, useState} from "react";
 
@@ -7,6 +6,7 @@ import {Form34ACandidate, Form34ACaptureForm} from "./Form34ACaptureForm";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/authStore";
+import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
 import {useLocalSearchParams} from "expo-router";
 
 export interface IAspirant {
@@ -38,6 +38,8 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
     const {id} = useLocalSearchParams();
 
     useEffect(() => {
+        if (!userToken) return;
+
         const fetchCandidates = async () => {
             try {
                 const response = await fetch(
@@ -50,6 +52,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                         method: "GET",
                     },
                 );
+                if (await handleUnauthorized(response)) return;
                 const data = await response.json();
                 if (data && data.data) {
                     setCandidates(data.data);
@@ -91,6 +94,8 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                 {
                     text: "Submit",
                     onPress: () => {
+                        if (!userToken) return;
+
                         const formData = new FormData();
                         formData.append(
                             "data",
@@ -114,19 +119,21 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                             {
                                 method: "POST",
                                 headers: {
-                                    Authorization: `Token ${userToken}`,
                                     Accept: "application/json",
+                                    Authorization: `Token ${userToken}`,
                                 },
                                 body: formData,
                             },
                         )
-                            .then((response) => {
+                            .then(async (response) => {
+                                if (await handleUnauthorized(response)) return null;
                                 if (!response.ok) {
                                     throw new Error("Failed to submit results");
                                 }
                                 return response.json();
                             })
-                            .then(() => {
+                            .then((data) => {
+                                if (!data) return;
                                 Alert.alert(
                                     "Success",
                                     "Results submitted successfully",

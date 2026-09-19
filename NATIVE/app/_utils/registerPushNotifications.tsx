@@ -7,6 +7,7 @@ import React, {useEffect} from "react";
 import Constants from "expo-constants";
 import {apiBaseURL} from "./apiBaseURL";
 import useAuthStore from "./authStore";
+import {handleUnauthorized} from "./handleUnauthorized";
 
 function RegisterPushNotifications() {
     const {setExpoPushToken, userToken} = useAuthStore();
@@ -41,7 +42,7 @@ function RegisterPushNotifications() {
             ).data;
             setExpoPushToken(expoPushToken);
 
-            await fetch(`${apiBaseURL}/api/accounts/push-token/`, {
+            const response = await fetch(`${apiBaseURL}/api/accounts/push-token/`, {
                 method: "POST",
                 headers: {
                     Accept: "application/json",
@@ -50,6 +51,7 @@ function RegisterPushNotifications() {
                 },
                 body: JSON.stringify({expo_push_token: expoPushToken}),
             });
+            await handleUnauthorized(response);
         }
 
         // This layout mounts after the launch continuation and any future

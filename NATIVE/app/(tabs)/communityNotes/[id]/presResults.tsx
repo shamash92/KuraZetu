@@ -20,6 +20,7 @@ import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
 import {sampleElectionData} from "../_sampleData";
 import useAuthStore from "@/app/_utils/authStore";
+import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
 import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 import {useLocalSearchParams} from "expo-router";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
@@ -92,11 +93,10 @@ export default function ResultsScreen() {
                 const response = await fetch(
                     `${apiBaseURL}/api/results/polling-station/${currentStationCode}/results/${level}/`,
                     {
-                        headers: {
-                            Authorization: `Token ${userToken}`,
-                        },
+                        headers: {Authorization: `Token ${userToken}`},
                     },
                 );
+                if (await handleUnauthorized(response)) return;
                 const data = await response.json();
                 // console.log(data, "data in ResultsScreen");
                 console.log(data["extra_data"], "extra data in ResultsScreen");
