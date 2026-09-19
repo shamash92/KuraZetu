@@ -25,7 +25,10 @@ PASSWORD = "test-password-only"
 
 @pytest.fixture
 def user(db):
-    return User.objects.create_user(phone_number=NUMBER, password=PASSWORD)
+    created_user = User.objects.create_user(phone_number=NUMBER, password=PASSWORD)
+    created_user.is_phone_verified = True
+    created_user.save(update_fields=("is_phone_verified",))
+    return created_user
 
 
 def api_login(client, number=NUMBER, password="wrong", **headers):
@@ -94,6 +97,8 @@ def test_shared_ip_does_not_lock_other_account_and_ip_change_is_separate(user):
     for _ in range(5):
         api_login(api)
     other = User.objects.create_user(phone_number="+254700000002", password=PASSWORD)
+    other.is_phone_verified = True
+    other.save(update_fields=("is_phone_verified",))
     assert api_login(api, str(other.phone_number), PASSWORD).status_code == 200
     assert api_login(api, password=PASSWORD, REMOTE_ADDR="192.0.2.2").status_code == 200
     assert api_login(api, password=PASSWORD).status_code == 429

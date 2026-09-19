@@ -212,6 +212,53 @@ def test_verified_signup_code_for_existing_user_returns_existing_account():
     assert challenge.code_digest == ""
 
 
+def test_unverified_login_requires_password_reset_before_issuing_credentials():
+    user = User.objects.create_user(
+        phone_number=NUMBER,
+        password="Old-long-unique-password-123!",
+    )
+    client = APIClient()
+
+    response = client.post(
+        reverse("login_api"),
+        {
+            "phone_number": NUMBER,
+            "password": "Old-long-unique-password-123!",
+            "expo_push_token": "ExponentPushToken[unverified]",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["code"] == "phone_verification_required"
+    assert "token" not in response.data
+    user.refresh_from_db()
+    assert user.is_phone_verified is False
+    assert user.expo_push_token is None
+
+
+def test_web_login_redirects_an_unverified_account_to_password_reset(client):
+    User.objects.create_user(
+        phone_number=NUMBER,
+        password="Old-long-unique-password-123!",
+    )
+
+    response = client.post(
+        reverse("login"),
+        {"phone_number": NUMBER, "password": "Old-long-unique-password-123!"},
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == "/ui/password-reset/?reason=phone_unverified"
+    assert "_auth_user_id" not in client.session
+    assert client.session["password_reset_phone_number"] == NUMBER
+
+    prefill = client.get(reverse("password_reset_phone_prefill_api"))
+
+    assert prefill.status_code == 200
+    assert prefill.json()["data"]["phone_number"] == NUMBER
+
+
 def test_verified_reset_ticket_changes_the_existing_password():
     user = User.objects.create_user(
         phone_number=NUMBER,
@@ -241,3 +288,4 @@ def test_verified_reset_ticket_changes_the_existing_password():
     assert response.status_code == 200
     user.refresh_from_db()
     assert user.check_password("New-long-unique-password-123!")
+    assert user.is_phone_verified is True

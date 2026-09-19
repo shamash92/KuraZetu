@@ -21,6 +21,8 @@ from accounts.models import (
     User,
 )
 
+PASSWORD_RESET_PHONE_NUMBER_SESSION_KEY = "password_reset_phone_number"
+
 
 class PhoneVerificationError(Exception):
     pass

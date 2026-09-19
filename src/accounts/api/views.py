@@ -167,6 +167,15 @@ class LoginView(APIView):
         )
 
         if user is not None:
+            if not user.is_phone_verified:
+                return Response(
+                    {
+                        "code": "phone_verification_required",
+                        "message": "Your phone number is unverified. Reset your password to continue.",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
             # first update the push notification token from mobile
             expo_push_token = data.get("expo_push_token", None)
             if expo_push_token:
