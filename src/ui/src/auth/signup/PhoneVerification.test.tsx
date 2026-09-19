@@ -135,7 +135,7 @@ test("a verified existing phone is directed to sign in without a signup ticket",
     );
     expect(screen.getByRole("link", {name: /reset password/i})).toHaveAttribute(
         "href",
-        "/accounts/password-reset/",
+        "/ui/password-reset/",
     );
 
     await user.click(screen.getByRole("button", {name: /use another number/i}));
