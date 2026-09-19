@@ -20,6 +20,12 @@ type VerifyPayload =
           expires_in_seconds: number;
       };
 
+type PasswordResetPayload = {
+    challenge_id: string;
+    expires_in_seconds: number;
+    retry_after_seconds: number;
+};
+
 export class PhoneVerificationRequestError extends Error {
     code: string | null;
     retryAfterSeconds: number | null;
@@ -80,6 +86,34 @@ async function post<T>(path: string, body: Record<string, string>): Promise<T> {
     return data.data;
 }
 
+async function postWithoutData(path: string, body: Record<string, string>): Promise<void> {
+    let response: Response;
+    try {
+        response = await fetch(`${apiBaseURL}${path}`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+    } catch {
+        throw new PhoneVerificationRequestError({
+            message: "We could not reach Kura Zetu. Check your connection and try again.",
+        });
+    }
+
+    const data = (await response.json().catch(() => ({}))) as ApiErrorBody;
+    if (!response.ok) {
+        throw new PhoneVerificationRequestError({
+            message:
+                data.error ?? "We could not complete phone verification. Try again.",
+            code: typeof data.code === "string" ? data.code : null,
+            retryAfterSeconds: data.retry_after_seconds ?? null,
+        });
+    }
+}
+
 export function startSignupPhoneVerification(phoneNumber: string) {
     return post<StartPayload>("/api/accounts/phone-verification/signup/start/", {
         phone_number: phoneNumber,
@@ -90,5 +124,19 @@ export function verifyPhoneCode(challengeId: string, code: string) {
     return post<VerifyPayload>("/api/accounts/phone-verification/verify/", {
         challenge_id: challengeId,
         code,
+    });
+}
+
+export function startPasswordResetVerification(phoneNumber: string) {
+    return post<PasswordResetPayload>(
+        "/api/accounts/phone-verification/password-reset/start/",
+        {phone_number: phoneNumber},
+    );
+}
+
+export function completePasswordReset(verificationTicket: string, newPassword: string) {
+    return postWithoutData("/api/accounts/phone-verification/password-reset/complete/", {
+        new_password: newPassword,
+        verification_ticket: verificationTicket,
     });
 }
