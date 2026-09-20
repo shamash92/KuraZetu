@@ -20,18 +20,6 @@ export default {
                     "Allow $(PRODUCT_NAME) to access your camera to capture Form 34A",
                 UIStatusBarStyle: "UIStatusBarStyleDarkContent",
                 UIViewControllerBasedStatusBarAppearance: true,
-                UIApplicationSceneManifest: {
-                    UIApplicationSupportsMultipleScenes: false,
-                    UISceneConfigurations: {
-                        UIWindowSceneSessionRoleApplication: [
-                            {
-                                UISceneConfigurationName: "Default Configuration",
-                                UISceneDelegateClassName:
-                                    "$(PRODUCT_MODULE_NAME).SceneDelegate",
-                            },
-                        ],
-                    },
-                },
             },
             entitlements: {
                 "com.apple.developer.networking.wifi-info": true,
@@ -113,8 +101,18 @@ export default {
                     },
                 },
             ],
-            "./plugins/withIosBuildFixes",
             "./plugins/withAndroidSliderFix",
+            [
+                "expo-build-properties",
+                {
+                    // SDK 57 still ships the legacy AppDelegate window setup,
+                    // which the iOS 27 SDK rejects. Opting in swaps it for
+                    // Expo's EXExpoAppSceneDelegate. Drop this on SDK 58.
+                    ios: {
+                        enableSceneSupport: true,
+                    },
+                },
+            ],
         ],
         experiments: {
             typedRoutes: true,
