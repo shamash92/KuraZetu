@@ -62,8 +62,8 @@ institutional standing.
 - Open source under the MIT licence; the codebase is intended to be contributed to and audited by
   outsiders.
 - **Undecided, and not to be invented:** the operating legal entity, governing jurisdiction, and the
-  Terms of Service and Privacy Policy themselves. `src/terms.md` records these as open questions and
-  the links in the signup form, landing footer, and APK download page are still placeholders.
+  Terms of Service and Privacy Policy themselves. These are still open questions and the links in
+  the signup form, landing footer, and APK download page are still placeholders.
 - **Not established:** device and network floor. Low-end Android and offline tolerance were
   explicitly *not* confirmed as binding constraints; do not treat performance limits as settled
   product truth until they are.
