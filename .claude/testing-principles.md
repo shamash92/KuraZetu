@@ -21,7 +21,7 @@ user workflow.
 | Scope | Tooling | Command |
 | --- | --- | --- |
 | `src/ui/` | Jest, jsdom, React Testing Library, and `user-event` | `cd src/ui && pnpm test` |
-| `NATIVE/tests/form34a/` | Node's built-in test runner for isolated logic | `cd NATIVE && pnpm test:form34a` |
+| `NATIVE/tests/form34a/` | Node's built-in test runner for isolated logic | `cd NATIVE && yarn test:form34a` |
 
 `NATIVE/` does not currently have a React Native component-test harness. Do not
 claim that component tests ran, or add a runner as a side effect of unrelated

@@ -16,7 +16,7 @@ These instructions apply to the Expo and React Native application under
 
 - Always use the official [Expo documentation for agents](https://docs.expo.dev/llms.txt)
   when researching Expo behavior.
-- Use `pnpm` and the scripts in `package.json`; do not substitute another
+- Use `yarn` and the scripts in `package.json`; do not substitute another
   package manager.
 - Visible UI changes require the repository's
   [Impeccable UI QA guidance](../.claude/design/impeccable.md).
