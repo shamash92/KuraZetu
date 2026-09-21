@@ -153,14 +153,6 @@ export default function SignupForm() {
             clearSignupFlow();
             clearVerificationTicket();
 
-            localStorage.setItem("token", token);
-            cookie.save("token", token, {
-                path: "/",
-                secure: true, // Ensures the cookie is sent over HTTPS only
-                httpOnly: false, // Prevents JavaScript from accessing the cookie (set to true if possible)
-                sameSite: "Strict", // Prevents the cookie from being sent with cross-site requests
-            });
-
             // The success page renders only for someone arriving from here;
             // without this it also renders for anyone who opens the URL
             // directly.
