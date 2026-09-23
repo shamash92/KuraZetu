@@ -22,6 +22,7 @@ import React, {useState} from "react";
 import {router} from "expo-router";
 import {statusBarHeight} from "@/app/_utils/screenDimensions";
 import useAuthStore from "@/app/_utils/authStore";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 
 interface SettingItemProps {
     icon: React.ReactNode;
@@ -96,10 +97,23 @@ export default function ProfileScreen() {
     const [darkModeEnabled, setDarkModeEnabled] = useState(false);
     const [locationEnabled, setLocationEnabled] = useState(true);
 
-    const {logOut} = useAuthStore();
+    const {logOut, userToken} = useAuthStore();
 
     const handleLogout = async () => {
         try {
+            // Revoke the token on the server before signing out here. A 401
+            // means it is already expired or revoked.
+            const response = await fetch(`${apiBaseURL}/api/accounts/native/logout/`, {
+                method: "POST",
+                headers: {Authorization: `Bearer ${userToken}`},
+            }).catch(() => null);
+            if (!response || (!response.ok && response.status !== 401)) {
+                Alert.alert(
+                    "Couldn't log out",
+                    "Unable to connect to the server. Check your connection and try again.",
+                );
+                return;
+            }
             await logOut();
 
             router.replace("/auth/login");
