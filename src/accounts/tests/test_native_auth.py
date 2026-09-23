@@ -1,8 +1,14 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.sessions.models import Session
 from django.urls import reverse
+from django.utils import timezone
 
 import pytest
+from axes.models import AccessAttempt
 from knox.models import AuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -43,6 +49,18 @@ def push_token_status(authorization):
         )
         .status_code
     )
+
+
+def native_login(password=PASSWORD):
+    return APIClient().post(
+        reverse("native_login_api"),
+        {"phone_number": NUMBER, "password": password},
+        format="json",
+    )
+
+
+def session_status(token):
+    return APIClient().get(reverse("native_session_api"), **bearer(token)).status_code
 
 
 def test_each_account_keeps_one_hashed_native_token(user):
@@ -97,3 +115,108 @@ def test_deactivated_account_cannot_use_its_knox_token(user):
     user.save(update_fields=("active",))
 
     assert push_token_status(f"Bearer {token}") == 401
+
+
+def test_native_login_issues_a_knox_token_and_no_web_session(user):
+    response = native_login()
+
+    assert response.status_code == 200
+    assert response["Cache-Control"] == "no-store"
+    assert response.data["data"]["expiry"]
+    assert AuthToken.objects.filter(user=user).count() == 1
+    assert settings.SESSION_COOKIE_NAME not in response.cookies
+    assert not Session.objects.exists()
+    assert not Token.objects.exists()
+    assert session_status(response.data["data"]["token"]) == 200
+
+
+def test_a_new_native_login_replaces_the_previous_token(user):
+    first = native_login().data["data"]["token"]
+    second = native_login().data["data"]["token"]
+
+    assert session_status(first) == 401
+    assert session_status(second) == 200
+
+
+def test_unverified_account_gets_no_knox_token():
+    User.objects.create_user(phone_number=NUMBER, password=PASSWORD)
+
+    response = native_login()
+
+    assert response.data["code"] == "phone_verification_required"
+    assert not AuthToken.objects.exists()
+
+
+def test_native_login_shares_the_password_lockout(user):
+    for _ in range(4):
+        assert native_login(password="wrong").status_code == 400
+    native_login(password="wrong")
+
+    response = native_login()
+
+    assert response.status_code == 429
+    assert response.json()["code"] == "login_temporarily_blocked"
+    assert not AuthToken.objects.exists()
+
+
+def test_native_login_resets_its_failure_counter_and_is_audited(user, monkeypatch):
+    native_login(password="wrong")
+    events = []
+    monkeypatch.setattr(
+        "accounts.signals.log_event",
+        lambda request, event, **kwargs: events.append(event),
+    )
+
+    native_login()
+
+    assert not AccessAttempt.objects.exists()
+    assert events == ["auth.login_succeeded"]
+
+
+def test_use_slides_the_expiry_but_never_past_thirty_days(user):
+    token = native_login().data["data"]["token"]
+    stored = AuthToken.objects.get(user=user)
+    stored.created = timezone.now() - timedelta(days=29)
+    stored.expiry = timezone.now() + timedelta(hours=1)
+    stored.save()
+
+    assert session_status(token) == 200
+
+    stored.refresh_from_db()
+    assert stored.expiry == stored.created + timedelta(days=30)
+
+
+def test_expired_token_is_rejected_and_deleted(user):
+    token = native_login().data["data"]["token"]
+    AuthToken.objects.update(expiry=timezone.now() - timedelta(seconds=1))
+
+    assert session_status(token) == 401
+    assert not AuthToken.objects.exists()
+
+
+def test_native_logout_revokes_the_token_and_keeps_web_sessions(user, client):
+    client.force_login(user)
+    token = native_login().data["data"]["token"]
+
+    response = APIClient().post(reverse("native_logout_api"), **bearer(token))
+
+    assert response.status_code == 204
+    assert session_status(token) == 401
+    assert Session.objects.count() == 1
+
+
+def test_native_endpoints_reject_web_sessions_and_drf_tokens(user):
+    api = APIClient()
+    api.force_login(user)
+    drf_token = Token.objects.create(user=user)
+
+    assert api.get(reverse("native_session_api")).status_code == 401
+    assert (
+        APIClient()
+        .get(
+            reverse("native_session_api"),
+            HTTP_AUTHORIZATION=f"Token {drf_token.key}",
+        )
+        .status_code
+        == 401
+    )

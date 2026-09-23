@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.signals import user_logged_in, user_logged_out
 
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -14,7 +15,11 @@ from accounts.api.serializers import (
     UserSerializer,
 )
 from accounts.auth_security import log_event
-from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
+from accounts.authentication import (
+    NATIVE_AUTHENTICATION,
+    WEB_AND_NATIVE_AUTHENTICATION,
+    issue_native_token,
+)
 from accounts.models import User
 from stations.models import PollingCenter, Ward
 
@@ -187,24 +192,73 @@ class LoginView(APIView):
                     user.save()
                     logger.debug("Expo push token updated for user_id=%s:", user.id)
 
-            token, created = Token.objects.get_or_create(user=user)
-            login(request._request, user)
-            return Response(
-                {
-                    "message": "User login successful",
-                    "data": {
-                        "user": UserSerializer(user).data,
-                        "token": token.key,
-                    },
-                },
-                status=status.HTTP_200_OK,
-            )
+            return self.login_succeeded(request, user)
         else:
             logger.debug("User authentication failed")
             return Response(
                 {"error": "Invalid credentials"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    def login_succeeded(self, request, user):
+        token, created = Token.objects.get_or_create(user=user)
+        login(request._request, user)
+        return Response(
+            {
+                "message": "User login successful",
+                "data": {
+                    "user": UserSerializer(user).data,
+                    "token": token.key,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class NativeLoginView(LoginView):
+    """Password login for the Native app: a Knox token, never a web session."""
+
+    def login_succeeded(self, request, user):
+        instance, token = issue_native_token(user)
+        # Resets the lockout counter, updates last_login, and audits the login.
+        user_logged_in.send(sender=user.__class__, request=request._request, user=user)
+        response = Response(
+            {
+                "message": "User login successful",
+                "data": {
+                    "user": UserSerializer(user).data,
+                    "token": token,
+                    "expiry": instance.expiry,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+class NativeSessionView(APIView):
+    """Confirm the Native token is still valid; each call slides its expiry."""
+
+    authentication_classes = NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(
+            {"data": {"expiry": request.auth.expiry}}, status=status.HTTP_200_OK
+        )
+
+
+class NativeLogoutView(APIView):
+    authentication_classes = NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request.auth.delete()
+        user_logged_out.send(
+            sender=request.user.__class__, request=request._request, user=request.user
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PushTokenView(APIView):

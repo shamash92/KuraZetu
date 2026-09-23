@@ -14,6 +14,8 @@ WEB_AND_NATIVE_AUTHENTICATION = (
     SessionAuthentication,
 )
 
+NATIVE_AUTHENTICATION = (KnoxTokenAuthentication,)
+
 
 def issue_native_token(user):
     """Replace the account's Native token; the raw value is returned once."""
