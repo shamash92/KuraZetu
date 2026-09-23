@@ -1,11 +1,7 @@
 import {
-    CheckCircle,
     Edit,
     FastForward,
-    HelpCircle,
-    MapPin,
     Save,
-    Sparkles,
     ThumbsUp,
     X,
 } from "lucide-react";
@@ -477,9 +473,6 @@ export default function GameMap({level}: GameMapProps) {
                         !isEditing && (
                         <div className="pv-first-locate">
                             <div className="pv-first-locate-card">
-                                <span className="pv-first-locate-icon">
-                                    <Sparkles size={22} />
-                                </span>
                                 <h3>You're the first to locate this center.</h3>
                                 <p>
                                     Search the school name, then place the first pin
@@ -496,9 +489,6 @@ export default function GameMap({level}: GameMapProps) {
                 <aside className="pv-game-panel">
                     {suggestedLocation ? (
                         <div className="pv-panel-state">
-                            <span className="pv-panel-state-icon">
-                                <CheckCircle size={24} />
-                            </span>
                             <h2>Pin recorded</h2>
                             <p>
                                 Asante. Your suggestion is now part of the community
@@ -510,9 +500,6 @@ export default function GameMap({level}: GameMapProps) {
                         </div>
                     ) : alreadyVerifiedByUser ? (
                         <div className="pv-panel-state">
-                            <span className="pv-panel-state-icon">
-                                <CheckCircle size={24} />
-                            </span>
                             <h2>Already verified</h2>
                             <p>
                                 You have already{" "}
@@ -545,12 +532,10 @@ export default function GameMap({level}: GameMapProps) {
 
                             {currentLocation.properties.pin_location_error ? (
                                 <div className="pv-ward-warning">
-                                    <HelpCircle size={14} />
                                     {currentLocation.properties.pin_location_error}
                                 </div>
                             ) : (
                                 <div className="pv-ward-ok">
-                                    <CheckCircle size={14} />
                                     Pin is inside {currentLocation.properties.ward} ward
                                 </div>
                             )}
@@ -651,13 +636,6 @@ export default function GameMap({level}: GameMapProps) {
                                                 : "is-outside"
                                         }`}
                                     >
-                                        {!draftPosition ? (
-                                            <MapPin size={14} />
-                                        ) : draftInsideWard ? (
-                                            <CheckCircle size={14} />
-                                        ) : (
-                                            <HelpCircle size={14} />
-                                        )}
                                         {!draftPosition
                                             ? "Pan or search, then choose Put pin here"
                                             : draftInsideWard
@@ -753,9 +731,6 @@ export default function GameMap({level}: GameMapProps) {
                         </>
                     ) : (
                         <div className="pv-panel-state">
-                            <span className="pv-panel-state-icon">
-                                <MapPin size={24} />
-                            </span>
                             <h2>Finding a center</h2>
                             <p>Preparing the next location for review.</p>
                         </div>

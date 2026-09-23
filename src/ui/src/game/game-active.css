@@ -558,19 +558,8 @@
   text-align: center;
 }
 
-.pv-first-locate-icon {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  margin: 0 auto;
-  place-items: center;
-  color: var(--pv-ink);
-  border-radius: 50%;
-  background: var(--pv-lime);
-}
-
 .pv-first-locate-card h3 {
-  margin: 15px 0 0;
+  margin: 0;
   font-size: 22px;
   font-weight: 900;
   letter-spacing: -0.035em;
@@ -979,18 +968,8 @@
   justify-content: center;
 }
 
-.pv-panel-state-icon {
-  display: grid;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  color: var(--pv-green-deep);
-  border-radius: 50%;
-  background: var(--pv-mint);
-}
-
 .pv-panel-state h2 {
-  margin: 18px 0 0;
+  margin: 0;
   font-size: 25px;
   font-weight: 900;
   letter-spacing: -0.035em;
