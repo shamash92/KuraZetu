@@ -106,24 +106,18 @@
   margin-left: auto;
 }
 
-.pv-game-track {
+.pv-game-progress {
+  margin: 0;
   color: var(--pv-mute);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.pv-game-helped {
-  padding: 6px 12px;
-  color: var(--pv-green-deep);
-  border-radius: 999px;
-  background: var(--pv-mint);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.pv-game-progress strong {
+  color: var(--pv-ink);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .pv-game-workspace {
@@ -1057,7 +1051,7 @@
   }
 
   .pv-game-pills,
-  .pv-game-track {
+  .pv-game-progress-scope {
     display: none;
   }
 
@@ -1090,9 +1084,8 @@
     display: none;
   }
 
-  .pv-game-helped {
-    padding-inline: 9px;
-    font-size: 9px;
+  .pv-game-progress {
+    font-size: 12px;
   }
 
   .pv-game-map-shell {

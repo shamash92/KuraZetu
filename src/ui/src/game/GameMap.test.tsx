@@ -113,8 +113,9 @@ test("a drawn polling center is shown with the volunteer's progress", async () =
     renderGame();
 
     expect(await screen.findByText("Kaloleni Primary School")).toBeInTheDocument();
-    expect(screen.getByText(/40 centers/)).toBeInTheDocument();
-    expect(screen.getByText(/7 helped/)).toBeInTheDocument();
+    expect(screen.getByText(/You've checked/)).toHaveTextContent(
+        "You've checked 7 of 40 centers",
+    );
 });
 
 test("skipping draws a different polling center", async () => {

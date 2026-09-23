@@ -526,13 +526,23 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
 
                 <div className="pv-game-nav-right">
                     {isAuthenticated && (
-                        <span className="pv-game-track">
-                            {level || "Kenya"} · {totalStationsCount} centers
-                        </span>
+                        <p className="pv-game-progress">
+                            You've checked <strong>{verifiedStationsCount}</strong>
+                            {totalStationsCount > 0 && (
+                                <>
+                                    {" "}
+                                    of <strong>{totalStationsCount}</strong>
+                                </>
+                            )}{" "}
+                            centers
+                            {level && (
+                                <span className="pv-game-progress-scope">
+                                    {" "}
+                                    in your {level}
+                                </span>
+                            )}
+                        </p>
                     )}
-                    <span className="pv-game-helped">
-                        {verifiedStationsCount} helped
-                    </span>
                 </div>
             </header>
 
