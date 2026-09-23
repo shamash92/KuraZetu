@@ -178,6 +178,25 @@ test("a center with no pin but an AI suggestion is not offered as a first find",
     expect(screen.getByRole("button", {name: /place your pin/i})).toBeInTheDocument();
 });
 
+test("a center the volunteer already pinned is not offered as a first find", async () => {
+    const center = unpinned(1, "Takaungu Primary School");
+    const own = pollingCenter(90, "Takaungu Primary School");
+    mockDraws(
+        round(center, {
+            error: "You have already verified this polling center",
+            user_verification: own,
+            partially_verified: {features: []},
+        }),
+    );
+
+    renderGame();
+
+    expect(await screen.findByText("Already verified")).toBeInTheDocument();
+    expect(
+        screen.queryByText("You're the first to locate this center."),
+    ).not.toBeInTheDocument();
+});
+
 test("confirming the pin records the verification and draws the next center", async () => {
     const user = userEvent.setup();
     const {countDraws, countVerifications} = mockDraws(

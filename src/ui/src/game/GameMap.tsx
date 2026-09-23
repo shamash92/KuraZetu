@@ -471,7 +471,10 @@ export default function GameMap({level}: GameMapProps) {
                     </div>
                 )}
 
-                    {currentLocation && isFirstToLocate && !isEditing && (
+                    {currentLocation &&
+                        isFirstToLocate &&
+                        !alreadyVerifiedByUser &&
+                        !isEditing && (
                         <div className="pv-first-locate">
                             <div className="pv-first-locate-card">
                                 <span className="pv-first-locate-icon">
