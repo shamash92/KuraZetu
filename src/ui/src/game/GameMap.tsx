@@ -12,6 +12,7 @@ import {IConsensus, IPollingCenterFeature, ISuggestionFeature, TLevel} from "./t
 import cookie from "react-cookies";
 import {toast} from "sonner";
 import MapComponent from "./Map";
+import {isPinOutsideWard} from "./wardGeometry";
 import {useAuth} from "../App";
 import {
     POLLING_CENTER_PARTIALLY_VERIFIED_URL,
@@ -547,6 +548,7 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
                         isEditing={isEditing}
                         draftPosition={draftPosition}
                         onDraftPositionChange={updateDraftPosition}
+                        onMovePin={openMovePin}
                         partiallyVerifiedLocations={
                             partiallyVerifiedLocations
                                 ? partiallyVerifiedLocations
@@ -622,15 +624,17 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
                                 <dd>IEBC roster</dd>
                             </dl>
 
-                            {currentLocation.properties.pin_location_error ? (
-                                <div className="pv-ward-warning">
-                                    {currentLocation.properties.pin_location_error}
-                                </div>
-                            ) : (
-                                <div className="pv-ward-ok">
-                                    Pin is inside {currentLocation.properties.ward} ward
-                                </div>
-                            )}
+                            {/* An off-ward pin is announced over the map instead. */}
+                            {!isPinOutsideWard(currentLocation) &&
+                                (currentLocation.properties.pin_location_error ? (
+                                    <div className="pv-ward-warning">
+                                        {currentLocation.properties.pin_location_error}
+                                    </div>
+                                ) : (
+                                    <div className="pv-ward-ok">
+                                        Pin is inside {currentLocation.properties.ward} ward
+                                    </div>
+                                ))}
 
                             <div className="pv-consensus">
                                 <div className="pv-consensus-head">
