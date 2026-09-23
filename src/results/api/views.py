@@ -6,12 +6,12 @@ from django.db.models import Sum
 from django.shortcuts import render
 
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
 from results.api.serializers import (
     AspirantSerializer,
     PollingStationGovernorResultsSerializer,
@@ -440,10 +440,7 @@ class PollingStationLevelResultsAPIView(APIView):
     (Form 34A, rejected/disputed/valid votes); other offices have none.
     """
 
-    authentication_classes = [
-        TokenAuthentication,
-        SessionAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
     # level -> (results model, results serializer, candidate FK field name)
@@ -551,10 +548,7 @@ class PollingStationLevelResultsAPIView(APIView):
 
 class PollingStationPresidentialResultsAPIView(APIView):
 
-    authentication_classes = [
-        TokenAuthentication,
-        SessionAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -600,10 +594,7 @@ class PollingStationPresidentialResultsAPIView(APIView):
 
 class PollingStationCandidatesListAPIView(APIView):
 
-    authentication_classes = [
-        TokenAuthentication,
-        SessionAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -661,10 +652,7 @@ class PollingStationResultsCreateAPIView(APIView):
     API view to create results for a polling station.
     """
 
-    authentication_classes = [
-        TokenAuthentication,
-        SessionAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request, *args, **kwargs):

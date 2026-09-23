@@ -3,7 +3,6 @@ import logging
 from django.contrib.auth import authenticate, login
 
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +14,7 @@ from accounts.api.serializers import (
     UserSerializer,
 )
 from accounts.auth_security import log_event
+from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
 from accounts.models import User
 from stations.models import PollingCenter, Ward
 
@@ -208,7 +208,7 @@ class LoginView(APIView):
 
 
 class PushTokenView(APIView):
-    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
