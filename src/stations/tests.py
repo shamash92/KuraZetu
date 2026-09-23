@@ -354,3 +354,56 @@ def test_round_already_verified_still_shows_other_suggestions():
     assert response.data["error"] == "You have already verified this polling center"
     suggestions = response.data["partially_verified"]["features"]
     assert [s["id"] for s in suggestions] == [other.id]
+
+
+def _upvote(client, center):
+    return client.post(
+        reverse("polling_centers_verification_api"),
+        {
+            "latitude": center.pin_location.y,
+            "longitude": center.pin_location.x,
+            "pollingCenterDBId": center.id,
+            "isUpvote": True,
+        },
+        format="json",
+    )
+
+
+@pytest.mark.django_db
+def test_confirming_a_pin_outside_its_ward_is_kept_as_an_outlier():
+    center = PollingCenter.objects.create(
+        name="Mtwapa", code="022", ward=_ward(), pin_location=Point(37.5, 0.5)
+    )
+
+    response = _upvote(_client_for(center), center)
+
+    assert response.status_code == 200
+    vote = PollingCenterVerification.objects.get(polling_center=center)
+    assert vote.is_upvote is True
+    assert vote.is_outlier is True
+
+
+@pytest.mark.django_db
+def test_confirming_a_pin_inside_its_ward_is_not_an_outlier():
+    center = PollingCenter.objects.create(
+        name="Takaungu", code="012", ward=_ward(), pin_location=Point(36.5, 0.5)
+    )
+
+    _upvote(_client_for(center), center)
+
+    assert (
+        PollingCenterVerification.objects.get(polling_center=center).is_outlier is False
+    )
+
+
+@pytest.mark.django_db
+def test_confirming_a_pin_outside_its_ward_needs_sign_in():
+    center = PollingCenter.objects.create(
+        name="Mtwapa", code="022", ward=_ward(), pin_location=Point(37.5, 0.5)
+    )
+
+    response = _upvote(APIClient(), center)
+
+    assert response.status_code == 403
+    center.refresh_from_db()
+    assert center.location_upvotes == 0
