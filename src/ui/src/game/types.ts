@@ -18,10 +18,11 @@ export interface IPollingCenterFeature {
         is_verified: boolean;
         is_unlocated?: boolean;
         location_upvotes: number;
+        // Null when the center has never been pinned.
         pin_location: {
             type: "Point";
             coordinates: [number, number];
-        };
+        } | null;
         // Present on partial-verification features (existing suggestions).
         suggested_by?: string;
         suggested_on?: string;
@@ -33,6 +34,16 @@ export interface IPollingCenterFeature {
         is_upvote?: boolean;
     };
 }
+
+// An existing suggestion. Unlike the center itself, it always has a pin.
+export type ISuggestionFeature = IPollingCenterFeature & {
+    properties: {
+        pin_location: {
+            type: "Point";
+            coordinates: [number, number];
+        };
+    };
+};
 
 // Result row from the geocode endpoint (/api/stations/geocode/).
 export interface IGeocodeResult {

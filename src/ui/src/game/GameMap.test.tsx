@@ -131,6 +131,53 @@ test("skipping draws a different polling center", async () => {
     expect(countDraws()).toBe(2);
 });
 
+function unpinned(id: number, name: string) {
+    const center = pollingCenter(id, name);
+    center.properties.pin_location = null;
+    center.properties.is_unlocated = true;
+    return center;
+}
+
+test("a center with no pin and no suggestions asks for the first pin and can be skipped", async () => {
+    const user = userEvent.setup();
+    const {countDraws} = mockDraws(
+        round(unpinned(1, "Takaungu Primary School")),
+        round(pollingCenter(2, "Mnarani Academy")),
+    );
+
+    renderGame();
+
+    expect(
+        await screen.findByText("You're the first to locate this center."),
+    ).toBeInTheDocument();
+    expect(
+        screen.queryByRole("button", {name: /yes — this pin is right/i}),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", {name: /skip/i}));
+
+    expect(await screen.findByText("Mnarani Academy")).toBeInTheDocument();
+    expect(countDraws()).toBe(2);
+});
+
+test("a center with no pin but an AI suggestion is not offered as a first find", async () => {
+    const suggestion = pollingCenter(90, "Takaungu Primary School");
+    suggestion.properties.ai_suggestion = true;
+    mockDraws(
+        round(unpinned(1, "Takaungu Primary School"), {
+            partially_verified: {features: [suggestion]},
+        }),
+    );
+
+    renderGame();
+
+    await screen.findByText("Takaungu Primary School");
+    expect(
+        screen.queryByText("You're the first to locate this center."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: /place your pin/i})).toBeInTheDocument();
+});
+
 test("confirming the pin records the verification and draws the next center", async () => {
     const user = userEvent.setup();
     const {countDraws, countVerifications} = mockDraws(

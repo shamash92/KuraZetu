@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {IConsensus, IPollingCenterFeature, TLevel} from "./types";
+import {IConsensus, IPollingCenterFeature, ISuggestionFeature, TLevel} from "./types";
 
 import cookie from "react-cookies";
 import {toast} from "sonner";
@@ -41,8 +41,8 @@ type DraftPosition = {lat: number; lng: number};
 type GameRoundResponse = {
     data: IPollingCenterFeature | null;
     error?: string;
-    user_verification?: IPollingCenterFeature | null;
-    partially_verified?: {features: IPollingCenterFeature[]};
+    user_verification?: ISuggestionFeature | null;
+    partially_verified?: {features: ISuggestionFeature[]};
     total_stations_count?: number;
     verified_stations_count?: number;
 };
@@ -143,6 +143,13 @@ export default function GameMap({level}: GameMapProps) {
     const verifiedStationsCount = round?.verified_stations_count ?? 0;
 
     const isUnlocated = currentLocation?.properties.is_unlocated === true;
+    // Unlocated, and nobody (volunteer or AI) has suggested a spot yet.
+    const isFirstToLocate = isUnlocated && !partiallyVerifiedLocations;
+    const placePinLabel = isFirstToLocate
+        ? "Place the first pin"
+        : isUnlocated
+          ? "Place your pin"
+          : "Move the pin";
 
     // Announce the already-verified round once per draw rather than on every
     // render that reads the same cached response.
@@ -276,14 +283,15 @@ export default function GameMap({level}: GameMapProps) {
     const isSavingPin = verifyMutation.isPending || suggestionMutation.isPending;
 
     const handleYes = () => {
-        if (!currentLocation) {
+        const pin = currentLocation?.properties.pin_location;
+        if (!currentLocation || !pin) {
             toast.error("No current location to verify");
             return;
         }
 
         verifyMutation.mutate({
-            latitude: currentLocation.properties.pin_location.coordinates[1],
-            longitude: currentLocation.properties.pin_location.coordinates[0],
+            latitude: pin.coordinates[1],
+            longitude: pin.coordinates[0],
             pollingCenterDBId: currentLocation.id,
             isUpvote: true,
         });
@@ -368,7 +376,7 @@ export default function GameMap({level}: GameMapProps) {
             if (event.key.toLowerCase() === "s" && currentLocation) {
                 if (isEditing) {
                     if (!isSavingPin) saveDraftPosition();
-                } else if (!isUnlocated) {
+                } else {
                     handleSkip();
                 }
             }
@@ -463,7 +471,7 @@ export default function GameMap({level}: GameMapProps) {
                     </div>
                 )}
 
-                    {currentLocation && isUnlocated && !isEditing && (
+                    {currentLocation && isFirstToLocate && !isEditing && (
                         <div className="pv-first-locate">
                             <div className="pv-first-locate-card">
                                 <span className="pv-first-locate-icon">
@@ -599,9 +607,7 @@ export default function GameMap({level}: GameMapProps) {
                                         </span>
                                         <div>
                                             <strong>
-                                                {isUnlocated
-                                                    ? "Place the first pin"
-                                                    : "Move the pin"}
+                                                {placePinLabel}
                                             </strong>
                                             <span>
                                                 Pan the map until the target is over the
@@ -717,9 +723,7 @@ export default function GameMap({level}: GameMapProps) {
                                         <Edit size={16} />
                                     </span>
                                     <span className="pv-decision-copy">
-                                        {isUnlocated
-                                            ? "Place the first pin"
-                                            : "Move the pin"}
+                                        {placePinLabel}
                                         <small>
                                             Pan the map and place the target on the building
                                         </small>
@@ -727,24 +731,20 @@ export default function GameMap({level}: GameMapProps) {
                                     <span className="pv-decision-key">M</span>
                                 </button>
 
-                                {!isUnlocated && (
-                                    <button
-                                        className="pv-decision-button is-skip"
-                                        type="button"
-                                        onClick={handleSkip}
-                                    >
-                                        <span className="pv-decision-icon">
-                                            <FastForward size={16} />
-                                        </span>
-                                        <span className="pv-decision-copy">
-                                            Skip
-                                            <small>
-                                                Not sure — pass to the next center
-                                            </small>
-                                        </span>
-                                        <span className="pv-decision-key">S</span>
-                                    </button>
-                                )}
+                                <button
+                                    className="pv-decision-button is-skip"
+                                    type="button"
+                                    onClick={handleSkip}
+                                >
+                                    <span className="pv-decision-icon">
+                                        <FastForward size={16} />
+                                    </span>
+                                    <span className="pv-decision-copy">
+                                        Skip
+                                        <small>Not sure — pass to the next center</small>
+                                    </span>
+                                    <span className="pv-decision-key">S</span>
+                                </button>
                             </div>
                             )}
                         </>
