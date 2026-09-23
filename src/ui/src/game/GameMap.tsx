@@ -16,6 +16,8 @@ import {useAuth} from "../App";
 import {
     POLLING_CENTER_PARTIALLY_VERIFIED_URL,
     POLLING_CENTER_VERIFY_URL,
+    centerRoundUrl,
+    levelCentersUrl,
     randomUnverifiedCenterUrl,
 } from "../api/apiUrls";
 import {gameKeys} from "../api/queryKeys";
@@ -24,6 +26,10 @@ import "./game-active.css";
 
 interface GameMapProps {
     level: TLevel | null;
+    // The centre on screen when playing a level; null starts at the top of
+    // the level's list. Unused by the random track.
+    centerId?: number | null;
+    onCenterChange?: (centerId: number) => void;
 }
 
 type DraftPosition = {lat: number; lng: number};
@@ -41,6 +47,19 @@ type GameRoundResponse = {
     partially_verified?: {features: ISuggestionFeature[]};
     total_stations_count?: number;
     verified_stations_count?: number;
+};
+
+/** The centres a level walks through, in play order. */
+type LevelCentersResponse = {
+    results: Array<{
+        id: number;
+        name: string;
+        code: string;
+        is_verified: boolean;
+        suggestion_count: number;
+    }>;
+    total_stations_count: number;
+    verified_stations_count: number;
 };
 
 /**
@@ -62,7 +81,7 @@ type VerifyResponse = {
     location_upvotes?: number;
 };
 
-export default function GameMap({level}: GameMapProps) {
+export default function GameMap({level, centerId = null, onCenterChange}: GameMapProps) {
     const [consensus, setConsensus] = useState<IConsensus | null>(null);
 
     const [suggestedLocation, setSuggestedLocation] =
@@ -77,14 +96,59 @@ export default function GameMap({level}: GameMapProps) {
     const isAuthenticated = useAuth();
     const queryClient = useQueryClient();
 
+    // A level is played by walking a fixed list, so no centre comes up twice;
+    // the random track (no level) draws one at a time instead.
+    const isLevelPlay = level !== null;
+
+    const levelQuery = useQuery({
+        queryKey: gameKeys.levelCenters(level ?? ""),
+
+        queryFn: async ({signal}): Promise<LevelCentersResponse> => {
+            const response = await fetch(levelCentersUrl(level ?? ""), {
+                method: "GET",
+                headers: {Accept: "application/json"},
+                credentials: "include",
+                signal,
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw Object.assign(
+                    new Error(data?.error ?? "Could not load the polling centers"),
+                    {status: response.status, payload: data},
+                );
+            }
+
+            return data;
+        },
+
+        enabled: isLevelPlay,
+        // The order is fixed for the session: refetching mid-walk would move
+        // centres under the volunteer.
+        staleTime: Infinity,
+        refetchOnWindowFocus: false,
+        retry: false,
+    });
+
+    const levelCenters = levelQuery.data?.results ?? [];
+    const activeCenterId = isLevelPlay ? (centerId ?? levelCenters[0]?.id ?? null) : null;
+
     const roundQuery = useQuery({
-        queryKey: gameKeys.randomCenter(level),
+        queryKey:
+            activeCenterId !== null
+                ? gameKeys.centerRound(activeCenterId)
+                : gameKeys.randomCenter(level),
 
         queryFn: async ({signal}): Promise<GameRoundResponse> => {
             // No `X-CSRFToken` here. Django enforces CSRF on unsafe methods
             // only, so a GET never needed it, and the token cannot go in the
             // query key: keys are held in memory and shown in devtools.
-            const response = await fetch(randomUnverifiedCenterUrl(level), {
+            const url =
+                activeCenterId !== null
+                    ? centerRoundUrl(activeCenterId)
+                    : randomUnverifiedCenterUrl(level);
+            const response = await fetch(url, {
                 method: "GET",
                 headers: {
                     Accept: "application/json",
@@ -112,6 +176,8 @@ export default function GameMap({level}: GameMapProps) {
             return data;
         },
 
+        enabled: !isLevelPlay || activeCenterId !== null,
+
         ...querySettings.gameRound,
     });
 
@@ -119,8 +185,33 @@ export default function GameMap({level}: GameMapProps) {
     // new draw, so the previous centre is gone the moment one is asked for.
     const round = roundQuery.isFetching ? undefined : roundQuery.data;
 
-    const toggleReload = () => {
-        void roundQuery.refetch();
+    // The list is not refetched mid-walk, so a saved verification is counted
+    // into it by hand.
+    const countOwnVerification = () => {
+        if (!isLevelPlay) return;
+        queryClient.setQueryData<LevelCentersResponse>(
+            gameKeys.levelCenters(level ?? ""),
+            (previous) =>
+                previous && {
+                    ...previous,
+                    verified_stations_count: previous.verified_stations_count + 1,
+                },
+        );
+    };
+
+    const goToNextCenter = () => {
+        if (!isLevelPlay) {
+            void roundQuery.refetch();
+            return;
+        }
+        if (!levelCenters.length) return;
+        // A centre opened from a shared link may sit outside the list; its
+        // index is -1, so the walk starts from the top.
+        const index = levelCenters.findIndex((center) => center.id === activeCenterId);
+        if (index === levelCenters.length - 1) {
+            toast.success("That was the last center here. Starting again from the top.");
+        }
+        onCenterChange?.(levelCenters[(index + 1) % levelCenters.length].id);
     };
 
     const alreadyVerifiedByUser =
@@ -135,8 +226,9 @@ export default function GameMap({level}: GameMapProps) {
     const partiallyVerifiedLocations = round?.partially_verified?.features?.length
         ? round.partially_verified.features
         : null;
-    const totalStationsCount = round?.total_stations_count ?? 0;
-    const verifiedStationsCount = round?.verified_stations_count ?? 0;
+    const counts = isLevelPlay ? levelQuery.data : round;
+    const totalStationsCount = counts?.total_stations_count ?? 0;
+    const verifiedStationsCount = counts?.verified_stations_count ?? 0;
 
     const isUnlocated = currentLocation?.properties.is_unlocated === true;
     // Unlocated, and nobody (volunteer or AI) has suggested a spot yet.
@@ -245,14 +337,14 @@ export default function GameMap({level}: GameMapProps) {
         onSuccess(data, variables) {
             if (variables.isUpvote) {
                 toast.success("Asante — your confirmation was recorded.");
+                countOwnVerification();
                 // This centre now carries the volunteer's vote, so their round
-                // is spent. Invalidating the key draws the next one.
-                void queryClient.invalidateQueries({
-                    queryKey: gameKeys.randomCenter(level),
-                });
+                // is spent.
+                goToNextCenter();
                 return;
             }
 
+            countOwnVerification();
             if (data.consensus) {
                 setConsensus(data.consensus);
             }
@@ -294,7 +386,7 @@ export default function GameMap({level}: GameMapProps) {
     };
 
     const handleSkip = () => {
-        toggleReload();
+        goToNextCenter();
     };
 
     const openMovePin = () => {
@@ -403,7 +495,7 @@ export default function GameMap({level}: GameMapProps) {
     // next one clears it.
     const nextLocation = () => {
         setSuggestedLocation(null);
-        toggleReload();
+        goToNextCenter();
     };
 
     const mapLocation = alreadyVerifiedByUser

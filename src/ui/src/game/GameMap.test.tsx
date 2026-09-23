@@ -1,4 +1,5 @@
 import {render, screen, waitFor} from "@testing-library/react";
+import {useState} from "react";
 import userEvent from "@testing-library/user-event";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
@@ -27,7 +28,10 @@ jest.mock("sonner", () => ({
     },
 }));
 
-const RANDOM_URL = "/api/stations/polling-centers/unverified/random/ward/";
+// The signed-out random track. Levels walk a list instead; see the end of file.
+const RANDOM_URL = "/api/stations/polling-centers/unverified/random/null/";
+const LEVEL_URL = "/api/stations/polling-centers/level/ward/";
+const roundUrl = (id: number) => `/api/stations/polling-centers/${id}/round/`;
 const VERIFY_URL = "/api/stations/polling-centers/verify/";
 
 function pollingCenter(id: number, name: string): IPollingCenterFeature {
@@ -97,7 +101,7 @@ function mockDraws(...bodies: Array<unknown>) {
 function renderGame() {
     return render(
         <QueryClientProvider client={new QueryClient()}>
-            <GameMap level="ward" />
+            <GameMap level={null} />
         </QueryClientProvider>,
     );
 }
@@ -299,4 +303,89 @@ test("a failed draw is requested once and not retried on its own", async () => {
     // so a retry is the most expensive possible response to a failure.
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+/**
+ * Plays the ward track: answers the level list with `centers` and each
+ * centre's round with a plain round of it. Reports which rounds were
+ * requested, in order.
+ */
+function mockLevel(centers: IPollingCenterFeature[]) {
+    const fetchMock = jest.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === LEVEL_URL) {
+            return Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        results: centers.map((center) => ({
+                            id: center.id,
+                            name: center.properties.name,
+                            code: center.properties.code,
+                            is_verified: false,
+                            suggestion_count: 0,
+                        })),
+                        total_stations_count: centers.length,
+                        verified_stations_count: 0,
+                    }),
+            });
+        }
+        const center = centers.find((c) => url === roundUrl(c.id));
+        return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(center ? round(center) : {}),
+        });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    return {
+        roundsRequested: () =>
+            fetchMock.mock.calls
+                .map(([input]) => String(input))
+                .filter((url) => url !== LEVEL_URL),
+    };
+}
+
+// Stands in for the URL: GameMap reports the next centre, the page shows it.
+function LevelGame({initialCenter = null}: {initialCenter?: number | null}) {
+    const [centerId, setCenterId] = useState<number | null>(initialCenter);
+    return <GameMap level="ward" centerId={centerId} onCenterChange={setCenterId} />;
+}
+
+function renderLevelGame(initialCenter: number | null = null) {
+    return render(
+        <QueryClientProvider client={new QueryClient()}>
+            <LevelGame initialCenter={initialCenter} />
+        </QueryClientProvider>,
+    );
+}
+
+test("skipping through a level walks the list in order and wraps once it ends", async () => {
+    const user = userEvent.setup();
+    const {roundsRequested} = mockLevel([
+        pollingCenter(1, "Kaloleni Primary School"),
+        pollingCenter(2, "Mnarani Academy"),
+    ]);
+
+    renderLevelGame();
+
+    await screen.findByText("Kaloleni Primary School");
+    await user.click(screen.getByRole("button", {name: /skip/i}));
+    await screen.findByText("Mnarani Academy");
+    await user.click(screen.getByRole("button", {name: /skip/i}));
+    await screen.findByText("Kaloleni Primary School");
+
+    expect(roundsRequested()).toEqual([roundUrl(1), roundUrl(2), roundUrl(1)]);
+});
+
+test("a centre named in the URL opens first", async () => {
+    const {roundsRequested} = mockLevel([
+        pollingCenter(1, "Kaloleni Primary School"),
+        pollingCenter(2, "Mnarani Academy"),
+    ]);
+
+    renderLevelGame(2);
+
+    expect(await screen.findByText("Mnarani Academy")).toBeInTheDocument();
+    expect(roundsRequested()).toEqual([roundUrl(2)]);
 });

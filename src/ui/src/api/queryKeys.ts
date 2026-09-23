@@ -41,6 +41,16 @@ export const gameKeys = {
     randomCenter(level: string | null) {
         return [...gameKeys.all, "random-center", level] as const;
     },
+
+    /** The centres a level walks through, in play order. */
+    levelCenters(level: string) {
+        return [...gameKeys.all, "level-centers", level] as const;
+    },
+
+    /** One centre's round, read afresh each time the volunteer lands on it. */
+    centerRound(centerId: number) {
+        return [...gameKeys.all, "center-round", centerId] as const;
+    },
 };
 
 export const resultKeys = {

@@ -1,18 +1,20 @@
 from django.urls import path
 
 from stations.api.views import (
+    AIPollingCenterVerificationAPIView,
+    CommunityNotesPollingCenterDetailsAPIView,
     ConstituenciesBoundariesListAPIView,
     CountiesBoundariesListAPIView,
+    GeocodeAPIView,
+    LevelPollingCentersAPIView,
+    PartiallyVerifiedPollingCenterAPIView,
+    PollingCenterRoundAPIView,
+    PollingStationInfoAPIView,
+    RandomUnverifiedPollingCenterAPIView,
+    VerificationPollingCenterAPIView,
     WardBoundariesListAPIView,
     WardPollingCenterFromLocationListAPIView,
     WardPollingCenterListAPIView,
-    RandomUnverifiedPollingCenterAPIView,
-    VerificationPollingCenterAPIView,
-    AIPollingCenterVerificationAPIView,
-    PartiallyVerifiedPollingCenterAPIView,
-    CommunityNotesPollingCenterDetailsAPIView,
-    PollingStationInfoAPIView,
-    GeocodeAPIView,
 )
 
 urlpatterns = [
@@ -45,6 +47,16 @@ urlpatterns = [
         "polling-centers/unverified/random/<str:admin_level>/",
         RandomUnverifiedPollingCenterAPIView.as_view(),
         name="random_unverified_polling_centers_api",
+    ),
+    path(
+        "polling-centers/level/<str:admin_level>/",
+        LevelPollingCentersAPIView.as_view(),
+        name="level_polling_centers_api",
+    ),
+    path(
+        "polling-centers/<int:pk>/round/",
+        PollingCenterRoundAPIView.as_view(),
+        name="polling_center_round_api",
     ),
     path(
         "polling-centers/verify/",
