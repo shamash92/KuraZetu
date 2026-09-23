@@ -1,6 +1,7 @@
 from django.contrib.gis.geos import Point
 from django.db import transaction
-from django.db.models import F
+from django.db.models import Case, Count, F, Q, When
+from django.shortcuts import get_object_or_404
 
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
@@ -149,6 +150,41 @@ class WardPollingCenterFromLocationListAPIView(APIView):
         )
 
 
+def _round_payload(polling_center, user):
+    """A pinverify round: the center and its suggestions.
+
+    When ``user`` has already verified the center, the round also carries
+    their own verification, flagged under ``error``.
+    """
+    verified_by_qs = PollingCenterVerification.objects.filter(
+        polling_center=polling_center,
+    )
+    verified_by_user_qs = verified_by_qs.filter(verified_by=user)
+
+    suggestions_qs = verified_by_qs.filter(is_upvote=False)
+
+    if verified_by_user_qs.exists():
+        # Others' suggestions still come back, so the volunteer sees their
+        # own pin among everyone else's.
+        return {
+            "error": "You have already verified this polling center",
+            "data": PollingCenterBoundarySerializer(polling_center).data,
+            "user_verification": PartiallyVerifiedPollingCenterBoundarySerializer(
+                verified_by_user_qs.first()
+            ).data,
+            "partially_verified": PartiallyVerifiedPollingCenterBoundarySerializer(
+                suggestions_qs.exclude(verified_by=user), many=True
+            ).data,
+        }
+
+    return {
+        "data": PollingCenterBoundarySerializer(polling_center).data,
+        "partially_verified": PartiallyVerifiedPollingCenterBoundarySerializer(
+            suggestions_qs, many=True
+        ).data,
+    }
+
+
 class RandomUnverifiedPollingCenterAPIView(APIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [AllowAny]
@@ -232,48 +268,14 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                     .first()
                 )
 
-            verified_by_qs = PollingCenterVerification.objects.filter(
-                polling_center=random_unverified_polling_center,
+            return Response(
+                {
+                    **_round_payload(random_unverified_polling_center, user),
+                    "total_stations_count": total_stations_count,
+                    "verified_stations_count": verified_stations_count,
+                },
+                status=status.HTTP_200_OK,
             )
-
-            verified_by_user_qs = verified_by_qs.filter(
-                verified_by=user,
-            )
-
-            if verified_by_user_qs.exists():
-                return Response(
-                    {
-                        "error": "You have already verified this polling center",
-                        "data": PollingCenterBoundarySerializer(
-                            random_unverified_polling_center
-                        ).data,
-                        "user_verification": PartiallyVerifiedPollingCenterBoundarySerializer(
-                            verified_by_user_qs.first()
-                        ).data,
-                        "total_stations_count": total_stations_count,
-                        "verified_stations_count": verified_stations_count,
-                    },
-                    status=status.HTTP_200_OK,
-                )
-            else:
-
-                boundary_data = PollingCenterBoundarySerializer(
-                    random_unverified_polling_center
-                ).data
-
-                partial_data = PartiallyVerifiedPollingCenterBoundarySerializer(
-                    verified_by_qs.filter(is_upvote=False), many=True
-                ).data
-
-                return Response(
-                    {
-                        "data": boundary_data,
-                        "partially_verified": partial_data,
-                        "total_stations_count": total_stations_count,
-                        "verified_stations_count": verified_stations_count,
-                    },
-                    status=status.HTTP_200_OK,
-                )
         else:
             random_unverified_polling_center = (
                 PollingCenter.objects.filter(
@@ -292,6 +294,101 @@ class RandomUnverifiedPollingCenterAPIView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
+
+
+# Admin level -> lookup from a PollingCenter to the user's matching area.
+LEVEL_LOOKUPS = {
+    "ward": ("ward", lambda center: center.ward),
+    "constituency": (
+        "ward__constituency",
+        lambda center: center.ward.constituency,
+    ),
+    "county": (
+        "ward__constituency__county",
+        lambda center: center.ward.constituency.county,
+    ),
+}
+
+
+class LevelPollingCentersAPIView(APIView):
+    """Every center in the caller's ward, constituency or county, in play order.
+
+    The caller's own center comes first, then unverified centers that already
+    have a pin (the easy rounds), then unlocated ones (no pin, or 0,0), then
+    verified ones, each by ward and station code. The client walks this list
+    so a round never repeats a center.
+    """
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, admin_level):
+        if admin_level not in LEVEL_LOOKUPS:
+            return Response(
+                {"error": "Level must be ward, constituency or county."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        own_center = request.user.polling_center
+        if own_center is None:
+            return Response(
+                {"error": "Set your polling center to play by level."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        lookup, area_of = LEVEL_LOOKUPS[admin_level]
+        area = area_of(own_center)
+
+        centers = (
+            PollingCenter.objects.filter(**{lookup: area})
+            .annotate(
+                suggestion_count=Count(
+                    "verifications",
+                    filter=Q(
+                        verifications__is_upvote=False,
+                        verifications__pin_location__isnull=False,
+                    ),
+                )
+            )
+            .order_by(
+                Case(
+                    When(id=own_center.id, then=0),
+                    When(is_verified=True, then=3),
+                    When(pin_location__isnull=True, then=2),
+                    When(pin_location__equals=Point(0, 0, srid=4326), then=2),
+                    default=1,
+                ),
+                "ward__number",
+                "code",
+                "id",
+            )
+            .values("id", "name", "code", "is_verified", "suggestion_count")
+        )
+
+        return Response(
+            {
+                "results": list(centers),
+                "total_stations_count": len(centers),
+                "verified_stations_count": PollingCenterVerification.objects.filter(
+                    **{f"polling_center__{lookup}": area},
+                    verified_by=request.user,
+                ).count(),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PollingCenterRoundAPIView(APIView):
+    """One center as a pinverify round, with every suggestion made for it."""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        polling_center = get_object_or_404(PollingCenter, pk=pk)
+        return Response(
+            _round_payload(polling_center, request.user),
+            status=status.HTTP_200_OK,
+        )
 
 
 class VerificationPollingCenterAPIView(APIView):

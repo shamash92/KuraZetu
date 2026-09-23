@@ -25,6 +25,16 @@ export default function GameLandingPage() {
     // "random" maps to a null admin-level for the existing GameMap/API contract.
     const mapLevel: TLevel | null = level === "random" || level === null ? null : level;
 
+    // ?center= pins the round to one centre so a level can be walked, reloaded
+    // and shared (e.g. /ui/game/?level=ward&center=123).
+    const rawCenter = Number(searchParams.get("center"));
+    const centerId = Number.isInteger(rawCenter) && rawCenter > 0 ? rawCenter : null;
+
+    const showCenter = (id: number) => {
+        if (level === null) return;
+        setSearchParams({level, center: String(id)});
+    };
+
     if (level === null) {
         return (
             <>
@@ -86,7 +96,11 @@ export default function GameLandingPage() {
 
     return (
         <>
-            <GameMap level={mapLevel} />
+            <GameMap
+                level={mapLevel}
+                centerId={centerId}
+                onCenterChange={showCenter}
+            />
         </>
     );
 }

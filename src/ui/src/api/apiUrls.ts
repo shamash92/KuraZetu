@@ -42,6 +42,19 @@ export function randomUnverifiedCenterUrl(level: string | null): string {
 }
 
 /**
+ * Every centre in the signed-in volunteer's ward, constituency or county, in
+ * the order the game walks them.
+ */
+export function levelCentersUrl(level: string): string {
+    return `/api/stations/polling-centers/level/${level}/`;
+}
+
+/** One centre as a round, with every suggestion made for it. */
+export function centerRoundUrl(centerId: number): string {
+    return `/api/stations/polling-centers/${centerId}/round/`;
+}
+
+/**
  * A volunteer's verdict on a centre's pin: either an upvote of the pin as
  * drawn, or a suggested position for it.
  */
