@@ -341,7 +341,7 @@ export default function LoginScreen() {
             password: password,
         };
 
-        fetch(`${apiBaseURL}/api/accounts/login/`, {
+        fetch(`${apiBaseURL}/api/accounts/native/login/`, {
             method: "POST",
             headers: {
                 Accept: "application/json",

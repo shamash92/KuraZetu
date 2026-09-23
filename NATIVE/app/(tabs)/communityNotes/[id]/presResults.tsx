@@ -93,7 +93,7 @@ export default function ResultsScreen() {
                 const response = await fetch(
                     `${apiBaseURL}/api/results/polling-station/${currentStationCode}/results/${level}/`,
                     {
-                        headers: {Authorization: `Token ${userToken}`},
+                        headers: {Authorization: `Bearer ${userToken}`},
                     },
                 );
                 if (await handleUnauthorized(response)) return;

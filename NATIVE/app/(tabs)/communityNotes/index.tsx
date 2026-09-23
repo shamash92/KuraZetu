@@ -60,7 +60,7 @@ const ElectionResultsApp = () => {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Token ${userToken}`,
+                            Authorization: `Bearer ${userToken}`,
                         },
                     },
                 );
