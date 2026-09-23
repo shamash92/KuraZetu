@@ -10,7 +10,7 @@ import {
 import {ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail} from "lucide-react-native";
 import React, {useEffect, useMemo, useState} from "react";
 
-import {router} from "expo-router";
+import {router, useLocalSearchParams} from "expo-router";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {
     CARD,
@@ -65,8 +65,14 @@ function useSecondsUntil(deadline: number | null) {
 }
 
 export default function ForgotPasswordScreen() {
+    const {phone, reason} = useLocalSearchParams<{
+        phone?: string;
+        reason?: string;
+    }>();
     const [step, setStep] = useState<Step>("phone");
-    const [phoneDigits, setPhoneDigits] = useState("");
+    const [phoneDigits, setPhoneDigits] = useState(() =>
+        (phone ?? "").replace(/[^0-9]/g, "").slice(0, 9),
+    );
     const [challenge, setChallenge] = useState<Challenge | null>(null);
     const [code, setCode] = useState("");
     const [verificationTicket, setVerificationTicket] = useState<string | null>(null);
@@ -228,6 +234,7 @@ export default function ForgotPasswordScreen() {
                         onBack={() => router.back()}
                         onPhoneChange={handlePhoneChange}
                         onSend={() => void sendCode()}
+                        phoneVerificationRequired={reason === "phone_unverified"}
                     />
                 )}
             </ScrollView>
@@ -242,6 +249,7 @@ function PhoneStep({
     onBack,
     onPhoneChange,
     onSend,
+    phoneVerificationRequired,
 }: {
     error: string | null;
     formattedPhone: string;
@@ -249,6 +257,7 @@ function PhoneStep({
     onBack: () => void;
     onPhoneChange: (value: string) => void;
     onSend: () => void;
+    phoneVerificationRequired: boolean;
 }) {
     return (
         <View style={styles.flow}>
@@ -259,9 +268,13 @@ function PhoneStep({
                 <View style={styles.iconCircle}>
                     <Mail color={COPPER_DEEP} size={34} strokeWidth={1.8} />
                 </View>
-                <Text style={styles.heading}>Forgot password?</Text>
+                <Text style={styles.heading}>
+                    {phoneVerificationRequired ? "Verify your phone." : "Forgot password?"}
+                </Text>
                 <Text style={styles.subtitle}>
-                    Enter your number and we&apos;ll send a six-digit code if it has an account.
+                    {phoneVerificationRequired
+                        ? "We’ll send a six-digit code, then you’ll set a new password to continue."
+                        : "Enter your number and we’ll send a six-digit code if it has an account."}
                 </Text>
             </View>
             <View style={styles.field}>

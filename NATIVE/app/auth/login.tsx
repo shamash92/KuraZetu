@@ -349,7 +349,16 @@ export default function LoginScreen() {
         })
             .then((response) => response.json())
             .then((data) => {
-                if (data["error"]) {
+                if (data["code"] === "phone_verification_required") {
+                    setIsSubmitting(false);
+                    router.replace({
+                        pathname: "/auth/forgot-password",
+                        params: {
+                            phone: nationalNumber,
+                            reason: "phone_unverified",
+                        },
+                    });
+                } else if (data["error"]) {
                     setIsSubmitting(false);
 
                     if (data["code"] === "login_temporarily_blocked") {
