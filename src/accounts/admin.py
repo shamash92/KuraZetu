@@ -5,6 +5,7 @@ from knox.models import AuthToken
 
 from .forms import MyAdminPasswordChangeForm, UserAdminChangeForm, UserAdminCreationForm
 from .models import (
+    NativeToken,
     PhoneVerificationChallenge,
     PhoneVerificationRateScope,
     PhoneVerificationSend,
@@ -177,13 +178,12 @@ class PhoneVerificationTicketAdmin(ReadOnlyPhoneVerificationAdmin):
         return mask_phone_number(obj.challenge.phone_number)
 
 
-# Knox registers its own AuthToken admin, and a model can only have one. Swap
-# it out: Knox's add form mints a working token for any account and its list
-# shows full phone numbers.
+# Knox's own admin mints a working token for any account and shows full phone
+# numbers. NativeToken lists the same tokens by masked phone instead.
 admin.site.unregister(AuthToken)
 
 
-@admin.register(AuthToken)
+@admin.register(NativeToken)
 class NativeTokenAdmin(admin.ModelAdmin):
     """Which accounts are signed in on Native. Deleting a token signs it out."""
 

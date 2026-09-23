@@ -14,6 +14,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from accounts.authentication import issue_native_token
+from accounts.models import NativeToken
 
 User = get_user_model()
 NUMBER = "+254700000001"
@@ -71,13 +72,17 @@ def test_each_account_keeps_one_hashed_native_token(user):
     assert token not in instance.digest
 
 
-def test_admin_lists_native_tokens_masked_and_cannot_mint_them(user, rf):
+def test_admin_shows_native_tokens_masked_and_cannot_mint_them(user, rf):
     issue_native_token(user)
-    token_admin = admin.site._registry[AuthToken]
+    token = NativeToken.objects.get()
+    token_admin = admin.site._registry[NativeToken]
     request = rf.get("/")
 
+    # Headings, breadcrumbs, delete pages, and history all use str(token).
+    assert str(token) == "+254700000XXX"
+    assert NUMBER not in token_admin.masked_phone(token)
     assert "digest" not in token_admin.list_display
-    assert NUMBER not in token_admin.masked_phone(AuthToken.objects.get())
+    assert not admin.site.is_registered(AuthToken)
     assert not token_admin.has_add_permission(request)
     assert not token_admin.has_change_permission(request)
 
