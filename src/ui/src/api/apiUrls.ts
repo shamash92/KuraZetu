@@ -23,6 +23,8 @@ export const PHONE_VERIFICATION_CODE_URL = "/api/accounts/phone-verification/ver
 export const SIGNUP_COMPLETION_URL = "/api/accounts/phone-verification/signup/complete/";
 export const PASSWORD_RESET_PHONE_VERIFICATION_START_URL =
     "/api/accounts/phone-verification/password-reset/start/";
+export const PASSWORD_RESET_PHONE_PREFILL_URL =
+    "/api/accounts/phone-verification/password-reset/prefill/";
 export const PASSWORD_RESET_COMPLETION_URL =
     "/api/accounts/phone-verification/password-reset/complete/";
 
