@@ -19,14 +19,14 @@ import {
     useMap,
 } from "react-leaflet";
 import L from "leaflet";
-import {IGeocodeResult, IPollingCenterFeature} from "./types";
+import {IGeocodeResult, IPollingCenterFeature, ISuggestionFeature} from "./types";
 
 interface MapComponentProps {
     location: IPollingCenterFeature;
     wardNumber?: number | null;
     suggestedLocation?: IPollingCenterFeature | null;
-    partiallyVerifiedLocations?: IPollingCenterFeature[] | null;
-    highlightedSuggestion?: IPollingCenterFeature | null;
+    partiallyVerifiedLocations?: ISuggestionFeature[] | null;
+    highlightedSuggestion?: ISuggestionFeature | null;
     isReadOnly?: boolean;
     isEditing: boolean;
     draftPosition: LatLng | null;
@@ -38,27 +38,19 @@ type LatLng = {lat: number; lng: number};
 const SATELLITE_NATIVE_MAX_ZOOM = 20;
 const MAP_MAX_ZOOM = 24;
 const DEFAULT_PIN_RADIUS_KM = 0.05;
+// Only reached for an unlocated center with no suggestions and no ward outline.
+const KENYA_CENTER: [number, number] = [0.0236, 37.9062];
 const ORIGINAL_COLOR = "#ff8a4c";
 const SUGGESTION_COLOR = "#8b7cff";
 const TARGET_COLOR = "#c4ff5e";
 
 function pinIcon(
-    kind: "current" | "suggestion" | "candidate" | "outlier" | "user",
+    kind: "current" | "candidate" | "user",
 ) {
-    const color =
-        kind === "user"
-            ? TARGET_COLOR
-            : kind === "current"
-            ? ORIGINAL_COLOR
-            : kind === "candidate"
-            ? TARGET_COLOR
-            : kind === "outlier"
-            ? "#d9764f"
-            : SUGGESTION_COLOR;
+    const color = kind === "current" ? ORIGINAL_COLOR : TARGET_COLOR;
     const className = [
         "pv-pin-marker",
         kind === "candidate" ? "is-candidate" : "",
-        kind === "outlier" ? "is-outlier" : "",
         kind === "user" ? "is-user" : "",
     ]
         .filter(Boolean)
@@ -210,10 +202,22 @@ export default function MapComponent({
     const pinRadiusMeters =
         (location.properties.radius ?? DEFAULT_PIN_RADIUS_KM) * 1000;
 
-    const center: [number, number] = [
-        location.properties.pin_location.coordinates[1],
-        location.properties.pin_location.coordinates[0],
-    ];
+    // An unlocated center has no usable pin (null, or the 0,0 placeholder), so
+    // the map opens on its first suggestion, else the middle of its ward.
+    const isUnlocated = location.properties.is_unlocated === true;
+    const wardBounds = useMemo(
+        () => (wardBoundary ? L.geoJSON(wardBoundary).getBounds() : null),
+        [wardBoundary],
+    );
+    const anchor = isUnlocated
+        ? partiallyVerifiedLocations?.[0]?.properties.pin_location
+        : location.properties.pin_location;
+    const wardCenter = wardBounds?.getCenter();
+    const center: [number, number] = anchor
+        ? [anchor.coordinates[1], anchor.coordinates[0]]
+        : wardCenter
+          ? [wardCenter.lat, wardCenter.lng]
+          : KENYA_CENTER;
     const [editTarget, setEditTarget] = useState<LatLng>({
         lat: center[0],
         lng: center[1],
@@ -221,7 +225,7 @@ export default function MapComponent({
 
     // Collect candidate points (original + suggestions) for cluster framing.
     const inliers = useMemo(() => {
-        const pts: LatLng[] = [{lat: center[0], lng: center[1]}];
+        const pts: LatLng[] = isUnlocated ? [] : [{lat: center[0], lng: center[1]}];
         partiallyVerifiedLocations?.forEach((loc) => {
             pts.push({
                 lat: loc.properties.pin_location.coordinates[1],
@@ -234,7 +238,12 @@ export default function MapComponent({
                 lng: highlightedSuggestion.properties.pin_location.coordinates[0],
             });
         }
-        return clusterInliers(pts);
+        if (pts.length) return clusterInliers(pts);
+        // Nothing placed yet: frame the whole ward.
+        if (wardBounds) {
+            return [wardBounds.getSouthWest(), wardBounds.getNorthEast()];
+        }
+        return [{lat: center[0], lng: center[1]}];
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.id, partiallyVerifiedLocations, highlightedSuggestion]);
 
@@ -367,85 +376,64 @@ export default function MapComponent({
                     />
                 )}
 
-                {/* Existing suggestions — clustered or muted outlier (req #2/#3) */}
-                {partiallyVerifiedLocations &&
-                    partiallyVerifiedLocations.map((loc) => {
-                        const outlier = loc.properties.is_outlier === true;
-                        return (
-                            <GeoJSON
-                                key={loc.id}
-                                data={loc}
-                                style={() => ({
-                                    fillColor: outlier
-                                        ? "#d9764f"
-                                        : SUGGESTION_COLOR,
-                                    fillOpacity: outlier ? 0.12 : 0.22,
-                                    color: outlier ? "#d9764f" : SUGGESTION_COLOR,
-                                    weight: outlier ? 1 : 2,
-                                    dashArray: "7 5",
-                                    opacity: outlier ? 0.5 : 1,
-                                })}
-                            >
-                            </GeoJSON>
-                        );
-                    })}
-
+                {/* Existing suggestions — clustered or muted outlier (req #2/#3).
+                    The circle is the only mark; clicking it opens the details. */}
                 {partiallyVerifiedLocations?.map((loc) => {
                     const outlier = loc.properties.is_outlier === true;
-                    const author = loc.properties.suggested_by || "Anonymous neighbour";
-                    const initials =
-                        author.replace(/[@\s]/g, "").slice(0, 2).toUpperCase() || "?";
+                    const isAi = loc.properties.ai_suggestion === true;
+                    const kind = outlier
+                        ? "Far from others"
+                        : isAi
+                          ? "AI suggestion"
+                          : "Neighbour suggestion";
+                    const status = outlier
+                        ? "Not counted"
+                        : location.properties.is_verified
+                          ? "Verified"
+                          : "Unverified";
                     return (
-                        <Marker
-                            key={`pin-${loc.id}`}
-                            position={[
-                                loc.properties.pin_location.coordinates[1],
-                                loc.properties.pin_location.coordinates[0],
-                            ]}
-                            icon={pinIcon(outlier ? "outlier" : "suggestion")}
+                        <GeoJSON
+                            key={loc.id}
+                            data={loc}
+                            style={() => ({
+                                fillColor: outlier ? "#d9764f" : SUGGESTION_COLOR,
+                                fillOpacity: outlier ? 0.12 : 0.22,
+                                color: outlier ? "#d9764f" : SUGGESTION_COLOR,
+                                weight: outlier ? 1 : 2,
+                                dashArray: "7 5",
+                                opacity: outlier ? 0.5 : 1,
+                            })}
                         >
-                            <Tooltip direction="top" offset={[0, -40]}>
-                                {outlier
-                                    ? "Far from other suggestions"
-                                    : "Community suggestion"}
+                            <Tooltip direction="top" sticky>
+                                {kind}
                             </Tooltip>
-                            <Popup>
-                                <div className="pv-pin-popup-tag">
-                                    {outlier
-                                        ? "Far from other suggestions"
-                                        : "Existing suggestion"}
-                                </div>
-                                <div className="pv-pin-popup-name">
-                                    {loc.properties.name}
-                                </div>
-                                <div className="pv-pin-popup-by">
-                                    <span className="pv-pin-popup-avatar">
-                                        {initials}
-                                    </span>
-                                    <div>
-                                        <div className="pv-pin-popup-who">{author}</div>
-                                        {loc.properties.suggested_on && (
-                                            <div className="pv-pin-popup-when">
-                                                {new Date(
-                                                    loc.properties.suggested_on,
-                                                ).toLocaleDateString()}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <span
-                                    className={`pv-pin-popup-source ${
-                                        loc.properties.ai_suggestion ? "is-ai" : ""
+                            <Popup className="pv-suggestion-popup">
+                                <div
+                                    className={`pv-suggestion-kind ${
+                                        outlier ? "is-outlier" : isAi ? "is-ai" : ""
                                     }`}
                                 >
-                                    {loc.properties.ai_suggestion
-                                        ? `AI · ${loc.properties.ai_model || "model"}`
-                                        : outlier
-                                        ? "Not counted toward agreement yet"
-                                        : "Citizen · in ward"}
-                                </span>
+                                    {kind}
+                                </div>
+                                <div className="pv-suggestion-label">Placed by</div>
+                                <div className="pv-suggestion-who">
+                                    {loc.properties.suggested_by || "Anonymous neighbour"}
+                                </div>
+                                <div className="pv-suggestion-foot">
+                                    <span>
+                                        {loc.properties.suggested_on &&
+                                            new Date(
+                                                loc.properties.suggested_on,
+                                            ).toLocaleDateString(undefined, {
+                                                day: "numeric",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                    </span>
+                                    <span className="pv-suggestion-status">{status}</span>
+                                </div>
                             </Popup>
-                        </Marker>
+                        </GeoJSON>
                     );
                 })}
 
@@ -469,39 +457,43 @@ export default function MapComponent({
                 )}
 
                 {/* Original center boundary */}
-                <GeoJSON
-                    key={location.id}
-                    data={location}
-                    style={() => ({
-                        fillColor: ORIGINAL_COLOR,
-                        fillOpacity: 0.2,
-                        color: ORIGINAL_COLOR,
-                        weight: 3,
-                    })}
-                />
+                {!isUnlocated && (
+                    <GeoJSON
+                        key={location.id}
+                        data={location}
+                        style={() => ({
+                            fillColor: ORIGINAL_COLOR,
+                            fillOpacity: 0.2,
+                            color: ORIGINAL_COLOR,
+                            weight: 3,
+                        })}
+                    />
+                )}
 
                 {/* Original center remains a distinct reference in every mode. */}
-                <Marker
-                    position={center}
-                    icon={pinIcon("current")}
-                >
-                    <Tooltip
-                        permanent
-                        direction="top"
-                        offset={[0, -42]}
-                        className="pv-map-role-label is-original"
+                {!isUnlocated && (
+                    <Marker
+                        position={center}
+                        icon={pinIcon("current")}
                     >
-                        Original · {originalUpvotes} yes
-                    </Tooltip>
-                    <Popup>
-                        <strong>{location.properties.name}</strong>
-                        <br />
-                        {location.properties.code}
-                        <br />
-                        {originalUpvotes}{" "}
-                        {originalUpvotes === 1 ? "confirmation" : "confirmations"}
-                    </Popup>
-                </Marker>
+                        <Tooltip
+                            permanent
+                            direction="top"
+                            offset={[0, -42]}
+                            className="pv-map-role-label is-original"
+                        >
+                            Original · {originalUpvotes} yes
+                        </Tooltip>
+                        <Popup>
+                            <strong>{location.properties.name}</strong>
+                            <br />
+                            {location.properties.code}
+                            <br />
+                            {originalUpvotes}{" "}
+                            {originalUpvotes === 1 ? "confirmation" : "confirmations"}
+                        </Popup>
+                    </Marker>
+                )}
 
                 {highlightedSuggestion && (
                     <>
@@ -558,7 +550,7 @@ export default function MapComponent({
                                 weight: 3,
                             }}
                         />
-                        {!location.properties.is_unlocated &&
+                        {!isUnlocated &&
                             editDistanceMeters > 1 && (
                                 <Polyline
                                     positions={[
