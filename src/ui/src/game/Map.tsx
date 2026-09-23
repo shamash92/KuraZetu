@@ -380,11 +380,17 @@ export default function MapComponent({
                     The circle is the only mark; clicking it opens the details. */}
                 {partiallyVerifiedLocations?.map((loc) => {
                     const outlier = loc.properties.is_outlier === true;
+                    const isAi = loc.properties.ai_suggestion === true;
                     const kind = outlier
-                        ? "Far from other suggestions"
-                        : loc.properties.ai_suggestion
+                        ? "Far from others"
+                        : isAi
                           ? "AI suggestion"
                           : "Neighbour suggestion";
+                    const status = outlier
+                        ? "Not counted"
+                        : location.properties.is_verified
+                          ? "Verified"
+                          : "Unverified";
                     return (
                         <GeoJSON
                             key={loc.id}
@@ -401,23 +407,31 @@ export default function MapComponent({
                             <Tooltip direction="top" sticky>
                                 {kind}
                             </Tooltip>
-                            <Popup>
-                                <div className="pv-pin-popup-tag">{kind}</div>
-                                <div className="pv-pin-popup-who">
+                            <Popup className="pv-suggestion-popup">
+                                <div
+                                    className={`pv-suggestion-kind ${
+                                        outlier ? "is-outlier" : isAi ? "is-ai" : ""
+                                    }`}
+                                >
+                                    {kind}
+                                </div>
+                                <div className="pv-suggestion-label">Placed by</div>
+                                <div className="pv-suggestion-who">
                                     {loc.properties.suggested_by || "Anonymous neighbour"}
                                 </div>
-                                {loc.properties.suggested_on && (
-                                    <div className="pv-pin-popup-when">
-                                        {new Date(
-                                            loc.properties.suggested_on,
-                                        ).toLocaleDateString(undefined, {
-                                            day: "numeric",
-                                            month: "short",
-                                            year: "numeric",
-                                        })}
-                                        {outlier && " · not counted toward agreement"}
-                                    </div>
-                                )}
+                                <div className="pv-suggestion-foot">
+                                    <span>
+                                        {loc.properties.suggested_on &&
+                                            new Date(
+                                                loc.properties.suggested_on,
+                                            ).toLocaleDateString(undefined, {
+                                                day: "numeric",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                    </span>
+                                    <span className="pv-suggestion-status">{status}</span>
+                                </div>
                             </Popup>
                         </GeoJSON>
                     );

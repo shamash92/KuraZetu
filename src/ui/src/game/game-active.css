@@ -419,7 +419,6 @@
   height: 52px;
 }
 
-
 .pv-pin-marker.is-user {
   width: 40px;
   height: 52px;
@@ -439,32 +438,106 @@
   font-family: "Public Sans", system-ui, sans-serif;
 }
 
-.pv-pin-popup-tag {
-  color: var(--pv-copper);
+/* Suggestion popup: kind, who placed it, when, and where it stands. */
+.pv-game-map .pv-suggestion-popup .leaflet-popup-content {
+  min-width: 230px;
+  margin: 0;
+}
+
+.pv-game-map .pv-suggestion-popup .leaflet-popup-close-button {
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: var(--pv-ink);
+  border: 1px solid var(--pv-rule);
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pv-suggestion-kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 48px 12px 14px;
+  color: var(--pv-ink);
+  border-bottom: 1px solid var(--pv-rule);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
+.pv-suggestion-kind::before {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--pv-green);
+  box-shadow: 0 0 0 3px var(--pv-mint);
+  content: "";
+}
 
+.pv-suggestion-kind.is-ai::before {
+  background: var(--pv-periwinkle-deep);
+  box-shadow: 0 0 0 3px var(--pv-periwinkle);
+}
 
+.pv-suggestion-kind.is-outlier::before {
+  background: var(--pv-copper);
+  box-shadow: 0 0 0 3px var(--pv-coral);
+}
 
-.pv-pin-popup-who {
-  margin-top: 4px;
+.pv-suggestion-label {
+  padding: 12px 14px 0;
+  color: var(--pv-mute);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pv-suggestion-who {
+  padding: 3px 14px 0;
   color: var(--pv-ink);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.pv-suggestion-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 14px;
+  color: var(--pv-mute);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pv-suggestion-status {
+  padding: 3px 8px;
+  color: var(--pv-ink);
+  border: 1px dashed var(--pv-ink);
+  border-radius: 999px;
+  font-size: 9px;
   font-weight: 700;
 }
 
-.pv-pin-popup-when {
-  margin-top: 2px;
-  color: var(--pv-mute-2);
-  font-size: 11px;
+/* Clicking a suggestion circle focuses its SVG path; the browser's focus
+   rectangle around it reads as a stray box on the map. */
+.pv-game-map path.leaflet-interactive:focus {
+  outline: none;
 }
-
-
 
 .pv-first-locate {
   position: absolute;
