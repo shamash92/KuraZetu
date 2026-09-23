@@ -20,6 +20,8 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import {IGeocodeResult, IPollingCenterFeature, ISuggestionFeature} from "./types";
+import {isPinOutsideWard, pointInWard} from "./wardGeometry";
+import {useAuth} from "../App";
 
 interface MapComponentProps {
     location: IPollingCenterFeature;
@@ -31,6 +33,7 @@ interface MapComponentProps {
     isEditing: boolean;
     draftPosition: LatLng | null;
     onDraftPositionChange: (position: LatLng, isInsideWard: boolean) => void;
+    onMovePin?: () => void;
 }
 
 type LatLng = {lat: number; lng: number};
@@ -88,34 +91,17 @@ function clusterInliers(points: LatLng[]): LatLng[] {
     return inliers.length ? inliers : points;
 }
 
-// Ray-casting point-in-polygon for the ward-guard hint (backend is the gate).
-function pointInRing(lng: number, lat: number, ring: number[][]): boolean {
-    let inside = false;
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const [xi, yi] = ring[i];
-        const [xj, yj] = ring[j];
-        const intersect =
-            yi > lat !== yj > lat &&
-            lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
-        if (intersect) inside = !inside;
-    }
-    return inside;
-}
-
-function pointInWard(lng: number, lat: number, boundary: any): boolean {
-    if (!boundary) return true; // no polygon → don't block client-side
-    const polys =
-        boundary.type === "MultiPolygon" ? boundary.coordinates : [boundary.coordinates];
-    return polys.some((poly: number[][][]) => pointInRing(lng, lat, poly[0]));
-}
-
 // Fits the map to the inlier cluster on first load / location change.
 function ClusterFramer({
     inliers,
     trigger,
+    zoomOut,
 }: {
     inliers: LatLng[];
     trigger: number;
+    // Fly out to the map's minimum zoom after framing, so a pin outside its
+    // ward is seen together with the ward outline.
+    zoomOut: boolean;
 }) {
     const map = useMap();
 
@@ -137,11 +123,20 @@ function ClusterFramer({
             map.invalidateSize();
             if (inliers.length === 1) {
                 map.setView([inliers[0].lat, inliers[0].lng], 18);
-                return;
+            } else {
+                const bounds = L.latLngBounds(inliers.map((p) => [p.lat, p.lng]));
+                map.fitBounds(bounds, {padding: [60, 60], maxZoom: 18});
+                console.log("[pinverify] fit to cluster, zoom:", map.getZoom());
             }
-            const bounds = L.latLngBounds(inliers.map((p) => [p.lat, p.lng]));
-            map.fitBounds(bounds, {padding: [60, 60], maxZoom: 18});
-            console.log("[pinverify] fit to cluster, zoom:", map.getZoom());
+            if (zoomOut) {
+                const reduceMotion = window.matchMedia?.(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                map.flyTo(map.getCenter(), map.getMinZoom(), {
+                    animate: !reduceMotion,
+                    duration: 1.2,
+                });
+            }
         };
         // Defer one tick so layout/animation settles first.
         const id = setTimeout(frame, 120);
@@ -186,6 +181,7 @@ export default function MapComponent({
     partiallyVerifiedLocations,
     highlightedSuggestion,
     isReadOnly = false,
+    onMovePin,
     isEditing,
     draftPosition,
     onDraftPositionChange,
@@ -213,6 +209,8 @@ export default function MapComponent({
         ? partiallyVerifiedLocations?.[0]?.properties.pin_location
         : location.properties.pin_location;
     const wardCenter = wardBounds?.getCenter();
+    const pinOutsideWard = isPinOutsideWard(location);
+    const isAuthenticated = useAuth();
     const center: [number, number] = anchor
         ? [anchor.coordinates[1], anchor.coordinates[0]]
         : wardCenter
@@ -357,7 +355,11 @@ export default function MapComponent({
                     keepBuffer={4}
                 />
 
-                <ClusterFramer inliers={inliers} trigger={frameTrigger} />
+                <ClusterFramer
+                    inliers={inliers}
+                    trigger={frameTrigger}
+                    zoomOut={pinOutsideWard}
+                />
                 {isEditing && (
                     <EditCenterTracker onCenterChange={setEditTarget} />
                 )}
@@ -599,6 +601,27 @@ export default function MapComponent({
                     </Marker>
                 )}
             </MapContainer>
+
+            {/* Says why the map zoomed out: the pin sits outside its ward. */}
+            {pinOutsideWard && !isEditing && (
+                <div
+                    className={`pv-map-ward-alert ${isReadOnly ? "" : "is-below-search"}`}
+                    role="status"
+                >
+                    <p>
+                        This pin is outside {location.properties.ward} ward. Move it
+                        inside the dashed outline
+                        {isAuthenticated
+                            ? ", or confirm it if the school is really there."
+                            : "."}
+                    </p>
+                    {!isReadOnly && onMovePin && (
+                        <button type="button" onClick={onMovePin}>
+                            Move the pin
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* Search bar (req #1) */}
             {!isReadOnly && (

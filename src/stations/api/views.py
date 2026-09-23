@@ -426,6 +426,23 @@ class VerificationPollingCenterAPIView(APIView):
             )
 
         if isUpvote is True:
+            # A pin outside its ward can still be right, when the school sits
+            # just across the line. Only a signed-in volunteer may confirm
+            # one, and the vote is kept as an outlier so staff can review the
+            # ward boundary.
+            ward = polling_center.ward
+            pin_outside_ward = bool(
+                polling_center.pin_location
+                and ward
+                and ward.boundary
+                and not ward.boundary.contains(polling_center.pin_location)
+            )
+            if pin_outside_ward and not user.is_authenticated:
+                return Response(
+                    {"error": "Sign in to confirm a pin outside its ward."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             if (
                 user.is_authenticated
                 and PollingCenterVerification.objects.filter(
@@ -448,6 +465,7 @@ class VerificationPollingCenterAPIView(APIView):
                         pin_location=polling_center.pin_location,
                         verified_by=user,
                         is_upvote=True,
+                        is_outlier=pin_outside_ward,
                     )
                 polling_center.refresh_from_db(fields=["location_upvotes"])
 

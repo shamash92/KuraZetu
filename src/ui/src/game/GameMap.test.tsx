@@ -13,7 +13,8 @@ jest.mock("./Map", () => ({
     default: () => <div data-testid="map" />,
 }));
 
-jest.mock("../App", () => ({useAuth: () => true}));
+let mockSignedIn = true;
+jest.mock("../App", () => ({useAuth: () => mockSignedIn}));
 
 jest.mock("react-cookies", () => ({
     __esModule: true,
@@ -112,8 +113,9 @@ test("a drawn polling center is shown with the volunteer's progress", async () =
     renderGame();
 
     expect(await screen.findByText("Kaloleni Primary School")).toBeInTheDocument();
-    expect(screen.getByText(/40 centers/)).toBeInTheDocument();
-    expect(screen.getByText(/7 helped/)).toBeInTheDocument();
+    expect(screen.getByText(/You've checked/)).toHaveTextContent(
+        "You've checked 7 of 40 centers",
+    );
 });
 
 test("skipping draws a different polling center", async () => {
@@ -199,6 +201,51 @@ test("a center the volunteer already pinned is not offered as a first find", asy
     expect(
         screen.queryByText("You're the first to locate this center."),
     ).not.toBeInTheDocument();
+});
+
+function offWard(id: number, name: string) {
+    const center = pollingCenter(id, name);
+    // Kaloleni's test pin (36.8, -1.3) lies outside this square.
+    center.properties.ward_boundary = {
+        type: "Polygon",
+        coordinates: [
+            [
+                [36, 0],
+                [37, 0],
+                [37, 1],
+                [36, 1],
+                [36, 0],
+            ],
+        ],
+    };
+    return center;
+}
+
+test("a signed-in volunteer can confirm a pin that sits outside its ward", async () => {
+    mockDraws(round(offWard(1, "Mtwapa Primary School")));
+
+    renderGame();
+
+    await screen.findByText("Mtwapa Primary School");
+    expect(
+        screen.getByRole("button", {name: /yes — this pin is right.*outside kaloleni ward/i}),
+    ).toBeInTheDocument();
+});
+
+test("a signed-out visitor cannot confirm a pin that sits outside its ward", async () => {
+    mockSignedIn = false;
+    try {
+        mockDraws(round(offWard(1, "Mtwapa Primary School")));
+
+        renderGame();
+
+        await screen.findByText("Mtwapa Primary School");
+        expect(
+            screen.queryByRole("button", {name: /yes — this pin is right/i}),
+        ).not.toBeInTheDocument();
+    } finally {
+        mockSignedIn = true;
+    }
 });
 
 test("confirming the pin records the verification and draws the next center", async () => {
