@@ -14,6 +14,7 @@ from accounts.api.serializers import (
     SignupCompletionSerializer,
     UserSerializer,
 )
+from accounts.authentication import issue_native_token
 from accounts.models import PhoneVerificationChallenge, User
 from accounts.phone_verification import (
     PASSWORD_RESET_PHONE_NUMBER_SESSION_KEY,
@@ -179,6 +180,7 @@ class SignupCompletionView(PhoneVerificationAPIView):
         data = serializer.validated_data.copy()
         verification_ticket = data.pop("verification_ticket")
         password = data.pop("password")
+        native_client = data.pop("client", None) == "native"
         ward_code = data.pop("ward_code")
         polling_center_code = data.pop("polling_center")
 
@@ -206,12 +208,15 @@ class SignupCompletionView(PhoneVerificationAPIView):
                 user.set_password(password)
                 user.save()
                 consume_ticket(ticket)
-                token, _ = Token.objects.get_or_create(user=user)
-                login(
-                    request,
-                    user,
-                    backend="django.contrib.auth.backends.ModelBackend",
-                )
+                if native_client:
+                    knox_token, token = issue_native_token(user)
+                else:
+                    token = Token.objects.get_or_create(user=user)[0].key
+                    login(
+                        request,
+                        user,
+                        backend="django.contrib.auth.backends.ModelBackend",
+                    )
         except (
             InvalidPhoneVerificationTicket,
             Ward.DoesNotExist,
@@ -226,11 +231,11 @@ class SignupCompletionView(PhoneVerificationAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        response_data = {"user": UserSerializer(user).data, "token": token}
+        if native_client:
+            response_data["expiry"] = knox_token.expiry
         return Response(
-            {
-                "message": "User signup successful",
-                "data": {"user": UserSerializer(user).data, "token": token.key},
-            },
+            {"message": "User signup successful", "data": response_data},
             status=status.HTTP_201_CREATED,
         )
 
