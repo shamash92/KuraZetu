@@ -1,9 +1,5 @@
-import * as LocalAuthentication from "expo-local-authentication";
-
 import {
     Alert,
-    Modal,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -18,7 +14,7 @@ import Animated, {
     withDelay,
     withTiming,
 } from "react-native-reanimated";
-import {ArrowRight, Eye, EyeOff, Fingerprint, Lock} from "lucide-react-native";
+import {ArrowRight, Eye, EyeOff, Lock} from "lucide-react-native";
 import {
     CARD,
     COPPER,
@@ -35,7 +31,6 @@ import {Link, router} from "expo-router";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
-import LottieComponent from "@/components/lottieLoading";
 import LoginLockout from "@/components/auth/lockout";
 import LoginLoading from "@/components/auth/login";
 import UpdateCheckerModal from "../_utils/updateModal";
@@ -48,7 +43,6 @@ import {
 import useAuthStore from "../_utils/authStore";
 import {useNetworkStatus} from "../_utils/useNetworkStatus";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {windowHeight} from "../_utils/screenDimensions";
 
 // Pins the sign-in screen on so the animation can be watched without racing a
 // real request. Development only — must be false on any branch that merges.
@@ -193,7 +187,6 @@ export default function LoginScreen() {
 
     const [error, setError] = useState<string | null>(null);
 
-    const [shouldRedirect, setShouldRedirect] = useState(false);
     const [isTallyAnimationComplete, setIsTallyAnimationComplete] = useState(false);
     const [successfulPasswordToken, setSuccessfulPasswordToken] = useState<string | null>(
         null,
@@ -201,7 +194,7 @@ export default function LoginScreen() {
     const [lockoutExpiresAt, setLockoutExpiresAt] = useState<number | null>(null);
     const [isLockoutRestored, setIsLockoutRestored] = useState(false);
 
-    const {logIn, hasSavedUserToken, userToken} = useAuthStore();
+    const {logIn} = useAuthStore();
 
     const insets = useSafeAreaInsets();
     const hasCommittedPasswordSignIn = useRef(false);
@@ -266,60 +259,6 @@ export default function LoginScreen() {
         logIn(successfulPasswordToken);
         router.replace("/(tabs)");
     }, [isTallyAnimationComplete, logIn, successfulPasswordToken]);
-
-    const handleBiometricAuth = async (userTokenValue: string) => {
-        if (Platform.OS === "web") {
-            Alert.alert(
-                "Info",
-                "Biometric authentication is not available on web platform",
-            );
-            return;
-        }
-
-        try {
-            const hasHardware = await LocalAuthentication.hasHardwareAsync();
-
-            console.log(hasHardware, "has hardware");
-            if (!hasHardware) {
-                Alert.alert("Error", "Biometric hardware not available");
-                return;
-            }
-
-            const supportedAuthTypes =
-                await LocalAuthentication.supportedAuthenticationTypesAsync();
-
-            console.log(supportedAuthTypes, "supported auth types");
-            if (supportedAuthTypes.length === 0) {
-                Alert.alert("Error", "No biometric authentication methods available");
-                return;
-            }
-
-            const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: "Authenticate to login",
-                fallbackLabel: "Use passcode",
-            });
-
-            console.log(result, "biometric auth result");
-
-            if (result.success) {
-                // Navigate to tabs on successful authentication
-                setShouldRedirect(true);
-
-                setTimeout(() => {
-                    logIn(userTokenValue);
-                }, 2000); // just to create a delay for the animation
-            } else if (result.error === "not_enrolled") {
-                Alert.alert(
-                    "Error",
-                    "No biometric credentials found. Please set up biometrics in your device settings.",
-                );
-            } else {
-                Alert.alert("Error", "Biometric authentication failed");
-            }
-        } catch (error) {
-            Alert.alert("Error", "Biometric authentication failed");
-        }
-    };
 
     const handleLogin = () => {
         if (!phoneNumber || phoneNumber === "+254") {
@@ -429,8 +368,6 @@ export default function LoginScreen() {
         setPhoneNumber("+254" + digits);
     };
 
-    useEffect(() => {}, [shouldRedirect]);
-
     if (!isLockoutRestored) return null;
 
     if (lockoutExpiresAt !== null) {
@@ -442,44 +379,13 @@ export default function LoginScreen() {
         );
     }
 
-    if ((isTallyAnimationVisible || PREVIEW_SIGNING_IN) && !shouldRedirect) {
+    if (isTallyAnimationVisible || PREVIEW_SIGNING_IN) {
         return <LoginLoading onTallyAnimationComplete={handleTallyAnimationComplete} />;
     }
 
     return (
         <View style={styles.screen}>
             <UpdateCheckerModal />
-
-            <Modal
-                transparent
-                animationType="slide"
-                visible={shouldRedirect}
-                onRequestClose={() => {}}
-            >
-                <View style={{flex: 1, justifyContent: "flex-end"}}>
-                    <View
-                        style={{
-                            height: 0.5 * windowHeight,
-                            backgroundColor: "rgba(255,255,255,0.97)",
-                            borderTopLeftRadius: 24,
-                            borderTopRightRadius: 24,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            shadowColor: "#000",
-                            shadowOffset: {width: 0, height: -2},
-                            shadowOpacity: 0.2,
-                            shadowRadius: 8,
-                            elevation: 8,
-                        }}
-                    >
-                        <LottieComponent
-                            name="login-fingerprint"
-                            backgroundColor="transparent"
-                            width={200}
-                        />
-                    </View>
-                </View>
-            </Modal>
 
             <ScrollView
                 contentContainerStyle={[
@@ -574,41 +480,6 @@ export default function LoginScreen() {
                     </Text>
                     <ArrowRight size={18} color={LIME_INK} strokeWidth={2.4} />
                 </TouchableOpacity>
-
-                <View style={styles.orDiv}>
-                    <View style={styles.orLine} />
-                    <Text style={styles.orText}>or</Text>
-                    <View style={styles.orLine} />
-                </View>
-
-                {hasSavedUserToken && userToken ? (
-                    <TouchableOpacity
-                        style={[styles.bioBtn, isOffline && styles.disabled]}
-                        onPress={() => handleBiometricAuth(userToken)}
-                        disabled={isOffline}
-                        activeOpacity={0.85}
-                    >
-                        <Fingerprint size={19} color={COPPER_DEEP} strokeWidth={1.8} />
-                        <Text style={styles.bioText}>Use biometrics</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <>
-                        <Text style={styles.bioHint}>
-                            No saved biometric credentials yet. Sign in with your phone
-                            number and password first to enable biometrics.
-                        </Text>
-
-                        <TouchableOpacity
-                            style={[styles.bioBtn, styles.bioBtnDisabled]}
-                            disabled
-                        >
-                            <Fingerprint size={19} color={MUTE_2} strokeWidth={1.8} />
-                            <Text style={[styles.bioText, {color: MUTE_2}]}>
-                                Biometrics unavailable
-                            </Text>
-                        </TouchableOpacity>
-                    </>
-                )}
 
                 <View style={styles.foot}>
                     <Text style={styles.footText}>Don&apos;t have an account? </Text>
@@ -777,53 +648,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: "800",
         color: LIME_INK,
-    },
-    orDiv: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        marginTop: 28,
-        marginBottom: 24,
-    },
-    orLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: RULE_16,
-    },
-    orText: {
-        fontSize: 10.5,
-        fontWeight: "700",
-        letterSpacing: 2.4,
-        textTransform: "uppercase",
-        color: MUTE_2,
-    },
-    bioBtn: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 9,
-        backgroundColor: CARD,
-        borderWidth: 1.5,
-        borderColor: INK,
-        borderRadius: 12,
-        paddingVertical: 13,
-        paddingHorizontal: 18,
-    },
-    bioBtnDisabled: {
-        borderColor: RULE_16,
-        opacity: 0.7,
-    },
-    bioText: {
-        fontSize: 13.5,
-        fontWeight: "800",
-        color: INK,
-    },
-    bioHint: {
-        fontSize: 12.5,
-        color: MUTE,
-        lineHeight: 18,
-        textAlign: "center",
-        marginBottom: 12,
     },
     foot: {
         marginTop: "auto",

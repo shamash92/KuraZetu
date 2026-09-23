@@ -4,7 +4,6 @@ export type SecureStoreKey =
     | "userID"
     | "userFirstName"
     | "userLastName"
-    | "userToken"
     | "expoPushToken"
     | "passwordLoginLockoutExpiry"
     | "lastLaunchAnimation";
