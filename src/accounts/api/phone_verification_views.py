@@ -16,6 +16,7 @@ from accounts.api.serializers import (
 )
 from accounts.models import PhoneVerificationChallenge, User
 from accounts.phone_verification import (
+    PASSWORD_RESET_PHONE_NUMBER_SESSION_KEY,
     InvalidPhoneVerificationCode,
     InvalidPhoneVerificationTicket,
     PhoneVerificationRateLimited,
@@ -88,6 +89,7 @@ class PasswordResetPhoneVerificationStartView(PhoneVerificationAPIView):
         serializer = PhoneVerificationStartSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         phone_number = serializer.validated_data["phone_number"]
+        request.session.pop(PASSWORD_RESET_PHONE_NUMBER_SESSION_KEY, None)
         user = User.objects.filter(phone_number=phone_number).first()
         try:
             verification = start_verification(
@@ -117,6 +119,19 @@ class PasswordResetPhoneVerificationStartView(PhoneVerificationAPIView):
                 },
             },
             status=status.HTTP_202_ACCEPTED,
+        )
+
+
+class PasswordResetPhonePrefillView(PhoneVerificationAPIView):
+    def get(self, request):
+        phone_number = request.session.get(PASSWORD_RESET_PHONE_NUMBER_SESSION_KEY)
+        if not phone_number:
+            return Response(
+                {"code": "password_reset_phone_not_found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(
+            {"data": {"phone_number": phone_number}}, status=status.HTTP_200_OK
         )
 
 
@@ -233,7 +248,8 @@ class PasswordResetCompletionView(PhoneVerificationAPIView):
                 if ticket.user is None:
                     raise InvalidPhoneVerificationTicket()
                 ticket.user.set_password(serializer.validated_data["new_password"])
-                ticket.user.save(update_fields=("password",))
+                ticket.user.is_phone_verified = True
+                ticket.user.save(update_fields=("password", "is_phone_verified"))
                 consume_ticket(ticket)
         except InvalidPhoneVerificationTicket:
             return Response(

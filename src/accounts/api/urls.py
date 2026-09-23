@@ -2,6 +2,7 @@ from django.urls import path
 
 from accounts.api.phone_verification_views import (
     PasswordResetCompletionView,
+    PasswordResetPhonePrefillView,
     PasswordResetPhoneVerificationStartView,
     PhoneVerificationCodeView,
     SignupCompletionView,
@@ -34,6 +35,11 @@ urlpatterns = [
         "phone-verification/password-reset/start/",
         PasswordResetPhoneVerificationStartView.as_view(),
         name="password_reset_phone_verification_start_api",
+    ),
+    path(
+        "phone-verification/password-reset/prefill/",
+        PasswordResetPhonePrefillView.as_view(),
+        name="password_reset_phone_prefill_api",
     ),
     path(
         "phone-verification/verify/",

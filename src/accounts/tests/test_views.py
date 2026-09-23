@@ -96,7 +96,11 @@ class TestSignupView:
 
 class TestLoginView:
     def test_login_with_correct_credentials_succeeds(self):
-        User.objects.create_user(phone_number="+254712345678", password="pw12345")
+        user = User.objects.create_user(
+            phone_number="+254712345678", password="pw12345"
+        )
+        user.is_phone_verified = True
+        user.save(update_fields=("is_phone_verified",))
         client = APIClient()
         response = client.post(
             reverse("login_api"),
