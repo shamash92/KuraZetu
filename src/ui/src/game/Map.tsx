@@ -21,6 +21,7 @@ import {
 import L from "leaflet";
 import {IGeocodeResult, IPollingCenterFeature, ISuggestionFeature} from "./types";
 import {isPinOutsideWard, pointInWard} from "./wardGeometry";
+import {useAuth} from "../App";
 
 interface MapComponentProps {
     location: IPollingCenterFeature;
@@ -209,6 +210,7 @@ export default function MapComponent({
         : location.properties.pin_location;
     const wardCenter = wardBounds?.getCenter();
     const pinOutsideWard = isPinOutsideWard(location);
+    const isAuthenticated = useAuth();
     const center: [number, number] = anchor
         ? [anchor.coordinates[1], anchor.coordinates[0]]
         : wardCenter
@@ -608,7 +610,10 @@ export default function MapComponent({
                 >
                     <p>
                         This pin is outside {location.properties.ward} ward. Move it
-                        inside the dashed outline.
+                        inside the dashed outline
+                        {isAuthenticated
+                            ? ", or confirm it if the school is really there."
+                            : "."}
                     </p>
                     {!isReadOnly && onMovePin && (
                         <button type="button" onClick={onMovePin}>

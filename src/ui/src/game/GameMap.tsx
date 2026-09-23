@@ -232,6 +232,10 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
     const verifiedStationsCount = counts?.verified_stations_count ?? 0;
 
     const isUnlocated = currentLocation?.properties.is_unlocated === true;
+    // A pin off its ward can still be confirmed, but only when signed in; the
+    // server keeps that vote as an outlier for staff to review.
+    const pinOutsideWard = currentLocation ? isPinOutsideWard(currentLocation) : false;
+    const canConfirmPin = !isUnlocated && (!pinOutsideWard || isAuthenticated);
     // Unlocated, and nobody (volunteer or AI) has suggested a spot yet.
     const isFirstToLocate = isUnlocated && !partiallyVerifiedLocations;
     const placePinLabel = isFirstToLocate
@@ -446,7 +450,7 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
             if (
                 event.key.toLowerCase() === "y" &&
                 currentLocation &&
-                !isUnlocated &&
+                canConfirmPin &&
                 !isEditing &&
                 !isSavingPin
             ) {
@@ -479,7 +483,7 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
         draftPosition,
         isEditing,
         isSavingPin,
-        isUnlocated,
+        canConfirmPin,
     ]);
 
     const consensusView: IConsensus = consensus ?? {
@@ -770,7 +774,7 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
                             ) : (
                             <div className="pv-game-decision">
                                 <div className="pv-game-decision-label">Your call</div>
-                                {!isUnlocated && (
+                                {canConfirmPin && (
                                     <button
                                         className="pv-decision-button is-yes"
                                         type="button"
@@ -783,8 +787,9 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
                                         <span className="pv-decision-copy">
                                             Yes — this pin is right
                                             <small>
-                                                Building lines up with the satellite
-                                                view
+                                                {pinOutsideWard
+                                                    ? `It's right, even though it's outside ${currentLocation.properties.ward} ward`
+                                                    : "Building lines up with the satellite view"}
                                             </small>
                                         </span>
                                         <span className="pv-decision-key">Y</span>
