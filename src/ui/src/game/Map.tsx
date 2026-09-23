@@ -45,22 +45,12 @@ const SUGGESTION_COLOR = "#8b7cff";
 const TARGET_COLOR = "#c4ff5e";
 
 function pinIcon(
-    kind: "current" | "suggestion" | "candidate" | "outlier" | "user",
+    kind: "current" | "candidate" | "user",
 ) {
-    const color =
-        kind === "user"
-            ? TARGET_COLOR
-            : kind === "current"
-            ? ORIGINAL_COLOR
-            : kind === "candidate"
-            ? TARGET_COLOR
-            : kind === "outlier"
-            ? "#d9764f"
-            : SUGGESTION_COLOR;
+    const color = kind === "current" ? ORIGINAL_COLOR : TARGET_COLOR;
     const className = [
         "pv-pin-marker",
         kind === "candidate" ? "is-candidate" : "",
-        kind === "outlier" ? "is-outlier" : "",
         kind === "user" ? "is-user" : "",
     ]
         .filter(Boolean)
@@ -386,85 +376,50 @@ export default function MapComponent({
                     />
                 )}
 
-                {/* Existing suggestions — clustered or muted outlier (req #2/#3) */}
-                {partiallyVerifiedLocations &&
-                    partiallyVerifiedLocations.map((loc) => {
-                        const outlier = loc.properties.is_outlier === true;
-                        return (
-                            <GeoJSON
-                                key={loc.id}
-                                data={loc}
-                                style={() => ({
-                                    fillColor: outlier
-                                        ? "#d9764f"
-                                        : SUGGESTION_COLOR,
-                                    fillOpacity: outlier ? 0.12 : 0.22,
-                                    color: outlier ? "#d9764f" : SUGGESTION_COLOR,
-                                    weight: outlier ? 1 : 2,
-                                    dashArray: "7 5",
-                                    opacity: outlier ? 0.5 : 1,
-                                })}
-                            >
-                            </GeoJSON>
-                        );
-                    })}
-
+                {/* Existing suggestions — clustered or muted outlier (req #2/#3).
+                    The circle is the only mark; clicking it opens the details. */}
                 {partiallyVerifiedLocations?.map((loc) => {
                     const outlier = loc.properties.is_outlier === true;
-                    const author = loc.properties.suggested_by || "Anonymous neighbour";
-                    const initials =
-                        author.replace(/[@\s]/g, "").slice(0, 2).toUpperCase() || "?";
+                    const kind = outlier
+                        ? "Far from other suggestions"
+                        : loc.properties.ai_suggestion
+                          ? "AI suggestion"
+                          : "Neighbour suggestion";
                     return (
-                        <Marker
-                            key={`pin-${loc.id}`}
-                            position={[
-                                loc.properties.pin_location.coordinates[1],
-                                loc.properties.pin_location.coordinates[0],
-                            ]}
-                            icon={pinIcon(outlier ? "outlier" : "suggestion")}
+                        <GeoJSON
+                            key={loc.id}
+                            data={loc}
+                            style={() => ({
+                                fillColor: outlier ? "#d9764f" : SUGGESTION_COLOR,
+                                fillOpacity: outlier ? 0.12 : 0.22,
+                                color: outlier ? "#d9764f" : SUGGESTION_COLOR,
+                                weight: outlier ? 1 : 2,
+                                dashArray: "7 5",
+                                opacity: outlier ? 0.5 : 1,
+                            })}
                         >
-                            <Tooltip direction="top" offset={[0, -40]}>
-                                {outlier
-                                    ? "Far from other suggestions"
-                                    : "Community suggestion"}
+                            <Tooltip direction="top" sticky>
+                                {kind}
                             </Tooltip>
                             <Popup>
-                                <div className="pv-pin-popup-tag">
-                                    {outlier
-                                        ? "Far from other suggestions"
-                                        : "Existing suggestion"}
+                                <div className="pv-pin-popup-tag">{kind}</div>
+                                <div className="pv-pin-popup-who">
+                                    {loc.properties.suggested_by || "Anonymous neighbour"}
                                 </div>
-                                <div className="pv-pin-popup-name">
-                                    {loc.properties.name}
-                                </div>
-                                <div className="pv-pin-popup-by">
-                                    <span className="pv-pin-popup-avatar">
-                                        {initials}
-                                    </span>
-                                    <div>
-                                        <div className="pv-pin-popup-who">{author}</div>
-                                        {loc.properties.suggested_on && (
-                                            <div className="pv-pin-popup-when">
-                                                {new Date(
-                                                    loc.properties.suggested_on,
-                                                ).toLocaleDateString()}
-                                            </div>
-                                        )}
+                                {loc.properties.suggested_on && (
+                                    <div className="pv-pin-popup-when">
+                                        {new Date(
+                                            loc.properties.suggested_on,
+                                        ).toLocaleDateString(undefined, {
+                                            day: "numeric",
+                                            month: "short",
+                                            year: "numeric",
+                                        })}
+                                        {outlier && " · not counted toward agreement"}
                                     </div>
-                                </div>
-                                <span
-                                    className={`pv-pin-popup-source ${
-                                        loc.properties.ai_suggestion ? "is-ai" : ""
-                                    }`}
-                                >
-                                    {loc.properties.ai_suggestion
-                                        ? `AI · ${loc.properties.ai_model || "model"}`
-                                        : outlier
-                                        ? "Not counted toward agreement yet"
-                                        : "Citizen · in ward"}
-                                </span>
+                                )}
                             </Popup>
-                        </Marker>
+                        </GeoJSON>
                     );
                 })}
 

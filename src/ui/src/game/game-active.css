@@ -419,10 +419,6 @@
   height: 52px;
 }
 
-.pv-pin-marker.is-outlier {
-  opacity: 0.58;
-  transform: scale(0.82);
-}
 
 .pv-pin-marker.is-user {
   width: 40px;
@@ -452,66 +448,23 @@
   text-transform: uppercase;
 }
 
-.pv-pin-popup-name {
-  margin-top: 4px;
-  color: var(--pv-ink);
-  font-size: 14px;
-  font-weight: 800;
-}
 
-.pv-pin-popup-by {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 9px;
-  border-top: 1px dashed var(--pv-rule);
-}
 
-.pv-pin-popup-avatar {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
-  place-items: center;
-  color: var(--pv-periwinkle-deep);
-  border-radius: 50%;
-  background: var(--pv-periwinkle);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 9px;
-  font-weight: 800;
-}
 
 .pv-pin-popup-who {
+  margin-top: 4px;
   color: var(--pv-ink);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .pv-pin-popup-when {
   margin-top: 2px;
   color: var(--pv-mute-2);
-  font-size: 9px;
+  font-size: 11px;
 }
 
-.pv-pin-popup-source {
-  display: inline-flex;
-  margin-top: 9px;
-  padding: 4px 8px;
-  color: var(--pv-green-deep);
-  border-radius: 999px;
-  background: var(--pv-mint);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 
-.pv-pin-popup-source.is-ai {
-  color: var(--pv-periwinkle-deep);
-  background: var(--pv-periwinkle);
-}
 
 .pv-first-locate {
   position: absolute;
