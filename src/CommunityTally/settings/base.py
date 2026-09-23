@@ -288,28 +288,28 @@ LEAFLET_CONFIG = {
     "MIN_ZOOM": 4,
     "MAX_ZOOM": 23,
     "PLUGINS": {"forms": {"auto-include": True}},
-    # "TILES": [
-    #     (
-    #         "Google Maps Satellite",
-    #         "http://mt{s}.google.com/vt/lyrs=s@207000000&hl=en&x={x}&y={y}&z={z}",
-    #         {
-    #             "type": "xyz",
-    #             "ext": "png",
-    #             "attribution": f"Data CC-By-SA by <a href='http://openstreetmap.org/' target='_blank'>OpenStreetMap</a>, Tiles Courtesy of <a href='http://www.mapquest.com/'>MapQuest</a>",
-    #             "subdomains": ["1", "2", "3", "4"],
-    #         },
-    #     ),
-    #     (
-    #         'Google Maps',
-    #         'http://mt{s}.google.com/vt/lyrs=m@207000000&hl=en&x={x}&y={y}&z={z}',
-    #         {
-    #             'type': 'xyz',
-    #             'ext': 'png',
-    #             'attribution': 'Data CC-By-SA by <a href="http://openstreetmap.org/" target="_blank">OpenStreetMap</a>, Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a>',
-    #             'subdomains': ['1', '2', '3', '4'],
-    #         },
-    #     ),
-    # ],
+    "TILES": [
+        (
+            "Google Maps Satellite",
+            "https://mt{s}.google.com/vt/lyrs=s@207000000&hl=en&x={x}&y={y}&z={z}",
+            {
+                "type": "xyz",
+                "ext": "png",
+                "attribution": "Imagery &copy; Google",
+                "subdomains": ["1", "2", "3", "4"],
+            },
+        ),
+        (
+            "Google Maps",
+            "https://mt{s}.google.com/vt/lyrs=m@207000000&hl=en&x={x}&y={y}&z={z}",
+            {
+                "type": "xyz",
+                "ext": "png",
+                "attribution": "Map data &copy; Google",
+                "subdomains": ["1", "2", "3", "4"],
+            },
+        ),
+    ],
     "ATTRIBUTION_PREFIX": "&copy; <a href='https://kurazetu.readthedocs.io/'>Kura Zetu</a>",
 }
 
