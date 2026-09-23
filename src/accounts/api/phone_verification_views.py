@@ -1,6 +1,7 @@
 from django.contrib.auth import login
 from django.db import IntegrityError, transaction
 
+from knox.models import AuthToken
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
@@ -255,6 +256,7 @@ class PasswordResetCompletionView(PhoneVerificationAPIView):
                 ticket.user.set_password(serializer.validated_data["new_password"])
                 ticket.user.is_phone_verified = True
                 ticket.user.save(update_fields=("password", "is_phone_verified"))
+                AuthToken.objects.filter(user=ticket.user).delete()
                 consume_ticket(ticket)
         except InvalidPhoneVerificationTicket:
             return Response(

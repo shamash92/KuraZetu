@@ -11,6 +11,7 @@ from knox.models import AuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from accounts.authentication import issue_native_token
 from accounts.models import (
     PhoneVerificationChallenge,
     PhoneVerificationSend,
@@ -290,6 +291,7 @@ def test_verified_reset_ticket_changes_the_existing_password():
         phone_number=NUMBER,
         password="Old-long-unique-password-123!",
     )
+    issue_native_token(user)
     client = APIClient()
     start = client.post(
         reverse("password_reset_phone_verification_start_api"),
@@ -315,3 +317,4 @@ def test_verified_reset_ticket_changes_the_existing_password():
     user.refresh_from_db()
     assert user.check_password("New-long-unique-password-123!")
     assert user.is_phone_verified is True
+    assert not AuthToken.objects.filter(user=user).exists()
