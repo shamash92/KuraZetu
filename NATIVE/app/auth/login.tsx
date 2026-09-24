@@ -46,6 +46,7 @@ import {
     saveToSecureStore,
 } from "../_utils/secureStore";
 import useAuthStore from "../_utils/authStore";
+import {useNetworkStatus} from "../_utils/useNetworkStatus";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {windowHeight} from "../_utils/screenDimensions";
 
@@ -204,6 +205,7 @@ export default function LoginScreen() {
 
     const insets = useSafeAreaInsets();
     const hasCommittedPasswordSignIn = useRef(false);
+    const isOffline = useNetworkStatus() === "offline";
 
     const handleTallyAnimationComplete = useCallback(() => {
         setIsTallyAnimationComplete(true);
@@ -552,10 +554,19 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                 </Link>
 
+                {isOffline ? (
+                    <Text style={styles.offline} accessibilityLiveRegion="polite">
+                        You&apos;re offline. Connect to the internet to sign in.
+                    </Text>
+                ) : null}
+
                 <TouchableOpacity
-                    style={[styles.primary, isSubmitting && styles.disabled]}
+                    style={[
+                        styles.primary,
+                        (isSubmitting || isOffline) && styles.disabled,
+                    ]}
                     onPress={() => handleLogin()}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isOffline}
                     activeOpacity={0.85}
                 >
                     <Text style={styles.primaryText}>
@@ -572,8 +583,9 @@ export default function LoginScreen() {
 
                 {hasSavedUserToken && userToken ? (
                     <TouchableOpacity
-                        style={styles.bioBtn}
+                        style={[styles.bioBtn, isOffline && styles.disabled]}
                         onPress={() => handleBiometricAuth(userToken)}
+                        disabled={isOffline}
                         activeOpacity={0.85}
                     >
                         <Fingerprint size={19} color={COPPER_DEEP} strokeWidth={1.8} />
@@ -738,6 +750,14 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "800",
         color: COPPER_DEEP,
+    },
+    offline: {
+        marginTop: 24,
+        fontSize: 13,
+        fontWeight: "700",
+        lineHeight: 18,
+        color: COPPER_DEEP,
+        textAlign: "center",
     },
     primary: {
         marginTop: 30,
