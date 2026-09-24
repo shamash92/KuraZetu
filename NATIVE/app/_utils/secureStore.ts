@@ -6,7 +6,9 @@ export type SecureStoreKey =
     | "userLastName"
     | "expoPushToken"
     | "passwordLoginLockoutExpiry"
-    | "lastLaunchAnimation";
+    | "lastLaunchAnimation"
+    | "biometricUnlock"
+    | "biometricNudgeShown";
 
 export async function saveToSecureStore(key: SecureStoreKey, value: string) {
     await SecureStore.setItemAsync(key, value);

@@ -35,6 +35,7 @@ import LoginLockout from "@/components/auth/lockout";
 import LoginLoading from "@/components/auth/login";
 import UpdateCheckerModal from "../_utils/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
+import {afterPasswordSignIn} from "../_utils/biometricUnlock";
 import {
     deleteFromSecureStore,
     getFromSecureStore,
@@ -258,6 +259,7 @@ export default function LoginScreen() {
         hasCommittedPasswordSignIn.current = true;
         logIn(successfulPasswordToken);
         router.replace("/(tabs)");
+        void afterPasswordSignIn(successfulPasswordToken);
     }, [isTallyAnimationComplete, logIn, successfulPasswordToken]);
 
     const handleLogin = () => {
