@@ -19,6 +19,7 @@ import {useSignupVerificationStore} from "@/app/_utils/signupVerificationStore";
 
 type SignupData = {
     age: number;
+    client: "native";
     first_name: string;
     gender: "M" | "F";
     last_name: string;
@@ -176,6 +177,7 @@ export default function SignupScreen() {
         let accountCreated = false;
         const data: SignupData = {
             age: Number.parseInt(formData.age, 10),
+            client: "native",
             first_name: formData.firstName.trim(),
             gender: formData.gender === "Male" ? "M" : "F",
             last_name: formData.lastName.trim(),

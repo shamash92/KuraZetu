@@ -47,7 +47,7 @@ function RegisterPushNotifications() {
                 headers: {
                     Accept: "application/json",
                     "Content-Type": "application/json",
-                    Authorization: `Token ${userToken}`,
+                    Authorization: `Bearer ${userToken}`,
                 },
                 body: JSON.stringify({expo_push_token: expoPushToken}),
             });

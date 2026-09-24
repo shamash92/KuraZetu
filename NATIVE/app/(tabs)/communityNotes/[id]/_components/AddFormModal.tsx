@@ -47,7 +47,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                     {
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Token ${userToken}`,
+                            Authorization: `Bearer ${userToken}`,
                         },
                         method: "GET",
                     },
@@ -120,7 +120,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                                 method: "POST",
                                 headers: {
                                     Accept: "application/json",
-                                    Authorization: `Token ${userToken}`,
+                                    Authorization: `Bearer ${userToken}`,
                                 },
                                 body: formData,
                             },

@@ -48,7 +48,7 @@ const PollingStationResultsSummaryList = () => {
                 const response = await fetch(
                     `${apiBaseURL}/api/stations/community-notes/polling-stations/${id}/info/`,
                     {
-                        headers: {Authorization: `Token ${userToken}`},
+                        headers: {Authorization: `Bearer ${userToken}`},
                     },
                 );
                 if (await handleUnauthorized(response)) return;

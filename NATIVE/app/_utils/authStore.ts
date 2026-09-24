@@ -1,12 +1,10 @@
-import {createJSONStorage, persist} from "zustand/middleware";
-import {deleteItemAsync, getItem, setItem} from "expo-secure-store";
+import {deleteItemAsync} from "expo-secure-store";
 
 import {create} from "zustand";
 import {saveToSecureStore} from "./secureStore";
 
 type UserState = {
     isLoggedIn: boolean;
-    hasSavedUserToken: boolean;
     shouldCreateAccount: boolean;
     userToken: null | string;
     expoPushToken: string | null;
@@ -15,64 +13,49 @@ type UserState = {
     logOut: () => Promise<void>;
 };
 
-// TODO: not sure if having both userToken and hasSavedUserToken is necessary.
-// Is there a scenario in which one exists without the other?
+// Builds before Knox persisted a permanent DRF token. Nothing that grants
+// access is stored now, so remove those values from phones that still have them.
+void deleteItemAsync("auth-store").catch(() => {});
+void deleteItemAsync("userToken").catch(() => {});
 
-export const useAuthStore = create(
-    persist<UserState>(
-        (set) => ({
-            isLoggedIn: false,
-            hasSavedUserToken: false,
-            shouldCreateAccount: false,
-            userToken: null,
-            expoPushToken: null,
-            setExpoPushToken: (expoPushToken: string | null) => {
-                set((state) => {
-                    return {
-                        ...state,
-                        expoPushToken,
-                    };
-                });
-                if (expoPushToken) {
-                    saveToSecureStore("expoPushToken", expoPushToken);
-                } else {
-                    // If the token is null, remove it from secure storage
-                    deleteItemAsync("expoPushToken");
-                }
-            },
-            logIn: (token: string) => {
-                saveToSecureStore("userToken", token);
-
-                set((state) => {
-                    return {
-                        ...state,
-                        isLoggedIn: true,
-                        hasSavedUserToken: true,
-                        userToken: token,
-                    };
-                });
-            },
-            logOut: async () => {
-                set((state) => {
-                    return {
-                        ...state,
-                        isLoggedIn: false,
-                        hasSavedUserToken: false,
-                        userToken: null,
-                    };
-                });
-                await deleteItemAsync("userToken");
-            },
-        }),
-        {
-            name: "auth-store",
-            storage: createJSONStorage(() => ({
-                setItem,
-                getItem,
-                removeItem: deleteItemAsync,
-            })),
-        },
-    ),
-);
+// The Knox token lives only in memory: a new process always starts signed out.
+export const useAuthStore = create<UserState>((set) => ({
+    isLoggedIn: false,
+    shouldCreateAccount: false,
+    userToken: null,
+    expoPushToken: null,
+    setExpoPushToken: (expoPushToken: string | null) => {
+        set((state) => {
+            return {
+                ...state,
+                expoPushToken,
+            };
+        });
+        if (expoPushToken) {
+            saveToSecureStore("expoPushToken", expoPushToken);
+        } else {
+            // If the token is null, remove it from secure storage
+            deleteItemAsync("expoPushToken");
+        }
+    },
+    logIn: (token: string) => {
+        set((state) => {
+            return {
+                ...state,
+                isLoggedIn: true,
+                userToken: token,
+            };
+        });
+    },
+    logOut: async () => {
+        set((state) => {
+            return {
+                ...state,
+                isLoggedIn: false,
+                userToken: null,
+            };
+        });
+    },
+}));
 
 export default useAuthStore;
