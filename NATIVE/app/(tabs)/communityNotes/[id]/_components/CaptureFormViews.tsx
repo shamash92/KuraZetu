@@ -40,6 +40,7 @@ export function CameraPermissionModal({
             animationType="slide"
             transparent
             statusBarTranslucent
+            onRequestClose={onClose}
         >
             <SafeAreaProvider>
                 <View style={styles.permissionOverlay}>
