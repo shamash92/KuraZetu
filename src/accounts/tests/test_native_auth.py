@@ -10,7 +10,6 @@ from django.utils import timezone
 import pytest
 from axes.models import AccessAttempt
 from knox.models import AuthToken
-from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from accounts.authentication import issue_native_token
@@ -19,6 +18,8 @@ from accounts.models import NativeToken
 User = get_user_model()
 NUMBER = "+254700000001"
 PASSWORD = "test-password-only"
+# Shaped like a DRF token key: 40 hex characters.
+DRF_TOKEN = "0123456789abcdef0123456789abcdef01234567"
 
 pytestmark = pytest.mark.django_db
 
@@ -87,12 +88,11 @@ def test_admin_shows_native_tokens_masked_and_cannot_mint_them(user, rf):
     assert not token_admin.has_change_permission(request)
 
 
-def test_shared_views_accept_knox_and_drf_tokens(user):
+def test_shared_views_accept_knox_tokens_and_reject_drf_tokens(user):
     knox_token = issue_native_token(user)[1]
-    drf_token = Token.objects.create(user=user)
 
     assert push_token_status(f"Bearer {knox_token}") == 200
-    assert push_token_status(f"Token {drf_token.key}") == 200
+    assert push_token_status(f"Token {DRF_TOKEN}") == 401
 
 
 def test_authorization_header_wins_over_a_session_cookie(user):
@@ -131,7 +131,6 @@ def test_native_login_issues_a_knox_token_and_no_web_session(user):
     assert AuthToken.objects.filter(user=user).count() == 1
     assert settings.SESSION_COOKIE_NAME not in response.cookies
     assert not Session.objects.exists()
-    assert not Token.objects.exists()
     assert session_status(response.data["data"]["token"]) == 200
 
 
@@ -213,14 +212,13 @@ def test_native_logout_revokes_the_token_and_keeps_web_sessions(user, client):
 def test_native_endpoints_reject_web_sessions_and_drf_tokens(user):
     api = APIClient()
     api.force_login(user)
-    drf_token = Token.objects.create(user=user)
 
     assert api.get(reverse("native_session_api")).status_code == 401
     assert (
         APIClient()
         .get(
             reverse("native_session_api"),
-            HTTP_AUTHORIZATION=f"Token {drf_token.key}",
+            HTTP_AUTHORIZATION=f"Token {DRF_TOKEN}",
         )
         .status_code
         == 401

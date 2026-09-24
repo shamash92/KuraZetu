@@ -3,7 +3,6 @@ from django.db import IntegrityError, transaction
 
 from knox.models import AuthToken
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -212,7 +211,6 @@ class SignupCompletionView(PhoneVerificationAPIView):
                 if native_client:
                     knox_token, token = issue_native_token(user)
                 else:
-                    token = Token.objects.get_or_create(user=user)[0].key
                     login(
                         request,
                         user,
@@ -232,8 +230,9 @@ class SignupCompletionView(PhoneVerificationAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        response_data = {"user": UserSerializer(user).data, "token": token}
+        response_data = {"user": UserSerializer(user).data}
         if native_client:
+            response_data["token"] = token
             response_data["expiry"] = knox_token.expiry
         return Response(
             {"message": "User signup successful", "data": response_data},

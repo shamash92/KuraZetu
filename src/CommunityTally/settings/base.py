@@ -48,6 +48,8 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "leaflet",
     "rest_framework",
+    # Unused: kept only so `migrate authtoken zero` can drop its table. Remove
+    # once that has run everywhere.
     "rest_framework.authtoken",
     "knox",
     "rest_framework_gis",
@@ -236,8 +238,7 @@ REST_FRAMEWORK = {
     # 'PAGE_SIZE': 50,
 }
 
-# Native app tokens. `Bearer` keeps them distinct from DRF's `Token` header
-# while both are accepted. Use slides the expiry; the cap forces a password.
+# Native app tokens. Use slides the expiry; the cap forces a password.
 REST_KNOX = {
     "AUTH_HEADER_PREFIX": "Bearer",
     "TOKEN_TTL": timedelta(days=7),
