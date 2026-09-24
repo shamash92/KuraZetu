@@ -8,7 +8,14 @@ from accounts.api.phone_verification_views import (
     SignupCompletionView,
     SignupPhoneVerificationStartView,
 )
-from accounts.api.views import LoginView, PushTokenView, SignupView
+from accounts.api.views import (
+    LoginView,
+    NativeLoginView,
+    NativeLogoutView,
+    NativeSessionView,
+    PushTokenView,
+    SignupView,
+)
 
 urlpatterns = [
     path(
@@ -20,6 +27,21 @@ urlpatterns = [
         "login/",
         LoginView.as_view(),
         name="login_api",
+    ),
+    path(
+        "native/login/",
+        NativeLoginView.as_view(),
+        name="native_login_api",
+    ),
+    path(
+        "native/session/",
+        NativeSessionView.as_view(),
+        name="native_session_api",
+    ),
+    path(
+        "native/logout/",
+        NativeLogoutView.as_view(),
+        name="native_logout_api",
     ),
     path(
         "push-token/",

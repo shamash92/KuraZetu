@@ -49,6 +49,7 @@ THIRD_PARTY_APPS = [
     "leaflet",
     "rest_framework",
     "rest_framework.authtoken",
+    "knox",
     "rest_framework_gis",
     "crispy_forms",
     "crispy_tailwind",
@@ -233,6 +234,15 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     # 'PAGE_SIZE': 50,
+}
+
+# Native app tokens. `Bearer` keeps them distinct from DRF's `Token` header
+# while both are accepted. Use slides the expiry; the cap forces a password.
+REST_KNOX = {
+    "AUTH_HEADER_PREFIX": "Bearer",
+    "TOKEN_TTL": timedelta(days=7),
+    "AUTO_REFRESH": True,
+    "AUTO_REFRESH_MAX_TTL": timedelta(days=30),
 }
 
 SPECTACULAR_SETTINGS = {

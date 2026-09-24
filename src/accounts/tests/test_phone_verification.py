@@ -7,8 +7,11 @@ from django.urls import reverse
 from django.utils import timezone
 
 import pytest
+from knox.models import AuthToken
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from accounts.authentication import issue_native_token
 from accounts.models import (
     PhoneVerificationChallenge,
     PhoneVerificationSend,
@@ -147,8 +150,7 @@ def test_password_reset_request_is_generic_and_sends_for_an_unknown_number():
     assert len(fake_sms_gateway.sent_messages) == 1
 
 
-def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_center):
-    client = APIClient()
+def verified_signup_payload(client, polling_center):
     start = client.post(
         reverse("signup_phone_verification_start_api"),
         {"phone_number": NUMBER},
@@ -160,7 +162,7 @@ def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_cente
         {"challenge_id": start.data["data"]["challenge_id"], "code": code},
         format="json",
     )
-    payload = {
+    return {
         "verification_ticket": verified.data["data"]["verification_ticket"],
         "password": "A-long-unique-password-123!",
         "ward_code": str(polling_center.ward.number),
@@ -171,6 +173,11 @@ def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_cente
         "gender": "F",
         "role": "voter",
     }
+
+
+def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_center):
+    client = APIClient()
+    payload = verified_signup_payload(client, polling_center)
 
     response = client.post(reverse("signup_completion_api"), payload, format="json")
 
@@ -185,6 +192,26 @@ def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_cente
         ).status_code
         == 400
     )
+
+
+def test_native_signup_issues_a_knox_token_without_a_web_session(polling_center):
+    client = APIClient()
+    payload = verified_signup_payload(client, polling_center)
+    payload["client"] = "native"
+
+    response = client.post(reverse("signup_completion_api"), payload, format="json")
+
+    assert response.status_code == 201
+    assert response.data["data"]["expiry"]
+    user = User.objects.get(phone_number=NUMBER)
+    assert AuthToken.objects.filter(user=user).count() == 1
+    assert not Token.objects.exists()
+    assert "_auth_user_id" not in client.session
+    session = APIClient().get(
+        reverse("native_session_api"),
+        HTTP_AUTHORIZATION=f"Bearer {response.data['data']['token']}",
+    )
+    assert session.status_code == 200
 
 
 def test_verified_signup_code_for_existing_user_returns_existing_account():
@@ -264,6 +291,7 @@ def test_verified_reset_ticket_changes_the_existing_password():
         phone_number=NUMBER,
         password="Old-long-unique-password-123!",
     )
+    issue_native_token(user)
     client = APIClient()
     start = client.post(
         reverse("password_reset_phone_verification_start_api"),
@@ -289,3 +317,4 @@ def test_verified_reset_ticket_changes_the_existing_password():
     user.refresh_from_db()
     assert user.check_password("New-long-unique-password-123!")
     assert user.is_phone_verified is True
+    assert not AuthToken.objects.filter(user=user).exists()

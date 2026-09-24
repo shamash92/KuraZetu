@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from knox.models import AuthToken
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -285,3 +286,15 @@ class PhoneVerificationTicket(models.Model):
     expires_at = models.DateTimeField()
     consumed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class NativeToken(AuthToken):
+    """A Knox token as the admin shows it: by masked phone, never its digest."""
+
+    class Meta:
+        proxy = True
+        verbose_name = "Native sign-in"
+        verbose_name_plural = "Native sign-ins"
+
+    def __str__(self):
+        return mask_phone_number(self.user.phone_number)

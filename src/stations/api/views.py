@@ -4,12 +4,12 @@ from django.db.models import Case, Count, F, Q, When
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
 from stations.api.serializers import (
     CommunityNotesPollingCenterSerializer,
     ConstituencySerializer,
@@ -186,7 +186,7 @@ def _round_payload(polling_center, user):
 
 
 class RandomUnverifiedPollingCenterAPIView(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [AllowAny]
 
     serializer_class = PollingCenterSerializer
@@ -319,7 +319,7 @@ class LevelPollingCentersAPIView(APIView):
     so a round never repeats a center.
     """
 
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
     def get(self, request, admin_level):
@@ -380,7 +380,7 @@ class LevelPollingCentersAPIView(APIView):
 class PollingCenterRoundAPIView(APIView):
     """One center as a pinverify round, with every suggestion made for it."""
 
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -392,10 +392,7 @@ class PollingCenterRoundAPIView(APIView):
 
 
 class VerificationPollingCenterAPIView(APIView):
-    authentication_classes = [
-        SessionAuthentication,
-        TokenAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [AllowAny]
 
     queryset = PollingCenter.objects.all()
@@ -519,10 +516,7 @@ class VerificationPollingCenterAPIView(APIView):
 
 
 class AIPollingCenterVerificationAPIView(APIView):
-    authentication_classes = [
-        SessionAuthentication,
-        TokenAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -627,10 +621,7 @@ class AIPollingCenterVerificationAPIView(APIView):
 
 
 class PartiallyVerifiedPollingCenterAPIView(APIView):
-    authentication_classes = [
-        SessionAuthentication,
-        TokenAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [AllowAny]
 
     queryset = PollingCenter.objects.all()
@@ -674,10 +665,7 @@ class PartiallyVerifiedPollingCenterAPIView(APIView):
 
 
 class CommunityNotesPollingCenterDetailsAPIView(APIView):
-    authentication_classes = [
-        SessionAuthentication,
-        TokenAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [AllowAny]
 
     queryset = PollingCenter.objects.all()
@@ -711,10 +699,7 @@ class CommunityNotesPollingCenterDetailsAPIView(APIView):
 
 
 class PollingStationInfoAPIView(APIView):
-    authentication_classes = [
-        SessionAuthentication,
-        TokenAuthentication,
-    ]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
     queryset = PollingStation.objects.all()
@@ -743,7 +728,7 @@ class GeocodeAPIView(APIView):
     """Location search, biased to a ward. Provider-switchable: Google Places
     when ``GOOGLE_MAPS_API_KEY`` is set, Nominatim (free) otherwise."""
 
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):

@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
+from knox.models import AuthToken
+
 from .forms import MyAdminPasswordChangeForm, UserAdminChangeForm, UserAdminCreationForm
 from .models import (
+    NativeToken,
     PhoneVerificationChallenge,
     PhoneVerificationRateScope,
     PhoneVerificationSend,
@@ -173,3 +176,32 @@ class PhoneVerificationTicketAdmin(ReadOnlyPhoneVerificationAdmin):
     @admin.display(description="Phone number")
     def masked_phone(self, obj):
         return mask_phone_number(obj.challenge.phone_number)
+
+
+# Knox's own admin mints a working token for any account and shows full phone
+# numbers. NativeToken lists the same tokens by masked phone instead.
+admin.site.unregister(AuthToken)
+
+
+@admin.register(NativeToken)
+class NativeTokenAdmin(admin.ModelAdmin):
+    """Which accounts are signed in on Native. Deleting a token signs it out."""
+
+    list_display = ("masked_phone", "created", "expiry")
+    search_fields = ("user__phone_number",)
+    ordering = ("-created",)
+    readonly_fields = ("masked_phone", "created", "expiry")
+    fields = readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user")
+
+    @admin.display(description="Phone number")
+    def masked_phone(self, obj):
+        return mask_phone_number(obj.user.phone_number)

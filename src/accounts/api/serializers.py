@@ -3,7 +3,13 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import CharField, ModelSerializer, Serializer, UUIDField
+from rest_framework.serializers import (
+    CharField,
+    ChoiceField,
+    ModelSerializer,
+    Serializer,
+    UUIDField,
+)
 
 from accounts.models import User
 
@@ -31,11 +37,14 @@ class SignupCompletionSerializer(ModelSerializer):
     password = CharField(write_only=True)
     ward_code = CharField(write_only=True)
     polling_center = CharField(max_length=8, write_only=True)
+    # The Native app asks for a Knox token instead of a web session.
+    client = ChoiceField(choices=("native",), required=False, write_only=True)
 
     class Meta:
         model = User
         fields = (
             "verification_ticket",
+            "client",
             "password",
             "ward_code",
             "polling_center",
