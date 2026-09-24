@@ -247,7 +247,7 @@ def test_unverified_login_requires_password_reset_before_issuing_credentials():
     client = APIClient()
 
     response = client.post(
-        reverse("login_api"),
+        reverse("native_login_api"),
         {
             "phone_number": NUMBER,
             "password": "Old-long-unique-password-123!",

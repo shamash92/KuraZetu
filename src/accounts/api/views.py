@@ -1,10 +1,9 @@
 import logging
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,7 +19,9 @@ from accounts.authentication import (
 logger = logging.getLogger(__name__)
 
 
-class LoginView(APIView):
+class NativeLoginView(APIView):
+    """Password login for the Native app: a Knox token, never a web session."""
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -91,24 +92,6 @@ class LoginView(APIView):
                 {"error": "Invalid credentials"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-    def login_succeeded(self, request, user):
-        token, created = Token.objects.get_or_create(user=user)
-        login(request._request, user)
-        return Response(
-            {
-                "message": "User login successful",
-                "data": {
-                    "user": UserSerializer(user).data,
-                    "token": token.key,
-                },
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class NativeLoginView(LoginView):
-    """Password login for the Native app: a Knox token, never a web session."""
 
     def login_succeeded(self, request, user):
         instance, token = issue_native_token(user)

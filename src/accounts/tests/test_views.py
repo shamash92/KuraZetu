@@ -19,7 +19,7 @@ class TestLoginView:
         user.save(update_fields=("is_phone_verified",))
         client = APIClient()
         response = client.post(
-            reverse("login_api"),
+            reverse("native_login_api"),
             {"phone_number": "+254712345678", "password": "pw12345"},
         )
         assert response.status_code == 200
@@ -29,16 +29,15 @@ class TestLoginView:
         User.objects.create_user(phone_number="+254712345678", password="pw12345")
         client = APIClient()
         response = client.post(
-            reverse("login_api"),
+            reverse("native_login_api"),
             {"phone_number": "+254712345678", "password": "wrongpw"},
         )
         assert response.status_code == 400
 
 
-def test_the_unverified_signup_route_is_gone():
-    response = APIClient().post("/api/accounts/signup/", {}, format="json")
-
-    assert response.status_code == 404
+@pytest.mark.parametrize("path", ["/api/accounts/signup/", "/api/accounts/login/"])
+def test_the_legacy_token_routes_are_gone(path):
+    assert APIClient().post(path, {}, format="json").status_code == 404
 
 
 def test_legacy_password_reset_route_redirects_to_otp_flow(client):

@@ -9,7 +9,6 @@ from accounts.api.phone_verification_views import (
     SignupPhoneVerificationStartView,
 )
 from accounts.api.views import (
-    LoginView,
     NativeLoginView,
     NativeLogoutView,
     NativeSessionView,
@@ -17,11 +16,6 @@ from accounts.api.views import (
 )
 
 urlpatterns = [
-    path(
-        "login/",
-        LoginView.as_view(),
-        name="login_api",
-    ),
     path(
         "native/login/",
         NativeLoginView.as_view(),
