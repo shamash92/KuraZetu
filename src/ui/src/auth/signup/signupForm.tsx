@@ -68,7 +68,6 @@ interface SignupFailure extends Error {
 
 interface SignupSuccess {
     message?: string;
-    data?: {token?: string};
 }
 
 export default function SignupForm() {
@@ -138,9 +137,6 @@ export default function SignupForm() {
         onSuccess: (data) => {
             if (data?.message !== "User signup successful") return;
 
-            const token = data.data?.token;
-            if (typeof token !== "string" || token.length === 0) return;
-
             // Clearing the ticket below empties the state this screen's own
             // guard watches. Without this the guard reads the cleared ticket as
             // "never verified", sends the new account back to the code screen,
@@ -152,14 +148,6 @@ export default function SignupForm() {
             // already created.
             clearSignupFlow();
             clearVerificationTicket();
-
-            localStorage.setItem("token", token);
-            cookie.save("token", token, {
-                path: "/",
-                secure: true, // Ensures the cookie is sent over HTTPS only
-                httpOnly: false, // Prevents JavaScript from accessing the cookie (set to true if possible)
-                sameSite: "Strict", // Prevents the cookie from being sent with cross-site requests
-            });
 
             // The success page renders only for someone arriving from here;
             // without this it also renders for anyone who opens the URL
