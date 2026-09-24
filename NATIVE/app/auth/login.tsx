@@ -14,7 +14,14 @@ import Animated, {
     withDelay,
     withTiming,
 } from "react-native-reanimated";
-import {ArrowRight, Eye, EyeOff, Lock} from "lucide-react-native";
+import {
+    ArrowRight,
+    Eye,
+    EyeOff,
+    Fingerprint,
+    Lock,
+    ScanFace,
+} from "lucide-react-native";
 import {
     CARD,
     COPPER,
@@ -35,7 +42,12 @@ import LoginLockout from "@/components/auth/lockout";
 import LoginLoading from "@/components/auth/login";
 import UpdateCheckerModal from "../_utils/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
-import {afterPasswordSignIn} from "../_utils/biometricUnlock";
+import {
+    afterPasswordSignIn,
+    BiometricUnlock,
+    getBiometricUnlock,
+    useBiometricLabel,
+} from "../_utils/biometricUnlock";
 import {
     deleteFromSecureStore,
     getFromSecureStore,
@@ -194,8 +206,10 @@ export default function LoginScreen() {
     );
     const [lockoutExpiresAt, setLockoutExpiresAt] = useState<number | null>(null);
     const [isLockoutRestored, setIsLockoutRestored] = useState(false);
+    const [biometricUnlock, setBiometricUnlock] = useState<BiometricUnlock>("off");
+    const biometricLabel = useBiometricLabel();
 
-    const {logIn} = useAuthStore();
+    const {logIn, lock} = useAuthStore();
 
     const insets = useSafeAreaInsets();
     const hasCommittedPasswordSignIn = useRef(false);
@@ -261,6 +275,10 @@ export default function LoginScreen() {
         router.replace("/(tabs)");
         void afterPasswordSignIn(successfulPasswordToken);
     }, [isTallyAnimationComplete, logIn, successfulPasswordToken]);
+
+    useEffect(() => {
+        void getBiometricUnlock().then(setBiometricUnlock);
+    }, []);
 
     const handleLogin = () => {
         if (!phoneNumber || phoneNumber === "+254") {
@@ -483,6 +501,24 @@ export default function LoginScreen() {
                     <ArrowRight size={18} color={LIME_INK} strokeWidth={2.4} />
                 </TouchableOpacity>
 
+                {biometricUnlock === "on" ? (
+                    <TouchableOpacity
+                        style={[styles.secondary, isOffline && styles.disabled]}
+                        onPress={lock}
+                        disabled={isOffline}
+                        activeOpacity={0.85}
+                    >
+                        {biometricLabel === "Face ID" ? (
+                            <ScanFace size={18} color={INK} strokeWidth={2.2} />
+                        ) : (
+                            <Fingerprint size={18} color={INK} strokeWidth={2.2} />
+                        )}
+                        <Text style={styles.secondaryText}>
+                            Unlock with {biometricLabel}
+                        </Text>
+                    </TouchableOpacity>
+                ) : null}
+
                 <View style={styles.foot}>
                     <Text style={styles.footText}>Don&apos;t have an account? </Text>
                     <Link href="/auth/signUp" asChild>
@@ -642,6 +678,24 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         paddingVertical: 16,
         paddingHorizontal: 22,
+    },
+    secondary: {
+        marginTop: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        backgroundColor: CARD,
+        borderWidth: 1.5,
+        borderColor: INK,
+        borderRadius: 14,
+        paddingVertical: 15,
+        paddingHorizontal: 22,
+    },
+    secondaryText: {
+        fontSize: 15,
+        fontWeight: "800",
+        color: INK,
     },
     disabled: {
         opacity: 0.6,

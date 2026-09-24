@@ -32,6 +32,9 @@ import LottieView from "lottie-react-native";
 import {DarkTheme, DefaultTheme, Stack, ThemeProvider} from "expo-router";
 import {getFromSecureStore, saveToSecureStore} from "./_utils/secureStore";
 import {useAuthStore} from "./_utils/authStore";
+import {useBackgroundLock} from "./_utils/useBackgroundLock";
+import {getBiometricUnlock} from "./_utils/biometricUnlock";
+import LockCover from "@/components/auth/lockCover";
 import {useFonts} from "expo-font";
 import {useQuickActionRouting} from "expo-quick-actions/router";
 
@@ -298,8 +301,10 @@ function AppLocationPermission() {
 }
 
 function RootLayoutNav() {
-    const {isLoggedIn, shouldCreateAccount} = useAuthStore();
+    const {isLoggedIn, isLocked, shouldCreateAccount} = useAuthStore();
     const colorScheme = useColorScheme();
+    const isAway = useBackgroundLock();
+    const isCovered = isLocked || (isAway && isLoggedIn);
 
     return (
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -318,6 +323,7 @@ function RootLayoutNav() {
                     <Stack.Screen name="(tabs)" options={{headerShown: false}} />
                 </Stack.Protected>
             </Stack>
+            {isCovered ? <LockCover isLocked={isLocked} /> : null}
         </ThemeProvider>
     );
 }
@@ -339,6 +345,10 @@ export default function AuthenticatedLayout() {
 
     useEffect(() => {
         void pickLaunchAnimation().then(setLaunchAnimation);
+        // A cold start with biometric unlock on opens behind the lock cover.
+        void getBiometricUnlock().then((state) => {
+            if (state === "on") useAuthStore.getState().lock();
+        });
     }, []);
 
     useEffect(() => {
