@@ -10,7 +10,7 @@ from django.utils import timezone
 
 import pytest
 from axes.models import AccessAttempt, AccessFailureLog, AccessLog
-from rest_framework.authtoken.models import Token
+from knox.models import AuthToken
 from rest_framework.test import APIClient
 
 from accounts.auth_security import account_reference, client_ip
@@ -33,7 +33,7 @@ def user(db):
 
 def api_login(client, number=NUMBER, password="wrong", **headers):
     return client.post(
-        reverse("login_api"),
+        reverse("native_login_api"),
         {"phone_number": number, "password": password},
         format="json",
         **headers,
@@ -69,7 +69,7 @@ def test_web_and_api_share_counter_and_expiry(user, client):
     assert response.json()["code"] == "login_temporarily_blocked"
     assert response.json()["retry_after_seconds"] == int(response["Retry-After"])
     assert 1 <= int(response["Retry-After"]) <= 900
-    assert not Token.objects.filter(user=user).exists()
+    assert not AuthToken.objects.filter(user=user).exists()
     assert api_login(api, password=PASSWORD).status_code == 429
     response = client.post(
         reverse("login"), {"phone_number": NUMBER, "password": PASSWORD}
@@ -177,7 +177,7 @@ def test_other_password_entry_points_cannot_bypass_lockout(user, client, route):
 @pytest.mark.django_db
 @pytest.mark.parametrize("payload", [{}, [], {"phone_number": NUMBER, "password": 1}])
 def test_malformed_api_input_is_rejected_without_a_server_error(payload):
-    response = APIClient().post(reverse("login_api"), payload, format="json")
+    response = APIClient().post(reverse("native_login_api"), payload, format="json")
     assert response.status_code == 400
     assert not AccessAttempt.objects.exists()
 
