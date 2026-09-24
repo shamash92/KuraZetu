@@ -57,7 +57,12 @@ function CameraSurface({
     onRetry,
 }: CameraSurfaceProps) {
     return (
-        <View style={[styles.preview, {aspectRatio: previewAspect}]}>
+        // Not collapsable: VisionCamera's Android preview lays itself out at
+        // (0, 0) of its native parent, so this box must be that parent.
+        <View
+            style={[styles.preview, {aspectRatio: previewAspect}]}
+            collapsable={false}
+        >
             {available && device ? (
                 <Camera
                     style={styles.camera}
