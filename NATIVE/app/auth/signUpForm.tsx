@@ -12,6 +12,7 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {router, useLocalSearchParams} from "expo-router";
 
 import SignupLoading from "@/components/auth/signup";
+import {afterPasswordSignIn} from "@/app/_utils/biometricUnlock";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
 import {useAuthStore} from "@/app/_utils/authStore";
@@ -124,6 +125,7 @@ export default function SignupScreen() {
         clearVerificationTicket();
         logIn(successfulSignupToken);
         router.replace("/(tabs)");
+        void afterPasswordSignIn(successfulSignupToken);
     }, [clearVerificationTicket, isBallotAnimationComplete, logIn, successfulSignupToken]);
 
     const updateFormData = (field: keyof typeof formData, value: string) => {

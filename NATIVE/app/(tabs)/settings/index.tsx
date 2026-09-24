@@ -12,17 +12,29 @@ import {
     AlertCircle,
     Bell,
     DatabaseIcon,
+    Fingerprint,
     LogOut,
     Moon,
+    ScanFace,
     User2,
 } from "lucide-react-native";
 import {NEUTRAL, PRIMARY} from "../../_utils/colors";
-import React, {useState} from "react";
+import React, {useCallback, useState} from "react";
 
-import {router} from "expo-router";
+import {router, useFocusEffect} from "expo-router";
 import {statusBarHeight} from "@/app/_utils/screenDimensions";
 import useAuthStore from "@/app/_utils/authStore";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {
+    BiometricUnlock,
+    canUseBiometricUnlock,
+    disableBiometricUnlock,
+    enableBiometricUnlock,
+    expireBiometricToken,
+    getBiometricUnlock,
+    useBiometricLabel,
+} from "@/app/_utils/biometricUnlock";
+import {isCancelledPrompt} from "@/app/_utils/lockRules";
 
 interface SettingItemProps {
     icon: React.ReactNode;
@@ -97,7 +109,42 @@ export default function ProfileScreen() {
     const [darkModeEnabled, setDarkModeEnabled] = useState(false);
     const [locationEnabled, setLocationEnabled] = useState(true);
 
+    const [biometricUnlock, setBiometricUnlock] = useState<BiometricUnlock>("off");
+    const biometricLabel = useBiometricLabel();
+    const canUseBiometrics = canUseBiometricUnlock();
+
     const {logOut, userToken} = useAuthStore();
+
+    // Sign-in can turn biometric unlock on after this tab has mounted.
+    useFocusEffect(
+        useCallback(() => {
+            void getBiometricUnlock().then(setBiometricUnlock);
+        }, []),
+    );
+
+    const handleBiometricToggle = async (enable: boolean) => {
+        if (enable && !canUseBiometrics) {
+            Alert.alert(
+                `${biometricLabel} isn't set up`,
+                `Set up ${biometricLabel} in your phone's settings first.`,
+            );
+            return;
+        }
+
+        try {
+            if (enable && userToken) {
+                await enableBiometricUnlock(userToken);
+                setBiometricUnlock("on");
+            } else if (!enable) {
+                await disableBiometricUnlock();
+                setBiometricUnlock("off");
+            }
+        } catch (error) {
+            if (!isCancelledPrompt(error)) {
+                Alert.alert(`Couldn't turn on ${biometricLabel}`, "Please try again.");
+            }
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -114,6 +161,8 @@ export default function ProfileScreen() {
                 );
                 return;
             }
+            // Keep Face ID on: the next password sign-in stores the new token.
+            await expireBiometricToken().catch(() => {});
             await logOut();
 
             router.replace("/auth/login");
@@ -175,6 +224,27 @@ export default function ProfileScreen() {
                     <Text style={styles.sectionTitle}>Account</Text>
 
                     <View style={styles.card}>
+                        <SettingItem
+                            icon={
+                                biometricLabel === "Face ID" ? (
+                                    <ScanFace size={22} color={PRIMARY[600]} />
+                                ) : (
+                                    <Fingerprint size={22} color={PRIMARY[600]} />
+                                )
+                            }
+                            title={`Unlock with ${biometricLabel}`}
+                            description={
+                                canUseBiometrics
+                                    ? `Use ${biometricLabel} instead of your password`
+                                    : `Set up ${biometricLabel} on this phone first`
+                            }
+                            toggle
+                            toggleValue={biometricUnlock !== "off"}
+                            onToggle={(enable) => void handleBiometricToggle(enable)}
+                        />
+
+                        <View style={styles.divider} />
+
                         <SettingItem
                             icon={<User2 size={22} color={PRIMARY[600]} />}
                             title="Account Settings"

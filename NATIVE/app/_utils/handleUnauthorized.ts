@@ -1,14 +1,15 @@
 import {router} from "expo-router";
 
 import useAuthStore from "./authStore";
+import {expireBiometricToken} from "./biometricUnlock";
 
 let signOutPromise: Promise<void> | null = null;
 
 async function signOutForInvalidToken() {
     if (!signOutPromise) {
-        signOutPromise = useAuthStore
-            .getState()
-            .logOut()
+        signOutPromise = expireBiometricToken()
+            .catch(() => {})
+            .then(() => useAuthStore.getState().logOut())
             .finally(() => {
                 router.replace("/auth/login");
                 signOutPromise = null;

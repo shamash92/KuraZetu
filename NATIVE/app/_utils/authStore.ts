@@ -5,12 +5,15 @@ import {saveToSecureStore} from "./secureStore";
 
 type UserState = {
     isLoggedIn: boolean;
+    // Face ID or a fingerprint is needed before the app is shown again.
+    isLocked: boolean;
     shouldCreateAccount: boolean;
     userToken: null | string;
     expoPushToken: string | null;
     setExpoPushToken: (expoPushToken: string | null) => void;
     logIn: (userToken: string) => void;
     logOut: () => Promise<void>;
+    lock: () => void;
 };
 
 // Builds before Knox persisted a permanent DRF token. Nothing that grants
@@ -21,6 +24,7 @@ void deleteItemAsync("userToken").catch(() => {});
 // The Knox token lives only in memory: a new process always starts signed out.
 export const useAuthStore = create<UserState>((set) => ({
     isLoggedIn: false,
+    isLocked: false,
     shouldCreateAccount: false,
     userToken: null,
     expoPushToken: null,
@@ -43,6 +47,7 @@ export const useAuthStore = create<UserState>((set) => ({
             return {
                 ...state,
                 isLoggedIn: true,
+                isLocked: false,
                 userToken: token,
             };
         });
@@ -52,7 +57,16 @@ export const useAuthStore = create<UserState>((set) => ({
             return {
                 ...state,
                 isLoggedIn: false,
+                isLocked: false,
                 userToken: null,
+            };
+        });
+    },
+    lock: () => {
+        set((state) => {
+            return {
+                ...state,
+                isLocked: true,
             };
         });
     },
