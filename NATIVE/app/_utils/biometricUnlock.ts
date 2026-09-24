@@ -2,6 +2,7 @@ import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 
 import {Alert, Platform} from "react-native";
+import {File, Paths} from "expo-file-system";
 import {useEffect, useState} from "react";
 import {
     deleteFromSecureStore,
@@ -23,7 +24,21 @@ const PROTECTED = {
     authenticationPrompt: "Unlock KuraZetu",
 };
 
+// iOS keeps Keychain items after the app is deleted. The documents folder is
+// deleted with the app, so a missing marker means a fresh install, and the
+// previous install's copy must not unlock it.
+const previousInstallCleared = (async () => {
+    const marker = new File(Paths.document, "installed");
+    if (marker.exists) return;
+
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await deleteFromSecureStore("biometricUnlock");
+    await deleteFromSecureStore("biometricNudgeShown");
+    marker.create();
+})().catch(() => {});
+
 export async function getBiometricUnlock(): Promise<BiometricUnlock> {
+    await previousInstallCleared;
     const value = await getFromSecureStore("biometricUnlock");
     return value === "on" || value === "needs_password" ? value : "off";
 }
