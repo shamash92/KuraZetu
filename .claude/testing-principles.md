@@ -6,11 +6,51 @@ inspiration:
   source: https://github.com/kentcdodds/kody/blob/main/docs/contributing/testing-principles.md
 ---
 
-# React and React Native testing principles
+# Testing principles
 
-Apply these principles to tests for hand-written code in `src/ui/` and
-`NATIVE/`. They govern new and substantively edited tests; do not reorganize an
+[What to test and what to keep](#what-to-test-and-what-to-keep) applies to all
+code in the repository: Django, `src/ui/`, `NATIVE/`, and scripts. The sections
+after it apply to tests for hand-written code in `src/ui/` and `NATIVE/`.
+
+These principles govern new and substantively edited tests; do not reorganize an
 unrelated existing suite solely to match this document.
+
+## What to test and what to keep
+
+Code in this project is refactored, replaced with libraries, and rewritten
+often. A test that pins how something is implemented must be rewritten with it.
+A test that pins what the user experiences survives the change and proves the
+new code still works. Write the second kind.
+
+- Prioritize behavioral and integration tests that follow how a person uses the
+  app. For a web or mobile sign-in that needs an OTP, test the journey: enter a
+  phone number, submit the code, end up signed in. Do not test in isolation
+  whether the form formats the number or escapes its input.
+- Test helpers through the workflow that uses them. If a function converts
+  international phone numbers to the Kenyan format, assert the reformatted
+  number in the field where a user typed it, not the function's return value.
+  When the function is later swapped for a library, that test still covers the
+  behavior and needs no edit.
+- Not every change needs a new committed test. Add one when a change adds or
+  alters functionality from a UI or user-flow perspective, and make it an
+  integration test of that flow.
+- Add a small unit test only in the few cases where the logic is important
+  enough to justify its maintenance cost on its own.
+
+### Verifying your own work
+
+- Use unit tests for your own verification. Write and run them locally while
+  you work; you do not need to commit them.
+- When a change touches something sensitive, rerun the existing behavioral and
+  integration tests that cover the area you changed, so the UI does not break
+  and the web app, mobile app, backend, or script still produces the outcomes it
+  is supposed to.
+- Agents often create many regression tests and other tests to verify their
+  work. These are valuable at the time but often should not be kept long-term.
+  Before handing work over, check every test you added or changed against this
+  document and make sure it is high signal. Edit, combine, or delete any that
+  are not, so the project does not carry the weight of tests that provide
+  minimal value.
 
 Favor small, readable suites with explicit setup and minimal magic. A test may
 be longer and contain several assertions when they describe one meaningful
@@ -20,6 +60,7 @@ user workflow.
 
 | Scope | Tooling | Command |
 | --- | --- | --- |
+| `src/` (Django) | pytest with `pytest-django` | `cd src && py.test --ds=CommunityTally.settings.local_testing --nomigrations` |
 | `src/ui/` | Jest, jsdom, React Testing Library, and `user-event` | `cd src/ui && pnpm test` |
 | `NATIVE/tests/form34a/` | Node's built-in test runner for isolated logic | `cd NATIVE && yarn test:form34a` |
 
@@ -28,12 +69,10 @@ claim that component tests ran, or add a runner as a side effect of unrelated
 work. Establish Expo-compatible component tooling as its own deliberate
 change when a feature needs it.
 
-## Choose the lightest useful test
+## Choose the right test
 
-- Test pure functions and state transitions without rendering when rendering
-  adds no confidence.
-- For web components and hooks, use Jest and Testing Library when behavior
-  depends on the rendered interface or user interaction.
+- For web components and hooks, use Jest and Testing Library to drive the
+  rendered interface the way a user would.
 - Keep end-to-end coverage for a small number of user-critical journeys. Do not
   introduce a new end-to-end framework as part of an unrelated feature.
 - Prefer local fakes and fixtures over the public internet or third-party
@@ -65,7 +104,7 @@ change when a feature needs it.
 - Do not test guarantees already enforced by TypeScript.
 - Add regression coverage when the failure is likely to recur or the affected
   workflow is important enough to justify its maintenance cost.
-- Keep slower integration and end-to-end suites deliberately small.
+- Keep slower end-to-end suites deliberately small.
 - Keep test output free of stray logging. Do not silence warnings or errors
   without asserting or narrowly accounting for the expected output.
 

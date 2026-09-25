@@ -7,7 +7,7 @@ These instructions apply to the React web application under `src/ui/`.
 - Repository-wide agent rules: [`../../AGENTS.md`](../../AGENTS.md)
 - JavaScript and TypeScript code style:
   [`../../.claude/code-style.md`](../../.claude/code-style.md)
-- React and React Native testing principles:
+- Testing principles:
   [`../../.claude/testing-principles.md`](../../.claude/testing-principles.md)
 - Frontend setup: [`../../docs/tutorials/setup.md`](../../docs/tutorials/setup.md)
 
