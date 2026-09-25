@@ -8,6 +8,7 @@ React application in `src/ui/`.
 - Repository-wide agent rules: [`../AGENTS.md`](../AGENTS.md)
 - Backend setup: [`../docs/tutorials/setup.md`](../docs/tutorials/setup.md)
 - Contribution standards: [`../docs/contributing.md`](../docs/contributing.md)
+- Testing principles: [`../.claude/testing-principles.md`](../.claude/testing-principles.md)
 
 ## Working rules
 

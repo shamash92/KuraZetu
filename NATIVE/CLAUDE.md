@@ -8,7 +8,7 @@ These instructions apply to the Expo and React Native application under
 - Repository-wide agent rules: [`../AGENTS.md`](../AGENTS.md)
 - JavaScript and TypeScript code style:
   [`../.claude/code-style.md`](../.claude/code-style.md)
-- React and React Native testing principles:
+- Testing principles:
   [`../.claude/testing-principles.md`](../.claude/testing-principles.md)
 - Expo setup: [`../docs/tutorials/setup-android.md`](../docs/tutorials/setup-android.md)
 

@@ -19,13 +19,12 @@ Closes #
 
 ## Testing
 
-<!-- List exact commands and notable results. Do not write "not tested" without a reason. -->
-- Automated tests:
-  - …
-- Manual testing:
-  1. …
-  2. …
-  3. …
+<!--
+Optional. If you fill it in, keep it to a line or two about what you validated,
+such as "Signing in with an OTP still works end to end" or "Tested locally and
+the results flow behaves as before". Do not describe the tests or functions you
+wrote to check your own work; most of them are not part of this PR.
+-->
 
 ## Screenshots
 

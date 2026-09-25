@@ -36,6 +36,9 @@ areas, read every applicable file.
 - Django and Python under `src/`, excluding `src/ui/`:
   [src/CLAUDE.md](./src/CLAUDE.md)
 
+Before writing or running tests anywhere in the repository, read
+[.claude/testing-principles.md](./.claude/testing-principles.md).
+
 ## Git
 
 Read the relevant section of [CONTRIBUTING.md](./CONTRIBUTING.md) before committing, branching, or
