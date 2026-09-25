@@ -23,14 +23,18 @@ A test that pins what the user experiences survives the change and proves the
 new code still works. Write the second kind.
 
 - Prioritize behavioral and integration tests that follow how a person uses the
-  app. For a web or mobile sign-in that needs an OTP, test the journey: enter a
-  phone number, submit the code, end up signed in. Do not test in isolation
-  whether the form formats the number or escapes its input.
-- Test helpers through the workflow that uses them. If a function converts
-  international phone numbers to the Kenyan format, assert the reformatted
-  number in the field where a user typed it, not the function's return value.
-  When the function is later swapped for a library, that test still covers the
-  behavior and needs no edit.
+  app over tests of isolated implementation details.
+
+  For example, for a web or mobile sign-in that needs an OTP, test the journey:
+  enter a phone number, submit the code, end up signed in. Do not test in
+  isolation whether the form formats the number or escapes its input.
+- Test helpers through the workflow that uses them, so the test keeps covering
+  the behavior when the helper is replaced.
+
+  For example, if a function converts international phone numbers to the Kenyan
+  format, assert the reformatted number in the field where a user typed it, not
+  the function's return value. When the function is later swapped for a
+  library, that test still passes and needs no edit.
 - Not every change needs a new committed test. Add one when a change adds or
   alters functionality from a UI or user-flow perspective, and make it an
   integration test of that flow.
