@@ -8,6 +8,13 @@ inspiration:
 
 # Testing principles
 
+Agents often create many regression tests and other tests to verify their
+work. These are valuable at the time but often should not be kept long-term.
+Before handing work over, check every test you added or changed against this
+document and make sure it is high signal. Edit, combine, or delete any that are
+not, so the project does not carry the weight of tests that provide minimal
+value.
+
 [What to test and what to keep](#what-to-test-and-what-to-keep) applies to all
 code in the repository: Django, `src/ui/`, `NATIVE/`, and scripts. The sections
 after it apply to tests for hand-written code in `src/ui/` and `NATIVE/`.
@@ -49,12 +56,6 @@ new code still works. Write the second kind.
   integration tests that cover the area you changed, so the UI does not break
   and the web app, mobile app, backend, or script still produces the outcomes it
   is supposed to.
-- Agents often create many regression tests and other tests to verify their
-  work. These are valuable at the time but often should not be kept long-term.
-  Before handing work over, check every test you added or changed against this
-  document and make sure it is high signal. Edit, combine, or delete any that
-  are not, so the project does not carry the weight of tests that provide
-  minimal value.
 
 Favor small, readable suites with explicit setup and minimal magic. A test may
 be longer and contain several assertions when they describe one meaningful
