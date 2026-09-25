@@ -1,5 +1,5 @@
 import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import {Camera as CameraIcon} from "lucide-react-native";
+import {Camera as CameraIcon, X} from "lucide-react-native";
 import {
     Camera,
     type CameraDevice,
@@ -26,6 +26,7 @@ interface LiveCameraPaneProps {
     readyToCapture: boolean;
     onCameraError: (error: Error) => void;
     onCapture: () => void;
+    onClose: () => void;
     onRetry: () => void;
     onToggleAspect: () => void;
 }
@@ -56,7 +57,12 @@ function CameraSurface({
     onRetry,
 }: CameraSurfaceProps) {
     return (
-        <View style={[styles.preview, {aspectRatio: previewAspect}]}>
+        // Not collapsable: VisionCamera's Android preview lays itself out at
+        // (0, 0) of its native parent, so this box must be that parent.
+        <View
+            style={[styles.preview, {aspectRatio: previewAspect}]}
+            collapsable={false}
+        >
             {available && device ? (
                 <Camera
                     style={styles.camera}
@@ -145,27 +151,44 @@ function CaptureGuidance({
 interface CaptureControlProps {
     enabled: boolean;
     onCapture: () => void;
+    onClose: () => void;
 }
 
-function CaptureControl({enabled, onCapture}: CaptureControlProps) {
+function CaptureControl({enabled, onCapture, onClose}: CaptureControlProps) {
     return (
         <View style={styles.cameraControls}>
-            {enabled ? (
+            <View style={styles.controlSlot}>
                 <TouchableOpacity
-                    style={styles.captureButton}
-                    onPress={onCapture}
+                    style={styles.closeButton}
+                    onPress={onClose}
                     accessibilityRole="button"
-                    accessibilityLabel="Take photo"
-                    accessibilityHint="Captures Form 34A for review"
+                    accessibilityLabel="Close camera"
+                    accessibilityHint="Returns to the results form"
+                    hitSlop={8}
                 >
-                    <CameraIcon size={32} color={perk.limeInk} />
+                    <X size={26} color={perk.card} />
                 </TouchableOpacity>
-            ) : (
-                <View
-                    style={styles.captureButtonWaiting}
-                    importantForAccessibility="no"
-                />
-            )}
+            </View>
+            <View style={styles.controlSlot}>
+                {enabled ? (
+                    <TouchableOpacity
+                        style={styles.captureButton}
+                        onPress={onCapture}
+                        accessibilityRole="button"
+                        accessibilityLabel="Take photo"
+                        accessibilityHint="Captures Form 34A for review"
+                    >
+                        <CameraIcon size={32} color={perk.limeInk} />
+                    </TouchableOpacity>
+                ) : (
+                    <View
+                        style={styles.captureButtonWaiting}
+                        importantForAccessibility="no"
+                    />
+                )}
+            </View>
+            {/* Empty third slot keeps the capture button centred. */}
+            <View style={styles.controlSlot} />
         </View>
     );
 }
@@ -185,6 +208,7 @@ export function LiveCameraPane({
     readyToCapture,
     onCameraError,
     onCapture,
+    onClose,
     onRetry,
     onToggleAspect,
 }: LiveCameraPaneProps) {
@@ -225,6 +249,7 @@ export function LiveCameraPane({
             <CaptureControl
                 enabled={readyToCapture && cameraAvailable}
                 onCapture={onCapture}
+                onClose={onClose}
             />
         </View>
     );
@@ -322,6 +347,19 @@ const styles = StyleSheet.create({
         bottom: 50,
         left: 0,
         right: 0,
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    controlSlot: {
+        flex: 1,
+        alignItems: "center",
+    },
+    closeButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: perk.red,
+        justifyContent: "center",
         alignItems: "center",
     },
     captureButton: {
