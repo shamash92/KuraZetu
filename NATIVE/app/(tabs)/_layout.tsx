@@ -34,6 +34,9 @@ export default function TabLayout() {
                 labelVisibilityMode="labeled"
                 tabBarRespectsIMEInsets
                 minimizeBehavior="onScrollDown"
+                screenOptions={{
+                    headerShown: false,
+                }}
             >
                 <NativeTabs.Trigger name="index">
                     <NativeTabs.Trigger.Icon
