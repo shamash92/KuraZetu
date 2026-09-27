@@ -18,6 +18,10 @@ import {
 import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {type Image as NitroImageHandle} from "react-native-nitro-image";
+import {
+    type BarcodeScanner,
+    createBarcodeScanner,
+} from "react-native-vision-camera-barcode-scanner";
 
 import {File} from "expo-file-system";
 
@@ -28,6 +32,7 @@ import {
 } from "./CaptureFormViews";
 import {LiveCameraPane} from "./LiveCameraPane";
 import {getCameraPermissionRecovery} from "./cameraPermission";
+import {readFormQr} from "./formQr";
 import {
     CaptureAspect,
     useForm34AFrameAnalysis,
@@ -71,6 +76,22 @@ function deleteTemporaryPhoto(uri: string | null) {
     }
 }
 
+/**
+ * Debugging aid: log the QR read from the captured photo beside the station
+ * the citizen selected, so the two can be compared by eye.
+ */
+async function logCapturedQr(
+    scanner: BarcodeScanner,
+    filePath: string,
+    stationCode: string | undefined,
+) {
+    const {value, source} = await readFormQr(scanner, filePath);
+    console.log(
+        `[form34a] captured QR=${value ?? "none"} via=${source} ` +
+            `station=${stationCode ?? "unknown"}`,
+    );
+}
+
 export interface Form34ACandidate {
     key: string;
     name: string;
@@ -90,6 +111,8 @@ interface Form34ACaptureFormProps {
     onClose: () => void;
     title: string;
     candidates: Form34ACandidate[];
+    /** Code of the polling station (stream) selected before capture. */
+    stationCode?: string;
     submitLabel?: string;
     onSubmit: (submission: Form34ASubmission) => void;
     /**
@@ -114,6 +137,7 @@ export function Form34ACaptureForm({
     onClose,
     title,
     candidates,
+    stationCode,
     submitLabel = "Submit",
     onSubmit,
     canSubmit,
@@ -141,6 +165,11 @@ export function Form34ACaptureForm({
         previewImageTargetSize: REVIEW_PREVIEW_RESOLUTION[aspect],
     });
 
+    const qrScanner = React.useMemo(
+        () => createBarcodeScanner({barcodeFormats: ["qr-code"]}),
+        [],
+    );
+
     const capturingRef = React.useRef(false);
     const captureGenerationRef = React.useRef(0);
     const pendingImageRef = React.useRef<string | null>(null);
@@ -150,7 +179,15 @@ export function Form34ACaptureForm({
     // after React commits the replacement, so the native view never receives
     // an already-disposed image.
     React.useEffect(() => {
-        return () => pendingPreview?.dispose();
+        return () => {
+            // Development builds deep-freeze every prop handed to a native
+            // view, and disposing a frozen image throws. Leave that one to
+            // garbage collection; release builds never freeze, so they always
+            // dispose, and any other failure still surfaces.
+            if (pendingPreview && !Object.isFrozen(pendingPreview)) {
+                pendingPreview.dispose();
+            }
+        };
     }, [pendingPreview]);
 
     const releaseOwnedPhotos = React.useCallback(() => {
@@ -193,6 +230,11 @@ export function Form34ACaptureForm({
                 return;
             }
 
+            // Not awaited: review opens at once while the QR is read.
+            logCapturedQr(qrScanner, filePath, stationCode).catch((error) =>
+                console.warn("[form34a] QR scan failed", error),
+            );
+
             // Held for review rather than accepted outright: the citizen is
             // still standing in front of the form and able to retake, which is
             // the cheapest moment to catch a bad shot.
@@ -209,7 +251,7 @@ export function Form34ACaptureForm({
             preview.current?.dispose();
             capturingRef.current = false;
         }
-    }, [photoOutput]);
+    }, [photoOutput, qrScanner, stationCode]);
 
     // Portrait: a 4:3 sensor frame shown upright is 3 wide by 4 tall.
     const previewAspect = aspect === "4:3" ? 3 / 4 : 9 / 16;

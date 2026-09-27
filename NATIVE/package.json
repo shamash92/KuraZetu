@@ -62,6 +62,7 @@
         "react-native-svg": "15.15.4",
         "react-native-tab-view": "^4.0.12",
         "react-native-vision-camera": "5.2.1",
+        "react-native-vision-camera-barcode-scanner": "5.2.1",
         "react-native-vision-camera-location": "5.2.1",
         "react-native-vision-camera-worklets": "5.2.1",
         "react-native-web": "^0.21.0",

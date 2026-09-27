@@ -38,6 +38,17 @@ export interface DetectedDocument {
      * screen as a document.
      */
     aspectRatio: number;
+    /**
+     * Bounding box of that shape as shares of the thumbnail's width and
+     * height, in the buffer's own orientation (`rotated` is not undone), or
+     * null when nothing large enough was found.
+     */
+    bounds: {x: number; y: number; width: number; height: number} | null;
+    /**
+     * The shape's four corners, in the same units and orientation as
+     * `bounds`, when asked for with `withCorners`; otherwise null. Unordered.
+     */
+    corners: {x: number; y: number}[] | null;
     /** Largest contour found at all, ignoring the minimum-area threshold. */
     largestAreaFraction: number;
     /** Diagnostics: total contours, and the corner count of the largest. */
@@ -58,6 +69,61 @@ const MIN_AREA_FRACTION = 0.05;
  */
 const APPROX_EPSILON_RATIO = 0.02;
 
+/** Copy a point vector out to JavaScript, releasing each native point. */
+function readPoints(vector: PointVector) {
+    const points: {x: number; y: number}[] = [];
+    for (let index = 0; index < vector.length; index++) {
+        const point = vector.get(index);
+        try {
+            points.push({x: point.x, y: point.y});
+        } finally {
+            point.release();
+        }
+    }
+    return points;
+}
+
+/**
+ * The four corners of a page outline, as shares of the frame.
+ *
+ * A clean outline simplifies to exactly four points. A ragged one — pages
+ * underneath in a binder, a curled corner, a hand over an edge — does not, so
+ * the corners are taken as the outline's extremes instead: top-left has the
+ * smallest x + y, bottom-right the largest, top-right the smallest y − x and
+ * bottom-left the largest. That holds for pages rotated up to 45°.
+ */
+function findCorners(contour: PointVector, width: number, height: number) {
+    const simplified = PointVector.create();
+    try {
+        OpenCV.approxPolyDP(
+            contour,
+            simplified,
+            APPROX_EPSILON_RATIO * OpenCV.arcLength(contour, true).value,
+            true,
+        );
+        let corners = readPoints(simplified);
+        if (corners.length !== 4) {
+            const points = readPoints(contour);
+            const extreme = (score: (point: {x: number; y: number}) => number) => {
+                let best = points[0];
+                for (const point of points) {
+                    if (score(point) < score(best)) best = point;
+                }
+                return best;
+            };
+            corners = [
+                extreme((point) => point.x + point.y),
+                extreme((point) => point.y - point.x),
+                extreme((point) => -(point.x + point.y)),
+                extreme((point) => -(point.y - point.x)),
+            ];
+        }
+        return corners.map((point) => ({x: point.x / width, y: point.y / height}));
+    } finally {
+        simplified.release();
+    }
+}
+
 /**
  * Find the largest document-like shape in a grayscale frame.
  *
@@ -65,7 +131,10 @@ const APPROX_EPSILON_RATIO = 0.02;
  * and null only when the pipeline itself failed — the caller needs to be able
  * to tell "no form in view" apart from "detection is broken".
  */
-export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | null {
+export function detectDocument(
+    thumbnail: LumaThumbnail,
+    {withCorners = false}: {withCorners?: boolean} = {},
+): DetectedDocument | null {
     const {data, width, height, rotated} = thumbnail;
 
     // OpenCV objects hold native memory and are not garbage collected, so
@@ -119,6 +188,8 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
         let bestArea = 0;
         let bestPointCount = 0;
         let bestAspectRatio = 0;
+        let bestBounds: DetectedDocument["bounds"] = null;
+        let bestIndex = -1;
         let largestArea = 0;
 
         for (let index = 0; index < contours.length; index++) {
@@ -152,6 +223,7 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
                     const bounds = OpenCV.boundingRect(approximated);
                     try {
                         bestArea = area;
+                        bestIndex = index;
                         bestPointCount = approximated.length;
                         const bufferRatio =
                             bounds.height > 0 ? bounds.width / bounds.height : 0;
@@ -159,6 +231,12 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
                             rotated && bufferRatio > 0
                                 ? 1 / bufferRatio
                                 : bufferRatio;
+                        bestBounds = {
+                            x: bounds.x / width,
+                            y: bounds.y / height,
+                            width: bounds.width / width,
+                            height: bounds.height / height,
+                        };
                     } finally {
                         bounds.release();
                     }
@@ -170,9 +248,23 @@ export function detectDocument(thumbnail: LumaThumbnail): DetectedDocument | nul
             }
         }
 
+        // Off by default: the live preview only needs the box, and reading
+        // points out allocates a native Point for each one.
+        let corners: DetectedDocument["corners"] = null;
+        if (withCorners && bestIndex >= 0) {
+            const contour = contours.get(bestIndex);
+            try {
+                corners = findCorners(contour, width, height);
+            } finally {
+                contour.release();
+            }
+        }
+
         return {
             areaFraction: bestArea / frameArea,
             aspectRatio: bestAspectRatio,
+            bounds: bestBounds,
+            corners,
             largestAreaFraction: largestArea / frameArea,
             contourCount: contours.length,
             bestPointCount,
