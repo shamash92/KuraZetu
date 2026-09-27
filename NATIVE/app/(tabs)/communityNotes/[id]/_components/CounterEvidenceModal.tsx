@@ -1,4 +1,5 @@
 import {Alert} from "react-native";
+import {useLocalSearchParams} from "expo-router";
 
 import {Form34ACandidate, Form34ACaptureForm} from "./Form34ACaptureForm";
 
@@ -34,6 +35,8 @@ export function CounterEvidenceModal({
     onClose,
     originalResults,
 }: CounterEvidenceModalProps) {
+    const {id} = useLocalSearchParams();
+
     const formCandidates: Form34ACandidate[] = originalResults.candidates.map(
         (candidate) => ({
             key: candidate.name,
@@ -104,6 +107,7 @@ export function CounterEvidenceModal({
             title="Submit counter-evidence"
             submitLabel="Submit"
             candidates={formCandidates}
+            stationCode={String(id)}
             canSubmit={({votes, rejectedVotes, disputedVotes}) =>
                 !isIdentical(votes, rejectedVotes, disputedVotes)
             }
