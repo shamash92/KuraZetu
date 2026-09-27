@@ -122,6 +122,8 @@ function streamNotice(check: StreamCheck | "checking" | null): StreamNotice | nu
             };
         case "otherStation":
             return {text: "This form is from another polling centre.", problem: true};
+        case "notForm34A":
+            return {text: "This isn't a presidential Form 34A.", problem: true};
         case "unread":
             return {
                 text: "Couldn't read the QR code. You can still use this photo.",

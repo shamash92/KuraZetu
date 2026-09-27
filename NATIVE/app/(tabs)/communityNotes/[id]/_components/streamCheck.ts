@@ -11,9 +11,12 @@ export type StreamCheck =
     | {kind: "match"; stream: number}
     | {kind: "otherStream"; stream: number; selectedStream: number}
     | {kind: "otherStation"; stationCode: string}
+    | {kind: "notForm34A"}
     | {kind: "unread"};
 
 const FORM_QR = /^(\d{15})(\d{2})$/;
+
+const FORM_34A_SERIES = "34";
 
 const CENTRE_CODE_LENGTH = 13;
 
@@ -29,7 +32,8 @@ export function checkStream(qr: string | null, selectedCode: string): StreamChec
     const parts = qr?.trim().match(FORM_QR);
     if (!parts) return {kind: "unread"};
 
-    const [, stationCode] = parts;
+    const [, stationCode, series] = parts;
+    if (series !== FORM_34A_SERIES) return {kind: "notForm34A"};
     if (stationCode === selectedCode) {
         return {kind: "match", stream: streamOf(stationCode)};
     }

@@ -30,6 +30,12 @@ test("a form from another centre is a different station", () => {
     });
 });
 
+test("another form series is not a Form 34A", () => {
+    assert.deepEqual(checkStream(`${KAGERA_STREAM_1}35`, KAGERA_STREAM_1), {
+        kind: "notForm34A",
+    });
+});
+
 test("no QR or an unrecognised one counts as unread, never a mismatch", () => {
     for (const qr of [null, "", "https://example.org", "0221110551003"]) {
         assert.deepEqual(checkStream(qr, KAGERA_STREAM_1), {kind: "unread"});
