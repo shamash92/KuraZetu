@@ -83,6 +83,12 @@ function deleteTemporaryPhoto(uri: string | null) {
  */
 const QR_CHECK_TIMEOUT_MS = 8000;
 
+/**
+ * Unread photos before "Use this photo" is offered anyway. The QR is a check,
+ * not a gate: a torn, stamped or glared code must never lock anyone out.
+ */
+const UNREAD_PHOTOS_BEFORE_OVERRIDE = 2;
+
 /** Read the QR from the captured photo and compare it with the selected stream. */
 async function checkCapturedStream(
     scanner: BarcodeScanner,
@@ -188,6 +194,7 @@ export function Form34ACaptureForm({
     const [streamCheck, setStreamCheck] = useState<
         StreamCheck | "checking" | null
     >(null);
+    const [unreadPhotos, setUnreadPhotos] = useState(0);
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
         qualityPrioritization: "quality",
@@ -266,6 +273,9 @@ export function Form34ACaptureForm({
                 checkCapturedStream(qrScanner, filePath, stationCode).then(
                     (check) => {
                         if (pendingImageRef.current !== uri) return;
+                        if (check.kind === "unread") {
+                            setUnreadPhotos((count) => count + 1);
+                        }
                         setStreamCheck(check);
                     },
                 );
@@ -318,6 +328,7 @@ export function Form34ACaptureForm({
         setCameraError(null);
         setCaptureError(null);
         setStreamCheck(null);
+        setUnreadPhotos(0);
     } else if (!visible && wasVisible) {
         setWasVisible(false);
     }
@@ -388,11 +399,13 @@ export function Form34ACaptureForm({
         openCamera();
     };
 
-    // Unchecked, matching, or unread: the QR is a check, never a lock-out.
+    // Unchecked, matching, or unread often enough that it must not block.
     const canUsePhoto =
         streamCheck === null ||
         (streamCheck !== "checking" &&
-            (streamCheck.kind === "match" || streamCheck.kind === "unread"));
+            (streamCheck.kind === "match" ||
+                (streamCheck.kind === "unread" &&
+                    unreadPhotos >= UNREAD_PHOTOS_BEFORE_OVERRIDE)));
 
     const acceptPendingPhoto = () => {
         const uri = pendingImageRef.current;
