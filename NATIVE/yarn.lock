@@ -6326,6 +6326,11 @@ react-native-tab-view@^4.0.12:
   dependencies:
     use-latest-callback "^0.2.3"
 
+react-native-vision-camera-barcode-scanner@5.2.1:
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/react-native-vision-camera-barcode-scanner/-/react-native-vision-camera-barcode-scanner-5.2.1.tgz#df3fc71f5f92bc7efd232f5602f3cdda573243a5"
+  integrity sha512-ka0YKs36TdmpqEDlX7I5QclV+NIHnS8Y8lbY8De5Eh9E4lglk8zwsQohPfMbqaLDts+jMxlYwcC8st4oQVF3Gg==
+
 react-native-vision-camera-location@5.2.1:
   version "5.2.1"
   resolved "https://registry.yarnpkg.com/react-native-vision-camera-location/-/react-native-vision-camera-location-5.2.1.tgz#f314bc24c5c1070b5b03921f12640fbc8e556b28"
