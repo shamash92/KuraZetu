@@ -104,7 +104,10 @@ interface StreamNotice {
 }
 
 /** One line about the photo's QR, if there is anything to say. */
-function streamNotice(check: StreamCheck | "checking" | null): StreamNotice | null {
+function streamNotice(
+    check: StreamCheck | "checking" | null,
+    canUsePhoto: boolean,
+): StreamNotice | null {
     if (check === null) return null;
     if (check === "checking") {
         return {text: "Reading the QR code…", problem: false};
@@ -133,10 +136,17 @@ function streamNotice(check: StreamCheck | "checking" | null): StreamNotice | nu
                 problem: true,
             };
         case "unread":
-            return {
-                text: "Couldn't read the QR code. You can still use this photo.",
-                problem: false,
-            };
+            return canUsePhoto
+                ? {
+                      text: "Couldn't read the QR code. You can still use this photo.",
+                      problem: false,
+                  }
+                : {
+                      text:
+                          "Couldn't read the QR code. Keep the top-right corner " +
+                          "flat and out of glare.",
+                      problem: true,
+                  };
     }
 }
 
@@ -152,7 +162,7 @@ export function PhotoReviewPane({
     onGoBack,
 }: PhotoReviewPaneProps) {
     const imageStyle = [styles.reviewImage, {aspectRatio: previewAspect}];
-    const notice = streamNotice(streamCheck);
+    const notice = streamNotice(streamCheck, canUsePhoto);
     const otherStream =
         streamCheck !== null &&
         streamCheck !== "checking" &&
