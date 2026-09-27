@@ -150,7 +150,15 @@ export function Form34ACaptureForm({
     // after React commits the replacement, so the native view never receives
     // an already-disposed image.
     React.useEffect(() => {
-        return () => pendingPreview?.dispose();
+        return () => {
+            // Development builds deep-freeze every prop handed to a native
+            // view, and disposing a frozen image throws. Leave that one to
+            // garbage collection; release builds never freeze, so they always
+            // dispose, and any other failure still surfaces.
+            if (pendingPreview && !Object.isFrozen(pendingPreview)) {
+                pendingPreview.dispose();
+            }
+        };
     }, [pendingPreview]);
 
     const releaseOwnedPhotos = React.useCallback(() => {
