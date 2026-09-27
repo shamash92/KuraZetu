@@ -125,8 +125,13 @@ function streamNotice(
             };
         case "otherStation":
             return {text: "This form is from another polling centre.", problem: true};
-        case "notForm34A":
-            return {text: "This isn't a presidential Form 34A.", problem: true};
+        case "otherForm":
+            return {
+                text: check.captured
+                    ? `This is ${check.captured}, not ${check.expected}.`
+                    : `This isn't ${check.expected}.`,
+                problem: true,
+            };
         case "unread":
             return canUsePhoto
                 ? {

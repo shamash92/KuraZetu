@@ -129,6 +129,7 @@ export default function ResultsScreen() {
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 originalResults={sampleElectionData}
+                level={level}
             />
 
             <ScrollView showsVerticalScrollIndicator={false}>
