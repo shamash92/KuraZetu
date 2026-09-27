@@ -1,5 +1,5 @@
 import {Alert} from "react-native";
-import {useLocalSearchParams} from "expo-router";
+import {router, useLocalSearchParams} from "expo-router";
 
 import {Form34ACandidate, Form34ACaptureForm} from "./Form34ACaptureForm";
 
@@ -108,6 +108,7 @@ export function CounterEvidenceModal({
             submitLabel="Submit"
             candidates={formCandidates}
             stationCode={String(id)}
+            onChooseStream={() => router.dismissTo("/communityNotes")}
             canSubmit={({votes, rejectedVotes, disputedVotes}) =>
                 !isIdentical(votes, rejectedVotes, disputedVotes)
             }

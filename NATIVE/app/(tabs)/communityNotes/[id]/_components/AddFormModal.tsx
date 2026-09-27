@@ -7,7 +7,7 @@ import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/authStore";
 import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
-import {useLocalSearchParams} from "expo-router";
+import {router, useLocalSearchParams} from "expo-router";
 
 export interface IAspirant {
     constituency: null | string;
@@ -157,6 +157,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
             title="Submit results"
             candidates={formCandidates}
             stationCode={String(id)}
+            onChooseStream={() => router.dismissTo("/communityNotes")}
             onSubmit={handleSubmit}
         />
     );
