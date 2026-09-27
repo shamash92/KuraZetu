@@ -38,16 +38,19 @@ test("each race expects its own form series", () => {
     assert.deepEqual(checkStream(`${KAGERA_STREAM_1}35`, KAGERA_STREAM_1, "president"), {
         kind: "otherForm",
         captured: "Form 35A (MP)",
+        stream: 1,
         expected: "Form 34A (President)",
     });
     assert.deepEqual(checkStream(`${KAGERA_STREAM_1}34`, KAGERA_STREAM_1, "mca"), {
         kind: "otherForm",
         captured: "Form 34A (President)",
+        stream: 1,
         expected: "Form 36A (MCA)",
     });
     assert.deepEqual(checkStream(`${KAGERA_STREAM_1}99`, KAGERA_STREAM_1, "president"), {
         kind: "otherForm",
         captured: null,
+        stream: 1,
         expected: "Form 34A (President)",
     });
 });

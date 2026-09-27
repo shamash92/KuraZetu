@@ -28,7 +28,7 @@ export type StreamCheck =
     | {kind: "match"; stream: number}
     | {kind: "otherStream"; stream: number; selectedStream: number}
     | {kind: "otherStation"; stationCode: string}
-    | {kind: "otherForm"; captured: string | null; expected: string}
+    | {kind: "otherForm"; captured: string | null; stream: number; expected: string}
     | {kind: "unread"};
 
 const FORM_QR = /^(\d{15})(\d{2})$/;
@@ -63,6 +63,7 @@ export function checkStream(
         return {
             kind: "otherForm",
             captured: formName(series),
+            stream: streamOf(stationCode),
             expected: `Form ${expected.series}A (${expected.race})`,
         };
     }

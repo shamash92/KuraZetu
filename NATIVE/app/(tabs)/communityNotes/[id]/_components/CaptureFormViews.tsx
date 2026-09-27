@@ -125,8 +125,9 @@ function streamNotice(check: StreamCheck | "checking" | null): StreamNotice | nu
         case "otherForm":
             return {
                 text: check.captured
-                    ? `This is ${check.captured}, not ${check.expected}.`
-                    : `This isn't ${check.expected}.`,
+                    ? `This is ${check.captured} for Stream ${check.stream}, ` +
+                      `not the expected ${check.expected}.`
+                    : `This isn't the expected ${check.expected}.`,
                 problem: true,
             };
         case "unread":
