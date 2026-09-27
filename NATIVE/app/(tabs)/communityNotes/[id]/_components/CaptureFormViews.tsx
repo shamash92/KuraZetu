@@ -124,6 +124,14 @@ function streamNotice(check: StreamCheck | "checking" | null): StreamNotice | nu
             };
         case "otherStation":
             return {text: "This form is from another polling centre.", problem: true};
+        case "otherForm":
+            return {
+                text: check.captured
+                    ? `This is ${check.captured} for Stream ${check.stream}, ` +
+                      `not the expected ${check.expected}.`
+                    : `This isn't the expected ${check.expected}.`,
+                problem: true,
+            };
         case "unread":
             return {
                 text: "Couldn't read the QR code. You can still use this photo.",

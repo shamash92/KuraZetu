@@ -156,6 +156,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
             onClose={onClose}
             title="Submit results"
             candidates={formCandidates}
+            level={level}
             stationCode={String(id)}
             onChooseStream={() => router.dismissTo("/communityNotes")}
             onSubmit={handleSubmit}

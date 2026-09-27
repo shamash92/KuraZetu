@@ -39,6 +39,7 @@ import {
     useForm34AFrameAnalysis,
 } from "./useForm34AFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
+import type {TLevelTabs} from "@/app/types";
 
 /**
  * Aspect the camera starts on.
@@ -93,6 +94,7 @@ async function checkCapturedStream(
     scanner: BarcodeScanner,
     filePath: string,
     stationCode: string,
+    level: TLevelTabs,
 ): Promise<StreamCheck> {
     try {
         const timeout = new Promise<null>((resolve) =>
@@ -106,7 +108,7 @@ async function checkCapturedStream(
             `[form34a] captured QR=${reading?.value ?? "none"} ` +
                 `via=${reading?.source ?? "timeout"} station=${stationCode}`,
         );
-        return checkStream(reading?.value ?? null, stationCode);
+        return checkStream(reading?.value ?? null, stationCode, level);
     } catch (error) {
         console.warn("[form34a] QR scan failed", error);
         return {kind: "unread"};
@@ -132,6 +134,8 @@ interface Form34ACaptureFormProps {
     onClose: () => void;
     title: string;
     candidates: Form34ACandidate[];
+    /** The race being captured; each has its own form and QR series. */
+    level: TLevelTabs;
     /**
      * Code of the polling station (stream) selected before capture. When set,
      * each photo's QR is checked against it before the photo can be used.
@@ -166,6 +170,7 @@ export function Form34ACaptureForm({
     onClose,
     title,
     candidates,
+    level,
     stationCode,
     onChooseStream,
     submitLabel = "Submit",
@@ -273,7 +278,7 @@ export function Form34ACaptureForm({
             // result only applies if this is still the photo under review.
             if (stationCode) {
                 setStreamCheck("checking");
-                checkCapturedStream(qrScanner, filePath, stationCode).then(
+                checkCapturedStream(qrScanner, filePath, stationCode, level).then(
                     (check) => {
                         if (pendingImageRef.current !== uri) return;
                         setStreamCheck(check);
@@ -299,7 +304,7 @@ export function Form34ACaptureForm({
             preview.current?.dispose();
             capturingRef.current = false;
         }
-    }, [photoOutput, qrScanner, stationCode]);
+    }, [level, photoOutput, qrScanner, stationCode]);
 
     // Portrait: a 4:3 sensor frame shown upright is 3 wide by 4 tall.
     const previewAspect = aspect === "4:3" ? 3 / 4 : 9 / 16;

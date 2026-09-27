@@ -2,6 +2,7 @@ import {Alert} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 
 import {Form34ACandidate, Form34ACaptureForm} from "./Form34ACaptureForm";
+import type {TLevelTabs} from "@/app/types";
 
 interface Candidate {
     name: string;
@@ -28,12 +29,14 @@ interface CounterEvidenceModalProps {
     visible: boolean;
     onClose: () => void;
     originalResults: ElectionData;
+    level: TLevelTabs;
 }
 
 export function CounterEvidenceModal({
     visible,
     onClose,
     originalResults,
+    level,
 }: CounterEvidenceModalProps) {
     const {id} = useLocalSearchParams();
 
@@ -107,6 +110,7 @@ export function CounterEvidenceModal({
             title="Submit counter-evidence"
             submitLabel="Submit"
             candidates={formCandidates}
+            level={level}
             stationCode={String(id)}
             onChooseStream={() => router.dismissTo("/communityNotes")}
             canSubmit={({votes, rejectedVotes, disputedVotes}) =>
