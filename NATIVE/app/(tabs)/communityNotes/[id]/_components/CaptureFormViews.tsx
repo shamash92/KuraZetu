@@ -14,6 +14,7 @@ import {
 } from "react-native-nitro-image";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 
+import type {StreamCheck} from "./streamCheck";
 import {VoteCountRow} from "./VoteCountRow";
 import {perk} from "@/app/_utils/colors";
 
@@ -87,18 +88,66 @@ interface PhotoReviewPaneProps {
     imageUri: string;
     preview: NitroImageHandle | null;
     previewAspect: number;
+    streamCheck: StreamCheck | "checking" | null;
+    canUsePhoto: boolean;
     onAccept: () => void;
     onRetake: () => void;
+    onChooseStream?: () => void;
+}
+
+interface StreamNotice {
+    text: string;
+    /** A problem replaces the usual review prompt and blocks the photo. */
+    problem: boolean;
+}
+
+/** One line about the photo's QR, if there is anything to say. */
+function streamNotice(check: StreamCheck | "checking" | null): StreamNotice | null {
+    if (check === null) return null;
+    if (check === "checking") {
+        return {text: "Reading the QR code…", problem: false};
+    }
+    switch (check.kind) {
+        case "match":
+            return {
+                text: `Stream ${check.stream} · matches the QR code`,
+                problem: false,
+            };
+        case "otherStream":
+            return {
+                text:
+                    `You captured Stream ${check.stream}, ` +
+                    `not Stream ${check.selectedStream}.`,
+                problem: true,
+            };
+        case "otherStation":
+            return {text: "This form is from another polling centre.", problem: true};
+        case "unread":
+            return {
+                text: "Couldn't read the QR code. You can still use this photo.",
+                problem: false,
+            };
+    }
 }
 
 export function PhotoReviewPane({
     imageUri,
     preview,
     previewAspect,
+    streamCheck,
+    canUsePhoto,
     onAccept,
     onRetake,
+    onChooseStream,
 }: PhotoReviewPaneProps) {
     const imageStyle = [styles.reviewImage, {aspectRatio: previewAspect}];
+    const notice = streamNotice(streamCheck);
+    const otherStream =
+        streamCheck !== null &&
+        streamCheck !== "checking" &&
+        streamCheck.kind === "otherStream"
+            ? streamCheck
+            : null;
 
     return (
         <View style={styles.reviewContainer}>
@@ -121,7 +170,16 @@ export function PhotoReviewPane({
                     />
                 )}
             </View>
-            <Text style={styles.reviewPrompt}>Can you read every vote number?</Text>
+            <Text
+                style={styles.reviewPrompt}
+                accessibilityRole={notice?.problem ? "alert" : undefined}
+                accessibilityLiveRegion="polite"
+            >
+                {notice?.problem ? notice.text : "Can you read every vote number?"}
+            </Text>
+            {notice && !notice.problem && (
+                <Text style={styles.streamNote}>{notice.text}</Text>
+            )}
             <View style={styles.reviewControls}>
                 <TouchableOpacity
                     style={styles.reviewRetake}
@@ -130,14 +188,32 @@ export function PhotoReviewPane({
                 >
                     <Text style={styles.secondaryButtonText}>Retake</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.reviewAccept}
-                    onPress={onAccept}
-                    accessibilityRole="button"
-                >
-                    <Check size={18} color={perk.limeInk} />
-                    <Text style={styles.primaryButtonText}>Use this photo</Text>
-                </TouchableOpacity>
+                {otherStream && onChooseStream ? (
+                    <TouchableOpacity
+                        style={styles.reviewAccept}
+                        onPress={onChooseStream}
+                        accessibilityRole="button"
+                        accessibilityHint="Returns to this centre's list of streams"
+                    >
+                        <Text style={styles.primaryButtonText}>
+                            Choose Stream {otherStream.stream}
+                        </Text>
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        style={[
+                            styles.reviewAccept,
+                            !canUsePhoto && styles.disabledButton,
+                        ]}
+                        onPress={onAccept}
+                        disabled={!canUsePhoto}
+                        accessibilityRole="button"
+                        accessibilityState={{disabled: !canUsePhoto}}
+                    >
+                        <Check size={18} color={perk.limeInk} />
+                        <Text style={styles.primaryButtonText}>Use this photo</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
@@ -354,6 +430,13 @@ const styles = StyleSheet.create({
         color: perk.ink,
         textAlign: "center",
         marginTop: 12,
+    },
+    streamNote: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: perk.mute,
+        textAlign: "center",
+        marginTop: 4,
     },
     reviewControls: {
         flexDirection: "row",

@@ -33,6 +33,7 @@ import {
 import {LiveCameraPane} from "./LiveCameraPane";
 import {getCameraPermissionRecovery} from "./cameraPermission";
 import {readFormQr} from "./formQr";
+import {type StreamCheck, checkStream} from "./streamCheck";
 import {
     CaptureAspect,
     useForm34AFrameAnalysis,
@@ -77,19 +78,34 @@ function deleteTemporaryPhoto(uri: string | null) {
 }
 
 /**
- * Debugging aid: log the QR read from the captured photo beside the station
- * the citizen selected, so the two can be compared by eye.
+ * How long the QR may take before the photo is treated as unread, so a stalled
+ * scan can never keep the citizen waiting at the form.
  */
-async function logCapturedQr(
+const QR_CHECK_TIMEOUT_MS = 8000;
+
+/** Read the QR from the captured photo and compare it with the selected stream. */
+async function checkCapturedStream(
     scanner: BarcodeScanner,
     filePath: string,
-    stationCode: string | undefined,
-) {
-    const {value, source} = await readFormQr(scanner, filePath);
-    console.log(
-        `[form34a] captured QR=${value ?? "none"} via=${source} ` +
-            `station=${stationCode ?? "unknown"}`,
-    );
+    stationCode: string,
+): Promise<StreamCheck> {
+    try {
+        const timeout = new Promise<null>((resolve) =>
+            setTimeout(() => resolve(null), QR_CHECK_TIMEOUT_MS),
+        );
+        const reading = await Promise.race([
+            readFormQr(scanner, filePath),
+            timeout,
+        ]);
+        console.log(
+            `[form34a] captured QR=${reading?.value ?? "none"} ` +
+                `via=${reading?.source ?? "timeout"} station=${stationCode}`,
+        );
+        return checkStream(reading?.value ?? null, stationCode);
+    } catch (error) {
+        console.warn("[form34a] QR scan failed", error);
+        return {kind: "unread"};
+    }
 }
 
 export interface Form34ACandidate {
@@ -111,8 +127,16 @@ interface Form34ACaptureFormProps {
     onClose: () => void;
     title: string;
     candidates: Form34ACandidate[];
-    /** Code of the polling station (stream) selected before capture. */
+    /**
+     * Code of the polling station (stream) selected before capture. When set,
+     * each photo's QR is checked against it before the photo can be used.
+     */
     stationCode?: string;
+    /**
+     * Return to the centre's list of streams, offered when the photo's QR
+     * names another stream at the same centre.
+     */
+    onChooseStream?: () => void;
     submitLabel?: string;
     onSubmit: (submission: Form34ASubmission) => void;
     /**
@@ -138,6 +162,7 @@ export function Form34ACaptureForm({
     title,
     candidates,
     stationCode,
+    onChooseStream,
     submitLabel = "Submit",
     onSubmit,
     canSubmit,
@@ -159,6 +184,10 @@ export function Form34ACaptureForm({
     const [permissionError, setPermissionError] = useState<string | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [captureError, setCaptureError] = useState<string | null>(null);
+    /** The pending photo's QR against the selected stream; null when unchecked. */
+    const [streamCheck, setStreamCheck] = useState<
+        StreamCheck | "checking" | null
+    >(null);
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
         qualityPrioritization: "quality",
@@ -230,10 +259,19 @@ export function Form34ACaptureForm({
                 return;
             }
 
-            // Not awaited: review opens at once while the QR is read.
-            logCapturedQr(qrScanner, filePath, stationCode).catch((error) =>
-                console.warn("[form34a] QR scan failed", error),
-            );
+            // Not awaited: review opens at once while the QR is read. The
+            // result only applies if this is still the photo under review.
+            if (stationCode) {
+                setStreamCheck("checking");
+                checkCapturedStream(qrScanner, filePath, stationCode).then(
+                    (check) => {
+                        if (pendingImageRef.current !== uri) return;
+                        setStreamCheck(check);
+                    },
+                );
+            } else {
+                setStreamCheck(null);
+            }
 
             // Held for review rather than accepted outright: the citizen is
             // still standing in front of the form and able to retake, which is
@@ -279,6 +317,7 @@ export function Form34ACaptureForm({
         setPermissionError(null);
         setCameraError(null);
         setCaptureError(null);
+        setStreamCheck(null);
     } else if (!visible && wasVisible) {
         setWasVisible(false);
     }
@@ -344,13 +383,20 @@ export function Form34ACaptureForm({
         pendingImageRef.current = null;
         setPendingImage(null);
         setPendingPreview(null);
+        setStreamCheck(null);
         deleteTemporaryPhoto(uri);
         openCamera();
     };
 
+    // Unchecked, matching, or unread: the QR is a check, never a lock-out.
+    const canUsePhoto =
+        streamCheck === null ||
+        (streamCheck !== "checking" &&
+            (streamCheck.kind === "match" || streamCheck.kind === "unread"));
+
     const acceptPendingPhoto = () => {
         const uri = pendingImageRef.current;
-        if (!uri) return;
+        if (!uri || !canUsePhoto) return;
 
         deleteTemporaryPhoto(capturedImageRef.current);
         capturedImageRef.current = uri;
@@ -358,6 +404,7 @@ export function Form34ACaptureForm({
         setCapturedImage(uri);
         setPendingImage(null);
         setPendingPreview(null);
+        setStreamCheck(null);
     };
 
     const closeForm = () => {
@@ -366,6 +413,15 @@ export function Form34ACaptureForm({
         releaseOwnedPhotos();
         onClose();
     };
+
+    // The photo belongs to another stream: leave this form so the citizen can
+    // pick the right stream from the centre's list.
+    const chooseStream = onChooseStream
+        ? () => {
+              closeForm();
+              onChooseStream();
+          }
+        : undefined;
 
     const toggleAspect = () => {
         captureGenerationRef.current += 1;
@@ -458,8 +514,11 @@ export function Form34ACaptureForm({
                             imageUri={pendingImage}
                             preview={pendingPreview}
                             previewAspect={previewAspect}
+                            streamCheck={streamCheck}
+                            canUsePhoto={canUsePhoto}
                             onAccept={acceptPendingPhoto}
                             onRetake={discardPendingPhoto}
+                            onChooseStream={chooseStream}
                         />
                     ) : showCamera ? (
                         <LiveCameraPane
