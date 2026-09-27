@@ -290,6 +290,13 @@ export function Form34ACaptureForm({
         setShowCamera(true);
     };
 
+    // Back to vote entry; the generation bump drops a capture still finishing.
+    const closeCamera = () => {
+        captureGenerationRef.current += 1;
+        setCaptureError(null);
+        setShowCamera(false);
+    };
+
     const discardPendingPhoto = () => {
         const uri = pendingImageRef.current;
         pendingImageRef.current = null;
@@ -379,6 +386,13 @@ export function Form34ACaptureForm({
             animationType="slide"
             presentationStyle="fullScreen"
             statusBarTranslucent={Platform.OS === "android"}
+            onRequestClose={
+                pendingImage
+                    ? discardPendingPhoto
+                    : showCamera
+                      ? closeCamera
+                      : closeForm
+            }
         >
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -420,6 +434,7 @@ export function Form34ACaptureForm({
                             readyToCapture={readyToCapture}
                             onCameraError={handleCameraError}
                             onCapture={takePicture}
+                            onClose={closeCamera}
                             onRetry={openCamera}
                             onToggleAspect={toggleAspect}
                         />
