@@ -155,6 +155,9 @@ export function PhotoReviewPane({
         streamCheck.kind === "otherStream"
             ? streamCheck
             : null;
+    const chooseStream = otherStream && onChooseStream ? otherStream : null;
+    // A blocking problem leaves nothing to use: only Retake, or Choose Stream.
+    const retakeOnly = !!notice?.problem && !chooseStream;
 
     return (
         <View style={styles.reviewContainer}>
@@ -189,13 +192,16 @@ export function PhotoReviewPane({
             )}
             <View style={styles.reviewControls}>
                 <TouchableOpacity
-                    style={styles.reviewRetake}
+                    style={[
+                        styles.reviewRetake,
+                        retakeOnly && styles.reviewRetakeAlone,
+                    ]}
                     onPress={onRetake}
                     accessibilityRole="button"
                 >
                     <Text style={styles.secondaryButtonText}>Retake</Text>
                 </TouchableOpacity>
-                {otherStream && onChooseStream ? (
+                {chooseStream ? (
                     <TouchableOpacity
                         style={styles.reviewAccept}
                         onPress={onChooseStream}
@@ -203,10 +209,10 @@ export function PhotoReviewPane({
                         accessibilityHint="Returns to this centre's list of streams"
                     >
                         <Text style={styles.primaryButtonText}>
-                            Choose Stream {otherStream.stream}
+                            Choose Stream {chooseStream.stream}
                         </Text>
                     </TouchableOpacity>
-                ) : (
+                ) : retakeOnly ? null : (
                     <TouchableOpacity
                         style={[
                             styles.reviewAccept,
@@ -458,6 +464,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
+    reviewRetakeAlone: {flex: 1},
     reviewAccept: {
         flex: 1.3,
         flexDirection: "row",
