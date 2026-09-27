@@ -524,6 +524,7 @@ export function Form34ACaptureForm({
                             onAccept={acceptPendingPhoto}
                             onRetake={discardPendingPhoto}
                             onChooseStream={chooseStream}
+                            onGoBack={closeForm}
                         />
                     ) : showCamera ? (
                         <LiveCameraPane

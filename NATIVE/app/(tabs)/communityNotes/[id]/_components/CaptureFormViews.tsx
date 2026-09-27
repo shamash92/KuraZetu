@@ -93,6 +93,8 @@ interface PhotoReviewPaneProps {
     onAccept: () => void;
     onRetake: () => void;
     onChooseStream?: () => void;
+    /** Leave the capture form, offered when the form is from another centre. */
+    onGoBack?: () => void;
 }
 
 interface StreamNotice {
@@ -147,6 +149,7 @@ export function PhotoReviewPane({
     onAccept,
     onRetake,
     onChooseStream,
+    onGoBack,
 }: PhotoReviewPaneProps) {
     const imageStyle = [styles.reviewImage, {aspectRatio: previewAspect}];
     const notice = streamNotice(streamCheck);
@@ -159,6 +162,12 @@ export function PhotoReviewPane({
     const chooseStream = otherStream && onChooseStream ? otherStream : null;
     // A blocking problem leaves nothing to use: only Retake, or Choose Stream.
     const retakeOnly = !!notice?.problem && !chooseStream;
+    // Retaking at the wrong centre cannot help; the only way on is back.
+    const goBackOnly =
+        !!onGoBack &&
+        streamCheck !== null &&
+        streamCheck !== "checking" &&
+        streamCheck.kind === "otherStation";
 
     return (
         <View style={styles.reviewContainer}>
@@ -197,10 +206,12 @@ export function PhotoReviewPane({
                         styles.reviewRetake,
                         retakeOnly && styles.reviewRetakeAlone,
                     ]}
-                    onPress={onRetake}
+                    onPress={goBackOnly ? onGoBack : onRetake}
                     accessibilityRole="button"
                 >
-                    <Text style={styles.secondaryButtonText}>Retake</Text>
+                    <Text style={styles.secondaryButtonText}>
+                        {goBackOnly ? "Go back" : "Retake"}
+                    </Text>
                 </TouchableOpacity>
                 {chooseStream ? (
                     <TouchableOpacity
