@@ -52,9 +52,14 @@ import {perk} from "@/app/_utils/colors";
  */
 const DEFAULT_ASPECT: CaptureAspect = "4:3";
 
+/**
+ * The largest photo the sensor offers at each aspect. VisionCamera settles on
+ * the closest size the device supports, so this is the full sensor wherever
+ * it is available: every extra pixel lands on handwritten vote figures.
+ */
 const PHOTO_RESOLUTION: Record<CaptureAspect, Size> = {
-    "16:9": CommonResolutions.UHD_16_9,
-    "4:3": CommonResolutions.UHD_4_3,
+    "16:9": CommonResolutions.HIGHEST_16_9,
+    "4:3": CommonResolutions.HIGHEST_4_3,
 };
 
 /** A bounded in-memory image for the full-screen review step. */
@@ -161,6 +166,11 @@ export function Form34ACaptureForm({
     const [captureError, setCaptureError] = useState<string | null>(null);
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
+        // JPEG on both platforms. The default is each platform's own format,
+        // which is HEIC on iPhone: most browsers cannot show it, and neither
+        // Pillow nor OpenCV can open it without an extra library.
+        containerFormat: "jpeg",
+        quality: 1.0,
         qualityPrioritization: "quality",
         previewImageTargetSize: REVIEW_PREVIEW_RESOLUTION[aspect],
     });
