@@ -82,13 +82,10 @@ They are worth reading if you are human, too. They are the shortest honest descr
 
 This project is:
 
-[x] A citizen-driven platform for transparency and accountability
-
-[x] An open-source collaborative system
-
-[x]  A civic empowerment tool with no political affiliation
-
-[x]  A platform for education, participation, and digital oversight
+- [x] A citizen-driven platform for transparency and accountability
+- [x] An open-source collaborative system
+- [x] A civic empowerment tool with no political affiliation
+- [x] A platform for education, participation, and digital oversight
 
 This project is not:
 
