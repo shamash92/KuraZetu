@@ -4,7 +4,8 @@ import {perk} from "@/app/_utils/colors";
 
 export type BracketState = "bad" | "ok" | "steady";
 
-const STATE_COLOR: Record<BracketState, string> = {
+/** Also used by the capture tips, so the drawings match the live camera. */
+export const BRACKET_COLOR: Record<BracketState, string> = {
     bad: perk.coralDeep,
     ok: perk.copperDeep,
     steady: perk.lime,
@@ -27,7 +28,7 @@ const STATE_COLOR: Record<BracketState, string> = {
  * squaring up to the page rather than guessing.
  */
 export function FramingBracket({state}: {state: BracketState}) {
-    const color = STATE_COLOR[state];
+    const color = BRACKET_COLOR[state];
     return (
         <View style={styles.centrer} pointerEvents="none">
             <View style={styles.box}>

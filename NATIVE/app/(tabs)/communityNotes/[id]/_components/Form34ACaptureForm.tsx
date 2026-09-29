@@ -30,6 +30,7 @@ import {
     PhotoReviewPane,
     VoteEntryPane,
 } from "./CaptureFormViews";
+import {CaptureTips} from "./CaptureTips";
 import {LiveCameraPane} from "./LiveCameraPane";
 import {getCameraPermissionRecovery} from "./cameraPermission";
 import {readFormQr} from "./formQr";
@@ -186,6 +187,8 @@ export function Form34ACaptureForm({
     const {hasPermission, canRequestPermission, requestPermission} =
         useCameraPermission();
     const [showCamera, setShowCamera] = useState(false);
+    /** The capture tip on screen; null when the tips are not showing. */
+    const [tipStep, setTipStep] = useState<number | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     /** Captured but not yet accepted — shown full-screen for review. */
     const [pendingImage, setPendingImage] = useState<string | null>(null);
@@ -339,6 +342,7 @@ export function Form34ACaptureForm({
         setPendingImage(null);
         setPendingPreview(null);
         setShowCamera(false);
+        setTipStep(null);
         setPermissionError(null);
         setCameraError(null);
         setCaptureError(null);
@@ -395,6 +399,11 @@ export function Form34ACaptureForm({
         setCameraError(null);
         setCaptureError(null);
         setShowCamera(true);
+    };
+
+    const finishTips = () => {
+        setTipStep(null);
+        openCamera();
     };
 
     // Back to vote entry; the generation bump drops a capture still finishing.
@@ -517,7 +526,9 @@ export function Form34ACaptureForm({
                     ? discardPendingPhoto
                     : showCamera
                       ? closeCamera
-                      : closeForm
+                      : tipStep !== null
+                        ? () => setTipStep(tipStep > 0 ? tipStep - 1 : null)
+                        : closeForm
             }
         >
             <SafeAreaProvider>
@@ -568,6 +579,12 @@ export function Form34ACaptureForm({
                             onRetry={openCamera}
                             onToggleAspect={toggleAspect}
                         />
+                    ) : tipStep !== null ? (
+                        <CaptureTips
+                            step={tipStep}
+                            onStepChange={setTipStep}
+                            onFinish={finishTips}
+                        />
                     ) : (
                         <VoteEntryPane
                             candidates={candidates}
@@ -578,7 +595,7 @@ export function Form34ACaptureForm({
                             submitLabel={submitLabel}
                             total={total}
                             votes={votes}
-                            onCapture={openCamera}
+                            onCapture={() => setTipStep(0)}
                             onClose={closeForm}
                             onDisputedVotesChange={setDisputedVotes}
                             onRejectedVotesChange={setRejectedVotes}
