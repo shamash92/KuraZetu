@@ -9,20 +9,7 @@
  */
 
 import type {TLevelTabs} from "@/app/types";
-
-/**
- * Each race's polling-station form: 34A for President up to 39A for Woman
- * Rep. Only 34A has been confirmed to end its QR in its series; the others
- * are assumed to follow the same pattern.
- */
-const FORMS: Record<TLevelTabs, {series: string; race: string}> = {
-    president: {series: "34", race: "President"},
-    mp: {series: "35", race: "MP"},
-    mca: {series: "36", race: "MCA"},
-    governor: {series: "37", race: "Governor"},
-    senator: {series: "38", race: "Senator"},
-    womanRep: {series: "39", race: "Woman Rep"},
-};
+import {RESULTS_FORMS} from "./resultsForms.ts";
 
 export type StreamCheck =
     | {kind: "match"; stream: number}
@@ -41,8 +28,10 @@ function streamOf(stationCode: string) {
 
 /** "Form 35A (MP)" for a known series, or null for one we do not recognise. */
 function formName(series: string) {
-    const form = Object.values(FORMS).find((entry) => entry.series === series);
-    return form ? `Form ${form.series}A (${form.race})` : null;
+    const form = Object.values(RESULTS_FORMS).find(
+        (entry) => entry.series === series,
+    );
+    return form ? `${form.name} (${form.race})` : null;
 }
 
 /**
@@ -58,13 +47,13 @@ export function checkStream(
     if (!parts) return {kind: "unread"};
 
     const [, stationCode, series] = parts;
-    const expected = FORMS[level];
+    const expected = RESULTS_FORMS[level];
     if (series !== expected.series) {
         return {
             kind: "otherForm",
             captured: formName(series),
             stream: streamOf(stationCode),
-            expected: `Form ${expected.series}A (${expected.race})`,
+            expected: `${expected.name} (${expected.race})`,
         };
     }
     if (stationCode === selectedCode) {

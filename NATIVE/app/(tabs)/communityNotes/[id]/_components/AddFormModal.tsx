@@ -2,7 +2,7 @@ import {Alert} from "react-native";
 import {File} from "expo-file-system";
 import {useEffect, useState} from "react";
 
-import {Form34ACandidate, Form34ACaptureForm} from "./Form34ACaptureForm";
+import {ResultsFormCandidate, ResultsFormCapture} from "./ResultsFormCapture";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/authStore";
@@ -64,7 +64,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         fetchCandidates();
     }, [visible, id, level, userToken]);
 
-    const formCandidates: Form34ACandidate[] = candidates.map((candidate) => ({
+    const formCandidates: ResultsFormCandidate[] = candidates.map((candidate) => ({
         key: String(candidate.id),
         name: `${candidate.first_name} ${candidate.last_name}`,
         party: candidate.party,
@@ -151,7 +151,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
     };
 
     return (
-        <Form34ACaptureForm
+        <ResultsFormCapture
             visible={visible}
             onClose={onClose}
             title="Submit results"

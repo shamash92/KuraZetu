@@ -57,7 +57,7 @@ function tipEntering(fromX: number): EntryExitAnimationFunction {
 }
 
 /**
- * Tips shown each time the Form 34A camera is opened from the form.
+ * Tips shown each time the results form camera is opened from the form.
  * The parent owns `step` so the Android back button can step back through
  * the tips; Skip and Start camera both finish them.
  */

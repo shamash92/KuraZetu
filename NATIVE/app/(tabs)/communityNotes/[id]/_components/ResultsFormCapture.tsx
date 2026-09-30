@@ -34,11 +34,12 @@ import {CaptureTips} from "./CaptureTips";
 import {LiveCameraPane} from "./LiveCameraPane";
 import {getCameraPermissionRecovery} from "./cameraPermission";
 import {readFormQr} from "./formQr";
+import {RESULTS_FORMS} from "./resultsForms";
 import {type StreamCheck, checkStream} from "./streamCheck";
 import {
     CaptureAspect,
-    useForm34AFrameAnalysis,
-} from "./useForm34AFrameAnalysis";
+    useResultsFormFrameAnalysis,
+} from "./useResultsFormFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
 import type {TLevelTabs} from "@/app/types";
 
@@ -122,13 +123,13 @@ async function checkCapturedStream(
     }
 }
 
-export interface Form34ACandidate {
+export interface ResultsFormCandidate {
     key: string;
     name: string;
     party?: string | null;
 }
 
-interface Form34ASubmission {
+interface ResultsFormSubmission {
     image: string;
     votes: Record<string, number>;
     rejectedVotes: number;
@@ -136,11 +137,11 @@ interface Form34ASubmission {
     total: number;
 }
 
-interface Form34ACaptureFormProps {
+interface ResultsFormCaptureProps {
     visible: boolean;
     onClose: () => void;
     title: string;
-    candidates: Form34ACandidate[];
+    candidates: ResultsFormCandidate[];
     /** The race being captured; each has its own form and QR series. */
     level: TLevelTabs;
     /**
@@ -154,7 +155,7 @@ interface Form34ACaptureFormProps {
      */
     onChooseStream?: () => void;
     submitLabel?: string;
-    onSubmit: (submission: Form34ASubmission) => void;
+    onSubmit: (submission: ResultsFormSubmission) => void;
     /**
      * Extra gate beyond the built-in rule (a photo plus at least one vote).
      * Return false to keep the submit button disabled.
@@ -168,11 +169,12 @@ interface Form34ACaptureFormProps {
 }
 
 /**
- * Shared Form 34A capture + vote-entry sheet. Owns the camera, the per-candidate
- * vote inputs and the running total; the parent supplies the candidate list and
- * handles what happens on submit (API upload, counter-evidence check, ...).
+ * Shared results form capture + vote-entry sheet, for any level. Owns the
+ * camera, the per-candidate vote inputs and the running total; the parent
+ * supplies the candidate list and handles what happens on submit (API upload,
+ * counter-evidence check, ...).
  */
-export function Form34ACaptureForm({
+export function ResultsFormCapture({
     visible,
     onClose,
     title,
@@ -183,7 +185,8 @@ export function Form34ACaptureForm({
     submitLabel = "Submit",
     onSubmit,
     canSubmit,
-}: Form34ACaptureFormProps) {
+}: ResultsFormCaptureProps) {
+    const formName = RESULTS_FORMS[level].name;
     const {hasPermission, canRequestPermission, requestPermission} =
         useCameraPermission();
     const [showCamera, setShowCamera] = useState(false);
@@ -327,7 +330,7 @@ export function Form34ACaptureForm({
         frameOutput,
         readyToCapture,
         resetAnalysis,
-    } = useForm34AFrameAnalysis({
+    } = useResultsFormFrameAnalysis({
         active: visible && showCamera,
         aspect,
     });
@@ -550,6 +553,7 @@ export function Form34ACaptureForm({
 
                     {pendingImage ? (
                         <PhotoReviewPane
+                            formName={formName}
                             imageUri={pendingImage}
                             preview={pendingPreview}
                             previewAspect={previewAspect}
@@ -589,6 +593,7 @@ export function Form34ACaptureForm({
                         <VoteEntryPane
                             candidates={candidates}
                             captured={!!capturedImage}
+                            formName={formName}
                             disputedVotes={disputedVotes}
                             rejectedVotes={rejectedVotes}
                             submitEnabled={submitEnabled}
@@ -609,7 +614,7 @@ export function Form34ACaptureForm({
     );
 }
 
-export default Form34ACaptureForm;
+export default ResultsFormCapture;
 
 const styles = StyleSheet.create({
     container: {

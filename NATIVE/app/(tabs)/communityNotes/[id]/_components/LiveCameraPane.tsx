@@ -9,7 +9,7 @@ import {
 
 import {FramingBracket, type BracketState} from "./FramingBracket";
 import type {QualityAssessment} from "./frameQuality";
-import type {CaptureAspect} from "./useForm34AFrameAnalysis";
+import type {CaptureAspect} from "./useResultsFormFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
 
 interface LiveCameraPaneProps {
@@ -176,7 +176,7 @@ function CaptureControl({enabled, onCapture, onClose}: CaptureControlProps) {
                         onPress={onCapture}
                         accessibilityRole="button"
                         accessibilityLabel="Take photo"
-                        accessibilityHint="Captures Form 34A for review"
+                        accessibilityHint="Captures the results form for review"
                     >
                         <CameraIcon size={32} color={perk.limeInk} />
                     </TouchableOpacity>
