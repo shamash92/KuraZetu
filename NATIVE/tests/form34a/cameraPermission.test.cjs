@@ -8,7 +8,7 @@ const {
 test("offers the system permission prompt when it remains available", () => {
     assert.deepEqual(getCameraPermissionRecovery(true), {
         action: "request",
-        message: "We need camera permission to capture Form 34A",
+        message: "We need camera permission to capture the results form",
         buttonLabel: "Grant Permission",
     });
 });
@@ -17,7 +17,7 @@ test("directs a permanently denied permission to device settings", () => {
     assert.deepEqual(getCameraPermissionRecovery(false), {
         action: "settings",
         message:
-            "Camera access is turned off. Enable it in Settings to capture Form 34A.",
+            "Camera access is turned off. Enable it in Settings to capture the results form.",
         buttonLabel: "Open Settings",
     });
 });

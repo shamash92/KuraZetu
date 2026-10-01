@@ -11,7 +11,7 @@ export function getCameraPermissionRecovery(
     if (canRequestPermission) {
         return {
             action: "request",
-            message: "We need camera permission to capture Form 34A",
+            message: "We need camera permission to capture the results form",
             buttonLabel: "Grant Permission",
         };
     }
@@ -19,7 +19,7 @@ export function getCameraPermissionRecovery(
     return {
         action: "settings",
         message:
-            "Camera access is turned off. Enable it in Settings to capture Form 34A.",
+            "Camera access is turned off. Enable it in Settings to capture the results form.",
         buttonLabel: "Open Settings",
     };
 }

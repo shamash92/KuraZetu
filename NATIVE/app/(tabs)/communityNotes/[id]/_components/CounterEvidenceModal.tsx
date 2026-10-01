@@ -1,7 +1,7 @@
 import {Alert} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 
-import {Form34ACandidate, Form34ACaptureForm} from "./Form34ACaptureForm";
+import {ResultsFormCandidate, ResultsFormCapture} from "./ResultsFormCapture";
 import type {TLevelTabs} from "@/app/types";
 
 interface Candidate {
@@ -40,7 +40,7 @@ export function CounterEvidenceModal({
 }: CounterEvidenceModalProps) {
     const {id} = useLocalSearchParams();
 
-    const formCandidates: Form34ACandidate[] = originalResults.candidates.map(
+    const formCandidates: ResultsFormCandidate[] = originalResults.candidates.map(
         (candidate) => ({
             key: candidate.name,
             name: candidate.name,
@@ -104,7 +104,7 @@ export function CounterEvidenceModal({
     };
 
     return (
-        <Form34ACaptureForm
+        <ResultsFormCapture
             visible={visible}
             onClose={onClose}
             title="Submit counter-evidence"

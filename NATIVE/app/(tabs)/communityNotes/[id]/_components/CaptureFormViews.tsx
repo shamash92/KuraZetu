@@ -85,6 +85,8 @@ export function CameraPermissionModal({
 }
 
 interface PhotoReviewPaneProps {
+    /** The results form being captured, e.g. "Form 37A". */
+    formName: string;
     imageUri: string;
     preview: NitroImageHandle | null;
     previewAspect: number;
@@ -151,6 +153,7 @@ function streamNotice(
 }
 
 export function PhotoReviewPane({
+    formName,
     imageUri,
     preview,
     previewAspect,
@@ -188,7 +191,7 @@ export function PhotoReviewPane({
                         style={imageStyle}
                         resizeMode="contain"
                         accessible
-                        accessibilityLabel="Captured Form 34A preview"
+                        accessibilityLabel={`Captured ${formName} preview`}
                     />
                 ) : (
                     <Image
@@ -196,7 +199,7 @@ export function PhotoReviewPane({
                         style={imageStyle}
                         resizeMode="contain"
                         accessible
-                        accessibilityLabel="Captured Form 34A preview"
+                        accessibilityLabel={`Captured ${formName} preview`}
                     />
                 )}
             </View>
@@ -263,6 +266,8 @@ interface VoteCandidate {
 interface VoteEntryPaneProps {
     candidates: VoteCandidate[];
     captured: boolean;
+    /** The results form being captured, e.g. "Form 37A". */
+    formName: string;
     disputedVotes: number;
     rejectedVotes: number;
     submitEnabled: boolean;
@@ -280,6 +285,7 @@ interface VoteEntryPaneProps {
 export function VoteEntryPane({
     candidates,
     captured,
+    formName,
     disputedVotes,
     rejectedVotes,
     submitEnabled,
@@ -300,14 +306,16 @@ export function VoteEntryPane({
                 contentContainerStyle={styles.contentInner}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.sectionLabel}>CAPTURE FORM 34A</Text>
+                <Text style={styles.sectionLabel}>
+                    CAPTURE {formName.toUpperCase()}
+                </Text>
                 {captured ? (
                     <View style={styles.capturedRow}>
-                        <Text style={styles.capturedText}>✓ Form 34A captured</Text>
+                        <Text style={styles.capturedText}>✓ {formName} captured</Text>
                         <TouchableOpacity
                             onPress={onCapture}
                             accessibilityRole="button"
-                            accessibilityLabel="Retake Form 34A photo"
+                            accessibilityLabel={`Retake ${formName} photo`}
                             hitSlop={8}
                         >
                             <Text style={styles.recaptureText}>Retake</Text>
@@ -320,7 +328,7 @@ export function VoteEntryPane({
                         accessibilityRole="button"
                     >
                         <CameraIcon size={16} color={perk.lime} />
-                        <Text style={styles.cameraButtonText}>Capture Form 34A</Text>
+                        <Text style={styles.cameraButtonText}>Capture {formName}</Text>
                     </TouchableOpacity>
                 )}
 

@@ -12,6 +12,7 @@ import React, {useEffect, useState} from "react";
 import {AddFormModal} from "./_components/AddFormModal";
 import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
 import {IPollingStationPresResults} from "@/app/types";
+import {RESULTS_FORMS} from "./_components/resultsForms";
 import {ResultsTable} from "./_components/ResultsTable";
 import {TLevelTabs} from "@/app/types";
 import {VoteSummary} from "./_components/VoteSummary";
@@ -146,10 +147,12 @@ export default function ResultsScreen() {
                     </Text>
                 </View>
 
-                {/* Form 34A Image */}
+                {/* Original results form image */}
                 {extraData && extraData.form_34A && (
                     <View style={{paddingHorizontal: 8}}>
-                        <Text style={styles.formLabel}>Original Form 34A</Text>
+                        <Text style={styles.formLabel}>
+                            Original {RESULTS_FORMS[level].name}
+                        </Text>
                         <View style={{height: 0.5 * windowHeight}}>
                             <ZoomableImage uri={extraData.form_34A} />
                         </View>
