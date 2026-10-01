@@ -25,7 +25,6 @@ import {useEffect, useRef, useState} from "react";
 import ResultsDashboard from "../dashboards/results";
 import {useAuth} from "../App";
 import "./kenya-counties";
-import "./perk-mesh";
 import "./landing.css";
 
 type County = {
@@ -44,7 +43,6 @@ type CountyData = {
 declare global {
     interface Window {
         KENYA_COUNTIES?: CountyData;
-        initPerkFooterGrid?: () => void;
     }
 }
 
@@ -357,9 +355,7 @@ function PhoneStage() {
         <section className="kz-stage" aria-label="KuraZetu app preview">
             <div className="kz-stage-inner">
                 <div className="kz-float kz-float-constituency">
-                    <div className="kz-float-icon">
-                        <ShieldCheck size={21} />
-                    </div>
+                    <ShieldCheck size={22} />
                     <div>
                         <strong>Westlands</strong>
                         <span>62 / 78 stations · 6 verifiers</span>
@@ -388,7 +384,7 @@ function PhoneStage() {
                         </div>
                         <div className="kz-screen-body">
                             <div className="kz-greeting">
-                                <h3>Hello, Wanjiku</h3>
+                                <strong>Hello, Wanjiku</strong>
                                 <p>Check your constituency results.</p>
                             </div>
                             <div className="kz-tile-grid">
@@ -458,19 +454,10 @@ function PhoneStage() {
                     </a>
                 </div>
                 <div className="kz-float kz-float-alert">
-                    <i>
-                        <AlertTriangle size={18} />
-                    </i>
+                    <AlertTriangle size={20} />
                     <div>
                         <strong>Alert</strong>
                         <span>Discrepancy at Station 114B</span>
-                    </div>
-                </div>
-                <div className="kz-float kz-float-user">
-                    <i>AN</i>
-                    <div>
-                        <strong>Achieng N.</strong>
-                        <span>Verifier · Kisumu Central</span>
                     </div>
                 </div>
             </div>
@@ -522,10 +509,6 @@ function LandingFooter() {
 }
 
 function PublicLanding() {
-    useEffect(() => {
-        window.initPerkFooterGrid?.();
-    }, []);
-
     return (
         <main className="kz-landing">
             <div className="kz-paper-bg" aria-hidden="true" />
@@ -583,19 +566,8 @@ function PublicLanding() {
 
             <PhoneStage />
 
-            <section className="kz-trust-strip">
-                <span>Built for public, verifiable participation</span>
-                <div>
-                    <b>Open source</b>
-                    <b>Polling-station level</b>
-                    <b>Community verified</b>
-                    <b>Public API</b>
-                </div>
-            </section>
-
             <section className="kz-compare" id="about">
                 <div className="kz-section-heading kz-section-heading-centered">
-                    <span>Read this first</span>
                     <h2>
                         What KuraZetu is. And just as importantly, what it is{" "}
                         <em>not</em>.
@@ -633,21 +605,17 @@ function PublicLanding() {
 
             <section className="kz-how">
                 <div className="kz-section-heading">
-                    <span>How it works</span>
                     <h2>
                         From the paper on the wall to the public dashboard, in four
                         steps.
                     </h2>
                 </div>
                 <div className="kz-steps">
-                    {steps.map(({title, copy, icon: Icon}, index) => (
+                    {steps.map(({title, copy, icon: Icon}) => (
                         <article key={title}>
-                            <span>0{index + 1}</span>
-                            <i>
-                                <Icon size={22} />
-                            </i>
                             <h3>{title}</h3>
                             <p>{copy}</p>
+                            <Icon size={28} aria-hidden="true" />
                         </article>
                     ))}
                 </div>
@@ -655,7 +623,6 @@ function PublicLanding() {
 
             <section className="kz-why">
                 <div>
-                    <span className="kz-eyebrow">Why trust it</span>
                     <h2>
                         Every number has a <b>Form 34A</b> behind it. Every form has a{" "}
                         <b>community verifier</b> behind it.
@@ -674,28 +641,27 @@ function PublicLanding() {
             <section className="kz-cta-wrap">
                 <div className="kz-cta">
                     <div>
-                        <span>Get involved</span>
                         <h2>
                             Your phone.
                             <br />
                             Your polling station.
                             <br />
-                            Your verified Form 34A.
+                            Your verified Form&nbsp;34A.
                         </h2>
                         <p>
-                            Sign up with your phone number. No password, email, or
-                            public name required.
+                            All you need is a phone number. No password, no email,
+                            and no public name.
                         </p>
                     </div>
                     <div>
                         <a href="/ui/download-apk/">
-                            Download for Android <ArrowRight size={16} />
+                            Get the Android app <ArrowRight size={16} />
                         </a>
                         <a className="is-ghost" href="/ui/signup/">
-                            Create an account <ArrowRight size={16} />
+                            Sign up with your phone <ArrowRight size={16} />
                         </a>
                         <a className="is-text" href="/accounts/login/">
-                            Just browse the results
+                            Already signed up? Sign in
                         </a>
                     </div>
                 </div>
