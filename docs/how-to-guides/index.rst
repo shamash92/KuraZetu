@@ -10,3 +10,4 @@ How-to guides
    Load boundaries data <load_boundaries_data>
    Customize your Multipass VM <customize-multipass>
    Connect VSCode to Multipass <vscode-multipass>
+   Configure log rotation <configure-log-rotation>

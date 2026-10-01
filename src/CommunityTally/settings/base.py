@@ -363,7 +363,9 @@ LOG_FORMAT = config("LOG_FORMAT", default="console" if DEBUG else "json")
 #
 # WatchedFileHandler, never RotatingFileHandler: it reopens the file when
 # logrotate replaces the inode, so several Gunicorn workers can write to one
-# file without losing lines. Rotation belongs to logrotate, not to the app.
+# file without losing lines. Rotation belongs to logrotate, not to the app —
+# see .deploy/logrotate/kurazetu.conf and
+# docs/how-to-guides/configure-log-rotation.md.
 LOG_FILE = config("LOG_FILE", default="")
 
 if LOG_FILE:
@@ -386,6 +388,8 @@ if LOG_FILE:
         )
         LOG_FILE = ""
 
+# See ../../../docs/explanations/logging-approach.md for why rotation,
+# redaction, and destinations are set up this way.
 LOGGING = {
     "version": 1,
     # Django and third-party libraries configure loggers at import time.
