@@ -4,7 +4,7 @@ const test = require("node:test");
 const {
     INITIAL_CAPTURE_READINESS,
     advanceCaptureReadiness,
-} = require("../../app/(tabs)/communityNotes/[id]/_components/captureReadiness.ts");
+} = require("../../components/resultsForm/camera/captureReadiness.ts");
 
 test("becomes ready only after two seconds of acceptable frames", () => {
     const started = advanceCaptureReadiness(

@@ -13,8 +13,8 @@
 import {Images, type Image} from "react-native-nitro-image";
 import type {BarcodeScanner} from "react-native-vision-camera-barcode-scanner";
 
-import {detectDocument} from "./documentDetection";
-import type {LumaThumbnail} from "./frameQuality";
+import {detectDocument} from "@/components/resultsForm/camera/documentDetection";
+import type {LumaThumbnail} from "@/components/resultsForm/camera/frameQuality";
 
 /**
  * Long side of the copy the QR is read from, whatever resolution the camera

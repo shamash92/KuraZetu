@@ -3,7 +3,7 @@ const test = require("node:test");
 
 const {
     parseVoteCount,
-} = require("../../app/(tabs)/communityNotes/[id]/_components/voteCount.ts");
+} = require("../../components/resultsForm/entry/voteCount.ts");
 
 test("keeps only decimal digits from a vote count", () => {
     assert.equal(parseVoteCount(" 1,234 votes "), 1234);

@@ -1,7 +1,7 @@
 import {Alert} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 
-import {ResultsFormCandidate, ResultsFormCapture} from "./ResultsFormCapture";
+import {ResultsFormCandidate, ResultsFormCapture} from "@/components/resultsForm";
 import type {TLevelTabs} from "@/app/types";
 
 interface Candidate {
