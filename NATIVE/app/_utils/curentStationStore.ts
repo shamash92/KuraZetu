@@ -22,7 +22,7 @@ export interface IPollingCenterInfo {
     ward: string;
 }
 
-export interface IPollingStation {
+interface IPollingStation {
     code: string;
     date_created: string;
     date_modified: string;
@@ -31,35 +31,18 @@ export interface IPollingStation {
     stream_number: number;
 }
 
-export interface ICurrentStationInfo extends IPollingStation {
-    polling_center: string;
-}
-
-export type TCurrentStationCode = string | null;
 interface CurrentStationState {
-    currentStationCode: TCurrentStationCode;
     currentCenter: IPollingCenterInfo | null;
-    currentStationInfo: ICurrentStationInfo | null;
     stations: IPollingStation[];
-    setCurrentStationCode: (code: TCurrentStationCode) => void;
     setCurrentCenter: (center: IPollingCenterInfo | null) => void;
     setStations: (stations: IPollingStation[]) => void;
-    setCurrentStationInfo: (station: ICurrentStationInfo) => void;
 }
 
 export const useCurrentPollingStationStore = create(
     persist<CurrentStationState>(
         (set) => ({
-            currentStationCode: null,
             currentCenter: null,
             stations: [],
-            currentStationInfo: null,
-            setCurrentStationCode: (code: TCurrentStationCode) => {
-                set((state) => ({
-                    ...state,
-                    currentStationCode: code !== null ? String(code) : null,
-                }));
-            },
             setCurrentCenter: (center: IPollingCenterInfo | null) => {
                 set((state) => ({
                     ...state,
@@ -70,12 +53,6 @@ export const useCurrentPollingStationStore = create(
                 set((state) => ({
                     ...state,
                     stations,
-                }));
-            },
-            setCurrentStationInfo: (station: ICurrentStationInfo) => {
-                set((state) => ({
-                    ...state,
-                    currentStationInfo: station,
                 }));
             },
         }),

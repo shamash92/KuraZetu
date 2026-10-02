@@ -22,9 +22,9 @@ import {perk} from "@/app/_utils/colors";
 import {sampleElectionData} from "../_sampleData";
 import useAuthStore from "@/app/_utils/authStore";
 import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
-import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 import {Redirect, useLocalSearchParams} from "expo-router";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {useStationInfo} from "@/hooks/useStationInfo";
 
 const windowHeight = Dimensions.get("window").height;
 
@@ -60,16 +60,7 @@ export default function LevelResultsScreen() {
     const [results, setResults] = useState<IPollingStationResult[] | null>(null);
     const [extraData, setExtraData] = useState<IPollingStationExtraData | null>(null);
 
-    const {
-        setStations,
-        stations,
-        currentStationCode,
-        setCurrentCenter,
-        setCurrentStationCode,
-        currentCenter,
-        setCurrentStationInfo,
-        currentStationInfo,
-    } = useCurrentPollingStationStore();
+    const station = useStationInfo();
 
     const {userToken} = useAuthStore();
 
@@ -84,7 +75,7 @@ export default function LevelResultsScreen() {
             return;
         }
 
-        if (!currentStationCode) {
+        if (!id) {
             return;
         }
 
@@ -95,7 +86,7 @@ export default function LevelResultsScreen() {
         const fetchStationResults = async () => {
             try {
                 const response = await fetch(
-                    `${apiBaseURL}/api/results/polling-station/${currentStationCode}/results/${level}/`,
+                    `${apiBaseURL}/api/results/polling-station/${id}/results/${level}/`,
                     {
                         headers: {Authorization: `Bearer ${userToken}`},
                     },
@@ -112,10 +103,10 @@ export default function LevelResultsScreen() {
             }
         };
 
-        if (currentStationCode && userToken) {
+        if (id && userToken) {
             fetchStationResults();
         }
-    }, [currentStationCode, userToken, addModalVisible, level]);
+    }, [id, userToken, addModalVisible, level]);
 
     if (!level) {
         return <Redirect href={`/communityNotes/${id}`} />;
@@ -148,11 +139,11 @@ export default function LevelResultsScreen() {
                         {levelLabel.toUpperCase()} · THIS STATION
                     </Text>
                     <Text style={styles.stationName}>
-                        {currentStationInfo?.polling_center}
+                        {station?.polling_center}
                     </Text>
                     <Text style={styles.stationMeta}>
-                        Stream {currentStationInfo?.stream_number} ·{" "}
-                        {currentStationInfo?.code} · {currentCenter?.constituency}
+                        Stream {station?.stream_number} · {station?.code} ·{" "}
+                        {station?.constituency}
                     </Text>
                 </View>
 

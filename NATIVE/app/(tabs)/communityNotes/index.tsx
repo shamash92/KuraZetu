@@ -41,9 +41,7 @@ const ElectionResultsApp = () => {
     const {
         setStations,
         stations,
-        currentStationCode,
         setCurrentCenter,
-        setCurrentStationCode,
         currentCenter,
     } = useCurrentPollingStationStore();
 
@@ -126,7 +124,6 @@ const ElectionResultsApp = () => {
                                 style={[styles.streamRow, lead && styles.streamRowLead]}
                                 onPress={() => {
                                     router.navigate(`/communityNotes/${station.code}`);
-                                    setCurrentStationCode(station.code);
                                 }}
                                 activeOpacity={0.9}
                             >
