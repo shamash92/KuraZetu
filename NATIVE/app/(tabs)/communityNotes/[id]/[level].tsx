@@ -11,10 +11,9 @@ import React, {useEffect, useState} from "react";
 
 import {AddFormModal} from "./_components/AddFormModal";
 import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
-import {IPollingStationResult} from "@/app/types";
+import {IPollingStationResult, TLevelTabs} from "@/app/types";
 import {RESULTS_FORMS} from "@/components/resultsForm";
 import {ResultsTable} from "./_components/ResultsTable";
-import {TLevelTabs} from "@/app/types";
 import {VoteSummary} from "./_components/VoteSummary";
 import {ZoomableImage} from "./_components/ZoomableImage";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
@@ -93,19 +92,15 @@ export default function LevelResultsScreen() {
                 );
                 if (await handleUnauthorized(response)) return;
                 const data = await response.json();
-                // console.log(data, "data in ResultsScreen");
-                console.log(data["extra_data"], "extra data in ResultsScreen");
 
                 setResults(data["data"]);
                 setExtraData(data["extra_data"]);
             } catch (error) {
-                console.error("Error fetching polling station pres results:", error);
+                console.error("Error fetching polling station results:", error);
             }
         };
 
-        if (id && userToken) {
-            fetchStationResults();
-        }
+        fetchStationResults();
     }, [id, userToken, addModalVisible, level]);
 
     if (!level) {
@@ -159,9 +154,7 @@ export default function LevelResultsScreen() {
                     </View>
                 )}
 
-                {/* Polling Station Info */}
-
-                {/* Digital Tabulation TODO: Perhaps refactor this to a separate component ? */}
+                {/* Digital Tabulation */}
                 <View
                     style={{
                         paddingHorizontal: 8,
@@ -227,7 +220,7 @@ export default function LevelResultsScreen() {
                             onPress={() => setModalVisible(true)}
                             activeOpacity={0.8}
                         >
-                            <MessageCircle size={24} color="#FFFFFF" />
+                            <MessageCircle size={24} color={perk.card} />
                         </TouchableOpacity>
                     </>
                 ) : (
@@ -245,16 +238,6 @@ export default function LevelResultsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#F8F9FA",
-        paddingTop: 30,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    header: {},
-    title: {},
     stationHeader: {
         paddingHorizontal: 16,
         paddingTop: 12,
@@ -314,30 +297,6 @@ const styles = StyleSheet.create({
         marginTop: 6,
         maxWidth: 260,
     },
-    section: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-    },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#212529",
-        marginBottom: 12,
-        paddingHorizontal: 4,
-    },
-    imageContainer: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 12,
-        shadowColor: "#000000",
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    bottomSpacing: {
-        height: 100,
-    },
-    fabContainer: {},
     fab: {
         width: 58,
         height: 58,
