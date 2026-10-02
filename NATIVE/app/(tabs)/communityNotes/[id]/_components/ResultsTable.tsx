@@ -1,6 +1,6 @@
 import {StyleSheet, Text, View} from "react-native";
 
-import {IPollingStationPresResults} from "@/app/types";
+import {IPollingStationResult} from "@/app/types";
 import React from "react";
 import {perk} from "@/app/_utils/colors";
 
@@ -8,7 +8,7 @@ export function ResultsTable({
     results,
     title = "Election Results",
 }: {
-    results: IPollingStationPresResults[];
+    results: IPollingStationResult[];
     title?: string;
 }) {
     // Sort candidates by votes in descending order
