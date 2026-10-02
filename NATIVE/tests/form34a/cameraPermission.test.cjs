@@ -3,7 +3,7 @@ const test = require("node:test");
 
 const {
     getCameraPermissionRecovery,
-} = require("../../app/(tabs)/communityNotes/[id]/_components/cameraPermission.ts");
+} = require("../../components/resultsForm/camera/cameraPermission.ts");
 
 test("offers the system permission prompt when it remains available", () => {
     assert.deepEqual(getCameraPermissionRecovery(true), {

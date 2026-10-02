@@ -59,7 +59,7 @@ function isDocumentCovered(document: DetectedDocument | null) {
     );
 }
 
-interface UseResultsFormFrameAnalysisOptions {
+interface UseFrameAnalysisOptions {
     active: boolean;
     aspect: CaptureAspect;
 }
@@ -71,10 +71,10 @@ interface UseResultsFormFrameAnalysisOptions {
  * and the configured frame output. Worklet scheduling, OpenCV, smoothing and
  * native-frame disposal remain private to this module.
  */
-export function useResultsFormFrameAnalysis({
+export function useFrameAnalysis({
     active,
     aspect,
-}: UseResultsFormFrameAnalysisOptions) {
+}: UseFrameAnalysisOptions) {
     const [quality, setQuality] = useState<FrameQuality | null>(null);
     const [document, setDocument] = useState<DetectedDocument | null>(null);
     const [readiness, setReadiness] = useState<CaptureReadiness>(

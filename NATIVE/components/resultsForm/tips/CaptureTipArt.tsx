@@ -12,7 +12,10 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, {Circle, Ellipse, G, Path, Rect, Text as SvgText} from "react-native-svg";
 
-import {BRACKET_COLOR, type BracketState} from "./FramingBracket";
+import {
+    BRACKET_COLOR,
+    type BracketState,
+} from "@/components/resultsForm/camera/FramingBracket";
 import {perk} from "@/app/_utils/colors";
 
 export type CaptureTipArtKind = "wipe" | "fill" | "qr" | "tap";

@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const {checkStream} = require("../../app/(tabs)/communityNotes/[id]/_components/streamCheck.ts");
+const {checkStream} = require("../../components/resultsForm/review/streamCheck.ts");
 
 // Kagera Primary School, Gatundu South: two streams at one centre.
 const KAGERA_STREAM_1 = "022111055100301";

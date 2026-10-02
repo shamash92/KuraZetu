@@ -9,7 +9,7 @@ import {
 
 import {FramingBracket, type BracketState} from "./FramingBracket";
 import type {QualityAssessment} from "./frameQuality";
-import type {CaptureAspect} from "./useResultsFormFrameAnalysis";
+import type {CaptureAspect} from "./useFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
 
 interface LiveCameraPaneProps {

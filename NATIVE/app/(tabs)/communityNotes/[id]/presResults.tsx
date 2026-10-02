@@ -12,7 +12,7 @@ import React, {useEffect, useState} from "react";
 import {AddFormModal} from "./_components/AddFormModal";
 import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
 import {IPollingStationPresResults} from "@/app/types";
-import {RESULTS_FORMS} from "./_components/resultsForms";
+import {RESULTS_FORMS} from "@/components/resultsForm";
 import {ResultsTable} from "./_components/ResultsTable";
 import {TLevelTabs} from "@/app/types";
 import {VoteSummary} from "./_components/VoteSummary";

@@ -9,7 +9,7 @@
  */
 
 import type {TLevelTabs} from "@/app/types";
-import {RESULTS_FORMS} from "./resultsForms.ts";
+import {RESULTS_FORMS} from "../resultsForms.ts";
 
 export type StreamCheck =
     | {kind: "match"; stream: number}

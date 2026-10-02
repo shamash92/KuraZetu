@@ -25,21 +25,16 @@ import {
 
 import {File} from "expo-file-system";
 
-import {
-    CameraPermissionModal,
-    PhotoReviewPane,
-    VoteEntryPane,
-} from "./CaptureFormViews";
-import {CaptureTips} from "./CaptureTips";
-import {LiveCameraPane} from "./LiveCameraPane";
-import {getCameraPermissionRecovery} from "./cameraPermission";
-import {readFormQr} from "./formQr";
+import {LiveCameraPane} from "./camera/LiveCameraPane";
+import {CameraPermissionModal} from "./camera/PermissionModal";
+import {getCameraPermissionRecovery} from "./camera/cameraPermission";
+import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
+import {VoteEntryPane} from "./entry/VoteEntryPane";
 import {RESULTS_FORMS} from "./resultsForms";
-import {type StreamCheck, checkStream} from "./streamCheck";
-import {
-    CaptureAspect,
-    useResultsFormFrameAnalysis,
-} from "./useResultsFormFrameAnalysis";
+import {PhotoReviewPane} from "./review/PhotoReviewPane";
+import {readFormQr} from "./review/formQr";
+import {type StreamCheck, checkStream} from "./review/streamCheck";
+import {CaptureTips} from "./tips/CaptureTips";
 import {perk} from "@/app/_utils/colors";
 import type {TLevelTabs} from "@/app/types";
 
@@ -330,7 +325,7 @@ export function ResultsFormCapture({
         frameOutput,
         readyToCapture,
         resetAnalysis,
-    } = useResultsFormFrameAnalysis({
+    } = useFrameAnalysis({
         active: visible && showCamera,
         aspect,
     });
@@ -613,8 +608,6 @@ export function ResultsFormCapture({
         </Modal>
     );
 }
-
-export default ResultsFormCapture;
 
 const styles = StyleSheet.create({
     container: {

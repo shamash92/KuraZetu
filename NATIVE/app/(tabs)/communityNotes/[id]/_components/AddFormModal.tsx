@@ -2,7 +2,7 @@ import {Alert} from "react-native";
 import {File} from "expo-file-system";
 import {useEffect, useState} from "react";
 
-import {ResultsFormCandidate, ResultsFormCapture} from "./ResultsFormCapture";
+import {ResultsFormCandidate, ResultsFormCapture} from "@/components/resultsForm";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/authStore";
