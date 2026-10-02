@@ -81,7 +81,7 @@ export interface ICountyPresResults {
     percentage: number;
 }
 
-export interface IPollingStationPresResults {
+export interface IPollingStationResult {
     candidate: ICandidateDetails;
     votes: number;
 }

@@ -21,7 +21,7 @@ export default function CommunityNotesDetailLayout() {
             />
 
             <Stack.Screen
-                name="presResults"
+                name="[level]"
                 options={{
                     headerShown: true,
                     headerBackVisible: true,

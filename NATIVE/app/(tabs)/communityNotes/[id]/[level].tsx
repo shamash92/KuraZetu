@@ -11,7 +11,7 @@ import React, {useEffect, useState} from "react";
 
 import {AddFormModal} from "./_components/AddFormModal";
 import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
-import {IPollingStationPresResults} from "@/app/types";
+import {IPollingStationResult} from "@/app/types";
 import {RESULTS_FORMS} from "@/components/resultsForm";
 import {ResultsTable} from "./_components/ResultsTable";
 import {TLevelTabs} from "@/app/types";
@@ -23,7 +23,7 @@ import {sampleElectionData} from "../_sampleData";
 import useAuthStore from "@/app/_utils/authStore";
 import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
 import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
-import {useLocalSearchParams} from "expo-router";
+import {Redirect, useLocalSearchParams} from "expo-router";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 const windowHeight = Dimensions.get("window").height;
@@ -37,7 +37,7 @@ const LEVEL_LABELS: Record<TLevelTabs, string> = {
     mca: "MCA",
 };
 
-export interface IPollingStationExtraData {
+interface IPollingStationExtraData {
     added_by: number;
     disputed_votes: number;
     is_verified: boolean;
@@ -49,7 +49,7 @@ export interface IPollingStationExtraData {
     registered_voters: number; // Optional, as it may not always be present
 }
 
-export default function ResultsScreen() {
+export default function LevelResultsScreen() {
     // Inside a tab screen this includes the tab bar, which floats over the content.
     const insets = useSafeAreaInsets();
 
@@ -57,7 +57,7 @@ export default function ResultsScreen() {
     const [addModalVisible, setAddModalVisible] = useState(false);
 
     const [upvoted, setUpvoted] = useState(false);
-    const [results, setResults] = useState<IPollingStationPresResults[] | null>(null);
+    const [results, setResults] = useState<IPollingStationResult[] | null>(null);
     const [extraData, setExtraData] = useState<IPollingStationExtraData | null>(null);
 
     const {
@@ -73,14 +73,17 @@ export default function ResultsScreen() {
 
     const {userToken} = useAuthStore();
 
-    const {level: levelParam} = useLocalSearchParams<{level?: string}>();
-    const level: TLevelTabs =
-        levelParam && levelParam in LEVEL_LABELS
-            ? (levelParam as TLevelTabs)
-            : "president";
-    const levelLabel = LEVEL_LABELS[level];
+    const {id, level: levelParam} = useLocalSearchParams<{
+        id: string;
+        level: string;
+    }>();
+    const level = levelParam in LEVEL_LABELS ? (levelParam as TLevelTabs) : null;
 
     useEffect(() => {
+        if (!level) {
+            return;
+        }
+
         if (!currentStationCode) {
             return;
         }
@@ -113,6 +116,12 @@ export default function ResultsScreen() {
             fetchStationResults();
         }
     }, [currentStationCode, userToken, addModalVisible, level]);
+
+    if (!level) {
+        return <Redirect href={`/communityNotes/${id}`} />;
+    }
+
+    const levelLabel = LEVEL_LABELS[level];
 
     return (
         <View

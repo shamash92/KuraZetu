@@ -126,7 +126,7 @@ const PollingStationResultsSummaryList = () => {
                             style={[styles.raceRow, idx > 0 && styles.raceRowBorder]}
                             onPress={() => {
                                 router.navigate(
-                                    `/communityNotes/${currentStationCode}/presResults?level=${race.level}`,
+                                    `/communityNotes/${currentStationCode}/${race.level}`,
                                 );
                             }}
                             activeOpacity={0.8}
