@@ -1,3 +1,4 @@
+from rest_framework.fields import SerializerMethodField
 from rest_framework.serializers import ModelSerializer
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -5,11 +6,10 @@ from stations.models import (
     Constituency,
     County,
     PollingCenter,
+    PollingCenterVerification,
     PollingStation,
     Ward,
-    PollingCenterVerification,
 )
-from rest_framework.fields import SerializerMethodField
 
 
 class CountySerializer(GeoFeatureModelSerializer):
@@ -215,10 +215,32 @@ class PollingStationInfoSerializer(ModelSerializer):
     def get_polling_center(self, obj):
         return obj.polling_center.name if obj.polling_center else None
 
+    ward = SerializerMethodField()
+    constituency = SerializerMethodField()
+    county = SerializerMethodField()
+
+    def _ward(self, obj):
+        return obj.polling_center.ward if obj.polling_center else None
+
+    def get_ward(self, obj):
+        ward = self._ward(obj)
+        return ward.name if ward else None
+
+    def get_constituency(self, obj):
+        ward = self._ward(obj)
+        return ward.constituency.name if ward else None
+
+    def get_county(self, obj):
+        ward = self._ward(obj)
+        return ward.constituency.county.name if ward else None
+
     class Meta:
         model = PollingStation
         fields = (
             "polling_center",
+            "ward",
+            "constituency",
+            "county",
             "stream_number",
             "code",
             "registered_voters",
