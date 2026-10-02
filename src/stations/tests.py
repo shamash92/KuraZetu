@@ -407,3 +407,21 @@ def test_confirming_a_pin_outside_its_ward_needs_sign_in():
     assert response.status_code == 403
     center.refresh_from_db()
     assert center.location_upvotes == 0
+
+
+@pytest.mark.django_db
+def test_station_info_names_the_ward_constituency_and_county():
+    center = PollingCenter.objects.create(name="Takaungu", code="012", ward=_ward())
+    PollingStation.objects.create(
+        polling_center=center, stream_number=1, code="01201", registered_voters=630
+    )
+
+    response = _client_for(center).get(
+        reverse("polling_station_info_api", args=["01201"])
+    )
+
+    assert response.status_code == 200
+    assert response.data["polling_center"] == "Takaungu"
+    assert response.data["ward"] == "Test Ward"
+    assert response.data["constituency"] == "Test Constituency"
+    assert response.data["county"] == "Test County"
