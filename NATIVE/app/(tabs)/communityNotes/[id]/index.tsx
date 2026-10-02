@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 import {
     ScrollView,
     StyleSheet,
@@ -11,81 +11,36 @@ import {router, useLocalSearchParams} from "expo-router";
 
 import {SafeAreaView} from "react-native-safe-area-context";
 import {TLevelTabs} from "@/app/types";
-import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
-import useAuthStore from "@/app/_utils/authStore";
-import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
-import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
+import {useStationInfo} from "@/hooks/useStationInfo";
 
 const PollingStationResultsSummaryList = () => {
-    const {id} = useLocalSearchParams();
+    const {id} = useLocalSearchParams<{id: string}>();
 
-    const {
-        currentStationCode,
-        setCurrentStationCode,
-        currentCenter,
-        setCurrentStationInfo,
-        currentStationInfo,
-    } = useCurrentPollingStationStore();
-
-    const {userToken} = useAuthStore();
-
-    useEffect(() => {
-        if (!id) {
-            return;
-        }
-
-        if (!userToken) {
-            return;
-        }
-
-        if (currentStationCode !== id) {
-            setCurrentStationCode(id.toString());
-        }
-
-        const fetchStation = async () => {
-            try {
-                const response = await fetch(
-                    `${apiBaseURL}/api/stations/community-notes/polling-stations/${id}/info/`,
-                    {
-                        headers: {Authorization: `Bearer ${userToken}`},
-                    },
-                );
-                if (await handleUnauthorized(response)) return;
-                const data = await response.json();
-                setCurrentStationInfo(data);
-            } catch (error) {
-                console.error("Error fetching polling station info:", error);
-            }
-        };
-
-        if (id && userToken) {
-            fetchStation();
-        }
-    }, [id, userToken]);
+    const station = useStationInfo();
 
     const races: {id: string; title: string; geo?: string; level: TLevelTabs}[] = [
         {id: "presidential", title: "President", geo: "National", level: "president"},
         {
             id: "governor",
             title: "Governor",
-            geo: currentCenter?.county,
+            geo: station?.county ?? undefined,
             level: "governor",
         },
         {
             id: "senator",
             title: "Senator",
-            geo: currentCenter?.county,
+            geo: station?.county ?? undefined,
             level: "senator",
         },
-        {id: "mp", title: "MP", geo: currentCenter?.constituency, level: "mp"},
+        {id: "mp", title: "MP", geo: station?.constituency ?? undefined, level: "mp"},
         {
             id: "woman-rep",
             title: "Woman Rep",
-            geo: currentCenter?.county,
+            geo: station?.county ?? undefined,
             level: "womanRep",
         },
-        {id: "mca", title: "MCA", geo: `${currentCenter?.ward} Ward`, level: "mca"},
+        {id: "mca", title: "MCA", geo: `${station?.ward} Ward`, level: "mca"},
     ];
 
     return (
@@ -109,12 +64,11 @@ const PollingStationResultsSummaryList = () => {
 
                 {/* Station */}
                 <Text style={styles.stationName}>
-                    {currentStationInfo?.polling_center}
+                    {station?.polling_center}
                 </Text>
                 <Text style={styles.stationMeta}>
-                    Stream {currentStationInfo?.stream_number} ·{" "}
-                    {currentStationInfo?.code} · {currentStationInfo?.registered_voters}{" "}
-                    voters
+                    Stream {station?.stream_number} · {station?.code} ·{" "}
+                    {station?.registered_voters} voters
                 </Text>
 
                 {/* Races */}
@@ -126,7 +80,7 @@ const PollingStationResultsSummaryList = () => {
                             style={[styles.raceRow, idx > 0 && styles.raceRowBorder]}
                             onPress={() => {
                                 router.navigate(
-                                    `/communityNotes/${currentStationCode}/${race.level}`,
+                                    `/communityNotes/${id}/${race.level}`,
                                 );
                             }}
                             activeOpacity={0.8}
