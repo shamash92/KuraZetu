@@ -8,8 +8,9 @@ machine that made them and are ignored by Git.
 The decision point is mostly operational policy: where logs live, who rotates
 them, and how hard we enforce redaction. Kura Zetu keeps stdout and journald as
 the baseline, makes `LOG_FILE=logs/app.json` a first-class repo-local option,
-rotates production files outside the app with `logrotate`, and aggressively
-deletes or converts unsafe `print()` calls.
+rotates production files outside the app with `logrotate` (see
+[How to configure log rotation](../how-to-guides/configure-log-rotation.md)),
+and aggressively deletes or converts unsafe `print()` calls.
 
 ## Logs go to standard output
 
