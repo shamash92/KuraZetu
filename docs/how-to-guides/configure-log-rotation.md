@@ -14,10 +14,10 @@ This guide assumes a production server running Gunicorn under systemd, with
 
 1. **Review the tracked template**
 
-    The repo ships a template at `src/.deploy/logrotate/kurazetu.conf`. It
-    rotates each file once it reaches 10MB, keeps 8 compressed generations,
+    The repository ships a template at `src/.deploy/logrotate/kurazetu.conf`.
+    It rotates each file once it reaches 10MB, keeps 8 compressed generations,
     and does **not** use `copytruncate` — `WatchedFileHandler` already
-    reopens the file when logrotate renames it, so a plain rename-and-create
+    reopens the file when `logrotate` renames it, so a plain rename-and-create
     rotation is both simpler and safe across multiple Gunicorn workers.
 
 2. **Match the paths and ownership to this server**
@@ -38,7 +38,7 @@ This guide assumes a production server running Gunicorn under systemd, with
     ```
 
     `logrotate` already runs daily via `logrotate.timer` on Ubuntu, so no
-    separate cron job or systemd unit is needed — dropping the file into
+    separate `cron` job or systemd unit is needed — dropping the file into
     `/etc/logrotate.d/` is enough.
 
 4. **Force an immediate rotation (optional)**
