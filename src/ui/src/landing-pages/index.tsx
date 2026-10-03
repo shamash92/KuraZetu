@@ -465,7 +465,7 @@ function PhoneStage() {
     );
 }
 
-function LandingFooter() {
+export function LandingFooter() {
     return (
         <footer className="kz-footer">
             <div className="kz-footer-inner">
