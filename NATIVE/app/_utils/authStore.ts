@@ -20,6 +20,8 @@ type UserState = {
 // access is stored now, so remove those values from phones that still have them.
 void deleteItemAsync("auth-store").catch(() => {});
 void deleteItemAsync("userToken").catch(() => {});
+// The old station store kept the user's polling center in the keychain.
+void deleteItemAsync("current-stations-store").catch(() => {});
 
 // The Knox token lives only in memory: a new process always starts signed out.
 export const useAuthStore = create<UserState>((set) => ({
