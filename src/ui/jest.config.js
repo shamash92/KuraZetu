@@ -26,6 +26,11 @@ module.exports = {
     ],
     moduleNameMapper: {
         "\\.css$": "<rootDir>/tests/styleMock.js",
+        // The Markdown toolchain publishes ESM only, across dozens of
+        // packages. Tests get the source back as text; how Markdown renders
+        // is checked by hand.
+        "^react-markdown$": "<rootDir>/tests/markdownMock.js",
+        "^remark-gfm$": "<rootDir>/tests/styleMock.js",
         "^@/(.*)$": "<rootDir>/$1",
     },
 };
