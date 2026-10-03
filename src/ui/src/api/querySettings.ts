@@ -65,4 +65,17 @@ export const querySettings = {
         refetchOnWindowFocus: false,
         retry: false,
     },
+
+    /**
+     * Specifications. What a person may read is decided by the server on each
+     * request, and losing access must take effect on the next one, so nothing
+     * is served from cache and a restricted body is dropped from memory as
+     * soon as its page unmounts.
+     */
+    specs: {
+        staleTime: 0,
+        gcTime: 0,
+        refetchInterval: false,
+        refetchOnWindowFocus: false,
+    },
 } as const;

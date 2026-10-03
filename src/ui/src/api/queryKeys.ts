@@ -94,3 +94,15 @@ export const resultKeys = {
         ] as const;
     },
 };
+
+export const specKeys = {
+    all: ["specs"] as const,
+
+    library() {
+        return [...specKeys.all, "library"] as const;
+    },
+
+    page(slug: string) {
+        return [...specKeys.all, "page", slug] as const;
+    },
+};
