@@ -1,0 +1,344 @@
+/* Android download page. Tokens, nav, buttons and footer come from
+   landing-pages/landing.css; everything here is scoped under `.kz-apk`. */
+
+.kz-apk {
+  min-height: 100vh;
+}
+
+.kz-apk ::selection {
+  color: var(--lime-ink);
+  background: var(--lime);
+}
+
+.kz-apk a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ── Hero: download beside the install steps ───────────────────────── */
+.kz-apk-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 64px;
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px 32px 96px;
+}
+
+.kz-apk-hero h1 {
+  margin: 0;
+  font-size: clamp(46px, 6.6vw, 92px);
+  font-weight: 900;
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.kz-apk-hero h1 span {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.kz-apk-hero h1 span::after {
+  content: "";
+  position: absolute;
+  right: -0.04em;
+  bottom: -0.04em;
+  left: -0.04em;
+  z-index: -1;
+  height: 0.2em;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'><path d='M2 7 C 40 1, 80 11, 120 5 S 196 9, 198 5' fill='none' stroke='%23c4ff5e' stroke-width='8' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.kz-apk-lead > p {
+  max-width: 54ch;
+  margin: 28px 0 0;
+  color: var(--mute-deep);
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.kz-apk-lead > .kz-button {
+  margin-top: 34px;
+}
+
+/* Build facts: measured values, so mono, but one quiet line, not a stat row. */
+.kz-apk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 18px 0 0;
+  padding: 0;
+  color: var(--mute-deep);
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Install card ──────────────────────────────────────────────────── */
+.kz-apk-install {
+  overflow: hidden;
+  border: 1px solid var(--rule-08);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.kz-apk-beta {
+  display: flex;
+  gap: 12px;
+  padding: 18px 24px 20px;
+  color: var(--mute-deep);
+  border-top: 1px solid var(--rule-08);
+  background: var(--surface);
+}
+
+.kz-apk-beta > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--coral-deep);
+}
+
+.kz-apk-beta strong {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.kz-apk-beta p {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.kz-apk-beta b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.kz-apk-install h2 {
+  margin: 0;
+  padding: 24px 24px 6px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.kz-apk-install ol {
+  margin: 0;
+  padding: 0 24px 10px;
+  list-style: none;
+  counter-reset: step;
+}
+
+.kz-apk-install li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 15px 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  counter-increment: step;
+}
+
+.kz-apk-install li + li {
+  border-top: 1px solid var(--rule-08);
+}
+
+.kz-apk-install li::before {
+  content: counter(step);
+  color: var(--mute-deep);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Release history ───────────────────────────────────────────────── */
+.kz-apk-releases {
+  width: 100%;
+  padding: 88px max(32px, calc((100% - 1216px) / 2)) 96px;
+  border-top: 1px solid var(--rule-08);
+  background: var(--paper-deep);
+}
+
+.kz-apk-releases > h2 {
+  margin: 0;
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.kz-apk-release-list {
+  margin-top: 40px;
+}
+
+.kz-apk-release-list article {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 40px;
+  padding: 28px 0;
+  border-top: 1px solid var(--rule-16);
+}
+
+.kz-apk-release-list h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.kz-apk-release-list h3 span {
+  padding: 4px 9px;
+  color: var(--green-deep);
+  border-radius: 999px;
+  background: var(--mint);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.kz-apk-release-list header p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kz-apk-release-list time {
+  display: block;
+  margin-top: 6px;
+  color: var(--mute-deep);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kz-apk-release-list ul {
+  max-width: 68ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kz-apk-release-list li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.kz-apk-release-list li + li {
+  margin-top: 8px;
+}
+
+.kz-apk-release-list li::before {
+  content: "";
+  position: absolute;
+  top: 0.8em;
+  left: 0;
+  width: 10px;
+  height: 1px;
+  background: var(--ink);
+}
+
+/* ── Bug report ────────────────────────────────────────────────────── */
+.kz-apk-bug-wrap {
+  width: 100%;
+  padding: 96px max(32px, calc((100% - 1216px) / 2));
+  border-top: 1px solid var(--rule-08);
+  background: var(--paper);
+}
+
+.kz-apk-bug {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px 48px;
+  padding: 48px 54px;
+  color: var(--paper);
+  border-radius: 8px;
+  background: var(--ink);
+}
+
+.kz-apk-bug h2 {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.kz-apk-bug p {
+  margin: 12px 0 0;
+  color: rgba(247, 246, 243, 0.72);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.kz-apk-bug a {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 24px;
+  color: var(--paper);
+  border: 1px solid rgba(247, 246, 243, 0.22);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 750;
+  text-decoration: none;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.kz-apk-bug a:hover {
+  border-color: var(--paper);
+  background: rgba(247, 246, 243, 0.08);
+}
+
+.kz-apk-bug a:focus-visible {
+  outline-color: var(--paper);
+}
+
+@media (max-width: 1050px) {
+  .kz-apk-hero { gap: 40px; }
+  .kz-apk-release-list article { grid-template-columns: 200px minmax(0, 1fr); gap: 28px; }
+}
+
+@media (max-width: 900px) {
+  .kz-apk-hero { grid-template-columns: minmax(0, 1fr); gap: 48px; padding: 64px 20px 72px; }
+  .kz-apk-releases { padding: 72px 20px; }
+  .kz-apk-releases > h2 { font-size: 40px; }
+  .kz-apk-bug-wrap { padding: 72px 20px; }
+  .kz-apk-bug { padding: 40px 34px; }
+  .kz-apk-bug h2 { font-size: 34px; }
+}
+
+@media (max-width: 560px) {
+  .kz-apk-hero { padding: 48px 18px 56px; }
+  .kz-apk-lead > p { margin-top: 22px; font-size: 16px; }
+  .kz-apk-lead > .kz-button { display: flex; }
+  .kz-apk-beta, .kz-apk-install h2, .kz-apk-install ol { padding-inline: 18px; }
+  .kz-apk-releases { padding: 56px 18px; }
+  .kz-apk-releases > h2 { font-size: 34px; }
+  .kz-apk-release-list { margin-top: 28px; }
+  .kz-apk-release-list article { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 24px 0; }
+  .kz-apk-bug-wrap { padding: 56px 18px; }
+  .kz-apk-bug { padding: 34px 24px; }
+}
