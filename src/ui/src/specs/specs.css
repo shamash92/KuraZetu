@@ -405,3 +405,13 @@
     display: none;
   }
 }
+
+/* ── Diagrams ──────────────────────────────────────────────────────── */
+.kz-specs .prose .diagram {
+  margin: 0 0 1em;
+  overflow-x: auto;
+}
+.kz-specs .prose .diagram svg {
+  max-width: 100%;
+  height: auto;
+}

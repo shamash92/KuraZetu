@@ -167,7 +167,7 @@ function EditorForm({spec}: {spec: AuthorSpecification}) {
                         />
                     </div>
                     <section className="preview" aria-label="Preview">
-                        <SpecMarkdown source={body} />
+                        <SpecMarkdown source={body} showDiagramErrors />
                     </section>
                 </div>
 
