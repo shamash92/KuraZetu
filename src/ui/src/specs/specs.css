@@ -1,0 +1,239 @@
+/* Specification library and reader. Reuses the :root tokens and fonts from
+   landing.css; every selector is scoped under .kz-specs. */
+
+.kz-specs {
+  width: 100%;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  background: var(--paper);
+}
+
+.kz-specs,
+.kz-specs * {
+  box-sizing: border-box;
+}
+
+.kz-specs .bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--rule-08);
+  font-size: 14px;
+  font-weight: 600;
+}
+.kz-specs .bar a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.kz-specs .bar a:hover {
+  text-decoration: underline;
+}
+.kz-specs .bar .brand {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-size: 18px;
+}
+
+.kz-specs main {
+  width: 100%;
+  max-width: 72ch;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+.kz-specs h1 {
+  margin: 0 0 12px;
+  font-size: clamp(30px, 5vw, 44px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.kz-specs .lede {
+  margin: 0 0 24px;
+  font-size: 17.5px;
+  color: var(--mute-deep);
+}
+
+.kz-specs .meta {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--copper-deep);
+}
+
+.kz-specs .status {
+  color: var(--mute-deep);
+}
+
+.kz-specs .notice {
+  margin: 20px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--rule-16);
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 14.5px;
+}
+
+.kz-specs a {
+  color: var(--periwinkle-deep);
+  text-underline-offset: 3px;
+}
+.kz-specs a:focus-visible,
+.kz-specs button:focus-visible,
+.kz-specs input:focus-visible,
+.kz-specs select:focus-visible,
+.kz-specs textarea:focus-visible {
+  outline: 2px solid var(--periwinkle-deep);
+  outline-offset: 2px;
+}
+
+/* ── Library ───────────────────────────────────────────────────────── */
+.kz-specs .entries {
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.kz-specs .entries li {
+  padding: 20px 0;
+  border-top: 1px solid var(--rule-16);
+}
+.kz-specs .entries h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.kz-specs .entries h2 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.kz-specs .entries h2 a:hover {
+  text-decoration: underline;
+}
+.kz-specs .entries p {
+  margin: 0;
+  color: var(--mute-deep);
+}
+
+/* ── Rendered Markdown ─────────────────────────────────────────────── */
+.kz-specs .prose {
+  margin-top: 32px;
+  overflow-wrap: break-word;
+}
+.kz-specs .prose h1,
+.kz-specs .prose h2,
+.kz-specs .prose h3,
+.kz-specs .prose h4 {
+  margin: 1.8em 0 0.5em;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.kz-specs .prose h1 {
+  font-size: 28px;
+}
+.kz-specs .prose h2 {
+  font-size: 23px;
+}
+.kz-specs .prose h3 {
+  font-size: 19px;
+}
+.kz-specs .prose h4 {
+  font-size: 16px;
+}
+.kz-specs .prose > :first-child {
+  margin-top: 0;
+}
+.kz-specs .prose p,
+.kz-specs .prose ul,
+.kz-specs .prose ol,
+.kz-specs .prose pre,
+.kz-specs .prose table,
+.kz-specs .prose blockquote {
+  margin: 0 0 1em;
+}
+.kz-specs .prose ul,
+.kz-specs .prose ol {
+  padding-left: 1.4em;
+}
+.kz-specs .prose ul {
+  list-style: disc;
+}
+.kz-specs .prose ol {
+  list-style: decimal;
+}
+.kz-specs .prose .contains-task-list {
+  padding-left: 0;
+  list-style: none;
+}
+.kz-specs .prose .task-list-item input {
+  margin-right: 8px;
+}
+.kz-specs .prose blockquote {
+  padding: 0 0 0 1.4em;
+  color: var(--mute-deep);
+  font-style: italic;
+}
+.kz-specs .prose code {
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+  background: var(--paper-deep);
+  font-family: var(--mono);
+  font-size: 0.88em;
+}
+.kz-specs .prose pre {
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid var(--rule-08);
+  border-radius: 14px;
+  background: var(--card);
+  line-height: 1.5;
+}
+.kz-specs .prose pre code {
+  padding: 0;
+  background: none;
+}
+.kz-specs .prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+.kz-specs .prose th,
+.kz-specs .prose td {
+  padding: 8px 12px;
+  border: 1px solid var(--rule-16);
+  text-align: left;
+  vertical-align: top;
+}
+.kz-specs .prose th {
+  background: var(--surface);
+  font-weight: 700;
+}
+.kz-specs .prose hr {
+  margin: 2em 0;
+  border: 0;
+  border-top: 1px solid var(--rule-16);
+}
+.kz-specs .prose .footnotes {
+  margin-top: 2.5em;
+  padding-top: 1em;
+  border-top: 1px solid var(--rule-16);
+  font-size: 14px;
+}
+.kz-specs .prose .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

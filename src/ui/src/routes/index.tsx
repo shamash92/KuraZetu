@@ -12,6 +12,8 @@ import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
 import GameLandingPage from "../game";
+import {Library} from "../specs/Library";
+import {SpecificationPage} from "../specs/SpecificationPage";
 
 export function NotFound() {
     return (
@@ -81,6 +83,8 @@ function RoutesApp() {
             <Route path="/ui/download-apk/" element={<APKDownloadPage />} />
             <Route path="/ui/game/" element={<GameLandingPage />} />
             <Route path="/ui/password-reset/" element={<PasswordReset />} />
+            <Route path="/ui/specs/" element={<Library />} />
+            <Route path="/ui/specs/:slug/" element={<SpecificationPage />} />
 
             {/* Public Routes */}
 
