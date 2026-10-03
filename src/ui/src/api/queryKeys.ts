@@ -105,4 +105,16 @@ export const specKeys = {
     page(slug: string) {
         return [...specKeys.all, "page", slug] as const;
     },
+
+    authorLibrary() {
+        return [...specKeys.all, "author"] as const;
+    },
+
+    authorSpecification(slug: string) {
+        return [...specKeys.authorLibrary(), slug] as const;
+    },
+
+    revision(slug: string, sequence: number | null) {
+        return [...specKeys.authorSpecification(slug), "revision", sequence] as const;
+    },
 };

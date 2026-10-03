@@ -4,7 +4,14 @@ import {Link} from "react-router-dom";
 import "../landing-pages/landing.css";
 import "./specs.css";
 
-export function SpecsShell({children}: {children: ReactNode}) {
+export function SpecsShell({
+    children,
+    wide = false,
+}: {
+    children: ReactNode;
+    /** The editor needs room for source and preview side by side. */
+    wide?: boolean;
+}) {
     return (
         <div className="kz-specs">
             <header className="bar">
@@ -13,7 +20,7 @@ export function SpecsShell({children}: {children: ReactNode}) {
                 </a>
                 <Link to="/ui/specs/">Specifications</Link>
             </header>
-            <main>{children}</main>
+            <main className={wide ? "wide" : undefined}>{children}</main>
         </div>
     );
 }
