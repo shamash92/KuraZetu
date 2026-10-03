@@ -10,8 +10,23 @@ class ResizeObserverStub {
     disconnect() {}
 }
 
+// A data router describes each navigation as a `Request`, which jsdom lacks.
+// No route here has a loader to read one, so only the shape matters.
+class RequestStub {
+    url: string;
+    method: string;
+    signal?: AbortSignal;
+
+    constructor(url: string, init: {method?: string; signal?: AbortSignal} = {}) {
+        this.url = url;
+        this.method = init.method ?? "GET";
+        this.signal = init.signal;
+    }
+}
+
 Object.assign(global, {
     TextDecoder,
     TextEncoder,
     ResizeObserver: ResizeObserverStub,
+    Request: RequestStub,
 });
