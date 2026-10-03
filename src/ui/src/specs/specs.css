@@ -237,3 +237,171 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
 }
+
+/* ── Author workspace and editor ───────────────────────────────────── */
+.kz-specs main.wide {
+  max-width: 1280px;
+}
+
+.kz-specs label {
+  display: block;
+  margin: 16px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.kz-specs label.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.kz-specs input:not([type="checkbox"]),
+.kz-specs select,
+.kz-specs textarea {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--rule-16);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.kz-specs textarea {
+  resize: vertical;
+}
+
+.kz-specs button {
+  margin: 12px 8px 0 0;
+  padding: 10px 18px;
+  border: 1px solid var(--rule-16);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.kz-specs button:hover:not(:disabled) {
+  background: var(--surface);
+}
+.kz-specs button.primary {
+  border-color: transparent;
+  background: var(--lime);
+  color: var(--lime-ink);
+}
+.kz-specs button.primary:hover:not(:disabled) {
+  background: var(--lime-deep);
+}
+.kz-specs button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.kz-specs button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.kz-specs .hint {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: var(--mute-deep);
+}
+.kz-specs [role="alert"] {
+  margin: 12px 0 0;
+  color: var(--red);
+  font-weight: 600;
+}
+
+.kz-specs .panel {
+  max-width: 72ch;
+  margin: 40px 0 0;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--rule-16);
+}
+.kz-specs .panel h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.kz-specs .panel p {
+  margin: 0 0 8px;
+}
+.kz-specs .panel form + form {
+  margin-top: 24px;
+}
+
+.kz-specs .readers {
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+.kz-specs .readers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-08);
+}
+.kz-specs .readers button {
+  margin: 0;
+}
+
+.kz-specs .panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+.kz-specs .panes .source textarea {
+  min-height: 60vh;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.kz-specs .panes .preview {
+  min-width: 0;
+  padding: 0 4px;
+}
+.kz-specs .panes-switch {
+  display: none;
+}
+
+.kz-specs .actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 16px;
+  padding: 10px 0 14px;
+  border-top: 1px solid var(--rule-16);
+  background: var(--paper);
+}
+.kz-specs .actions p {
+  flex: 1 1 220px;
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--mute-deep);
+}
+
+/* One pane at a time where two would not fit. */
+@media (max-width: 860px) {
+  .kz-specs .panes-switch {
+    display: block;
+    margin-top: 12px;
+  }
+  .kz-specs .panes {
+    grid-template-columns: 1fr;
+  }
+  .kz-specs .panes[data-pane="source"] .preview,
+  .kz-specs .panes[data-pane="preview"] .source {
+    display: none;
+  }
+}
