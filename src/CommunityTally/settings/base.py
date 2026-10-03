@@ -48,9 +48,6 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "leaflet",
     "rest_framework",
-    # Unused: kept only so `migrate authtoken zero` can drop its table. Remove
-    # once that has run everywhere.
-    "rest_framework.authtoken",
     "knox",
     "rest_framework_gis",
     "crispy_forms",
