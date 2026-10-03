@@ -14,7 +14,6 @@ import {perk} from "@/app/_utils/colors";
 import {router} from "expo-router";
 import useAuthStore from "@/app/_utils/authStore";
 import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
-import useCurrentPollingStationStore from "@/app/_utils/curentStationStore";
 
 export interface IPollingCenterInfo {
     code: string;
@@ -37,13 +36,7 @@ export interface IPollingStation {
 const ElectionResultsApp = () => {
     const [pollingCenterInfo, setPollingCenterInfo] =
         useState<IPollingCenterInfo | null>(null);
-
-    const {
-        setStations,
-        stations,
-        setCurrentCenter,
-        currentCenter,
-    } = useCurrentPollingStationStore();
+    const [stations, setStations] = useState<IPollingStation[]>([]);
 
     const {userToken} = useAuthStore();
 
@@ -66,7 +59,6 @@ const ElectionResultsApp = () => {
                 const data = await response.json();
                 if (data && data.data) {
                     setPollingCenterInfo(data.data);
-                    setCurrentCenter(data.data);
                     setStations(data.stations || []);
                 }
             } catch (error) {
