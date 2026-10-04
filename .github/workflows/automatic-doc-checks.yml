@@ -1,14 +1,16 @@
 #
-name: Automatic doc checks
+name: Documentation checks
 
 on:
   push:
     branches: [ main ]
     paths:
       - 'docs/**'   # Only run on changes to the docs directory
+      - '.github/workflows/automatic-doc-checks.yml'
   pull_request:
     paths:
       - 'docs/**'   # Only run on changes to the docs directory
+      - '.github/workflows/automatic-doc-checks.yml'
 
   workflow_dispatch:
     # Manual trigger

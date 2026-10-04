@@ -1,0 +1,30 @@
+name: iOS/Android tests
+
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'NATIVE/**'
+    - '.github/workflows/native.yml'
+  pull_request:
+    branches:
+    - '*'
+    paths:
+    - 'NATIVE/**'
+    - '.github/workflows/native.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+    - name: Test
+      working-directory: "NATIVE"
+      run: yarn test

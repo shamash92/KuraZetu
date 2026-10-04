@@ -1,4 +1,4 @@
-name: Frontend checks
+name: UI checks
 
 on:
   workflow_call:
@@ -7,11 +7,13 @@ on:
     - main
     paths:
     - 'src/ui/**'   # Only run on changes to the web frontend
+    - '.github/workflows/frontend.yml'
   pull_request:
     branches:
     - '*'
     paths:
     - 'src/ui/**'
+    - '.github/workflows/frontend.yml'
 
 jobs:
   typecheck:

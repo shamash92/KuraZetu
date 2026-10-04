@@ -1,8 +1,9 @@
 # Kura Zetu
 
-![Backend CI](https://github.com/shamash92/KuraZetu/actions/workflows/django.yml/badge.svg)
-![Frontend CI](https://github.com/shamash92/KuraZetu/actions/workflows/frontend.yml/badge.svg)
-![Documentation CI](https://github.com/shamash92/KuraZetu/actions/workflows/automatic-doc-checks.yml/badge.svg)
+![Backend tests](https://github.com/shamash92/KuraZetu/actions/workflows/django.yml/badge.svg)
+![UI checks](https://github.com/shamash92/KuraZetu/actions/workflows/frontend.yml/badge.svg)
+![iOS/Android tests](https://github.com/shamash92/KuraZetu/actions/workflows/native.yml/badge.svg)
+![Documentation checks](https://github.com/shamash92/KuraZetu/actions/workflows/automatic-doc-checks.yml/badge.svg)
 ![Blog](https://github.com/shamash92/KuraZetu/actions/workflows/blog-frontmatter.yml/badge.svg?event=pull_request)
 ![GitHub License](https://img.shields.io/github/license/shamash92/KuraZetu?label=License&color=blue)
 ![GitHub issues](https://img.shields.io/github/issues/shamash92/KuraZetu)
