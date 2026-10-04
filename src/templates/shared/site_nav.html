@@ -12,11 +12,16 @@
     <div class="site-nav__menu" id="site-navigation">
       <nav class="site-nav__links" aria-label="Primary navigation">
         <a href="/ui/game/">pinVerify254</a>
-        <a href="https://github.com/shamash92/KuraZetu.git" target="_blank" rel="noopener noreferrer">Contribute</a>
         <a href="#">About</a>
         <a href="{% url 'blog:list' %}"{% if current_nav == "blog" %} class="is-current" aria-current="page"{% endif %}>Blog</a>
-        <a href="/ui/specs/">Specs</a>
-        <a href="{% url 'swagger' %}"{% if current_nav == "api" %} class="is-current" aria-current="page"{% endif %}>API</a>
+        <details class="site-nav__group">
+          <summary{% if current_nav == "api" %} class="is-current"{% endif %}>Developers</summary>
+          <div class="site-nav__sub">
+            <a href="/ui/specs/">Specs</a>
+            <a href="{% url 'swagger' %}"{% if current_nav == "api" %} class="is-current" aria-current="page"{% endif %}>API</a>
+            <a href="https://github.com/shamash92/KuraZetu.git" target="_blank" rel="noopener noreferrer">Contribute</a>
+          </div>
+        </details>
       </nav>
       <div class="site-nav__auth">
         {% if user.is_authenticated %}

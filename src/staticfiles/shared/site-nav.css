@@ -72,6 +72,58 @@
   text-decoration: underline;
   text-underline-offset: 5px;
 }
+.site-nav__group {
+  position: relative;
+}
+.site-nav__group summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #44403c;
+  font-size: 16px;
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+}
+.site-nav__group summary::-webkit-details-marker {
+  display: none;
+}
+.site-nav__group summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.site-nav__group[open] summary::after {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+.site-nav__group summary:hover {
+  color: #1c1917;
+}
+.site-nav__sub {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: -12px;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid #e7e5e4;
+  border-radius: 12px;
+  background: #fff;
+}
+.site-nav__sub a {
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+.site-nav__sub a:hover {
+  background: #f5f5f4;
+}
 .site-nav__auth {
   gap: 16px;
 }
@@ -172,6 +224,14 @@
   }
   .site-nav__auth {
     margin-top: 16px;
+  }
+  /* In the stacked menu the group opens in place rather than floating. */
+  .site-nav__sub {
+    position: static;
+    min-width: 0;
+    margin-top: 8px;
+    padding: 0 0 0 12px;
+    border: 0;
   }
   .site-nav__desktop-label,
   .site-nav--open .site-nav__menu-icon {

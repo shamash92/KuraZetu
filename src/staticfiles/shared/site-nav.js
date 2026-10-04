@@ -19,3 +19,11 @@ document.querySelectorAll(".site-nav").forEach((header) => {
     }
   });
 });
+
+// A group of links closes when focus leaves it, so it does not stay open over
+// the page after a click elsewhere.
+document.querySelectorAll(".site-nav__group").forEach((group) => {
+  group.addEventListener("focusout", (event) => {
+    if (!group.contains(event.relatedTarget)) group.open = false;
+  });
+});

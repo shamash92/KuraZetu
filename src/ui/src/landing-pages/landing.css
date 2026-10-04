@@ -268,9 +268,73 @@ footer.kz-footer {
   background: var(--surface);
 }
 
-.kz-nav-links a[aria-current="page"] {
+.kz-nav-links a[aria-current="page"],
+.kz-nav-group summary[data-current] {
   color: var(--paper);
   background: var(--ink);
+}
+
+.kz-nav-group {
+  position: relative;
+}
+
+.kz-nav-group summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  color: var(--ink);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+}
+
+.kz-nav-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.kz-nav-group summary:not([data-current]):hover {
+  background: var(--surface);
+}
+
+.kz-nav-group[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.kz-nav-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--rule-16);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.kz-nav-menu a {
+  border-radius: 9px;
+}
+
+.kz-nav-links .kz-nav-menu a[aria-current="page"] {
+  color: var(--ink);
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.kz-mobile-nav-label {
+  margin-top: 10px;
+  color: var(--mute);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .kz-nav-actions {

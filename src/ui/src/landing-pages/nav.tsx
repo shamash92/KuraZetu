@@ -33,14 +33,6 @@ export default function NavComponent() {
                             pinVerify254
                         </a>
                         <a
-                            href="https://github.com/shamash92/KuraZetu.git"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium transition-colors text-stone-700 hover:text-stone-900"
-                        >
-                            Contribute
-                        </a>
-                        <a
                             href="#"
                             className="font-medium transition-colors text-stone-700 hover:text-stone-900"
                         >
@@ -52,18 +44,27 @@ export default function NavComponent() {
                         >
                             Blog
                         </a>
-                        <a
-                            href="/ui/specs/"
-                            className="font-medium transition-colors text-stone-700 hover:text-stone-900"
-                        >
-                            Specs
-                        </a>
-                        <a
-                            href="/api/schema/swagger/"
-                            className="font-medium transition-colors text-stone-700 hover:text-stone-900"
-                        >
-                            API
-                        </a>
+                        <details className="relative">
+                            <summary className="cursor-pointer list-none font-medium transition-colors text-stone-700 hover:text-stone-900">
+                                Developers
+                            </summary>
+                            <div className="absolute left-0 z-40 grid gap-1 p-2 mt-3 bg-white border rounded-xl min-w-44 border-stone-200">
+                                <a href="/ui/specs/" className="font-medium transition-colors text-stone-700 hover:text-stone-900">
+                                    Specs
+                                </a>
+                                <a href="/api/schema/swagger/" className="font-medium transition-colors text-stone-700 hover:text-stone-900">
+                                    API
+                                </a>
+                                <a
+                                    href="https://github.com/shamash92/KuraZetu.git"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium transition-colors text-stone-700 hover:text-stone-900"
+                                >
+                                    Contribute
+                                </a>
+                            </div>
+                        </details>
                     </nav>
 
                     {authInfo ? (

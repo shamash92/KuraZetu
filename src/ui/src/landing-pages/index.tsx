@@ -3,6 +3,7 @@ import {
     ArrowRight,
     Camera,
     Check,
+    ChevronDown,
     Clock3,
     Eye,
     Github,
@@ -276,13 +277,6 @@ export function LandingNav({current}: {current?: "specs"} = {}) {
                 <nav className="kz-nav-links" aria-label="Main navigation">
                     <a href="/ui/game/">pinVerify254</a>
                     <a
-                        href="https://github.com/shamash92/KuraZetu.git"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        Contribute
-                    </a>
-                    <a
                         href="https://kurazetu.readthedocs.io/"
                         target="_blank"
                         rel="noreferrer"
@@ -290,13 +284,37 @@ export function LandingNav({current}: {current?: "specs"} = {}) {
                         Docs
                     </a>
                     <a href="/blog/">Blog</a>
-                    <a
-                        href="/ui/specs/"
-                        aria-current={current === "specs" ? "page" : undefined}
+                    <details
+                        className="kz-nav-group"
+                        // Closes when focus leaves it, so it does not stay open
+                        // over the page after a click elsewhere.
+                        onBlur={(event) => {
+                            if (!event.currentTarget.contains(event.relatedTarget)) {
+                                event.currentTarget.open = false;
+                            }
+                        }}
                     >
-                        Specs
-                    </a>
-                    <a href="/api/schema/rapidoc/">API</a>
+                        <summary data-current={current === "specs" || undefined}>
+                            Developers
+                            <ChevronDown size={14} aria-hidden="true" />
+                        </summary>
+                        <div className="kz-nav-menu">
+                            <a
+                                href="/ui/specs/"
+                                aria-current={current === "specs" ? "page" : undefined}
+                            >
+                                Specs
+                            </a>
+                            <a href="/api/schema/rapidoc/">API</a>
+                            <a
+                                href="https://github.com/shamash92/KuraZetu.git"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Contribute
+                            </a>
+                        </div>
+                    </details>
                 </nav>
                 <div className="kz-nav-actions">
                     {isAuthenticated ? (
@@ -326,13 +344,14 @@ export function LandingNav({current}: {current?: "specs"} = {}) {
                 {open && (
                     <nav className="kz-mobile-nav" aria-label="Mobile navigation">
                         <a href="/ui/game/">pinVerify254</a>
+                        <a href="https://kurazetu.readthedocs.io/">Docs</a>
+                        <a href="/blog/">Blog</a>
+                        <span className="kz-mobile-nav-label">Developers</span>
+                        <a href="/ui/specs/">Specs</a>
+                        <a href="/api/schema/rapidoc/">API</a>
                         <a href="https://github.com/shamash92/KuraZetu.git">
                             Contribute
                         </a>
-                        <a href="https://kurazetu.readthedocs.io/">Docs</a>
-                        <a href="/blog/">Blog</a>
-                        <a href="/ui/specs/">Specs</a>
-                        <a href="/api/schema/rapidoc/">API</a>
                         {isAuthenticated ? (
                             <a href="/accounts/logout/">Log out</a>
                         ) : (

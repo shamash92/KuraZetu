@@ -16,6 +16,14 @@ test("the blog is linked from desktop and mobile navigation", async () => {
         ),
     ).toHaveAttribute("href", "/blog/");
 
+    // What a developer needs sits together under one entry.
+    const developers = screen.getByText("Developers").closest("details")!;
+    expect(
+        within(developers)
+            .getAllByRole("link", {hidden: true})
+            .map((link) => link.textContent),
+    ).toEqual(["Specs", "API", "Contribute"]);
+
     await user.click(screen.getByRole("button", {name: "Open navigation"}));
 
     expect(
