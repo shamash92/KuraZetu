@@ -96,3 +96,9 @@ export function pollingCenterResultsUrl(
         pollingCenterCode,
     )}/${path}/`;
 }
+
+export const SPECS_LIBRARY_URL = "/api/specs/";
+
+export function specificationPageUrl(slug: string): string {
+    return `/api/specs/${encodeURIComponent(slug)}/`;
+}
