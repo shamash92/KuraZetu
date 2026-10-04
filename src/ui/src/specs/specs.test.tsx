@@ -14,6 +14,7 @@ const PUBLIC = {
     summary: "Placeholder summary.",
     access: "full",
     archived: false,
+    published_at: "2026-10-03T12:00:00Z",
 };
 const LOCKED = {
     slug: "kz-901",
@@ -21,6 +22,7 @@ const LOCKED = {
     summary: "Safe summary.",
     access: "locked",
     archived: false,
+    published_at: null,
 };
 
 const BODY = "Synthetic body.";
@@ -58,7 +60,6 @@ test("a visitor browses the library and reads a public specification", async () 
         "/api/specs/kz-900/": {
             ...PUBLIC,
             body: BODY,
-            published_at: "2026-10-03T12:00:00Z",
             superseded_by: LOCKED,
         },
     });
@@ -69,11 +70,11 @@ test("a visitor browses the library and reads a public specification", async () 
     expect(within(locked).getByText(/^Restricted\./)).toBeInTheDocument();
 
     await user.click(
-        screen.getByRole("link", {name: "Synthetic public specification"}),
+        screen.getByRole("link", {name: /Synthetic public specification/}),
     );
 
     expect(await screen.findByText("Synthetic body.")).toBeInTheDocument();
-    expect(screen.getByText("Published 3 October 2026")).toBeInTheDocument();
+    expect(screen.getByText("3 Oct 2026")).toBeInTheDocument();
     expect(screen.getByRole("link", {name: "Safe title"})).toHaveAttribute(
         "href",
         "/ui/specs/kz-901/",
@@ -88,11 +89,12 @@ test("a restricted page shows only its safe listing and a missing one says so", 
         await screen.findByRole("heading", {level: 1, name: "Safe title"}),
     ).toBeInTheDocument();
     expect(screen.getByText(/^Restricted\./)).toBeInTheDocument();
-    expect(screen.queryByRole("button")).toBeNull();
+    // The notice offers nothing to do.
+    expect(within(screen.getByRole("main")).queryByRole("button")).toBeNull();
     locked.unmount();
 
     renderSpecs("/ui/specs/kz-999/");
     expect(
-        await screen.findByRole("heading", {name: "Specification not found"}),
+        await screen.findByRole("heading", {name: "This page doesn’t exist."}),
     ).toBeInTheDocument();
 });

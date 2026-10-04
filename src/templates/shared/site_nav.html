@@ -15,6 +15,7 @@
         <a href="https://github.com/shamash92/KuraZetu.git" target="_blank" rel="noopener noreferrer">Contribute</a>
         <a href="#">About</a>
         <a href="{% url 'blog:list' %}"{% if current_nav == "blog" %} class="is-current" aria-current="page"{% endif %}>Blog</a>
+        <a href="/ui/specs/">Specs</a>
         <a href="{% url 'swagger' %}"{% if current_nav == "api" %} class="is-current" aria-current="page"{% endif %}>API</a>
       </nav>
       <div class="site-nav__auth">

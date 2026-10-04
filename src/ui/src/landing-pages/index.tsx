@@ -261,7 +261,7 @@ function AtlasBackground() {
     );
 }
 
-export function LandingNav() {
+export function LandingNav({current}: {current?: "specs"} = {}) {
     const [open, setOpen] = useState(false);
     const isAuthenticated = useAuth();
 
@@ -290,6 +290,12 @@ export function LandingNav() {
                         Docs
                     </a>
                     <a href="/blog/">Blog</a>
+                    <a
+                        href="/ui/specs/"
+                        aria-current={current === "specs" ? "page" : undefined}
+                    >
+                        Specs
+                    </a>
                     <a href="/api/schema/rapidoc/">API</a>
                 </nav>
                 <div className="kz-nav-actions">
@@ -325,6 +331,7 @@ export function LandingNav() {
                         </a>
                         <a href="https://kurazetu.readthedocs.io/">Docs</a>
                         <a href="/blog/">Blog</a>
+                        <a href="/ui/specs/">Specs</a>
                         <a href="/api/schema/rapidoc/">API</a>
                         {isAuthenticated ? (
                             <a href="/accounts/logout/">Log out</a>

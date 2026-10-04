@@ -12,7 +12,7 @@ import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
 import GameLandingPage from "../game";
-import {AuthorLibrary} from "../specs/AuthorLibrary";
+import {NewSpecification} from "../specs/NewSpecification";
 import {Editor} from "../specs/Editor";
 import {Library} from "../specs/Library";
 import {SpecificationPage} from "../specs/SpecificationPage";
@@ -86,7 +86,7 @@ function RoutesApp() {
             <Route path="/ui/game/" element={<GameLandingPage />} />
             <Route path="/ui/password-reset/" element={<PasswordReset />} />
             <Route path="/ui/specs/" element={<Library />} />
-            <Route path="/ui/specs/author/" element={<AuthorLibrary />} />
+            <Route path="/ui/specs/author/" element={<NewSpecification />} />
             <Route path="/ui/specs/author/:slug/" element={<Editor />} />
             <Route path="/ui/specs/:slug/" element={<SpecificationPage />} />
 
