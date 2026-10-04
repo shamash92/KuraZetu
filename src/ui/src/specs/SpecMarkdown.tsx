@@ -1,4 +1,5 @@
-import type {ComponentProps} from "react";
+import {isValidElement} from "react";
+import type {ComponentProps, ReactNode} from "react";
 import ReactMarkdown from "react-markdown";
 import type {ExtraProps} from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -26,6 +27,41 @@ function SpecLink({href, children}: ComponentProps<"a">) {
             {children}
         </a>
     );
+}
+
+/** The anchor of a section, made from its heading. */
+export function headingId(heading: string): string {
+    return heading
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+}
+
+/** The second-level headings of a document, in order, for its contents list. */
+export function headingsOf(source: string): Array<string> {
+    const headings: Array<string> = [];
+    let isInFence = false;
+
+    for (const line of source.split("\n")) {
+        if (/^\s*(```|~~~)/.test(line)) isInFence = !isInFence;
+        const heading = isInFence ? null : /^##\s+(.+?)\s*#*$/.exec(line);
+        if (heading) headings.push(heading[1].replace(/[*_`]/g, ""));
+    }
+
+    return headings;
+}
+
+function textOf(node: ReactNode): string {
+    if (typeof node === "string" || typeof node === "number") return String(node);
+    if (Array.isArray(node)) return node.map(textOf).join("");
+    if (isValidElement<{children?: ReactNode}>(node)) {
+        return textOf(node.props.children);
+    }
+    return "";
+}
+
+function Section({children}: ComponentProps<"h2">) {
+    return <h2 id={headingId(textOf(children))}>{children}</h2>;
 }
 
 /** The source of a fenced `mermaid` block, or null for any other block. */
@@ -68,7 +104,7 @@ export function SpecMarkdown({
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 disallowedElements={["img"]}
-                components={{a: SpecLink, pre: Block}}
+                components={{a: SpecLink, h2: Section, pre: Block}}
             >
                 {source}
             </ReactMarkdown>

@@ -1,4 +1,4 @@
-import {act, render, screen, within} from "@testing-library/react";
+import {act, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {
@@ -8,8 +8,10 @@ import {
     createMemoryRouter,
 } from "react-router-dom";
 
-import {AuthorLibrary} from "./AuthorLibrary";
+import {NewSpecification} from "./NewSpecification";
 import {Editor} from "./Editor";
+
+jest.mock("../App", () => ({useAuth: () => true}));
 
 type Call = {method: string; url: string; body: Record<string, unknown>};
 
@@ -73,6 +75,7 @@ function fakeAuthorApi(initial: Array<Record<string, any>> = []) {
                     : spec.readers.filter((number: string) => number !== body.phone_number);
         } else if (method === "PATCH") {
             Object.assign(spec, body, {has_unpublished_changes: true});
+            spec.title = spec.title.trim();
         }
         return {...spec, revisions: [...spec.revisions]};
     }
@@ -115,7 +118,7 @@ function renderAuthoring(path: string) {
                 path: "*",
                 element: (
                     <Routes>
-                        <Route path="/ui/specs/author/" element={<AuthorLibrary />} />
+                        <Route path="/ui/specs/author/" element={<NewSpecification />} />
                         <Route path="/ui/specs/author/:slug/" element={<Editor />} />
                     </Routes>
                 ),
@@ -149,12 +152,18 @@ test("an author creates a specification, drafts it with a live preview and publi
 
     await user.click(source);
     await user.paste("## Pasted heading\n\nPasted paragraph.");
+    // The server trims the title; that must not leave the draft looking
+    // unsaved once it is saved.
+    await user.type(screen.getByLabelText("Title"), " ");
+    // The corner button swaps the Markdown for its preview and back.
+    await user.click(screen.getByRole("button", {name: "Preview"}));
     const preview = screen.getByRole("region", {name: "Preview"});
     expect(within(preview).getByText(/Pasted heading/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", {name: "Edit"}));
     expect(screen.getByRole("status")).toHaveTextContent("Unsaved changes");
     // Neither a link nor the Back button leaves an unsaved draft behind.
     for (const leave of [
-        () => user.click(screen.getByRole("link", {name: "All specifications"})),
+        () => user.click(screen.getByRole("link", {name: "Write"})),
         () => act(() => router.navigate(-1)),
     ]) {
         await leave();
@@ -208,10 +217,9 @@ test("widening access shows what becomes visible and waits for confirmation", as
     ]);
     const user = userEvent.setup();
     renderAuthoring("/ui/specs/author/kz-900/");
-    const policy = await screen.findByLabelText("Change policy to");
+    const policy = await screen.findByLabelText("Access");
 
     await user.selectOptions(policy, "RESTRICTED_LISTED");
-    await user.click(screen.getByRole("button", {name: "Change access"}));
     let confirmation = screen.getByRole("group", {name: "Confirm wider access"});
     expect(within(confirmation).getByText("Safe title")).toBeInTheDocument();
     expect(within(confirmation).getByText("Safe summary.")).toBeInTheDocument();
@@ -219,7 +227,6 @@ test("widening access shows what becomes visible and waits for confirmation", as
     expect(api.calls).toEqual([]);
 
     await user.selectOptions(policy, "PUBLIC");
-    await user.click(screen.getByRole("button", {name: "Change access"}));
     confirmation = screen.getByRole("group", {name: "Confirm wider access"});
     expect(
         await within(confirmation).findByText("Published body."),
@@ -227,14 +234,11 @@ test("widening access shows what becomes visible and waits for confirmation", as
     await user.click(
         within(confirmation).getByRole("button", {name: "Confirm: Public"}),
     );
-    expect(await screen.findByText("Public", {selector: "strong"})).toBeInTheDocument();
+    await waitFor(() => expect(policy).toHaveValue("PUBLIC"));
 
     // Narrowing needs no confirmation.
     await user.selectOptions(policy, "RESTRICTED_CONCEALED");
-    await user.click(screen.getByRole("button", {name: "Change access"}));
-    expect(
-        await screen.findByText("Restricted, concealed", {selector: "strong"}),
-    ).toBeInTheDocument();
+    await waitFor(() => expect(policy).toHaveValue("RESTRICTED_CONCEALED"));
 
     expect(api.calls.map((call) => call.body)).toEqual([
         {access_policy: "PUBLIC", confirm_widening: true},
@@ -255,8 +259,7 @@ test("access cannot be widened to public until the revision is on screen", async
     const user = userEvent.setup();
     renderAuthoring("/ui/specs/author/kz-900/");
 
-    await user.selectOptions(await screen.findByLabelText("Change policy to"), "PUBLIC");
-    await user.click(screen.getByRole("button", {name: "Change access"}));
+    await user.selectOptions(await screen.findByLabelText("Access"), "PUBLIC");
 
     const confirmation = screen.getByRole("group", {name: "Confirm wider access"});
     expect(await within(confirmation).findByRole("alert")).toHaveTextContent(
@@ -288,8 +291,9 @@ test("an author adds and removes readers and sees why a change was refused", asy
     );
     expect(await screen.findByText("No readers.")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("checkbox", {name: /^Archived/}));
-    expect(await screen.findByRole("checkbox", {name: /^Archived/})).toBeChecked();
+    const status = screen.getByLabelText("Status");
+    await user.selectOptions(status, "archived");
+    await waitFor(() => expect(status).toHaveValue("archived"));
 });
 
 test("the author routes look missing to anyone else", async () => {
@@ -303,6 +307,6 @@ test("the author routes look missing to anyone else", async () => {
 
     renderAuthoring("/ui/specs/author/kz-900/");
     expect(
-        await screen.findByRole("heading", {name: "Page not found"}),
+        await screen.findByRole("heading", {name: "This page doesn’t exist."}),
     ).toBeInTheDocument();
 });

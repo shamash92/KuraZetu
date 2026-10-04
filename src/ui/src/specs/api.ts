@@ -8,11 +8,12 @@ export type LibraryEntry = {
     summary: string;
     access: "full" | "locked";
     archived: boolean;
+    /** Null for a locked entry: the date is part of what it conceals. */
+    published_at: string | null;
 };
 
 export type SpecificationPage = LibraryEntry & {
     body?: string;
-    published_at?: string;
     superseded_by?: LibraryEntry | null;
 };
 

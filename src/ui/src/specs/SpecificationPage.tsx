@@ -1,14 +1,20 @@
 import {useQuery} from "@tanstack/react-query";
+import {Lock} from "lucide-react";
 import {Link, useParams} from "react-router-dom";
 
 import {specKeys} from "../api/queryKeys";
 import {querySettings} from "../api/querySettings";
 
 import {getSpecificationPage} from "./api";
-import {SpecMarkdown} from "./SpecMarkdown";
-import {RESTRICTED_NOTICE, SpecsShell} from "./SpecsShell";
-
-const PUBLISHED_DATE = new Intl.DateTimeFormat("en-KE", {dateStyle: "long"});
+import {SpecMarkdown, headingId, headingsOf} from "./SpecMarkdown";
+import {
+    NotFound,
+    RESTRICTED_NOTICE,
+    SpecsShell,
+    Status,
+    formatDate,
+    indexOf,
+} from "./SpecsShell";
 
 export function SpecificationPage() {
     const {slug = ""} = useParams();
@@ -18,49 +24,102 @@ export function SpecificationPage() {
         ...querySettings.specs,
     });
     const spec = page.data;
+    const isLocked = spec?.access === "locked";
+    const successor = spec?.superseded_by;
+    const contents = spec?.body ? headingsOf(spec.body) : [];
+    // A short document reads straight through; a long one gets a way around.
+    const hasContents = contents.length >= 4;
 
     return (
-        <SpecsShell>
+        <SpecsShell editSlug={spec?.slug}>
             {page.isPending && <p className="status">Loading specification…</p>}
-            {page.isError && (
-                <>
-                    <h1>Specification not found</h1>
-                    <p className="lede">
-                        There is no specification at this address.{" "}
-                        <Link to="/ui/specs/">See all specifications</Link>.
-                    </p>
-                </>
-            )}
+            {page.isError && <NotFound />}
             {spec && (
-                <article>
-                    <h1>{spec.title}</h1>
-                    {spec.summary && <p className="lede">{spec.summary}</p>}
-                    {spec.published_at && (
-                        <p className="meta">
-                            Published{" "}
-                            {PUBLISHED_DATE.format(new Date(spec.published_at))}
+                <>
+                    {successor && (
+                        <p className="banner" role="note">
+                            <Status archived={spec.archived} superseded />
+                            <span>
+                                Replaced by{" "}
+                                <Link to={`/ui/specs/${successor.slug}/`}>
+                                    {successor.title}
+                                </Link>
+                                . New work should follow the replacement.
+                            </span>
                         </p>
                     )}
-                    {spec.archived && (
-                        <p className="notice">
-                            Archived. This specification is no longer maintained.
+                    {spec.archived && !successor && (
+                        <p className="banner" role="note">
+                            <Status archived />
+                            <span>Kept for reference. No longer maintained.</span>
                         </p>
                     )}
-                    {spec.superseded_by && (
-                        <p className="notice">
-                            Superseded by{" "}
-                            <Link to={`/ui/specs/${spec.superseded_by.slug}/`}>
-                                {spec.superseded_by.title}
-                            </Link>
-                            .
-                        </p>
-                    )}
-                    {spec.access === "locked" ? (
-                        <p className="notice">{RESTRICTED_NOTICE}</p>
+
+                    <header className="mast">
+                        <h1>{spec.title}</h1>
+                        {spec.summary && <p className="lede">{spec.summary}</p>}
+                        <dl className="facts">
+                            <div>
+                                <dt>Index</dt>
+                                <dd>{indexOf(spec.slug)}</dd>
+                            </div>
+                            {spec.published_at && (
+                                <div>
+                                    <dt>Published</dt>
+                                    <dd>{formatDate(spec.published_at)}</dd>
+                                </div>
+                            )}
+                            {(spec.archived || successor) && (
+                                <div>
+                                    <dt>Status</dt>
+                                    <dd>
+                                        <Status
+                                            archived={spec.archived}
+                                            superseded={Boolean(successor)}
+                                        />
+                                    </dd>
+                                </div>
+                            )}
+                            {isLocked && (
+                                <div>
+                                    <dt>Access</dt>
+                                    <dd>
+                                        <Lock size={14} aria-hidden="true" />
+                                        Restricted
+                                    </dd>
+                                </div>
+                            )}
+                        </dl>
+                    </header>
+
+                    {isLocked ? (
+                        <section className="lockpanel" aria-label="Access required">
+                            <Lock size={40} strokeWidth={1.4} aria-hidden="true" />
+                            <h2>This specification is restricted.</h2>
+                            <p>{RESTRICTED_NOTICE}</p>
+                        </section>
                     ) : (
-                        <SpecMarkdown source={spec.body ?? ""} />
+                        <div className={hasContents ? "reader has-toc" : "reader"}>
+                            <article className="doc-body">
+                                <SpecMarkdown source={spec.body ?? ""} />
+                            </article>
+                            {hasContents && (
+                                <nav className="toc" aria-label="Contents">
+                                    <p className="t">Contents</p>
+                                    <ol>
+                                        {contents.map((heading) => (
+                                            <li key={heading}>
+                                                <a href={`#${headingId(heading)}`}>
+                                                    {heading}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                </nav>
+                            )}
+                        </div>
                     )}
-                </article>
+                </>
             )}
         </SpecsShell>
     );

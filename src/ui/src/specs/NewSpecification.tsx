@@ -1,13 +1,13 @@
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useState} from "react";
-import {Link, useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 
 import {specKeys} from "../api/queryKeys";
 import {querySettings} from "../api/querySettings";
 
 import {createSpecification, getAuthorLibrary} from "./authorApi";
 import type {AccessPolicy, AuthorEntry} from "./authorApi";
-import {SpecsShell} from "./SpecsShell";
+import {NotFound, SpecsShell} from "./SpecsShell";
 
 export const POLICY_NAMES: Record<AccessPolicy, string> = {
     PUBLIC: "Public",
@@ -22,10 +22,11 @@ export function publicationStatus(spec: AuthorEntry): string {
         : "Published";
 }
 
-export function AuthorLibrary() {
+export function NewSpecification() {
     const navigate = useNavigate();
     const [title, setTitle] = useState("");
 
+    // Read only to learn whether this account may write at all.
     const library = useQuery({
         queryKey: specKeys.authorLibrary(),
         queryFn: ({signal}) => getAuthorLibrary(signal),
@@ -40,61 +41,63 @@ export function AuthorLibrary() {
     if (library.isError) {
         return (
             <SpecsShell>
-                <h1>Page not found</h1>
-                <p className="lede">
-                    <Link to="/ui/specs/">See all specifications</Link>.
-                </p>
+                <NotFound />
             </SpecsShell>
         );
     }
 
+    // Nothing is offered until the account is known to be an author.
+    if (library.isPending) return <SpecsShell>{null}</SpecsShell>;
+
     return (
         <SpecsShell>
-            <h1>Write specifications</h1>
-            {library.isPending && <p className="status">Loading…</p>}
-
-            <ul className="entries">
-                {library.data?.map((spec) => (
-                    <li key={spec.slug}>
-                        <h2>
-                            <Link to={`/ui/specs/author/${spec.slug}/`}>
-                                {spec.title}
-                            </Link>
-                        </h2>
-                        <p className="meta">
-                            {spec.slug} · {POLICY_NAMES[spec.access_policy]} ·{" "}
-                            {publicationStatus(spec)}
-                            {spec.archived && " · Archived"}
-                        </p>
-                    </li>
-                ))}
-            </ul>
-
+            {/* A blank sheet from the library: the title is written straight
+                onto it. */}
             <form
-                className="panel"
+                className="blank"
                 onSubmit={(event) => {
                     event.preventDefault();
                     create.mutate();
                 }}
             >
-                <h2>New specification</h2>
-                <p>
-                    A new specification is concealed until you change its access
-                    policy. Its address is generated and says nothing about its
-                    title.
-                </p>
+                <div className="sheet-top">
+                    <h1>New specification</h1>
+                    <span>Draft</span>
+                </div>
                 <label htmlFor="new-title">Title</label>
-                <input
+                <textarea
                     id="new-title"
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
+                    rows={2}
+                    autoFocus
                     required
                     maxLength={200}
+                    placeholder="What is it called?"
+                    value={title}
+                    // A title is one line, however it wraps on the sheet.
+                    onChange={(event) =>
+                        setTitle(event.target.value.replace(/\s*\n\s*/g, " "))
+                    }
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            event.preventDefault();
+                            event.currentTarget.form?.requestSubmit();
+                        }
+                    }}
                 />
                 {create.isError && <p role="alert">{create.error.message}</p>}
-                <button type="submit" disabled={create.isPending}>
-                    Create draft
-                </button>
+                <div className="blank-foot">
+                    <p>
+                        Starts concealed. Only authors can see it until you change
+                        its access.
+                    </p>
+                    <button
+                        className="primary"
+                        type="submit"
+                        disabled={create.isPending}
+                    >
+                        Create draft
+                    </button>
+                </div>
             </form>
         </SpecsShell>
     );

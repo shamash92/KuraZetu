@@ -1,7 +1,12 @@
-/* Specification library and reader. Reuses the :root tokens and fonts from
-   landing.css; every selector is scoped under .kz-specs. */
+/* Specification library, reader and editor. Reuses the :root tokens and fonts
+   from landing.css; every selector is scoped under .kz-specs. */
 
 .kz-specs {
+  --display: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mute-2: #9a9da3;
+  --paper-vivid: #e9e8e2;
+  --ink-soft: #1a1a1a;
+
   width: 100%;
   min-height: 100vh;
   color: var(--ink);
@@ -16,48 +21,44 @@
   box-sizing: border-box;
 }
 
-.kz-specs .bar {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--rule-08);
-  font-size: 14px;
-  font-weight: 600;
-}
-.kz-specs .bar a {
-  color: var(--ink);
-  text-decoration: none;
-}
-.kz-specs .bar a:hover {
-  text-decoration: underline;
-}
-.kz-specs .bar .brand {
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  font-size: 18px;
-}
-
 .kz-specs main {
   width: 100%;
-  max-width: 72ch;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 48px 24px 96px;
+  padding: 0 32px 120px;
+}
+.kz-specs main.wide {
+  max-width: 1240px;
 }
 
 .kz-specs h1 {
-  margin: 0 0 12px;
-  font-size: clamp(30px, 5vw, 44px);
+  margin: 14px 0 0;
+  font-family: var(--display);
+  font-size: clamp(34px, 4.4vw, 56px);
   font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.kz-specs .eyebrow {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
 }
 
 .kz-specs .lede {
-  margin: 0 0 24px;
+  max-width: 640px;
+  margin: 20px 0 0;
   font-size: 17.5px;
-  color: var(--mute-deep);
+  line-height: 1.6;
+  color: var(--mute);
+  text-wrap: pretty;
 }
 
 .kz-specs .meta {
@@ -65,11 +66,12 @@
   font-family: var(--mono);
   font-size: 12px;
   letter-spacing: 0.04em;
-  color: var(--copper-deep);
+  color: var(--mute);
 }
 
 .kz-specs .status {
-  color: var(--mute-deep);
+  margin: 32px 0;
+  color: var(--mute);
 }
 
 .kz-specs .notice {
@@ -82,51 +84,417 @@
 }
 
 .kz-specs a {
-  color: var(--periwinkle-deep);
+  color: var(--ink);
   text-underline-offset: 3px;
+}
+.kz-specs ::selection {
+  color: var(--lime-ink);
+  background: var(--lime);
 }
 .kz-specs a:focus-visible,
 .kz-specs button:focus-visible,
 .kz-specs input:focus-visible,
 .kz-specs select:focus-visible,
 .kz-specs textarea:focus-visible {
-  outline: 2px solid var(--periwinkle-deep);
-  outline-offset: 2px;
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.kz-specs .crumbs {
+  display: flex;
+  padding: 28px 0 0;
+}
+.kz-specs .crumbs:empty {
+  display: none;
+}
+.kz-specs .author-links {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-left: auto;
+}
+.kz-specs .author-links .kz-button {
+  min-height: 0;
+  padding: 9px 14px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.kz-specs .author-links .kz-button-ink,
+.kz-specs .author-links .kz-button-ink:hover {
+  color: var(--paper);
+}
+
+.kz-specs .st,
+.kz-specs .acc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.kz-specs .st .glyph {
+  width: 10px;
+  height: 10px;
+  border: 1.3px solid currentColor;
+  border-radius: 50%;
+}
+.kz-specs .st[data-status="archived"] .glyph {
+  border-radius: 2px;
+}
+
+.kz-specs .empty {
+  max-width: 560px;
+  padding: 72px 0;
+}
+.kz-specs .empty h1 {
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.kz-specs .empty p:not(.eyebrow) {
+  margin: 12px 0 24px;
+  color: var(--mute);
+}
+.kz-specs .empty .kz-button {
+  text-decoration: none;
 }
 
 /* ── Library ───────────────────────────────────────────────────────── */
-.kz-specs .entries {
-  margin: 32px 0 0;
+.kz-specs .lib-title {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.kz-specs .lib-title h1 {
+  margin: 0;
+}
+.kz-specs .lib-head {
+  padding: 56px 0 32px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--rule-08);
+}
+.kz-specs .lib-head h1 {
+  font-size: clamp(40px, 5.4vw, 72px);
+}
+
+.kz-specs .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 48px 32px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
-.kz-specs .entries li {
-  padding: 20px 0;
-  border-top: 1px solid var(--rule-16);
-}
-.kz-specs .entries h2 {
-  margin: 0 0 4px;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-.kz-specs .entries h2 a {
+.kz-specs .doc {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   color: var(--ink);
   text-decoration: none;
 }
-.kz-specs .entries h2 a:hover {
-  text-decoration: underline;
+.kz-specs .sheet {
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 17 / 22;
+  padding: 18px 18px 16px;
+  overflow: hidden;
+  border: 1px solid var(--rule-16);
+  border-radius: 3px;
+  background: var(--card);
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease;
 }
-.kz-specs .entries p {
+.kz-specs .doc:hover .sheet {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+}
+.kz-specs .sheet-top {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule-08);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-specs .sheet h2 {
+  display: -webkit-box;
+  margin: 16px 0 0;
+  overflow: hidden;
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+.kz-specs .sheet p {
+  display: -webkit-box;
+  margin: 10px 0 0;
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--mute);
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+.kz-specs .sheet-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.kz-specs .sheet-foot .d {
+  color: var(--mute);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.kz-specs .sheet--locked {
+  background: var(--paper-vivid);
+}
+.kz-specs .sheet--locked .lockmark {
+  flex: 0 0 auto;
+  margin: auto 0 0;
+}
+.kz-specs .sheet--locked h2 {
+  margin-top: 12px;
+}
+.kz-specs .doc-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--mute);
+}
+.kz-specs .doc-meta .st {
+  color: var(--ink);
+}
+.kz-specs .doc-meta .req {
+  color: var(--ink-soft);
+}
+.kz-specs .never {
+  max-width: 720px;
+  margin: 80px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-08);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--mute);
+}
+
+/* ── Reader ────────────────────────────────────────────────────────── */
+.kz-specs .banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  margin: 16px 0 0;
+  padding: 14px 18px;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.kz-specs .banner .st {
+  font-weight: 700;
+}
+
+/* The masthead: one ink rule, the title at the left margin, and the facts
+   about the document on a single line beneath it. */
+.kz-specs .mast {
+  margin-top: 20px;
+  padding-top: 28px;
+  border-top: 4px solid var(--ink);
+}
+.kz-specs .mast h1 {
+  max-width: 22ch;
   margin: 0;
-  color: var(--mute-deep);
+}
+.kz-specs .mast .lede {
+  max-width: 62ch;
+  margin-top: 14px;
+}
+.kz-specs .facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 36px;
+  margin: 28px 0 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule-16);
+  border-bottom: 1px solid var(--rule-08);
+}
+.kz-specs .facts div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.kz-specs .facts dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-specs .facts dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.kz-specs .facts dd svg {
+  flex: 0 0 auto;
+}
+
+.kz-specs .reader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  padding-top: 28px;
+}
+.kz-specs .reader.has-toc {
+  grid-template-columns: minmax(0, 70ch) minmax(180px, 1fr);
+}
+.kz-specs .doc-body {
+  max-width: 70ch;
+}
+.kz-specs .toc {
+  position: sticky;
+  top: 104px;
+  align-self: start;
+  max-width: 240px;
+  padding-left: 18px;
+  border-left: 1px solid var(--rule-16);
+}
+.kz-specs .toc .t {
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-specs .toc ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: section;
+}
+.kz-specs .toc a {
+  display: block;
+  padding: 6px 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--mute);
+  text-decoration: none;
+}
+.kz-specs .toc a:hover {
+  color: var(--ink);
+}
+.kz-specs .toc a::before,
+.kz-specs .reader.has-toc .prose h2::before {
+  counter-increment: section;
+  content: counter(section, decimal-leading-zero);
+  margin-right: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--mute);
+}
+.kz-specs .reader.has-toc .prose {
+  counter-reset: section;
+}
+.kz-specs .reader.has-toc .prose h2::before {
+  vertical-align: 0.25em;
+}
+
+.kz-specs .lockpanel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 40px;
+  padding: 56px 40px;
+  border: 1px solid var(--rule-16);
+  border-radius: 4px;
+  background: var(--paper-vivid);
+}
+.kz-specs .lockpanel h2 {
+  margin: 8px 0 0;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.kz-specs .lockpanel p {
+  max-width: 52ch;
+  margin: 0;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .kz-specs main {
+    padding: 0 20px 120px;
+  }
+  .kz-specs .reader,
+  .kz-specs .reader.has-toc {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .kz-specs .toc {
+    position: static;
+    order: -1;
+  }
+  .kz-specs .grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 36px 20px;
+  }
+  .kz-specs .sheet {
+    padding: 14px;
+  }
+  .kz-specs .sheet h2 {
+    font-size: 16px;
+  }
+  .kz-specs .sheet p {
+    display: none;
+  }
+  .kz-specs .lockpanel {
+    padding: 36px 24px;
+  }
+  .kz-specs .toc {
+    max-width: none;
+  }
 }
 
 /* ── Rendered Markdown ─────────────────────────────────────────────── */
 .kz-specs .prose {
-  margin-top: 32px;
+  padding-top: 8px;
+  font-size: 17px;
+  line-height: 1.7;
   overflow-wrap: break-word;
+}
+.kz-specs .prose h2 {
+  scroll-margin-top: 96px;
 }
 .kz-specs .prose h1,
 .kz-specs .prose h2,
@@ -141,7 +509,7 @@
   font-size: 28px;
 }
 .kz-specs .prose h2 {
-  font-size: 23px;
+  font-size: 24px;
 }
 .kz-specs .prose h3 {
   font-size: 19px;
@@ -239,8 +607,122 @@
 }
 
 /* ── Author workspace and editor ───────────────────────────────────── */
-.kz-specs main.wide {
-  max-width: 1280px;
+.kz-specs .drafts {
+  max-width: 720px;
+  margin-top: 72px;
+}
+.kz-specs .drafts h2 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-specs .rows {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.kz-specs .rows li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule-16);
+}
+.kz-specs .rows a {
+  font-weight: 700;
+  text-decoration: none;
+}
+.kz-specs .rows a:hover {
+  text-decoration: underline;
+}
+.kz-specs .rows .meta {
+  margin: 0;
+}
+
+/* A new specification starts as a blank sheet from the library. The title is
+   written straight onto the paper; the sheet's edge shows where focus is. */
+.kz-specs .blank {
+  display: flex;
+  flex-direction: column;
+  max-width: 680px;
+  min-height: 420px;
+  margin-top: 48px;
+  padding: 22px 28px 24px;
+  border: 1px solid var(--rule-16);
+  border-radius: 3px;
+  background: var(--card);
+  transition: border-color 140ms ease;
+}
+.kz-specs .blank:focus-within {
+  border-color: var(--ink);
+}
+.kz-specs .blank .sheet-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.kz-specs .blank h1 {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--ink);
+}
+.kz-specs .blank label {
+  margin: 40px 0 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-specs .blank textarea {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--display);
+  font-size: clamp(30px, 4.2vw, 44px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  caret-color: var(--ink);
+  resize: none;
+  field-sizing: content;
+}
+.kz-specs .blank textarea::placeholder {
+  color: var(--mute-2);
+  opacity: 0.55;
+}
+/* The sheet's own edge is the focus indicator for the field it holds. */
+.kz-specs .blank textarea:focus-visible {
+  outline: none;
+}
+.kz-specs .blank-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule-08);
+}
+.kz-specs .blank-foot p {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.kz-specs .blank-foot button {
+  margin: 0;
 }
 
 .kz-specs label {
@@ -248,13 +730,6 @@
   margin: 16px 0 6px;
   font-size: 13px;
   font-weight: 700;
-}
-.kz-specs label.check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 500;
-  font-size: 15px;
 }
 
 .kz-specs input:not([type="checkbox"]),
@@ -305,6 +780,58 @@
   color: var(--paper);
 }
 
+/* Properties: one row of small menus above the draft. Each is a pill holding
+   its name and its current value; the pill's edge shows focus. */
+.kz-specs .props {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+.kz-specs .props .meta {
+  margin: 0 8px 0 0;
+}
+.kz-specs .prop {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding-left: 12px;
+  border: 1px solid var(--rule-16);
+  border-radius: 999px;
+  background: var(--card);
+}
+.kz-specs .prop:focus-within {
+  border-color: var(--ink);
+}
+.kz-specs .prop span {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+  white-space: nowrap;
+}
+.kz-specs .prop select {
+  width: auto;
+  max-width: 220px;
+  padding: 6px 28px 6px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' fill='none' stroke='%230d0d0d' stroke-width='1.4'/></svg>")
+    no-repeat right 10px center / 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  appearance: none;
+  cursor: pointer;
+}
+.kz-specs .prop select:focus-visible {
+  outline: none;
+}
+
 .kz-specs .hint {
   margin: 6px 0 0;
   font-size: 13.5px;
@@ -331,9 +858,6 @@
 .kz-specs .panel p {
   margin: 0 0 8px;
 }
-.kz-specs .panel form + form {
-  margin-top: 24px;
-}
 
 .kz-specs .readers {
   margin: 12px 0;
@@ -352,24 +876,135 @@
   margin: 0;
 }
 
-.kz-specs .panes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-top: 8px;
+/* The field styles set `display`, which would otherwise undo `hidden`. */
+.kz-specs [hidden] {
+  display: none;
 }
-.kz-specs .panes .source textarea {
-  min-height: 60vh;
+
+/* The draft on the left, its settings in a narrow column on the right. */
+.kz-specs .workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 40px;
+  align-items: start;
+}
+
+/* One frame holds the Markdown or its preview; the button in its corner
+   swaps them. */
+.kz-specs .md {
+  position: relative;
+}
+.kz-specs .md textarea,
+.kz-specs .md .preview {
+  height: 70vh;
+}
+.kz-specs .md textarea {
+  padding-right: 56px;
   font-family: var(--mono);
   font-size: 14px;
   line-height: 1.6;
+  resize: none;
 }
-.kz-specs .panes .preview {
-  min-width: 0;
-  padding: 0 4px;
+.kz-specs .md .preview {
+  padding: 16px 56px 16px 18px;
+  overflow-y: auto;
+  border: 1px solid var(--rule-16);
+  border-radius: 14px;
+  background: var(--card);
 }
-.kz-specs .panes-switch {
-  display: none;
+.kz-specs .md .preview .prose {
+  max-width: 70ch;
+  padding-top: 0;
+}
+.kz-specs .md-toggle {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 1;
+}
+
+.kz-specs button.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+/* Settings column: small type, small controls, hairlines between groups. */
+.kz-specs .side {
+  position: sticky;
+  top: 96px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.kz-specs .side .panel {
+  max-width: none;
+  margin: 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--rule-16);
+}
+.kz-specs .side .panel:first-child {
+  border-top: 0;
+  padding-top: 22px;
+}
+.kz-specs .side .panel h2 {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-specs .side .hint {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+}
+.kz-specs .side label {
+  margin: 10px 0 4px;
+  font-size: 12px;
+}
+.kz-specs .side input:not([type="checkbox"]),
+.kz-specs .side textarea {
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+}
+.kz-specs .side button:not(.icon) {
+  margin-top: 8px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+.kz-specs .side .readers {
+  margin: 4px 0 8px;
+}
+.kz-specs .side .readers li {
+  padding: 4px 0;
+  font-variant-numeric: tabular-nums;
+}
+.kz-specs .side .readers button {
+  margin: 0;
+}
+.kz-specs .side .readers button.icon {
+  width: 26px;
+  height: 26px;
+}
+
+.kz-specs .revision {
+  max-width: 70ch;
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-16);
+}
+.kz-specs .revision h2 {
+  margin: 20px 0 4px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .kz-specs .actions {
@@ -391,18 +1026,13 @@
   color: var(--mute-deep);
 }
 
-/* One pane at a time where two would not fit. */
-@media (max-width: 860px) {
-  .kz-specs .panes-switch {
-    display: block;
-    margin-top: 12px;
+@media (max-width: 1000px) {
+  .kz-specs .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
   }
-  .kz-specs .panes {
-    grid-template-columns: 1fr;
-  }
-  .kz-specs .panes[data-pane="source"] .preview,
-  .kz-specs .panes[data-pane="preview"] .source {
-    display: none;
+  .kz-specs .side {
+    position: static;
   }
 }
 
@@ -414,4 +1044,91 @@
 .kz-specs .prose .diagram svg {
   max-width: 100%;
   height: auto;
+}
+
+/* Phone widths: the display sizes step down so headings stop crowding what
+   sits beside them, and labels that no longer fit give way to their values. */
+@media (max-width: 560px) {
+  .kz-specs h1,
+  .kz-specs .mast h1 {
+    font-size: 30px;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+  .kz-specs .lib-head {
+    padding: 32px 0 24px;
+    margin-bottom: 28px;
+  }
+  .kz-specs .lib-head h1 {
+    font-size: 32px;
+  }
+  .kz-specs .lede {
+    margin-top: 12px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .kz-specs .grid {
+    gap: 28px 16px;
+  }
+  .kz-specs .sheet {
+    padding: 12px;
+  }
+  .kz-specs .sheet-top,
+  .kz-specs .sheet-foot {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .kz-specs .sheet h2 {
+    margin-top: 12px;
+    font-size: 15px;
+  }
+  /* The date says enough on its own at this width. */
+  .kz-specs .sheet-foot span:first-child {
+    display: none;
+  }
+  .kz-specs .doc-meta {
+    font-size: 13px;
+  }
+  .kz-specs .never {
+    margin-top: 56px;
+    font-size: 11.5px;
+  }
+  .kz-specs .mast {
+    padding-top: 20px;
+  }
+  .kz-specs .facts {
+    gap: 6px 20px;
+    margin-top: 20px;
+  }
+  .kz-specs .facts dt {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+  }
+  .kz-specs .facts dd {
+    font-size: 13.5px;
+  }
+  .kz-specs .prose {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .kz-specs .prose h2 {
+    font-size: 21px;
+  }
+  .kz-specs .prose h3 {
+    font-size: 18px;
+  }
+  .kz-specs .lockpanel h2 {
+    font-size: 22px;
+  }
+  .kz-specs .blank {
+    min-height: 320px;
+    margin-top: 24px;
+    padding: 16px 18px 18px;
+  }
+  .kz-specs .blank label {
+    margin-top: 28px;
+  }
+  .kz-specs .blank textarea {
+    font-size: 28px;
+  }
 }
