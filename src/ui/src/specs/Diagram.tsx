@@ -16,8 +16,9 @@ function withoutConfiguration(source: string): string {
  *
  * Mermaid is large, so it is fetched only when a specification has a diagram.
  * The strict security level drops click handlers and links and escapes any
- * markup in labels. When the source cannot be drawn the reader gets it as a
- * code block; `showError` adds the reason for the author.
+ * markup in labels. While it is being drawn a placeholder holds its place.
+ * When the source cannot be drawn the reader gets it as a code block;
+ * `showError` adds the reason for the author.
  */
 export function Diagram({source, showError}: {source: string; showError: boolean}) {
     const id = `diagram-${useId().replace(/[^a-z0-9]/gi, "")}`;
@@ -63,12 +64,22 @@ export function Diagram({source, showError}: {source: string; showError: boolean
         );
     }
 
+    // Until the outcome is known nothing of the source is shown: it would
+    // flash on screen and then be replaced by the picture.
+    if (failure?.source !== source) {
+        return (
+            <p className="diagram diagram--pending" role="status">
+                Drawing diagram…
+            </p>
+        );
+    }
+
     return (
         <>
             <pre>
                 <code>{source}</code>
             </pre>
-            {showError && failure?.source === source && (
+            {showError && (
                 <p role="alert">This diagram cannot be drawn: {failure.reason}</p>
             )}
         </>
