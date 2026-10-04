@@ -80,25 +80,6 @@
   gap: 4px;
 }
 
-.pv-game-pills a {
-  padding: 7px 12px;
-  color: var(--pv-mute);
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.pv-game-pills a:hover,
-.pv-game-pills a.is-active {
-  color: var(--pv-ink);
-  background: var(--pv-surface);
-}
-
-.pv-game-pills a.is-active {
-  font-weight: 750;
-}
-
 .pv-game-nav-right {
   display: flex;
   align-items: center;

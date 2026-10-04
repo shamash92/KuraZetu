@@ -262,7 +262,62 @@ function AtlasBackground() {
     );
 }
 
-export function LandingNav({current}: {current?: "specs"} = {}) {
+type NavSection = "pinverify" | "specs";
+
+/**
+ * The site's links, the same wherever a navigation bar appears. The Django
+ * pages render the same set from `templates/shared/site_nav.html`; a test
+ * keeps the two in step.
+ */
+export function SiteNavLinks({current}: {current?: NavSection}) {
+    return (
+        <>
+            <a
+                href="/ui/game/"
+                aria-current={current === "pinverify" ? "page" : undefined}
+            >
+                pinVerify254
+            </a>
+            <a href="https://kurazetu.readthedocs.io/" target="_blank" rel="noreferrer">
+                Docs
+            </a>
+            <a href="/blog/">Blog</a>
+            <details
+                className="kz-nav-group"
+                // Closes when focus leaves it, so it does not stay open over
+                // the page after a click elsewhere.
+                onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) {
+                        event.currentTarget.open = false;
+                    }
+                }}
+            >
+                <summary data-current={current === "specs" || undefined}>
+                    Developers
+                    <ChevronDown size={14} aria-hidden="true" />
+                </summary>
+                <div className="kz-nav-menu">
+                    <a
+                        href="/ui/specs/"
+                        aria-current={current === "specs" ? "page" : undefined}
+                    >
+                        Specs
+                    </a>
+                    <a href="/api/schema/rapidoc/">API</a>
+                    <a
+                        href="https://github.com/shamash92/KuraZetu.git"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Contribute
+                    </a>
+                </div>
+            </details>
+        </>
+    );
+}
+
+export function LandingNav({current}: {current?: NavSection} = {}) {
     const [open, setOpen] = useState(false);
     const isAuthenticated = useAuth();
 
@@ -275,46 +330,7 @@ export function LandingNav({current}: {current?: "specs"} = {}) {
             <header className="kz-topbar">
                 <Brand />
                 <nav className="kz-nav-links" aria-label="Main navigation">
-                    <a href="/ui/game/">pinVerify254</a>
-                    <a
-                        href="https://kurazetu.readthedocs.io/"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        Docs
-                    </a>
-                    <a href="/blog/">Blog</a>
-                    <details
-                        className="kz-nav-group"
-                        // Closes when focus leaves it, so it does not stay open
-                        // over the page after a click elsewhere.
-                        onBlur={(event) => {
-                            if (!event.currentTarget.contains(event.relatedTarget)) {
-                                event.currentTarget.open = false;
-                            }
-                        }}
-                    >
-                        <summary data-current={current === "specs" || undefined}>
-                            Developers
-                            <ChevronDown size={14} aria-hidden="true" />
-                        </summary>
-                        <div className="kz-nav-menu">
-                            <a
-                                href="/ui/specs/"
-                                aria-current={current === "specs" ? "page" : undefined}
-                            >
-                                Specs
-                            </a>
-                            <a href="/api/schema/rapidoc/">API</a>
-                            <a
-                                href="https://github.com/shamash92/KuraZetu.git"
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Contribute
-                            </a>
-                        </div>
-                    </details>
+                    <SiteNavLinks current={current} />
                 </nav>
                 <div className="kz-nav-actions">
                     {isAuthenticated ? (

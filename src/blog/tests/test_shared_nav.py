@@ -42,7 +42,7 @@ def clear_navigation_cache():
 
 
 @pytest.mark.parametrize(
-    "page,current", [("blog:list", "blog:list"), ("rapidoc", "swagger")]
+    "page,current", [("blog:list", "blog:list"), ("rapidoc", "rapidoc")]
 )
 def test_page_navigation_matches_landing_page(client, page, current):
     response = client.get(reverse(page))
@@ -50,23 +50,24 @@ def test_page_navigation_matches_landing_page(client, page, current):
     html = response.content.decode()
     nav = NavigationParser(html)
     landing = (
-        Path(__file__).resolve().parents[2] / "ui/src/landing-pages/nav.tsx"
+        Path(__file__).resolve().parents[2] / "ui/src/landing-pages/index.tsx"
     ).read_text()
-    desktop_nav = landing.split("<nav", 1)[1].split("</nav>", 1)[0]
-    expected_links = re.findall(r'href="([^"]+)"', desktop_nav)
+    site_links = landing.split("function SiteNavLinks", 1)[1].split("\n}\n", 1)[0]
+    expected_links = re.findall(r'href="([^"]+)"', site_links)
 
     assert nav.links == expected_links
     for text in (
         "KuraZetu",
-        "powered by Kiongozi",
+        "Powered by Kiongozi",
         "pinVerify254",
-        "Contribute",
-        "About",
+        "Docs",
         "Blog",
+        "Developers",
+        "Specs",
         "API",
-        "Login",
-        "Register",
-        "Sign Up",
+        "Contribute",
+        "Sign in",
+        "Get started",
     ):
         assert text in landing
         assert text in html
@@ -86,20 +87,20 @@ def test_page_navigation_uses_session_auth(client, django_user_model, page, sett
     settings.DEBUG = False
     url = reverse(page)
     # Prime the anonymous cache before visiting the same page while signed in.
-    assert b"Login</a>" in client.get(url).content
+    assert b"Sign in</a>" in client.get(url).content
     user = django_user_model.objects.create_user(
         **{django_user_model.USERNAME_FIELD: "+254700000000"}
     )
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
     response = client.get(url)
     assert response.status_code == 200
-    assert b'href="/accounts/logout/">Logout</a>' in response.content
+    assert b'href="/accounts/logout/">Log out</a>' in response.content
     assert b'href="/accounts/login/"' not in response.content
     assert b'href="/ui/signup/"' not in response.content
     if page == "blog:list":
         assert "Cookie" in response.headers["Vary"]
     client.logout()
-    assert b"Login</a>" in client.get(url).content
+    assert b"Sign in</a>" in client.get(url).content
 
 
 def test_rapidoc_keeps_alternate_api_formats(client):

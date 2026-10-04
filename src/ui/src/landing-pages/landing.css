@@ -264,14 +264,20 @@ footer.kz-footer {
   border-radius: 999px;
 }
 
-.kz-nav-links a:hover {
-  background: var(--surface);
-}
-
+/* Hover and where you are: a lime rule under the link, not a filled pill. */
 .kz-nav-links a[aria-current="page"],
 .kz-nav-group summary[data-current] {
-  color: var(--paper);
-  background: var(--ink);
+  font-weight: 700;
+}
+
+.kz-nav-links a:hover,
+.kz-nav-group summary:hover,
+.kz-nav-links a[aria-current="page"],
+.kz-nav-group summary[data-current] {
+  text-decoration: underline;
+  text-decoration-color: var(--lime-deep);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 7px;
 }
 
 .kz-nav-group {
@@ -295,10 +301,6 @@ footer.kz-footer {
   display: none;
 }
 
-.kz-nav-group summary:not([data-current]):hover {
-  background: var(--surface);
-}
-
 .kz-nav-group[open] summary svg {
   transform: rotate(180deg);
 }
@@ -319,12 +321,6 @@ footer.kz-footer {
 
 .kz-nav-menu a {
   border-radius: 9px;
-}
-
-.kz-nav-links .kz-nav-menu a[aria-current="page"] {
-  color: var(--ink);
-  background: var(--surface);
-  font-weight: 700;
 }
 
 .kz-mobile-nav-label {
