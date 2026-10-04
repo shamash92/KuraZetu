@@ -102,3 +102,25 @@ export const SPECS_LIBRARY_URL = "/api/specs/";
 export function specificationPageUrl(slug: string): string {
     return `/api/specs/${encodeURIComponent(slug)}/`;
 }
+
+export const SPECS_AUTHOR_URL = "/api/specs/author/";
+
+export function authorSpecificationUrl(slug: string): string {
+    return `${SPECS_AUTHOR_URL}${encodeURIComponent(slug)}/`;
+}
+
+export function specificationPublishUrl(slug: string): string {
+    return `${authorSpecificationUrl(slug)}publish/`;
+}
+
+export function specificationAccessPolicyUrl(slug: string): string {
+    return `${authorSpecificationUrl(slug)}access-policy/`;
+}
+
+export function specificationReadersUrl(slug: string): string {
+    return `${authorSpecificationUrl(slug)}readers/`;
+}
+
+export function specificationRevisionUrl(slug: string, sequence: number): string {
+    return `${authorSpecificationUrl(slug)}revisions/${sequence}/`;
+}

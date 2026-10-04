@@ -6,6 +6,8 @@ import {MemoryRouter, Route, Routes} from "react-router-dom";
 import {Library} from "./Library";
 import {SpecificationPage} from "./SpecificationPage";
 
+jest.mock("../App", () => ({useAuth: () => false}));
+
 const PUBLIC = {
     slug: "kz-900",
     title: "Synthetic public specification",
