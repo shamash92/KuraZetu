@@ -125,7 +125,11 @@ class AuthorSpecificationSerializer(AuthorLibraryEntrySerializer):
     summary = serializers.CharField(
         source="draft_summary", allow_blank=True, required=False
     )
-    body = serializers.CharField(source="draft_body", allow_blank=True, required=False)
+    # Markdown is kept exactly as written: leading and trailing whitespace can
+    # be part of it.
+    body = serializers.CharField(
+        source="draft_body", allow_blank=True, required=False, trim_whitespace=False
+    )
     superseded_by = serializers.SlugRelatedField(
         slug_field="slug",
         queryset=Specification.objects.all(),

@@ -77,7 +77,9 @@ def test_author_drafts_publishes_and_readers_keep_the_current_revision():
     publish = url("specs_publish_api", slug)
     assert writer.post(publish).status_code == 400
 
-    save_draft(writer, slug, summary="First summary", body="First body")
+    saved = save_draft(writer, slug, summary="First summary", body="First body\n")
+    assert saved.json()["body"] == "First body\n"
+    save_draft(writer, slug, body="First body")
     assert writer.post(publish).json()["has_unpublished_changes"] is False
     set_policy(writer, slug, "PUBLIC", confirm_widening=True)
     page = url("specs_page_api", slug)
