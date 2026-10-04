@@ -13,10 +13,11 @@ class LibraryEntrySerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     summary = serializers.SerializerMethodField()
     access = serializers.SerializerMethodField()
+    published_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Specification
-        fields = ("slug", "title", "summary", "access", "archived")
+        fields = ("slug", "title", "summary", "access", "archived", "published_at")
 
     def get_title(self, spec) -> str:
         if spec.can_read:
@@ -31,20 +32,24 @@ class LibraryEntrySerializer(serializers.ModelSerializer):
     def get_access(self, spec) -> str:
         return "full" if spec.can_read else "locked"
 
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_published_at(self, spec):
+        # Part of the revision history, so not for a person who cannot read it.
+        if not spec.can_read:
+            return None
+        return serializers.DateTimeField().to_representation(
+            spec.current_revision.published_at
+        )
+
 
 class SpecificationPageSerializer(LibraryEntrySerializer):
     """A specification the person may read, with its current revision."""
 
     body = serializers.CharField(source="current_revision.body")
-    published_at = serializers.DateTimeField(source="current_revision.published_at")
     superseded_by = serializers.SerializerMethodField()
 
     class Meta(LibraryEntrySerializer.Meta):
-        fields = LibraryEntrySerializer.Meta.fields + (
-            "body",
-            "published_at",
-            "superseded_by",
-        )
+        fields = LibraryEntrySerializer.Meta.fields + ("body", "superseded_by")
 
     @extend_schema_field(LibraryEntrySerializer(allow_null=True))
     def get_superseded_by(self, spec):

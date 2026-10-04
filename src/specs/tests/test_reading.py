@@ -58,6 +58,7 @@ def test_visitor_reads_public_and_sees_only_safe_metadata_for_listed():
     visitor = APIClient()
 
     entries = visitor.get(reverse("specs_library_api")).json()
+    assert entries[1].pop("published_at") is not None
     assert entries == [
         {
             "slug": "listed",
@@ -65,6 +66,7 @@ def test_visitor_reads_public_and_sees_only_safe_metadata_for_listed():
             "summary": "Safe summary",
             "access": "locked",
             "archived": False,
+            "published_at": None,
         },
         {
             "slug": "public",
