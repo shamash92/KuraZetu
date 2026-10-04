@@ -14,6 +14,7 @@ import {toast} from "sonner";
 import MapComponent from "./Map";
 import {isPinOutsideWard} from "./wardGeometry";
 import {useAuth} from "../App";
+import {SiteNavLinks} from "../landing-pages";
 import {
     POLLING_CENTER_PARTIALLY_VERIFIED_URL,
     POLLING_CENTER_VERIFY_URL,
@@ -515,13 +516,8 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
                     <span>Powered by Kiongozi</span>
                 </a>
 
-                <nav className="pv-game-pills" aria-label="KuraZetu">
-                    <a href="/ui/dashboards/user/">Results</a>
-                    <a className="is-active" href="/ui/game/">
-                        PinVerify
-                    </a>
-                    <a href="/ui/#contribute">Contribute</a>
-                    <a href="/ui/#about">About</a>
+                <nav className="pv-game-pills kz-nav-links" aria-label="Main navigation">
+                    <SiteNavLinks current="pinverify" />
                 </nav>
 
                 <div className="pv-game-nav-right">

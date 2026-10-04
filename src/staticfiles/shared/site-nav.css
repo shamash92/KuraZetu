@@ -1,13 +1,16 @@
+/* The navigation bar of the Django-rendered pages. It is drawn to match the
+   React bar (`.kz-topbar` in the landing styles): brand and links at the
+   left, account actions at the right, a lime rule under the current link. */
 .site-nav {
   position: relative;
   padding: 0;
   z-index: 50;
-  border-bottom: 1px solid #e7e5e4;
-  background: rgba(255, 255, 255, 0.8);
-  color: #1c1917;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  border-bottom: 1px solid rgba(13, 13, 13, 0.07);
+  background: rgba(255, 255, 255, 0.88);
+  color: #0d0d0d;
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   line-height: 1.5;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(20px);
 }
 .site-nav--sticky {
   position: sticky;
@@ -21,11 +24,9 @@
 .site-nav__inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 64px;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 24px;
+  gap: 32px;
+  min-height: 81px;
+  padding: 18px 32px;
 }
 .site-nav a {
   text-decoration: none;
@@ -34,20 +35,25 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  color: #1c1917;
+  color: #0d0d0d;
+  line-height: 1;
 }
 .site-brand__name {
   font-size: 24px;
-  font-weight: 700;
-  line-height: 32px;
+  font-weight: 800;
 }
 .site-brand__name > span {
-  color: #ef4444;
+  color: #c44539;
+  font-weight: 900;
 }
 .site-brand__tag {
-  color: #78716c;
-  font-size: 12px;
-  line-height: 16px;
+  margin-top: 4px;
+  color: #6b6d72;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .site-nav__menu {
   display: contents;
@@ -58,85 +64,128 @@
   align-items: center;
 }
 .site-nav__links {
-  gap: 32px;
+  gap: 6px;
+  margin-left: 14px;
 }
-.site-nav__links a {
-  color: #44403c;
-  font-size: 16px;
+.site-nav__links a,
+.site-nav__group summary {
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #0d0d0d;
+  font-size: 14px;
   font-weight: 500;
 }
-.site-nav__links a:hover {
-  color: #1c1917;
+/* Hover and where you are: a lime rule under the link. */
+.site-nav__links .is-current {
+  font-weight: 700;
 }
+.site-nav__links a:hover,
+.site-nav__group summary:hover,
 .site-nav__links .is-current {
   text-decoration: underline;
-  text-underline-offset: 5px;
+  text-decoration-color: #a8e63a;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 7px;
+}
+.site-nav__group {
+  position: relative;
+}
+.site-nav__group summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  cursor: pointer;
+}
+.site-nav__group summary::-webkit-details-marker {
+  display: none;
+}
+.site-nav__group summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.site-nav__group[open] summary::after {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+.site-nav__sub {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid rgba(13, 13, 13, 0.14);
+  border-radius: 14px;
+  background: #fff;
+}
+.site-nav__sub a {
+  border-radius: 9px;
 }
 .site-nav__auth {
-  gap: 16px;
+  gap: 8px;
+  margin-left: auto;
 }
 .site-nav__auth a {
-  padding: 8px 24px;
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 11px 20px;
+  border: 1px solid rgba(13, 13, 13, 0.14);
   border-radius: 999px;
-  font-size: 16px;
+  color: #0d0d0d;
+  font-size: 14px;
   font-weight: 600;
   transition:
-    color 300ms,
-    background 300ms,
-    transform 300ms;
+    border-color 160ms,
+    background 160ms;
 }
-.site-nav__login,
-.site-nav__logout {
-  color: #fff;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+.site-nav__auth a:hover {
+  border-color: #0d0d0d;
+  background: #f1f0eb;
 }
-.site-nav__login {
-  background: #16a34a;
+.site-nav__auth .site-nav__register {
+  border-color: #c4ff5e;
+  background: #c4ff5e;
+  color: #0a0a0a;
 }
-.site-nav__logout {
-  background: #dc2626;
-}
-.site-nav__login:hover,
-.site-nav__logout:hover {
-  background: #15803d;
-  transform: scale(1.05);
-}
-.site-nav__register {
-  border: 1px solid #d6d3d1;
-  color: #44403c;
-}
-.site-nav__register:hover {
-  border-color: #a8a29e;
-  color: #1c1917;
+.site-nav__auth .site-nav__register:hover {
+  border-color: #a8e63a;
+  background: #a8e63a;
 }
 .site-nav a:focus-visible,
+.site-nav summary:focus-visible,
 .site-nav__toggle:focus-visible {
-  outline: 3px solid #15803d;
+  outline: 2px solid #0d0d0d;
   outline-offset: 3px;
 }
 .site-nav__toggle,
-.site-nav__mobile-label,
 .site-nav__close-icon {
   display: none;
 }
 @media (min-width: 768px) and (max-width: 1023px) {
-  .site-nav__links {
+  .site-nav__inner {
     gap: 16px;
-  }
-  .site-nav__auth {
-    gap: 8px;
+    padding: 18px 20px;
   }
   .site-nav__auth a {
-    padding: 8px 16px;
+    padding: 9px 14px;
   }
 }
 @media (max-width: 767px) {
   .site-nav__inner {
     flex-wrap: wrap;
-  }
-  .site-brand {
-    min-height: 64px;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 0 16px;
+    min-height: 70px;
+    padding: 14px 18px;
   }
   .site-nav__toggle:not([hidden]) {
     display: block;
@@ -155,11 +204,10 @@
   .site-nav--enhanced .site-nav__menu {
     display: none;
     position: absolute;
-    top: 64px;
+    top: 100%;
     left: 0;
-    padding: 16px 24px;
-    border-bottom: 1px solid #e7e5e4;
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    padding: 14px 18px 18px;
+    border-bottom: 1px solid rgba(13, 13, 13, 0.14);
   }
   .site-nav--open .site-nav__menu {
     display: block;
@@ -168,16 +216,27 @@
   .site-nav__auth {
     align-items: stretch;
     flex-direction: column;
-    gap: 16px;
+    gap: 2px;
+    margin-left: 0;
   }
   .site-nav__auth {
+    gap: 8px;
     margin-top: 16px;
   }
-  .site-nav__desktop-label,
+  .site-nav__auth a {
+    justify-content: center;
+  }
+  /* In the stacked menu the group opens in place rather than floating. */
+  .site-nav__sub {
+    position: static;
+    min-width: 0;
+    margin-top: 8px;
+    padding: 0 0 0 12px;
+    border: 0;
+  }
   .site-nav--open .site-nav__menu-icon {
     display: none;
   }
-  .site-nav__mobile-label,
   .site-nav--open .site-nav__close-icon {
     display: inline;
   }
