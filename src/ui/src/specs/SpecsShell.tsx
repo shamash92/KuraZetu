@@ -1,4 +1,5 @@
 import {useQuery} from "@tanstack/react-query";
+import {ArrowLeft} from "lucide-react";
 import type {ReactNode} from "react";
 import {Link, useLocation} from "react-router-dom";
 
@@ -106,6 +107,10 @@ export function SpecsShell({
                 <main className={wide ? "wide" : undefined}>
                     {!isLibrary && (
                         <div className="crumbs">
+                            <Link className="kz-button" to="/ui/specs/">
+                                <ArrowLeft size={14} aria-hidden="true" />
+                                Back to specs
+                            </Link>
                             <AuthorLinks editSlug={editSlug} />
                         </div>
                     )}

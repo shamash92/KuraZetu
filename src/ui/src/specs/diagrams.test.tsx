@@ -27,8 +27,9 @@ test("a diagram that cannot be drawn falls back to its source, with the reason f
     mockMermaid.render.mockRejectedValue(new Error("Parse error on line 2"));
 
     const reader = render(<Diagram source={SOURCE} showError={false} />);
-    expect(screen.getByText(/A --> B/)).toBeInTheDocument();
-    await Promise.resolve();
+    // The source is not flashed on screen while the outcome is unknown.
+    expect(screen.queryByText(/A --> B/)).toBeNull();
+    expect(await screen.findByText(/A --> B/)).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
     reader.unmount();
 

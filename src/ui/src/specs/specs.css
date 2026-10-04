@@ -102,10 +102,10 @@
 
 .kz-specs .crumbs {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   padding: 28px 0 0;
-}
-.kz-specs .crumbs:empty {
-  display: none;
 }
 .kz-specs .author-links {
   display: flex;
@@ -113,6 +113,7 @@
   gap: 8px;
   margin-left: auto;
 }
+.kz-specs .crumbs > .kz-button,
 .kz-specs .author-links .kz-button {
   min-height: 0;
   padding: 9px 14px;
@@ -1040,6 +1041,18 @@
 .kz-specs .prose .diagram {
   margin: 0 0 1em;
   overflow-x: auto;
+}
+.kz-specs .prose .diagram--pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  border: 1px dashed var(--rule-16);
+  border-radius: 14px;
+  color: var(--mute);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
 }
 .kz-specs .prose .diagram svg {
   max-width: 100%;
