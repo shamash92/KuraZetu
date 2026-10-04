@@ -20,6 +20,12 @@
     z-index: 1;
 }
 
+/* The navigation opens a menu over the page, so it has to stack above the
+   content that follows it. */
+.blog-page > .site-nav {
+    z-index: 50;
+}
+
 .blog-paper {
     position: absolute;
     inset: 0;
