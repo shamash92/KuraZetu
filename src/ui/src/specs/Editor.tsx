@@ -1,6 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {Eye, Pencil, X} from "lucide-react";
 import {useEffect, useState} from "react";
+import type {ReactNode} from "react";
 import {useBlocker, useParams} from "react-router-dom";
 import {toast} from "sonner";
 
@@ -8,18 +9,21 @@ import {specKeys} from "../api/queryKeys";
 import {querySettings} from "../api/querySettings";
 
 import {POLICY_NAMES, publicationStatus} from "./NewSpecification";
+import type {Stage} from "./api";
 import {
     changeAccessPolicy,
     changeReader,
+    createDocumentSet,
     getAuthorLibrary,
     getAuthorSpecification,
+    getDocumentSets,
     getRevision,
     publishSpecification,
     saveSpecification,
 } from "./authorApi";
 import type {AccessPolicy, AuthorSpecification} from "./authorApi";
 import {SpecMarkdown} from "./SpecMarkdown";
-import {NotFound, SpecsShell, indexOf} from "./SpecsShell";
+import {NotFound, STAGE_NAMES, SpecsShell, indexOf} from "./SpecsShell";
 
 const DISCLOSURE: Record<AccessPolicy, number> = {
     RESTRICTED_CONCEALED: 0,
@@ -27,6 +31,7 @@ const DISCLOSURE: Record<AccessPolicy, number> = {
     PUBLIC: 2,
 };
 const POLICIES = Object.keys(DISCLOSURE) as Array<AccessPolicy>;
+const STAGES = Object.keys(STAGE_NAMES) as Array<Stage>;
 const REVISION_DATE = new Intl.DateTimeFormat("en-KE", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -214,6 +219,7 @@ function EditorForm({spec}: {spec: AuthorSpecification}) {
                 </form>
 
                 <aside className="side" aria-label="Settings">
+                    <DocumentSetPanel spec={spec} />
                     <SafeListingPanel spec={spec} />
                     <ReadersPanel spec={spec} />
                     <RevisionsPanel spec={spec} onView={setViewedRevision} />
@@ -250,8 +256,11 @@ function PropertyBar({spec}: {spec: AuthorSpecification}) {
     const changeLifecycle = useSpecificationChange(
         slug,
         "Saved",
-        (changes: {archived?: boolean; superseded_by?: string | null}) =>
-            saveSpecification(slug, changes),
+        (changes: {
+            archived?: boolean;
+            superseded_by?: string | null;
+            stage?: Stage;
+        }) => saveSpecification(slug, changes),
     );
     const others = useQuery({
         queryKey: specKeys.authorLibrary(),
@@ -290,7 +299,7 @@ function PropertyBar({spec}: {spec: AuthorSpecification}) {
                 <label className="prop">
                     <span>Access</span>
                     <select
-                        value={spec.access_policy}
+                        value={widening ?? spec.access_policy}
                         disabled={changeAccess.isPending}
                         onChange={(event) =>
                             chooseAccess(event.target.value as AccessPolicy)
@@ -304,7 +313,22 @@ function PropertyBar({spec}: {spec: AuthorSpecification}) {
                     </select>
                 </label>
                 <label className="prop">
-                    <span>Status</span>
+                    <span>Stage</span>
+                    <select
+                        value={spec.stage}
+                        onChange={(event) =>
+                            changeLifecycle.mutate({stage: event.target.value as Stage})
+                        }
+                    >
+                        {STAGES.map((stage) => (
+                            <option key={stage} value={stage}>
+                                {STAGE_NAMES[stage]}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label className="prop">
+                    <span>Archived</span>
                     <select
                         value={spec.archived ? "archived" : "active"}
                         onChange={(event) =>
@@ -313,8 +337,8 @@ function PropertyBar({spec}: {spec: AuthorSpecification}) {
                             })
                         }
                     >
-                        <option value="active">Active</option>
-                        <option value="archived">Archived</option>
+                        <option value="active">No</option>
+                        <option value="archived">Yes</option>
                     </select>
                 </label>
                 <label className="prop">
@@ -341,51 +365,16 @@ function PropertyBar({spec}: {spec: AuthorSpecification}) {
 
             {widening && (
                 <div className="notice" role="group" aria-label="Confirm wider access">
-                    {widening === "RESTRICTED_LISTED" ? (
-                        <>
-                            <p>
-                                Everyone, with or without an account, will see this
-                                entry in the library. Only the reader list can open
-                                it.
-                            </p>
-                            <p>
-                                <strong>{spec.safe_listing_title}</strong>
-                            </p>
-                            <p>{spec.safe_listing_summary}</p>
-                        </>
-                    ) : current === undefined ? (
-                        <p>
-                            Nothing is published yet. Everyone, with or without an
-                            account, will be able to read each revision from the
-                            moment you publish it.
-                        </p>
-                    ) : (
-                        <>
-                            <p>
-                                Everyone, with or without an account, will be able to
-                                read the current revision in full:
-                            </p>
-                            {disclosed.isPending && (
-                                <p className="status">Loading the revision…</p>
-                            )}
-                            {disclosed.isError && (
-                                <p role="alert">
-                                    The revision could not be loaded, so access
-                                    cannot be widened. Try again.
-                                </p>
-                            )}
-                            {disclosed.data && (
-                                <>
-                                    <p>
-                                        <strong>{disclosed.data.title}</strong>
-                                    </p>
-                                    <p>{disclosed.data.summary}</p>
-                                    <SpecMarkdown source={disclosed.data.body} />
-                                </>
-                            )}
-                        </>
-                    )}
-                    <p>This cannot be undone once someone has seen or copied it.</p>
+                    <p>
+                        <strong>
+                            {widening === "RESTRICTED_LISTED"
+                                ? "Everyone, with or without an account, will see this entry in the library. Only the reader list can open it."
+                                : current === undefined
+                                  ? "Nothing is published yet. Everyone, with or without an account, will be able to read each revision from the moment you publish it."
+                                  : "Everyone, with or without an account, will be able to read the current revision in full."}
+                        </strong>{" "}
+                        This cannot be undone once someone has seen or copied it.
+                    </p>
                     <button
                         type="button"
                         className="primary"
@@ -402,10 +391,198 @@ function PropertyBar({spec}: {spec: AuthorSpecification}) {
                     <button type="button" onClick={() => setWidening(null)}>
                         Cancel
                     </button>
+                    {widening === "PUBLIC" && disclosed.isPending && current && (
+                        <p className="status">Loading the revision…</p>
+                    )}
+                    {widening === "PUBLIC" && disclosed.isError && (
+                        <p role="alert">
+                            The revision could not be loaded, so access cannot be
+                            widened. Try again.
+                        </p>
+                    )}
+                    {/* Kept to a height that leaves the decision in view. */}
+                    {widening === "RESTRICTED_LISTED" && (
+                        <section className="disclosed" aria-label="What becomes visible">
+                            <p>
+                                <strong>{spec.safe_listing_title}</strong>
+                            </p>
+                            <p>{spec.safe_listing_summary}</p>
+                        </section>
+                    )}
+                    {widening === "PUBLIC" && disclosed.data && (
+                        <section
+                            className="disclosed"
+                            aria-label="What becomes visible"
+                            tabIndex={0}
+                        >
+                            <p>
+                                <strong>{disclosed.data.title}</strong>
+                            </p>
+                            <p>{disclosed.data.summary}</p>
+                            <SpecMarkdown source={disclosed.data.body} />
+                        </section>
+                    )}
                 </div>
             )}
             {failure && <p role="alert">{failure.message}</p>}
         </>
+    );
+}
+
+/**
+ * One setting in the side column: a row that names it and says what it holds
+ * now, and opens to the form that changes it.
+ */
+function Fold({
+    title,
+    value,
+    children,
+}: {
+    title: string;
+    value: string;
+    children: ReactNode;
+}) {
+    return (
+        <details className="panel fold">
+            <summary>
+                <span className="t">{title}</span>
+                <span className="v">{value}</span>
+            </summary>
+            {children}
+        </details>
+    );
+}
+
+const UNUSED_WHILE_PUBLIC = "Not used while public";
+
+/** The menu option that makes a new document set. A set's address never
+ *  has this form. */
+const NEW_SET = "new";
+
+/**
+ * Puts the specification in a document set and says where it comes in it.
+ * A set that does not exist yet is made from the same menu.
+ */
+function DocumentSetPanel({spec}: {spec: AuthorSpecification}) {
+    const {slug} = spec;
+    const queryClient = useQueryClient();
+    const [setSlug, setSetSlug] = useState(spec.document_set ?? "");
+    const [newTitle, setNewTitle] = useState("");
+    const [newSummary, setNewSummary] = useState("");
+    const [isOrdered, setIsOrdered] = useState(true);
+
+    const sets = useQuery({
+        queryKey: specKeys.authorDocumentSets(),
+        queryFn: ({signal}) => getDocumentSets(signal),
+        ...querySettings.specs,
+    });
+    const create = useMutation({
+        mutationFn: () =>
+            createDocumentSet({
+                title: newTitle,
+                summary: newSummary,
+                ordered: isOrdered,
+            }),
+    });
+    const save = useSpecificationChange(slug, "Document set saved", (chosen: string) =>
+        saveSpecification(slug, {document_set: chosen || null}),
+    );
+
+    const isUnchanged = setSlug === (spec.document_set ?? "");
+    const failure = create.error ?? save.error;
+
+    async function submit() {
+        let chosen = setSlug;
+        if (chosen === NEW_SET) {
+            // Made first and chosen at once, so a refused save that follows
+            // does not make the set a second time.
+            try {
+                chosen = (await create.mutateAsync()).slug;
+            } catch {
+                return;
+            }
+            await queryClient.invalidateQueries({
+                queryKey: specKeys.authorDocumentSets(),
+            });
+            setSetSlug(chosen);
+            setNewTitle("");
+            setNewSummary("");
+        }
+        save.mutate(chosen);
+    }
+
+    const current = sets.data?.find((option) => option.slug === spec.document_set);
+
+    return (
+        <Fold
+            title="Document set"
+            value={current?.title ?? "None"}
+        >
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    void submit();
+                }}
+            >
+                <label htmlFor="set-choice">Belongs to</label>
+                <select
+                    id="set-choice"
+                    value={setSlug}
+                    onChange={(event) => setSetSlug(event.target.value)}
+                >
+                    <option value="">No document set</option>
+                    {sets.data?.map((option) => (
+                        <option key={option.slug} value={option.slug}>
+                            {option.title}
+                        </option>
+                    ))}
+                    <option value={NEW_SET}>New document set…</option>
+                </select>
+                {setSlug === NEW_SET && (
+                    <>
+                        <label htmlFor="new-set-title">Title of the new set</label>
+                        <input
+                            id="new-set-title"
+                            value={newTitle}
+                            onChange={(event) => setNewTitle(event.target.value)}
+                            maxLength={200}
+                            required
+                        />
+                        <label htmlFor="new-set-summary">Summary of the new set</label>
+                        <textarea
+                            id="new-set-summary"
+                            rows={2}
+                            value={newSummary}
+                            onChange={(event) => setNewSummary(event.target.value)}
+                        />
+                        <p className="hint">
+                            Anyone who can see one member sees this title and
+                            summary.
+                        </p>
+                        <label className="check">
+                            <input
+                                type="checkbox"
+                                checked={isOrdered}
+                                onChange={(event) => setIsOrdered(event.target.checked)}
+                            />
+                            Has a reading order
+                        </label>
+                    </>
+                )}
+                {setSlug && setSlug !== spec.document_set && (
+                    <p className="hint">
+                        It joins as the last one. Rearrange the set on its page.
+                    </p>
+                )}
+                <button
+                    type="submit"
+                    disabled={isUnchanged || create.isPending || save.isPending}
+                >
+                    Save document set
+                </button>
+            </form>
+            {failure && <p role="alert">{failure.message}</p>}
+        </Fold>
     );
 }
 
@@ -421,8 +598,14 @@ function SafeListingPanel({spec}: {spec: AuthorSpecification}) {
     );
 
     return (
-        <section className="panel" aria-labelledby="listing-heading">
-            <h2 id="listing-heading">Safe listing</h2>
+        <Fold
+            title="Safe listing"
+            value={
+                spec.access_policy === "PUBLIC"
+                    ? UNUSED_WHILE_PUBLIC
+                    : spec.safe_listing_title || "Not written"
+            }
+        >
             <form
                 onSubmit={(event) => {
                     event.preventDefault();
@@ -430,18 +613,17 @@ function SafeListingPanel({spec}: {spec: AuthorSpecification}) {
                 }}
             >
                 <p className="hint">
-                    What people who cannot read this specification see when it is
-                    listed. Write it separately; do not copy the real title or
-                    summary.
+                    Shown to people who cannot read this specification. Do not
+                    copy the real title or summary.
                 </p>
-                <label htmlFor="safe-title">Safe listing title</label>
+                <label htmlFor="safe-title">Safe title</label>
                 <input
                     id="safe-title"
                     value={safeTitle}
                     onChange={(event) => setSafeTitle(event.target.value)}
                     maxLength={200}
                 />
-                <label htmlFor="safe-summary">Safe listing summary</label>
+                <label htmlFor="safe-summary">Safe summary</label>
                 <textarea
                     id="safe-summary"
                     rows={2}
@@ -453,7 +635,7 @@ function SafeListingPanel({spec}: {spec: AuthorSpecification}) {
                 </button>
             </form>
             {save.isError && <p role="alert">{save.error.message}</p>}
-        </section>
+        </Fold>
     );
 }
 
@@ -468,13 +650,22 @@ function ReadersPanel({spec}: {spec: AuthorSpecification}) {
     );
 
     return (
-        <section className="panel" aria-labelledby="readers-heading">
-            <h2 id="readers-heading">Reader list</h2>
+        <Fold
+            title="Reader list"
+            value={
+                spec.access_policy === "PUBLIC"
+                    ? UNUSED_WHILE_PUBLIC
+                    : spec.readers.length === 0
+                      ? "No readers"
+                      : spec.readers.length === 1
+                        ? "1 reader"
+                        : `${spec.readers.length} readers`
+            }
+        >
             <p className="hint">
-                Only these accounts can read a restricted specification. Removal
-                takes effect on the person's next request.
+                Only these accounts can read it. Removal applies on the
+                person's next request.
             </p>
-            {spec.readers.length === 0 && <p>No readers.</p>}
             <ul className="readers">
                 {spec.readers.map((number) => (
                     <li key={number}>
@@ -514,7 +705,7 @@ function ReadersPanel({spec}: {spec: AuthorSpecification}) {
                 </button>
             </form>
             {change.isError && <p role="alert">{change.error.message}</p>}
-        </section>
+        </Fold>
     );
 }
 
@@ -528,8 +719,14 @@ function RevisionsPanel({
     if (spec.revisions.length === 0) return null;
 
     return (
-        <section className="panel" aria-labelledby="revisions-heading">
-            <h2 id="revisions-heading">Published revisions</h2>
+        <Fold
+            title="Published revisions"
+            value={
+                spec.revisions.length === 1
+                    ? "1 revision"
+                    : `${spec.revisions.length} revisions`
+            }
+        >
             <p className="hint">Readers see only the newest. None can be changed.</p>
             <ul className="readers">
                 {spec.revisions.map((entry) => (
@@ -548,7 +745,7 @@ function RevisionsPanel({
                     </li>
                 ))}
             </ul>
-        </section>
+        </Fold>
     );
 }
 

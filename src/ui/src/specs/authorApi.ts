@@ -1,8 +1,10 @@
 import cookie from "react-cookies";
 
 import {
+    SPECS_AUTHOR_SETS_URL,
     SPECS_AUTHOR_URL,
     authorSpecificationUrl,
+    documentSetOrderUrl,
     specificationAccessPolicyUrl,
     specificationPublishUrl,
     specificationReadersUrl,
@@ -10,6 +12,7 @@ import {
 } from "../api/apiUrls";
 
 import {getJson} from "./api";
+import type {DocumentSet, Stage} from "./api";
 
 export type AccessPolicy = "PUBLIC" | "RESTRICTED_LISTED" | "RESTRICTED_CONCEALED";
 
@@ -36,6 +39,9 @@ export type AuthorSpecification = AuthorEntry & {
     safe_listing_title: string;
     safe_listing_summary: string;
     superseded_by: string | null;
+    /** The slug of its document set. */
+    document_set: string | null;
+    stage: Stage;
     readers: Array<string>;
     revisions: Array<RevisionSummary>;
 };
@@ -52,6 +58,8 @@ export type SpecificationChanges = Partial<
         | "safe_listing_summary"
         | "archived"
         | "superseded_by"
+        | "document_set"
+        | "stage"
     >
 >;
 
@@ -101,6 +109,19 @@ export function getAuthorSpecification(slug: string, signal?: AbortSignal) {
 
 export function getRevision(slug: string, sequence: number, signal?: AbortSignal) {
     return getJson<Revision>(specificationRevisionUrl(slug, sequence), signal);
+}
+
+export function getDocumentSets(signal?: AbortSignal) {
+    return getJson<Array<DocumentSet>>(SPECS_AUTHOR_SETS_URL, signal);
+}
+
+export function createDocumentSet(documentSet: Omit<DocumentSet, "slug">) {
+    return send<DocumentSet>("POST", SPECS_AUTHOR_SETS_URL, documentSet);
+}
+
+/** Puts the named members of a set in the order given. */
+export function rearrangeDocumentSet(slug: string, specifications: Array<string>) {
+    return send<null>("POST", documentSetOrderUrl(slug), {specifications});
 }
 
 export function createSpecification(title: string) {

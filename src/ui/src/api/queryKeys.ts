@@ -110,6 +110,10 @@ export const specKeys = {
         return [...specKeys.all, "author"] as const;
     },
 
+    authorDocumentSets() {
+        return [...specKeys.all, "author-sets"] as const;
+    },
+
     authorSpecification(slug: string) {
         return [...specKeys.authorLibrary(), slug] as const;
     },

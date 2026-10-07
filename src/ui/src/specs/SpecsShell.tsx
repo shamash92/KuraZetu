@@ -9,6 +9,7 @@ import {useAuth} from "../App";
 import {LandingNav} from "../landing-pages";
 import "../landing-pages/landing.css";
 
+import type {LibraryEntry, Stage} from "./api";
 import {getAuthorLibrary} from "./authorApi";
 import "./specs.css";
 
@@ -47,6 +48,39 @@ export function Status({archived, superseded = false}: {
             {status}
         </span>
     );
+}
+
+export const STAGE_NAMES: Record<Stage, string> = {
+    BRAINDUMP: "Braindump",
+    DRAFT: "Draft",
+    ACCEPTED: "Accepted",
+    LIVE: "Live",
+};
+
+/** How far the work a specification describes has come. */
+export function StageMark({stage}: {stage: Stage}) {
+    return (
+        <span className="st" data-stage={stage.toLowerCase()}>
+            <span className="glyph" aria-hidden="true" />
+            {STAGE_NAMES[stage]}
+        </span>
+    );
+}
+
+export function documentSetPath(slug: string): string {
+    return `/ui/specs/sets/${slug}/`;
+}
+
+/** Two digits, as a reading order is printed: `01`. */
+export function ordinal(index: number): string {
+    return String(index + 1).padStart(2, "0");
+}
+
+export function membersOf(
+    entries: ReadonlyArray<LibraryEntry>,
+    setSlug: string,
+): Array<LibraryEntry> {
+    return entries.filter((entry) => entry.document_set?.slug === setSlug);
 }
 
 /**

@@ -11,7 +11,9 @@ import {
     NotFound,
     RESTRICTED_NOTICE,
     SpecsShell,
+    StageMark,
     Status,
+    documentSetPath,
     formatDate,
     indexOf,
 } from "./SpecsShell";
@@ -63,6 +65,24 @@ export function SpecificationPage() {
                                 <dt>Index</dt>
                                 <dd>{indexOf(spec.slug)}</dd>
                             </div>
+                            {spec.document_set && (
+                                <div>
+                                    <dt>Document set</dt>
+                                    <dd>
+                                        <Link to={documentSetPath(spec.document_set.slug)}>
+                                            {spec.document_set.title}
+                                        </Link>
+                                    </dd>
+                                </div>
+                            )}
+                            {spec.stage && (
+                                <div>
+                                    <dt>Stage</dt>
+                                    <dd>
+                                        <StageMark stage={spec.stage} />
+                                    </dd>
+                                </div>
+                            )}
                             {spec.published_at && (
                                 <div>
                                     <dt>Published</dt>

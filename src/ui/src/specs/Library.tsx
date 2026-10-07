@@ -9,15 +9,48 @@ import {useAuth} from "../App";
 
 import {getLibrary} from "./api";
 import {getAuthorLibrary} from "./authorApi";
-import type {LibraryEntry} from "./api";
+import type {DocumentSet, LibraryEntry} from "./api";
 import {
     AuthorLinks,
     RESTRICTED_NOTICE,
     SpecsShell,
+    StageMark,
     Status,
+    documentSetPath,
     formatDate,
     indexOf,
+    ordinal,
 } from "./SpecsShell";
+
+/** How many members a set's cover names before it says how many are left. */
+const COVER_MEMBERS = 5;
+
+type Shelved = LibraryEntry | {set: DocumentSet; members: Array<LibraryEntry>};
+
+/**
+ * The library in the order it is shown: each document set stands where its
+ * first member would. A set with one member a person can discover is shown
+ * as that specification alone.
+ */
+function shelve(entries: ReadonlyArray<LibraryEntry>): Array<Shelved> {
+    const sets = new Map<string, Array<LibraryEntry>>();
+    for (const entry of entries) {
+        if (!entry.document_set) continue;
+        const members = sets.get(entry.document_set.slug) ?? [];
+        sets.set(entry.document_set.slug, [...members, entry]);
+    }
+
+    const shelf: Array<Shelved> = [];
+    for (const entry of entries) {
+        const members = entry.document_set && sets.get(entry.document_set.slug);
+        if (!entry.document_set || !members || members.length < 2) {
+            shelf.push(entry);
+        } else if (members[0] === entry) {
+            shelf.push({set: entry.document_set, members});
+        }
+    }
+    return shelf;
+}
 
 /** One specification as a sheet of paper, with its standing underneath. */
 function Cover({entry}: {entry: LibraryEntry}) {
@@ -48,6 +81,7 @@ function Cover({entry}: {entry: LibraryEntry}) {
                     )}
                 </div>
                 <div className="doc-meta">
+                    {entry.stage && <StageMark stage={entry.stage} />}
                     <Status archived={entry.archived} />
                     {isLocked && (
                         <>
@@ -58,6 +92,46 @@ function Cover({entry}: {entry: LibraryEntry}) {
                             <span className="req">{RESTRICTED_NOTICE}</span>
                         </>
                     )}
+                </div>
+            </Link>
+        </li>
+    );
+}
+
+/** A document set as a stack of paper that names what is in it. */
+function SetCover({set, members}: {set: DocumentSet; members: Array<LibraryEntry>}) {
+    const named = members.slice(0, COVER_MEMBERS);
+    const left = members.length - named.length;
+
+    return (
+        <li>
+            <Link className="doc" to={documentSetPath(set.slug)}>
+                <div className="sheet sheet--set">
+                    <div className="sheet-top">
+                        <span>Document set</span>
+                        <span>{members.length}</span>
+                    </div>
+                    <h2>{set.title}</h2>
+                    <ol className="members">
+                        {named.map((member, index) => (
+                            <li key={member.slug}>
+                                {set.ordered && (
+                                    <span className="n">{ordinal(index)}</span>
+                                )}
+                                <span>
+                                    {member.access === "locked" && (
+                                        <Lock size={12} aria-label="Locked" />
+                                    )}
+                                    {member.title}
+                                </span>
+                            </li>
+                        ))}
+                    </ol>
+                    {left > 0 && <p className="more">and {left} more</p>}
+                </div>
+                <div className="doc-meta">
+                    <strong>{members.length} related specifications</strong>
+                    <span>{set.ordered ? "Reading order" : "Read in any order"}</span>
                 </div>
             </Link>
         </li>
@@ -126,9 +200,13 @@ export function Library() {
             )}
 
             <ul className="grid">
-                {library.data?.map((entry) => (
-                    <Cover key={entry.slug} entry={entry} />
-                ))}
+                {shelve(library.data ?? []).map((item) =>
+                    "set" in item ? (
+                        <SetCover key={item.set.slug} {...item} />
+                    ) : (
+                        <Cover key={item.slug} entry={item} />
+                    ),
+                )}
             </ul>
 
             <Drafts />

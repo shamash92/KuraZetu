@@ -83,6 +83,24 @@
   font-size: 14.5px;
 }
 
+.kz-specs .notice > p:first-child {
+  max-width: 72ch;
+  margin: 0;
+}
+/* What a wider policy discloses, held to a height that keeps the decision
+   above it in view. */
+.kz-specs .disclosed {
+  max-height: 46vh;
+  margin-top: 14px;
+  padding: 4px 16px;
+  overflow-y: auto;
+  border: 1px solid var(--rule-16);
+  border-radius: 10px;
+  background: var(--card);
+  scrollbar-color: var(--rule-16) transparent;
+  scrollbar-width: thin;
+}
+
 .kz-specs a {
   color: var(--ink);
   text-underline-offset: 3px;
@@ -143,6 +161,19 @@
 }
 .kz-specs .st[data-status="archived"] .glyph {
   border-radius: 2px;
+}
+.kz-specs .st[data-stage="braindump"] .glyph {
+  border-style: dotted;
+}
+.kz-specs .st[data-stage="draft"] .glyph {
+  border-style: dashed;
+}
+.kz-specs .st[data-stage="accepted"] .glyph {
+  background: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--paper);
+}
+.kz-specs .st[data-stage="live"] .glyph {
+  background: var(--lime);
 }
 
 .kz-specs .empty {
@@ -272,6 +303,48 @@
 .kz-specs .sheet--locked h2 {
   margin-top: 12px;
 }
+/* A document set: the same sheet with two more behind it. */
+.kz-specs .sheet--set {
+  box-shadow:
+    4px -4px 0 -1px var(--card),
+    4px -4px 0 0 var(--rule-16),
+    8px -8px 0 -1px var(--card),
+    8px -8px 0 0 var(--rule-16);
+}
+.kz-specs .sheet--set .sheet-top {
+  display: flex;
+  justify-content: space-between;
+}
+.kz-specs .members {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.kz-specs .members li {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.kz-specs .members svg {
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.kz-specs .n {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.75;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+.kz-specs .sheet .more {
+  margin-top: 8px;
+}
+.kz-specs .doc-meta strong {
+  color: var(--ink);
+}
 .kz-specs .doc-meta {
   display: flex;
   flex-direction: column;
@@ -362,6 +435,92 @@
 }
 .kz-specs .facts dd svg {
   flex: 0 0 auto;
+}
+
+/* A set's masthead carries a note on how to read it, beside the title. */
+.kz-specs .mast--set {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px 40px;
+}
+.kz-specs .mast .order {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 300px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--rule-16);
+  border-radius: 10px;
+  background: var(--card);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.kz-specs .mast .order svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.kz-specs .set-rows {
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.kz-specs .set-rows li {
+  display: flex;
+  gap: 20px;
+  padding: 22px 0;
+  border-top: 1px solid var(--rule-16);
+}
+.kz-specs .set-rows li:last-child {
+  border-bottom: 1px solid var(--rule-16);
+}
+.kz-specs .set-rows .n {
+  font-size: 12px;
+  line-height: 2;
+}
+.kz-specs .set-rows .what {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.kz-specs .set-rows a {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.kz-specs .set-rows a:hover {
+  text-decoration: underline;
+}
+.kz-specs .set-rows p {
+  margin: 4px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.kz-specs .set-rows .standing {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 13.5px;
+  color: var(--mute);
+  white-space: nowrap;
+}
+.kz-specs .set-rows .standing .st {
+  color: var(--ink);
+}
+/* An author's controls for the order, at the end of each row. */
+.kz-specs .set-rows .reorder {
+  display: flex;
+  flex: 0 0 auto;
+  align-self: center;
+  gap: 6px;
 }
 
 .kz-specs .reader {
@@ -788,7 +947,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding-bottom: 8px;
+  padding: 20px 0 8px;
 }
 .kz-specs .props .meta {
   margin: 0 8px 0 0;
@@ -965,15 +1124,89 @@
   margin: 0 0 8px;
   font-size: 12.5px;
 }
+.kz-specs .side label + .hint,
+.kz-specs .side textarea + .hint {
+  margin-top: 6px;
+}
+/* Each setting is a row: its name, what it holds now, and a chevron that
+   turns when the row is open. */
+.kz-specs .side .fold {
+  padding: 0;
+}
+.kz-specs .fold summary {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 13px 22px 13px 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' fill='none' stroke='%230d0d0d' stroke-width='1.4'/></svg>")
+    no-repeat right 2px center / 12px;
+  list-style: none;
+  cursor: pointer;
+}
+.kz-specs .fold summary::-webkit-details-marker {
+  display: none;
+}
+.kz-specs .fold[open] summary {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 7.5l3-3 3 3' fill='none' stroke='%230d0d0d' stroke-width='1.4'/></svg>");
+}
+.kz-specs .fold summary:hover .v {
+  color: var(--ink);
+}
+.kz-specs .fold summary:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.kz-specs .fold .t {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kz-specs .fold .v {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+.kz-specs .fold[open] {
+  padding-bottom: 16px;
+}
+.kz-specs .fold > form > label:first-child {
+  margin-top: 0;
+}
 .kz-specs .side label {
   margin: 10px 0 4px;
   font-size: 12px;
 }
 .kz-specs .side input:not([type="checkbox"]),
+.kz-specs .side select,
 .kz-specs .side textarea {
   padding: 7px 10px;
   border-radius: 8px;
   font-size: 13.5px;
+}
+/* The same chevron the property menus carry, in place of the browser's. */
+.kz-specs .side select {
+  padding-right: 30px;
+  background: var(--card)
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' fill='none' stroke='%230d0d0d' stroke-width='1.4'/></svg>")
+    no-repeat right 10px center / 12px;
+  appearance: none;
+  cursor: pointer;
+}
+.kz-specs .side label.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .kz-specs .side button:not(.icon) {
   margin-top: 8px;
@@ -1062,6 +1295,14 @@
 /* Phone widths: the display sizes step down so headings stop crowding what
    sits beside them, and labels that no longer fit give way to their values. */
 @media (max-width: 560px) {
+  .kz-specs .set-rows li {
+    flex-wrap: wrap;
+  }
+  .kz-specs .set-rows .standing {
+    flex-basis: 100%;
+    flex-direction: row;
+    gap: 14px;
+  }
   .kz-specs h1,
   .kz-specs .mast h1 {
     font-size: 30px;

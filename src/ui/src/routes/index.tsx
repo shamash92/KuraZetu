@@ -16,6 +16,7 @@ import {NewSpecification} from "../specs/NewSpecification";
 import {Editor} from "../specs/Editor";
 import {Library} from "../specs/Library";
 import {SpecificationPage} from "../specs/SpecificationPage";
+import {DocumentSetPage} from "../specs/DocumentSetPage";
 
 export function NotFound() {
     return (
@@ -88,6 +89,7 @@ function RoutesApp() {
             <Route path="/ui/specs/" element={<Library />} />
             <Route path="/ui/specs/author/" element={<NewSpecification />} />
             <Route path="/ui/specs/author/:slug/" element={<Editor />} />
+            <Route path="/ui/specs/sets/:slug/" element={<DocumentSetPage />} />
             <Route path="/ui/specs/:slug/" element={<SpecificationPage />} />
 
             {/* Public Routes */}
