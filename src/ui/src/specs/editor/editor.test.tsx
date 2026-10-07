@@ -11,7 +11,7 @@ import {
 import {NewSpecification} from "./NewSpecification";
 import {Editor} from "./Editor";
 
-jest.mock("../App", () => ({useAuth: () => true}));
+jest.mock("../../App", () => ({useAuth: () => true}));
 
 type Call = {method: string; url: string; body: Record<string, unknown>};
 
@@ -26,6 +26,7 @@ function fakeAuthorApi(initial: Array<Record<string, any>> = []) {
     );
     const calls: Array<Call> = [];
     const refusals = new Map<string, string>();
+    const sets: Array<Record<string, unknown>> = [];
 
     function blank() {
         return {
@@ -38,12 +39,18 @@ function fakeAuthorApi(initial: Array<Record<string, any>> = []) {
             safe_listing_title: "",
             safe_listing_summary: "",
             superseded_by: null,
+            document_set: null,
+            stage: "DRAFT",
             readers: [] as Array<string>,
             revisions: [] as Array<Record<string, unknown>>,
         };
     }
 
     function answer(url: string, method: string, body: Record<string, any>) {
+        if (url === "/api/specs/author/sets/") {
+            if (method === "POST") sets.push({...body, slug: "set-900"});
+            return method === "POST" ? sets[sets.length - 1] : [...sets];
+        }
         const [, slug, action, sequence] =
             url.match(/^\/api\/specs\/author\/(?:([^/]+)\/(?:([^/]+)\/)?(?:(\d+)\/)?)?$/) ??
             [];
@@ -274,7 +281,9 @@ test("an author adds and removes readers and sees why a change was refused", asy
     const api = fakeAuthorApi([{slug: "kz-900", title: "Real title"}]);
     const user = userEvent.setup();
     renderAuthoring("/ui/specs/author/kz-900/");
-    const number = await screen.findByLabelText("Phone number of the account");
+    // The row says what the list holds; opening it gives the form.
+    await user.click(await screen.findByText("No readers"));
+    const number = screen.getByLabelText("Phone number of the account");
 
     api.refuse("/api/specs/author/kz-900/readers/", "No account has this phone number.");
     await user.type(number, "+254700000404");
@@ -289,11 +298,39 @@ test("an author adds and removes readers and sees why a change was refused", asy
     await user.click(
         await screen.findByRole("button", {name: "Remove +254700000009"}),
     );
-    expect(await screen.findByText("No readers.")).toBeInTheDocument();
+    expect(await screen.findByText("No readers")).toBeInTheDocument();
 
-    const status = screen.getByLabelText("Status");
-    await user.selectOptions(status, "archived");
-    await waitFor(() => expect(status).toHaveValue("archived"));
+    const archived = screen.getByLabelText("Archived");
+    await user.selectOptions(archived, "Yes");
+    await waitFor(() => expect(archived).toHaveDisplayValue("Yes"));
+});
+
+test("an author makes a document set, places a specification in it and sets its stage", async () => {
+    const api = fakeAuthorApi([{slug: "kz-900", title: "Synthetic title"}]);
+    const user = userEvent.setup();
+    renderAuthoring("/ui/specs/author/kz-900/");
+
+    // A set that does not exist yet is made from the menu that chooses one.
+    await user.click(await screen.findByText("Document set"));
+    await user.selectOptions(screen.getByLabelText("Belongs to"), "new");
+    await user.type(screen.getByLabelText("Title of the new set"), "Synthetic set");
+    await user.click(screen.getByRole("button", {name: "Save document set"}));
+
+    // Saved, the row itself names the set.
+    await waitFor(() =>
+        expect(screen.getByText("Document set").closest("summary")).toHaveTextContent(
+            "Synthetic set",
+        ),
+    );
+    await user.selectOptions(screen.getByLabelText("Stage"), "Accepted");
+
+    await waitFor(() =>
+        expect(api.calls.map((call) => call.body)).toEqual([
+            {title: "Synthetic set", summary: "", ordered: true},
+            {document_set: "set-900"},
+            {stage: "ACCEPTED"},
+        ]),
+    );
 });
 
 test("the author routes look missing to anyone else", async () => {

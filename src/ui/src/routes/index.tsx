@@ -12,10 +12,13 @@ import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
 import GameLandingPage from "../game";
-import {NewSpecification} from "../specs/NewSpecification";
-import {Editor} from "../specs/Editor";
-import {Library} from "../specs/Library";
-import {SpecificationPage} from "../specs/SpecificationPage";
+import {
+    DocumentSetPage,
+    Editor,
+    Library,
+    NewSpecification,
+    SpecificationPage,
+} from "../specs";
 
 export function NotFound() {
     return (
@@ -88,6 +91,7 @@ function RoutesApp() {
             <Route path="/ui/specs/" element={<Library />} />
             <Route path="/ui/specs/author/" element={<NewSpecification />} />
             <Route path="/ui/specs/author/:slug/" element={<Editor />} />
+            <Route path="/ui/specs/sets/:slug/" element={<DocumentSetPage />} />
             <Route path="/ui/specs/:slug/" element={<SpecificationPage />} />
 
             {/* Public Routes */}

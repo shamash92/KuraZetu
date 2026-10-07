@@ -1,10 +1,12 @@
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 import pytest
 from rest_framework.test import APIClient
 
-from specs.models import AccessPolicy, Revision, Specification
+from specs.admin import RecordAdmin
+from specs.models import AccessPolicy, Record, Revision, Specification
 
 pytestmark = pytest.mark.django_db
 
@@ -67,6 +69,8 @@ def test_visitor_reads_public_and_sees_only_safe_metadata_for_listed():
             "access": "locked",
             "archived": False,
             "published_at": None,
+            "stage": None,
+            "document_set": None,
         },
         {
             "slug": "public",
@@ -74,6 +78,8 @@ def test_visitor_reads_public_and_sees_only_safe_metadata_for_listed():
             "summary": "Real summary of public",
             "access": "full",
             "archived": False,
+            "stage": "DRAFT",
+            "document_set": None,
         },
     ]
 
@@ -136,3 +142,21 @@ def test_responses_are_never_stored_in_a_shared_cache():
     response = page(APIClient(), "public")
     assert "no-store" in response["Cache-Control"]
     assert "private" in response["Cache-Control"]
+
+
+def test_admin_record_list_names_a_restricted_specification_only_by_its_safe_title():
+    public, listed, concealed = library()
+    for spec in (public, listed, concealed):
+        Record.objects.create(action=Record.Action.PUBLISHED, specification=spec)
+    Record.objects.create(action=Record.Action.AUTHOR_GRANTED)
+    records = RecordAdmin(Record, admin.site)
+
+    titles = [records.title(record) for record in Record.objects.order_by("pk")]
+
+    assert titles == [
+        "Real title of public",
+        "Safe title",
+        "Restricted specification",
+        None,
+    ]
+    assert records.list_display == ("title", "action", "detail")

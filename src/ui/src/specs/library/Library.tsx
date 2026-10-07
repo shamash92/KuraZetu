@@ -2,22 +2,22 @@ import {useQuery} from "@tanstack/react-query";
 import {Lock} from "lucide-react";
 import {Link} from "react-router-dom";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
+import {specKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
-import {useAuth} from "../App";
-
-import {getLibrary} from "./api";
-import {getAuthorLibrary} from "./authorApi";
-import type {LibraryEntry} from "./api";
+import {getLibrary} from "../shared/api";
+import type {LibraryEntry} from "../shared/api";
+import {AuthorLinks, SpecsShell} from "../shared/SpecsShell";
 import {
-    AuthorLinks,
     RESTRICTED_NOTICE,
-    SpecsShell,
+    StageMark,
     Status,
     formatDate,
     indexOf,
-} from "./SpecsShell";
+} from "../shared/standing";
+import {useAuthor} from "../shared/useAuthor";
+
+import {SetCover, shelve} from "./documentSets";
 
 /** One specification as a sheet of paper, with its standing underneath. */
 function Cover({entry}: {entry: LibraryEntry}) {
@@ -42,12 +42,13 @@ function Cover({entry}: {entry: LibraryEntry}) {
                     {entry.summary && <p>{entry.summary}</p>}
                     {entry.published_at && (
                         <div className="sheet-foot">
-                            <span>Published</span>
+                            <span>Updated</span>
                             <span className="d">{formatDate(entry.published_at)}</span>
                         </div>
                     )}
                 </div>
                 <div className="doc-meta">
+                    {entry.stage && <StageMark stage={entry.stage} />}
                     <Status archived={entry.archived} />
                     {isLocked && (
                         <>
@@ -70,15 +71,7 @@ function Cover({entry}: {entry: LibraryEntry}) {
  * own page.
  */
 function Drafts() {
-    const isSignedIn = useAuth();
-    const authoring = useQuery({
-        queryKey: specKeys.authorLibrary(),
-        queryFn: ({signal}) => getAuthorLibrary(signal),
-        enabled: isSignedIn,
-        retry: false,
-        ...querySettings.specs,
-    });
-    const drafts = authoring.data?.filter((spec) => !spec.published) ?? [];
+    const drafts = useAuthor().library.filter((spec) => !spec.published);
 
     if (drafts.length === 0) return null;
 
@@ -126,9 +119,13 @@ export function Library() {
             )}
 
             <ul className="grid">
-                {library.data?.map((entry) => (
-                    <Cover key={entry.slug} entry={entry} />
-                ))}
+                {shelve(library.data ?? []).map((item) =>
+                    "set" in item ? (
+                        <SetCover key={item.set.slug} {...item} />
+                    ) : (
+                        <Cover key={item.slug} entry={item} />
+                    ),
+                )}
             </ul>
 
             <Drafts />

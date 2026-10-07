@@ -32,6 +32,19 @@ module.exports = {
       }
     ]
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        // Mermaid lazy-loads every diagram type as its own chunk; fold them into one.
+        mermaid: {
+          name: 'mermaid',
+          chunks: 'async',
+          test: /[\\/]node_modules[\\/]/,
+          enforce: true
+        }
+      }
+    }
+  },
   watchOptions: {
     ignored: ['**/node_modules/**', '**/static/**']
   },

@@ -105,6 +105,12 @@ export function specificationPageUrl(slug: string): string {
 
 export const SPECS_AUTHOR_URL = "/api/specs/author/";
 
+export const SPECS_AUTHOR_SETS_URL = `${SPECS_AUTHOR_URL}sets/`;
+
+export function documentSetOrderUrl(slug: string): string {
+    return `${SPECS_AUTHOR_SETS_URL}${encodeURIComponent(slug)}/order/`;
+}
+
 export function authorSpecificationUrl(slug: string): string {
     return `${SPECS_AUTHOR_URL}${encodeURIComponent(slug)}/`;
 }

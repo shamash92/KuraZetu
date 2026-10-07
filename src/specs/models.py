@@ -54,6 +54,51 @@ DISCLOSURE = {
 }
 
 
+class Stage(models.TextChoices):
+    """How far the work a specification describes has come."""
+
+    BRAINDUMP = "BRAINDUMP"
+    DRAFT = "DRAFT"
+    ACCEPTED = "ACCEPTED"
+    LIVE = "LIVE"
+
+
+class DocumentSet(models.Model):
+    """Specifications that describe related work, shown together.
+
+    The title and summary are shown to anyone who can discover one member,
+    so they are written for people who can read none of them.
+    """
+
+    slug = models.SlugField(unique=True)
+    title = models.CharField(max_length=200)
+    summary = models.TextField(blank=True)
+    # False when the members can be read in any order.
+    ordered = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.slug
+
+    def members(self):
+        """Every member in the order it is shown, concealed ones included."""
+        return self.specifications.order_by("position", "slug")
+
+    @transaction.atomic
+    def rearrange(self, slugs):
+        """Put the named members in the order given.
+
+        A member that is not named keeps its place among the others, so an
+        order made from what one page lists does not disturb the rest.
+        """
+        members = list(self.members().select_for_update())
+        named = {member.slug: member for member in members if member.slug in slugs}
+        moved = iter(named[slug] for slug in slugs)
+        ordered = [next(moved) if m.slug in named else m for m in members]
+        for position, member in enumerate(ordered, start=1):
+            member.position = position
+        Specification.objects.bulk_update(ordered, ["position"])
+
+
 class Specification(models.Model):
     slug = models.SlugField(unique=True)
     access_policy = models.CharField(
@@ -88,6 +133,18 @@ class Specification(models.Model):
         null=True,
         related_name="supersedes",
     )
+    document_set = models.ForeignKey(
+        DocumentSet,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="specifications",
+    )
+    # Where it comes in its set. Never sent to readers: they are given the
+    # members they can discover in order, so a gap cannot show that a
+    # concealed member exists.
+    position = models.PositiveSmallIntegerField(default=0)
+    stage = models.CharField(max_length=12, choices=Stage.choices, default=Stage.DRAFT)
 
     objects = SpecificationQuerySet.as_manager()
 
@@ -124,6 +181,14 @@ class Specification(models.Model):
             detail=str(revision.sequence),
         )
         return revision
+
+    def join(self, document_set):
+        """Move to a document set, as its last member, or out of every set."""
+        self.document_set = document_set
+        self.position = 0
+        if document_set is not None:
+            last = document_set.specifications.aggregate(last=Max("position"))
+            self.position = (last["last"] or 0) + 1
 
     def widens_disclosure(self, policy):
         return DISCLOSURE[policy] > DISCLOSURE[self.access_policy]

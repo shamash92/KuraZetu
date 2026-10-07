@@ -1,74 +1,21 @@
-import {useQuery} from "@tanstack/react-query";
 import {ArrowLeft} from "lucide-react";
 import type {ReactNode} from "react";
 import {Link, useLocation} from "react-router-dom";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
-import {useAuth} from "../App";
-import {LandingNav} from "../landing-pages";
-import "../landing-pages/landing.css";
+import {LandingNav} from "../../landing-pages";
+import "../../landing-pages/landing.css";
 
-import {getAuthorLibrary} from "./authorApi";
 import "./specs.css";
+import {useAuthor} from "./useAuthor";
 
-export const RESTRICTED_NOTICE =
-    "Restricted. This specification is available only to named accounts.";
-
-const DATE = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-});
-
-export function formatDate(value: string): string {
-    return DATE.format(new Date(value));
-}
-
-/** The address as the index printed on a specification: `KZ-7F3K9Q`. */
-export function indexOf(slug: string): string {
-    return slug.toUpperCase();
-}
-
-/**
- * Says a specification is no longer the one to follow. There is nothing to
- * say otherwise: being published does not mean what it describes is built.
- */
-export function Status({archived, superseded = false}: {
-    archived: boolean;
-    superseded?: boolean;
-}) {
-    if (!archived && !superseded) return null;
-
-    const status = superseded ? "Superseded" : "Archived";
-    return (
-        <span className="st" data-status={status.toLowerCase()}>
-            <span className="glyph" aria-hidden="true" />
-            {status}
-        </span>
-    );
-}
-
-/**
- * The author's way in: shown only to an account that can write.
- *
- * The author routes answer "not found" to everyone but an author, so a
- * successful read is what shows the way in. Visitors are never asked.
- */
+/** The author's way in: shown only to an account that can write. */
 export function AuthorLinks({editSlug}: {editSlug?: string}) {
-    const isSignedIn = useAuth();
-    const authoring = useQuery({
-        queryKey: specKeys.authorLibrary(),
-        queryFn: ({signal}) => getAuthorLibrary(signal),
-        enabled: isSignedIn,
-        retry: false,
-        ...querySettings.specs,
-    });
+    const {isAuthor} = useAuthor();
 
     // The page for writing a new one does not need a button that leads to it.
     const isWriting = useLocation().pathname === "/ui/specs/author/";
 
-    if (!authoring.isSuccess) return null;
+    if (!isAuthor) return null;
 
     return (
         <span className="author-links">

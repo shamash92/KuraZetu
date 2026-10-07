@@ -208,3 +208,72 @@ def test_author_archives_supersedes_and_deletes_only_unpublished():
     assert writer.delete(detail).status_code == 409
     library = writer.get(url("specs_author_library_api")).json()
     assert [entry["slug"] for entry in library] == [slug]
+
+
+def test_author_groups_specifications_into_an_ordered_document_set():
+    writer = author()
+    visitor = APIClient()
+    sets = url("specs_author_document_sets_api")
+    assert visitor.get(sets).status_code == 404
+
+    document_set = writer.post(
+        sets, {"title": "Synthetic set", "summary": "Set summary."}, format="json"
+    ).json()
+    assert document_set["ordered"] is True
+    # The address says nothing about the set.
+    assert "synthetic" not in document_set["slug"]
+
+    # Each one joins as the last member of the set.
+    slugs = {}
+    for title, policy in (
+        ("First", "PUBLIC"),
+        ("Concealed second", "RESTRICTED_CONCEALED"),
+        ("Third", "PUBLIC"),
+    ):
+        slug = slugs[title] = created(writer, title)
+        save_draft(
+            writer,
+            slug,
+            body="Synthetic body.",
+            document_set=document_set["slug"],
+            stage="ACCEPTED",
+        )
+        set_policy(writer, slug, policy, confirm_widening=True)
+        writer.post(url("specs_publish_api", slug))
+    alone = created(writer, "Standalone")
+    save_draft(writer, alone, body="Synthetic body.")
+    set_policy(writer, alone, "PUBLIC", confirm_widening=True)
+    writer.post(url("specs_publish_api", alone))
+
+    library = visitor.get(url("specs_library_api")).json()
+
+    members = [entry for entry in library if entry["document_set"]]
+    assert [entry["title"] for entry in members] == ["First", "Third"]
+    assert members[0]["document_set"] == document_set
+    assert members[0]["stage"] == "ACCEPTED"
+    # A reader is not given the numbers whose gap would reveal the second.
+    assert "position" not in members[0]
+    assert [e["title"] for e in library if not e["document_set"]] == ["Standalone"]
+
+    # The author rearranges what the set's page lists. The concealed member
+    # is not named and keeps its place between the two.
+    order = url("specs_document_set_order_api", document_set["slug"])
+    rearranged = {"specifications": [slugs["Third"], slugs["First"]]}
+    assert visitor.post(order, rearranged, format="json").status_code == 404
+    assert writer.post(order, rearranged, format="json").status_code == 204
+    assert [
+        writer.get(url("specs_author_specification_api", slugs[title])).json()[
+            "position"
+        ]
+        for title in ("Third", "Concealed second", "First")
+    ] == [1, 2, 3]
+    library = visitor.get(url("specs_library_api")).json()
+    assert [e["title"] for e in library if e["document_set"]] == ["Third", "First"]
+    assert (
+        writer.post(order, {"specifications": [alone]}, format="json").status_code
+        == 400
+    )
+
+    writer.delete(url("specs_author_document_set_api", document_set["slug"]))
+    library = visitor.get(url("specs_library_api")).json()
+    assert len(library) == 3 and not any(entry["document_set"] for entry in library)

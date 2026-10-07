@@ -1,53 +1,30 @@
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation} from "@tanstack/react-query";
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
-
-import {createSpecification, getAuthorLibrary} from "./authorApi";
-import type {AccessPolicy, AuthorEntry} from "./authorApi";
-import {NotFound, SpecsShell} from "./SpecsShell";
-
-export const POLICY_NAMES: Record<AccessPolicy, string> = {
-    PUBLIC: "Public",
-    RESTRICTED_LISTED: "Restricted, listed",
-    RESTRICTED_CONCEALED: "Restricted, concealed",
-};
-
-export function publicationStatus(spec: AuthorEntry): string {
-    if (!spec.published) return "Not published";
-    return spec.has_unpublished_changes
-        ? "Published, with unpublished changes in the draft"
-        : "Published";
-}
+import {createSpecification} from "../shared/authorApi";
+import {NotFound, SpecsShell} from "../shared/SpecsShell";
+import {useAuthor} from "../shared/useAuthor";
 
 export function NewSpecification() {
     const navigate = useNavigate();
     const [title, setTitle] = useState("");
 
-    // Read only to learn whether this account may write at all.
-    const library = useQuery({
-        queryKey: specKeys.authorLibrary(),
-        queryFn: ({signal}) => getAuthorLibrary(signal),
-        retry: false,
-        ...querySettings.specs,
-    });
+    const author = useAuthor();
     const create = useMutation({
         mutationFn: () => createSpecification(title),
         onSuccess: (created) => navigate(`/ui/specs/author/${created.slug}/`),
     });
 
-    if (library.isError) {
+    // Nothing is offered until the account is known to be an author.
+    if (!author.isKnown) return <SpecsShell>{null}</SpecsShell>;
+    if (!author.isAuthor) {
         return (
             <SpecsShell>
                 <NotFound />
             </SpecsShell>
         );
     }
-
-    // Nothing is offered until the account is known to be an author.
-    if (library.isPending) return <SpecsShell>{null}</SpecsShell>;
 
     return (
         <SpecsShell>

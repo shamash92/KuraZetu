@@ -2,19 +2,21 @@ import {useQuery} from "@tanstack/react-query";
 import {Lock} from "lucide-react";
 import {Link, useParams} from "react-router-dom";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
+import {specKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
-import {getSpecificationPage} from "./api";
-import {SpecMarkdown, headingId, headingsOf} from "./SpecMarkdown";
+import {documentSetPath} from "../library/documentSets";
+import {getSpecificationPage} from "../shared/api";
+import {NotFound, SpecsShell} from "../shared/SpecsShell";
 import {
-    NotFound,
     RESTRICTED_NOTICE,
-    SpecsShell,
+    StageMark,
     Status,
     formatDate,
     indexOf,
-} from "./SpecsShell";
+} from "../shared/standing";
+
+import {SpecMarkdown, headingId, headingsOf} from "./SpecMarkdown";
 
 export function SpecificationPage() {
     const {slug = ""} = useParams();
@@ -63,6 +65,24 @@ export function SpecificationPage() {
                                 <dt>Index</dt>
                                 <dd>{indexOf(spec.slug)}</dd>
                             </div>
+                            {spec.document_set && (
+                                <div>
+                                    <dt>Document set</dt>
+                                    <dd>
+                                        <Link to={documentSetPath(spec.document_set.slug)}>
+                                            {spec.document_set.title}
+                                        </Link>
+                                    </dd>
+                                </div>
+                            )}
+                            {spec.stage && (
+                                <div>
+                                    <dt>Stage</dt>
+                                    <dd>
+                                        <StageMark stage={spec.stage} />
+                                    </dd>
+                                </div>
+                            )}
                             {spec.published_at && (
                                 <div>
                                     <dt>Published</dt>
