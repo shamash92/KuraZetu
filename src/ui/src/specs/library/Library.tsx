@@ -2,55 +2,22 @@ import {useQuery} from "@tanstack/react-query";
 import {Lock} from "lucide-react";
 import {Link} from "react-router-dom";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
+import {specKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
-import {useAuth} from "../App";
-
-import {getLibrary} from "./api";
-import {getAuthorLibrary} from "./authorApi";
-import type {DocumentSet, LibraryEntry} from "./api";
+import {getLibrary} from "../shared/api";
+import type {LibraryEntry} from "../shared/api";
+import {AuthorLinks, SpecsShell} from "../shared/SpecsShell";
 import {
-    AuthorLinks,
     RESTRICTED_NOTICE,
-    SpecsShell,
     StageMark,
     Status,
-    documentSetPath,
     formatDate,
     indexOf,
-    ordinal,
-} from "./SpecsShell";
+} from "../shared/standing";
+import {useAuthor} from "../shared/useAuthor";
 
-/** How many members a set's cover names before it says how many are left. */
-const COVER_MEMBERS = 5;
-
-type Shelved = LibraryEntry | {set: DocumentSet; members: Array<LibraryEntry>};
-
-/**
- * The library in the order it is shown: each document set stands where its
- * first member would. A set with one member a person can discover is shown
- * as that specification alone.
- */
-function shelve(entries: ReadonlyArray<LibraryEntry>): Array<Shelved> {
-    const sets = new Map<string, Array<LibraryEntry>>();
-    for (const entry of entries) {
-        if (!entry.document_set) continue;
-        const members = sets.get(entry.document_set.slug) ?? [];
-        sets.set(entry.document_set.slug, [...members, entry]);
-    }
-
-    const shelf: Array<Shelved> = [];
-    for (const entry of entries) {
-        const members = entry.document_set && sets.get(entry.document_set.slug);
-        if (!entry.document_set || !members || members.length < 2) {
-            shelf.push(entry);
-        } else if (members[0] === entry) {
-            shelf.push({set: entry.document_set, members});
-        }
-    }
-    return shelf;
-}
+import {SetCover, shelve} from "./documentSets";
 
 /** One specification as a sheet of paper, with its standing underneath. */
 function Cover({entry}: {entry: LibraryEntry}) {
@@ -98,61 +65,13 @@ function Cover({entry}: {entry: LibraryEntry}) {
     );
 }
 
-/** A document set as a stack of paper that names what is in it. */
-function SetCover({set, members}: {set: DocumentSet; members: Array<LibraryEntry>}) {
-    const named = members.slice(0, COVER_MEMBERS);
-    const left = members.length - named.length;
-
-    return (
-        <li>
-            <Link className="doc" to={documentSetPath(set.slug)}>
-                <div className="sheet sheet--set">
-                    <div className="sheet-top">
-                        <span>Document set</span>
-                        <span>{members.length}</span>
-                    </div>
-                    <h2>{set.title}</h2>
-                    <ol className="members">
-                        {named.map((member, index) => (
-                            <li key={member.slug}>
-                                {set.ordered && (
-                                    <span className="n">{ordinal(index)}</span>
-                                )}
-                                <span>
-                                    {member.access === "locked" && (
-                                        <Lock size={12} aria-label="Locked" />
-                                    )}
-                                    {member.title}
-                                </span>
-                            </li>
-                        ))}
-                    </ol>
-                    {left > 0 && <p className="more">and {left} more</p>}
-                </div>
-                <div className="doc-meta">
-                    <strong>{members.length} related specifications</strong>
-                    <span>{set.ordered ? "Reading order" : "Read in any order"}</span>
-                </div>
-            </Link>
-        </li>
-    );
-}
-
 /**
  * An author's unpublished drafts. Nothing else lists them: the library shows
  * only what is published, and a published specification is edited from its
  * own page.
  */
 function Drafts() {
-    const isSignedIn = useAuth();
-    const authoring = useQuery({
-        queryKey: specKeys.authorLibrary(),
-        queryFn: ({signal}) => getAuthorLibrary(signal),
-        enabled: isSignedIn,
-        retry: false,
-        ...querySettings.specs,
-    });
-    const drafts = authoring.data?.filter((spec) => !spec.published) ?? [];
+    const drafts = useAuthor().library.filter((spec) => !spec.published);
 
     if (drafts.length === 0) return null;
 

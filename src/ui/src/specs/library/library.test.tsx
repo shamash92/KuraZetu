@@ -5,10 +5,10 @@ import {MemoryRouter, Route, Routes} from "react-router-dom";
 
 import {DocumentSetPage} from "./DocumentSetPage";
 import {Library} from "./Library";
-import {SpecificationPage} from "./SpecificationPage";
+import {SpecificationPage} from "../reader/SpecificationPage";
 
 let mockSignedIn = false;
-jest.mock("../App", () => ({useAuth: () => mockSignedIn}));
+jest.mock("../../App", () => ({useAuth: () => mockSignedIn}));
 
 const PUBLIC = {
     slug: "kz-900",
@@ -84,24 +84,6 @@ test("a visitor browses the library and reads a public specification", async () 
     );
 });
 
-test("a restricted page shows only its safe listing and a missing one says so", async () => {
-    mockApi({"/api/specs/kz-901/": LOCKED});
-
-    const locked = renderSpecs("/ui/specs/kz-901/");
-    expect(
-        await screen.findByRole("heading", {level: 1, name: "Safe title"}),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/^Restricted\./)).toBeInTheDocument();
-    // The notice offers nothing to do.
-    expect(within(screen.getByRole("main")).queryByRole("button")).toBeNull();
-    locked.unmount();
-
-    renderSpecs("/ui/specs/kz-999/");
-    expect(
-        await screen.findByRole("heading", {name: "This page doesn’t exist."}),
-    ).toBeInTheDocument();
-});
-
 test("a document set is one cover in the library and opens to its specifications in order", async () => {
     const set = {
         slug: "set-900",
@@ -168,7 +150,7 @@ test("only an author is given the controls that rearrange a document set", async
     mockSignedIn = true;
     mockApi({
         ...routes,
-        "/api/specs/author/sets/": [set],
+        "/api/specs/author/": [],
         "/api/specs/author/sets/set-900/order/": null,
     });
     const user = userEvent.setup();

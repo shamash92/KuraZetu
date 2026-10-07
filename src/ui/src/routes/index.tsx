@@ -12,11 +12,13 @@ import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
 import GameLandingPage from "../game";
-import {NewSpecification} from "../specs/NewSpecification";
-import {Editor} from "../specs/Editor";
-import {Library} from "../specs/Library";
-import {SpecificationPage} from "../specs/SpecificationPage";
-import {DocumentSetPage} from "../specs/DocumentSetPage";
+import {
+    DocumentSetPage,
+    Editor,
+    Library,
+    NewSpecification,
+    SpecificationPage,
+} from "../specs";
 
 export function NotFound() {
     return (

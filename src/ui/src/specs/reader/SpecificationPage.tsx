@@ -2,21 +2,21 @@ import {useQuery} from "@tanstack/react-query";
 import {Lock} from "lucide-react";
 import {Link, useParams} from "react-router-dom";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
+import {specKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
-import {getSpecificationPage} from "./api";
-import {SpecMarkdown, headingId, headingsOf} from "./SpecMarkdown";
+import {documentSetPath} from "../library/documentSets";
+import {getSpecificationPage} from "../shared/api";
+import {NotFound, SpecsShell} from "../shared/SpecsShell";
 import {
-    NotFound,
     RESTRICTED_NOTICE,
-    SpecsShell,
     StageMark,
     Status,
-    documentSetPath,
     formatDate,
     indexOf,
-} from "./SpecsShell";
+} from "../shared/standing";
+
+import {SpecMarkdown, headingId, headingsOf} from "./SpecMarkdown";
 
 export function SpecificationPage() {
     const {slug = ""} = useParams();

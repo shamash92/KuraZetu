@@ -5,11 +5,11 @@ import type {ReactNode} from "react";
 import {useBlocker, useParams} from "react-router-dom";
 import {toast} from "sonner";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
+import {specKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
-import {POLICY_NAMES, publicationStatus} from "./NewSpecification";
-import type {Stage} from "./api";
+import {SpecMarkdown} from "../reader/SpecMarkdown";
+import type {Stage} from "../shared/api";
 import {
     changeAccessPolicy,
     changeReader,
@@ -20,10 +20,15 @@ import {
     getRevision,
     publishSpecification,
     saveSpecification,
-} from "./authorApi";
-import type {AccessPolicy, AuthorSpecification} from "./authorApi";
-import {SpecMarkdown} from "./SpecMarkdown";
-import {NotFound, STAGE_NAMES, SpecsShell, indexOf} from "./SpecsShell";
+} from "../shared/authorApi";
+import type {AccessPolicy, AuthorSpecification} from "../shared/authorApi";
+import {NotFound, SpecsShell} from "../shared/SpecsShell";
+import {
+    POLICY_NAMES,
+    STAGE_NAMES,
+    indexOf,
+    publicationStatus,
+} from "../shared/standing";
 
 const DISCLOSURE: Record<AccessPolicy, number> = {
     RESTRICTED_CONCEALED: 0,

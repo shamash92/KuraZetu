@@ -11,7 +11,7 @@ import {
 import {NewSpecification} from "./NewSpecification";
 import {Editor} from "./Editor";
 
-jest.mock("../App", () => ({useAuth: () => true}));
+jest.mock("../../App", () => ({useAuth: () => true}));
 
 type Call = {method: string; url: string; body: Record<string, unknown>};
 

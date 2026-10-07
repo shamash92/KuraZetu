@@ -9,7 +9,7 @@ import {
     specificationPublishUrl,
     specificationReadersUrl,
     specificationRevisionUrl,
-} from "../api/apiUrls";
+} from "../../api/apiUrls";
 
 import {getJson} from "./api";
 import type {DocumentSet, Stage} from "./api";

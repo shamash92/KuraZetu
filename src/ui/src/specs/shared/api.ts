@@ -1,4 +1,4 @@
-import {SPECS_LIBRARY_URL, specificationPageUrl} from "../api/apiUrls";
+import {SPECS_LIBRARY_URL, specificationPageUrl} from "../../api/apiUrls";
 
 export type Stage = "BRAINDUMP" | "DRAFT" | "ACCEPTED" | "LIVE";
 

@@ -2,21 +2,16 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ArrowDown, ArrowUp, Info, Lock} from "lucide-react";
 import {Link, useParams} from "react-router-dom";
 
-import {specKeys} from "../api/queryKeys";
-import {querySettings} from "../api/querySettings";
+import {specKeys} from "../../api/queryKeys";
+import {querySettings} from "../../api/querySettings";
 
-import {useAuth} from "../App";
+import {getLibrary} from "../shared/api";
+import {rearrangeDocumentSet} from "../shared/authorApi";
+import {NotFound, SpecsShell} from "../shared/SpecsShell";
+import {StageMark, formatDate} from "../shared/standing";
+import {useAuthor} from "../shared/useAuthor";
 
-import {getLibrary} from "./api";
-import {getDocumentSets, rearrangeDocumentSet} from "./authorApi";
-import {
-    NotFound,
-    SpecsShell,
-    StageMark,
-    formatDate,
-    membersOf,
-    ordinal,
-} from "./SpecsShell";
+import {membersOf, ordinal} from "./documentSets";
 
 /**
  * The specifications of one document set. It is the library filtered to the
@@ -32,16 +27,7 @@ export function DocumentSetPage() {
     const members = membersOf(library.data ?? [], slug);
     const set = members[0]?.document_set;
 
-    // The author routes answer "not found" to everyone but an author, so a
-    // successful read is what shows the controls. Visitors are never asked.
-    const isSignedIn = useAuth();
-    const authoring = useQuery({
-        queryKey: specKeys.authorDocumentSets(),
-        queryFn: ({signal}) => getDocumentSets(signal),
-        enabled: isSignedIn,
-        retry: false,
-        ...querySettings.specs,
-    });
+    const {isAuthor} = useAuthor();
     const queryClient = useQueryClient();
     const rearrange = useMutation({
         mutationFn: (order: Array<string>) => rearrangeDocumentSet(slug, order),
@@ -107,7 +93,7 @@ export function DocumentSetPage() {
                                         <span>{formatDate(member.published_at)}</span>
                                     )}
                                 </div>
-                                {authoring.isSuccess && (
+                                {isAuthor && (
                                     <div className="reorder">
                                         <button
                                             type="button"
