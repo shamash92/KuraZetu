@@ -42,7 +42,7 @@ function Cover({entry}: {entry: LibraryEntry}) {
                     {entry.summary && <p>{entry.summary}</p>}
                     {entry.published_at && (
                         <div className="sheet-foot">
-                            <span>Published</span>
+                            <span>Updated</span>
                             <span className="d">{formatDate(entry.published_at)}</span>
                         </div>
                     )}

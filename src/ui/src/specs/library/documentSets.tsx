@@ -2,6 +2,7 @@ import {Lock} from "lucide-react";
 import {Link} from "react-router-dom";
 
 import type {DocumentSet, LibraryEntry} from "../shared/api";
+import {formatDate} from "../shared/standing";
 
 /**
  * How document sets are shown to a reader. Everything here works from the
@@ -26,7 +27,7 @@ export function membersOf(
 }
 
 /** How many members a set's cover names before it says how many are left. */
-const COVER_MEMBERS = 5;
+const COVER_MEMBERS = 4;
 
 type Shelved = LibraryEntry | {set: DocumentSet; members: Array<LibraryEntry>};
 
@@ -59,6 +60,11 @@ export function shelve(entries: ReadonlyArray<LibraryEntry>): Array<Shelved> {
 export function SetCover({set, members}: {set: DocumentSet; members: Array<LibraryEntry>}) {
     const named = members.slice(0, COVER_MEMBERS);
     const left = members.length - named.length;
+    // The newest revision among the members this person can read.
+    const updated = members
+        .flatMap((member) => member.published_at ?? [])
+        .sort()
+        .pop();
 
     return (
         <li>
@@ -75,7 +81,7 @@ export function SetCover({set, members}: {set: DocumentSet; members: Array<Libra
                                 {set.ordered && (
                                     <span className="n">{ordinal(index)}</span>
                                 )}
-                                <span>
+                                <span className="name">
                                     {member.access === "locked" && (
                                         <Lock size={12} aria-label="Locked" />
                                     )}
@@ -83,8 +89,14 @@ export function SetCover({set, members}: {set: DocumentSet; members: Array<Libra
                                 </span>
                             </li>
                         ))}
+                        {left > 0 && <li className="more">and {left} more</li>}
                     </ol>
-                    {left > 0 && <p className="more">and {left} more</p>}
+                    {updated && (
+                        <div className="sheet-foot">
+                            <span>Updated</span>
+                            <span className="d">{formatDate(updated)}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="doc-meta">
                     <strong>{members.length} related specifications</strong>

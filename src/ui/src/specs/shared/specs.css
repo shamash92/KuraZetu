@@ -315,12 +315,26 @@
   display: flex;
   justify-content: space-between;
 }
+/* The list gives way before the foot does, so a narrow cover loses a name
+   and never its date. */
 .kz-specs .members {
+  flex: 0 1 auto;
+  min-height: 0;
   margin: 14px 0 0;
   padding: 0;
+  overflow: hidden;
   list-style: none;
   font-size: 13.5px;
   line-height: 1.4;
+}
+.kz-specs .members .name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kz-specs .members .more {
+  color: var(--mute);
 }
 .kz-specs .members li {
   display: flex;
@@ -338,9 +352,6 @@
   line-height: 1.75;
   letter-spacing: 0.06em;
   color: var(--mute);
-}
-.kz-specs .sheet .more {
-  margin-top: 8px;
 }
 .kz-specs .doc-meta strong {
   color: var(--ink);
@@ -363,8 +374,7 @@
   margin: 80px 0 0;
   padding-top: 20px;
   border-top: 1px solid var(--rule-08);
-  font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.6;
   color: var(--mute);
 }
