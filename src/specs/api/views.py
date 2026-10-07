@@ -22,12 +22,21 @@ from specs.api.serializers import (
     AccessPolicyChangeSerializer,
     AuthorLibraryEntrySerializer,
     AuthorSpecificationSerializer,
+    DocumentSetOrderSerializer,
+    DocumentSetSerializer,
     LibraryEntrySerializer,
     ReaderSerializer,
     RevisionSerializer,
     SpecificationPageSerializer,
 )
-from specs.models import AccessPolicy, Record, Revision, Specification, is_author
+from specs.models import (
+    AccessPolicy,
+    DocumentSet,
+    Record,
+    Revision,
+    Specification,
+    is_author,
+)
 
 
 class SpecificationView:
@@ -42,7 +51,7 @@ class SpecificationView:
 
     def get_queryset(self):
         return Specification.objects.discoverable_by(self.request.user).select_related(
-            "current_revision"
+            "current_revision", "document_set"
         )
 
 
@@ -50,7 +59,7 @@ class LibraryView(SpecificationView, ListAPIView):
     serializer_class = LibraryEntrySerializer
 
     def get_queryset(self):
-        return super().get_queryset().order_by("slug")
+        return super().get_queryset().order_by("position", "slug")
 
 
 class SpecificationPageView(SpecificationView, RetrieveAPIView):
@@ -99,6 +108,31 @@ class AuthorSpecificationView(AuthorView, RetrieveUpdateDestroyAPIView):
                 status=status.HTTP_409_CONFLICT,
             )
         spec.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AuthorDocumentSetsView(AuthorView, ListCreateAPIView):
+    serializer_class = DocumentSetSerializer
+
+    def get_queryset(self):
+        return DocumentSet.objects.order_by("title")
+
+
+class AuthorDocumentSetView(AuthorView, RetrieveUpdateDestroyAPIView):
+    serializer_class = DocumentSetSerializer
+
+    def get_queryset(self):
+        return DocumentSet.objects.all()
+
+
+class DocumentSetOrderView(AuthorDocumentSetView):
+    def post(self, request, slug):
+        document_set = self.get_object()
+        order = DocumentSetOrderSerializer(
+            data=request.data, context={"document_set": document_set}
+        )
+        order.is_valid(raise_exception=True)
+        document_set.rearrange(order.validated_data["specifications"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

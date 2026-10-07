@@ -69,6 +69,8 @@ def test_visitor_reads_public_and_sees_only_safe_metadata_for_listed():
             "access": "locked",
             "archived": False,
             "published_at": None,
+            "stage": None,
+            "document_set": None,
         },
         {
             "slug": "public",
@@ -76,6 +78,8 @@ def test_visitor_reads_public_and_sees_only_safe_metadata_for_listed():
             "summary": "Real summary of public",
             "access": "full",
             "archived": False,
+            "stage": "DRAFT",
+            "document_set": None,
         },
     ]
 

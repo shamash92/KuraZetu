@@ -5,7 +5,33 @@ from drf_spectacular.utils import extend_schema_field
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
-from specs.models import AccessPolicy, Revision, Specification
+from specs.models import AccessPolicy, DocumentSet, Revision, Specification, Stage
+
+ADDRESS_ALPHABET = string.ascii_lowercase + string.digits
+
+
+def new_address(model=Specification, prefix="kz-"):
+    """An address that says nothing about what it names.
+
+    Random rather than numbered, so that a gap between two addresses a
+    person can see does not show that a concealed specification exists.
+    """
+    while True:
+        slug = prefix + "".join(secrets.choice(ADDRESS_ALPHABET) for _ in range(6))
+        if not model.objects.filter(slug=slug).exists():
+            return slug
+
+
+class DocumentSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentSet
+        fields = ("slug", "title", "summary", "ordered")
+        read_only_fields = ("slug",)
+
+    def create(self, validated_data):
+        return super().create(
+            {**validated_data, "slug": new_address(DocumentSet, "set-")}
+        )
 
 
 class LibraryEntrySerializer(serializers.ModelSerializer):
@@ -15,13 +41,24 @@ class LibraryEntrySerializer(serializers.ModelSerializer):
     """
 
     title = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
+    document_set = DocumentSetSerializer(read_only=True)
     summary = serializers.SerializerMethodField()
     access = serializers.SerializerMethodField()
     published_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Specification
-        fields = ("slug", "title", "summary", "access", "archived", "published_at")
+        fields = (
+            "slug",
+            "title",
+            "summary",
+            "access",
+            "archived",
+            "published_at",
+            "stage",
+            "document_set",
+        )
 
     def get_title(self, spec) -> str:
         if spec.can_read:
@@ -32,6 +69,10 @@ class LibraryEntrySerializer(serializers.ModelSerializer):
         if spec.can_read:
             return spec.current_revision.summary
         return spec.safe_listing_summary
+
+    @extend_schema_field(serializers.ChoiceField(Stage.choices, allow_null=True))
+    def get_stage(self, spec):
+        return spec.stage if spec.can_read else None
 
     def get_access(self, spec) -> str:
         return "full" if spec.can_read else "locked"
@@ -64,21 +105,6 @@ class SpecificationPageSerializer(LibraryEntrySerializer):
             .first()
         )
         return LibraryEntrySerializer(successor).data if successor else None
-
-
-ADDRESS_ALPHABET = string.ascii_lowercase + string.digits
-
-
-def new_address():
-    """An address that says nothing about the specification.
-
-    Random rather than numbered, so that a gap between two addresses a
-    person can see does not show that a concealed specification exists.
-    """
-    while True:
-        slug = "kz-" + "".join(secrets.choice(ADDRESS_ALPHABET) for _ in range(6))
-        if not Specification.objects.filter(slug=slug).exists():
-            return slug
 
 
 class AuthorLibraryEntrySerializer(serializers.ModelSerializer):
@@ -136,6 +162,12 @@ class AuthorSpecificationSerializer(AuthorLibraryEntrySerializer):
         allow_null=True,
         required=False,
     )
+    document_set = serializers.SlugRelatedField(
+        slug_field="slug",
+        queryset=DocumentSet.objects.all(),
+        allow_null=True,
+        required=False,
+    )
     readers = serializers.SerializerMethodField()
     revisions = serializers.SerializerMethodField()
 
@@ -146,10 +178,13 @@ class AuthorSpecificationSerializer(AuthorLibraryEntrySerializer):
             "safe_listing_title",
             "safe_listing_summary",
             "superseded_by",
+            "document_set",
+            "position",
+            "stage",
             "readers",
             "revisions",
         )
-        read_only_fields = ("slug", "access_policy")
+        read_only_fields = ("slug", "access_policy", "position")
 
     def get_readers(self, spec) -> list[str]:
         return [str(reader.phone_number) for reader in spec.readers.all()]
@@ -159,6 +194,15 @@ class AuthorSpecificationSerializer(AuthorLibraryEntrySerializer):
         return RevisionSummarySerializer(
             spec.revisions.order_by("-sequence"), many=True
         ).data
+
+    def update(self, spec, validated_data):
+        # A specification that joins a set comes last in it. Its place is
+        # changed only by rearranging the set.
+        if "document_set" in validated_data:
+            document_set = validated_data.pop("document_set")
+            if document_set != spec.document_set:
+                spec.join(document_set)
+        return super().update(spec, validated_data)
 
     def validate(self, attrs):
         spec = self.instance
@@ -174,6 +218,20 @@ class AuthorSpecificationSerializer(AuthorLibraryEntrySerializer):
                 {"safe_listing_title": "A listed specification needs a safe title."}
             )
         return attrs
+
+
+class DocumentSetOrderSerializer(serializers.Serializer):
+    specifications = serializers.ListField(child=serializers.SlugField())
+
+    def validate_specifications(self, slugs):
+        members = set(
+            self.context["document_set"].specifications.values_list("slug", flat=True)
+        )
+        if len(set(slugs)) != len(slugs) or not set(slugs) <= members:
+            raise serializers.ValidationError(
+                "Name each specification once, and only members of this set."
+            )
+        return slugs
 
 
 class AccessPolicyChangeSerializer(serializers.Serializer):
