@@ -1,9 +1,11 @@
 import {ArrowLeft} from "lucide-react";
+import {useEffect} from "react";
 import type {ReactNode} from "react";
 import {Link, useLocation} from "react-router-dom";
 
 import {LandingNav} from "../../landing-pages";
 import "../../landing-pages/landing.css";
+import {preloadMermaid} from "../reader/Diagram";
 
 import "./specs.css";
 import {useAuthor} from "./useAuthor";
@@ -46,6 +48,10 @@ export function SpecsShell({
 }) {
     // The library puts the author's links beside its own heading.
     const isLibrary = useLocation().pathname === "/ui/specs/";
+
+    // Every specification page starts the fetch, so a diagram is ready by the
+    // time a person opens a specification that has one.
+    useEffect(() => preloadMermaid(), []);
 
     return (
         <>
