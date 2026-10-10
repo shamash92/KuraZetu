@@ -1,7 +1,7 @@
 import {
-    Alert,
     Keyboard,
     KeyboardAvoidingView,
+    LayoutChangeEvent,
     Platform,
     Pressable,
     PressableProps,
@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View,
     ViewStyle,
+    useWindowDimensions,
 } from "react-native";
 import Animated, {
     Easing,
@@ -33,17 +34,14 @@ import {
 } from "lucide-react-native";
 import {
     CARD,
-    COPPER,
     COPPER_DEEP,
     INK,
     LIME,
     LIME_INK,
     MUTE,
-    PAPER,
+    MUTE_2,
     RED,
-    RULE_08,
     RULE_16,
-    SURFACE,
 } from "../_utils/colors";
 import {Link, router} from "expo-router";
 import React, {useCallback, useEffect, useRef, useState} from "react";
@@ -86,9 +84,17 @@ const SWAP_MS = 480;
 const CHAR_STAGGER_MS = 22;
 const HOLD_MS = 1800;
 const LONGEST_GREETING = Math.max(...GREETINGS.map((g) => g.length));
-// The county atlas sits behind the greeting and runs off the trailing edge.
-const ATLAS_WIDTH = 260;
-const ATLAS_HEIGHT = (ATLAS_WIDTH * COUNTY_ATLAS_HEIGHT) / COUNTY_ATLAS_WIDTH;
+// The county atlas is the hero's one image: the country in lime, its 47
+// counties cut in ink. It takes all the room the hero has and runs off the
+// trailing edge, stopping short of the greeting.
+const ATLAS_ASPECT = COUNTY_ATLAS_HEIGHT / COUNTY_ATLAS_WIDTH;
+const ATLAS_MAX_WIDTH_RATIO = 0.74;
+const ATLAS_BLEED_RATIO = 0.2;
+const ATLAS_TOP_GAP = 4;
+// Room kept under the atlas for the greeting. The coast runs away to the
+// right there, so the greeting sits in the clear below the southern border.
+const ATLAS_GREETING_RESERVE = 64;
+const PHONE_DIGITS = 9;
 // Press feedback: 120ms and 3% is the ceiling for a control touched this often.
 const PRESS_TRANSITION = {
     transitionProperty: "transform",
@@ -303,6 +309,8 @@ export default function LoginScreen() {
     const {logIn, lock} = useAuthStore();
 
     const insets = useSafeAreaInsets();
+    const {width: windowWidth} = useWindowDimensions();
+    const [heroHeight, setHeroHeight] = useState<number | null>(null);
     const hasCommittedPasswordSignIn = useRef(false);
     const phoneInput = useRef<TextInput>(null);
     const passwordInput = useRef<TextInput>(null);
@@ -375,14 +383,23 @@ export default function LoginScreen() {
     }, []);
 
     const handleLogin = () => {
-        if (!phoneNumber || phoneNumber === "+254") {
-            Alert.alert("Error", "Please enter your phone number");
+        if (nationalNumber.length === 0) {
+            setError("Enter your phone number.");
+            phoneInput.current?.focus();
+            return;
+        }
+        if (nationalNumber.length < PHONE_DIGITS) {
+            setError(`Your phone number needs ${PHONE_DIGITS} digits after +254.`);
+            phoneInput.current?.focus();
             return;
         }
         if (!password) {
-            Alert.alert("Error", "Please enter your password");
+            setError("Enter your password.");
+            passwordInput.current?.focus();
             return;
         }
+
+        setError(null);
 
         hasCommittedPasswordSignIn.current = false;
         setIsTallyAnimationComplete(false);
@@ -429,27 +446,15 @@ export default function LoginScreen() {
                         }
 
                         setError(data["error"]);
-                        Alert.alert("Please try again later", data["error"]);
                     } else if (data["error"] === "Invalid credentials") {
-                        console.log("Invalid credentials");
-                        setError(data["error"]);
-                        Alert.alert(
-                            "Invalid credentials",
-                            "Please check your phone number and password.",
-                        );
+                        setError("Wrong phone number or password.");
                     } else if (
                         data["error"] === "Invalid data" &&
                         data["details"]["phone_number"]
                     ) {
-                        console.log("Phone number error");
-                        setError(data["details"]["phone_number"]);
-                        Alert.alert(
-                            "Phone number error",
-                            data["details"]["phone_number"][0],
-                        );
+                        setError(data["details"]["phone_number"][0]);
                     } else {
                         setError(data["error"]);
-                        Alert.alert("Unable to log in", data["error"]);
                     }
                 } else if (data["message"] === "User login successful") {
                     let token = data["data"]["token"];
@@ -466,21 +471,45 @@ export default function LoginScreen() {
                     }
                 } else {
                     setIsSubmitting(false);
-                    Alert.alert("Unable to log in", "Please try again.");
+                    setError("Could not sign you in. Try again.");
                 }
             })
             .catch(() => {
                 setIsSubmitting(false);
-                Alert.alert("Unable to log in", "Check your connection and try again.");
+                setError("Could not sign you in. Check your connection and try again.");
             });
     };
 
     // National number digits only (without the +254 country code).
     const nationalNumber = phoneNumber.replace(/^\+254/, "");
+    // Shown in threes, the way the number is read out: 712 345 678.
+    const groupedNumber = nationalNumber.replace(/(\d{3})(?=\d)/g, "$1 ");
     const handlePhoneChange = (text: string) => {
-        const digits = text.replace(/[^0-9]/g, "").slice(0, 9);
+        const digits = text.replace(/[^0-9]/g, "").slice(0, PHONE_DIGITS);
         setPhoneNumber("+254" + digits);
+        setError(null);
+        // The number pad has no next key, so a full number moves on by itself.
+        if (digits.length === PHONE_DIGITS && nationalNumber.length < PHONE_DIGITS) {
+            passwordInput.current?.focus();
+        }
     };
+    const handlePasswordChange = (text: string) => {
+        setPassword(text);
+        setError(null);
+    };
+
+    const atlasTop = insets.top + ATLAS_TOP_GAP;
+    const atlasHeight =
+        heroHeight === null
+            ? 0
+            : Math.max(
+                  0,
+                  Math.min(
+                      windowWidth * ATLAS_MAX_WIDTH_RATIO * ATLAS_ASPECT,
+                      heroHeight - atlasTop - ATLAS_GREETING_RESERVE,
+                  ),
+              );
+    const atlasWidth = atlasHeight / ATLAS_ASPECT;
 
     if (!isLockoutRestored) return null;
 
@@ -518,24 +547,38 @@ export default function LoginScreen() {
                         {paddingTop: insets.top + 14},
                         isKeyboardOpen && styles.heroCompact,
                     ]}
+                    onLayout={(event: LayoutChangeEvent) => {
+                        // Sized once, at rest: the keyboard shrinks the hero
+                        // and the atlas is hidden by then anyway.
+                        if (!isKeyboardOpen) {
+                            setHeroHeight(event.nativeEvent.layout.height);
+                        }
+                    }}
                 >
                     <Animated.View
                         style={[
                             styles.atlas,
-                            {top: insets.top + 6, opacity: isKeyboardOpen ? 0 : 1},
+                            {
+                                top: atlasTop,
+                                right: -atlasWidth * ATLAS_BLEED_RATIO,
+                                opacity: isKeyboardOpen || atlasHeight === 0 ? 0 : 1,
+                            },
                             ATLAS_FADE,
                         ]}
+                        pointerEvents="none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
                     >
                         <Svg
-                            width={ATLAS_WIDTH}
-                            height={ATLAS_HEIGHT}
+                            width={atlasWidth}
+                            height={atlasHeight}
                             viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
                         >
                             <Path
                                 d={COUNTY_ATLAS_PATH}
-                                fill="none"
-                                stroke={RULE_16}
-                                strokeWidth={1.8}
+                                fill={LIME}
+                                stroke={INK}
+                                strokeWidth={2.2}
                                 strokeLinejoin="round"
                             />
                         </Svg>
@@ -544,23 +587,27 @@ export default function LoginScreen() {
                     {isKeyboardOpen ? (
                         <View />
                     ) : (
-                        <Animated.View
+                        <Animated.Text
+                            style={styles.wordmark}
                             entering={FadeIn.duration(200)}
                             exiting={FadeOut.duration(120)}
                         >
-                            <Text style={styles.wordmark}>
-                                Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
-                            </Text>
+                            Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
+                        </Animated.Text>
+                    )}
+
+                    <View>
+                        {isKeyboardOpen ? null : (
                             <Text style={styles.disclaimer}>
                                 Citizen tally · Not an IEBC system
                             </Text>
-                        </Animated.View>
-                    )}
-
-                    <KineticGreeting />
+                        )}
+                        <KineticGreeting />
+                    </View>
                 </View>
 
                 <View style={[styles.sheet, {paddingBottom: insets.bottom + 18}]}>
+                    <Text style={styles.label}>Phone number</Text>
                     <Pressable
                         style={[
                             styles.fieldShell,
@@ -580,21 +627,21 @@ export default function LoginScreen() {
                                 accessibilityLabel="Phone number"
                                 placeholder="712 345 678"
                                 placeholderTextColor={MUTE}
-                                value={nationalNumber}
+                                value={groupedNumber}
                                 onChangeText={handlePhoneChange}
-                                keyboardType="phone-pad"
+                                keyboardType="number-pad"
                                 textContentType="telephoneNumber"
-                                maxLength={9}
+                                autoComplete="tel-national"
                                 onFocus={() => setFocusedField("phone")}
                                 onBlur={() => setFocusedField(null)}
                             />
                         </View>
                     </Pressable>
 
+                    <Text style={[styles.label, styles.labelGap]}>Password</Text>
                     <Pressable
                         style={[
                             styles.fieldShell,
-                            styles.fieldGap,
                             focusedField === "password" && styles.fieldFocused,
                         ]}
                         onPress={() => passwordInput.current?.focus()}
@@ -605,13 +652,13 @@ export default function LoginScreen() {
                                 ref={passwordInput}
                                 style={styles.fieldInput}
                                 accessibilityLabel="Password"
-                                placeholder="Password"
-                                placeholderTextColor={MUTE}
                                 value={password}
-                                onChangeText={setPassword}
+                                onChangeText={handlePasswordChange}
                                 secureTextEntry={!showPassword}
                                 textContentType="password"
+                                autoComplete="current-password"
                                 autoCapitalize="none"
+                                autoCorrect={false}
                                 returnKeyType="go"
                                 onSubmitEditing={() => handleLogin()}
                                 onFocus={() => setFocusedField("password")}
@@ -644,6 +691,14 @@ export default function LoginScreen() {
                     {isOffline ? (
                         <Text style={styles.offline} accessibilityLiveRegion="polite">
                             You&apos;re offline. Connect to the internet to sign in.
+                        </Text>
+                    ) : error ? (
+                        <Text
+                            style={styles.error}
+                            accessibilityRole="alert"
+                            accessibilityLiveRegion="assertive"
+                        >
+                            {error}
                         </Text>
                     ) : null}
 
@@ -698,18 +753,18 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: PAPER,
+        backgroundColor: INK,
     },
     content: {
         flexGrow: 1,
     },
-    // Brand and greeting on paper; the form rises from the bottom edge, where
-    // the thumb already is.
+    // Brand, atlas and greeting on ink; the form rises from the bottom edge,
+    // where the thumb already is.
     hero: {
         flexGrow: 1,
-        minHeight: 300,
+        minHeight: 250,
         paddingHorizontal: 24,
-        paddingBottom: 26,
+        paddingBottom: 22,
         justifyContent: "space-between",
         overflow: "hidden",
     },
@@ -718,39 +773,30 @@ const styles = StyleSheet.create({
     },
     atlas: {
         position: "absolute",
-        right: -64,
     },
     wordmark: {
         fontFamily: "PublicSans-ExtraBold",
         fontSize: 22,
         letterSpacing: -0.7,
-        color: INK,
+        color: CARD,
     },
     wordmarkDot: {
         color: RED,
     },
     disclaimer: {
-        marginTop: 6,
+        marginBottom: 2,
         fontFamily: "SpaceMono-Regular",
         fontSize: 10.5,
         letterSpacing: 1.2,
         textTransform: "uppercase",
-        color: MUTE,
+        color: MUTE_2,
     },
     heading: {
         fontSize: 34,
         fontWeight: "900",
         letterSpacing: -0.9,
         lineHeight: HEADING_LINE_HEIGHT,
-        color: INK,
-    },
-    langLabel: {
-        fontSize: 10.5,
-        fontWeight: "700",
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        color: COPPER,
-        marginBottom: 6,
+        color: CARD,
     },
     greetingMask: {
         height: GREETING_MASK_HEIGHT,
@@ -771,27 +817,33 @@ const styles = StyleSheet.create({
         backgroundColor: CARD,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        borderWidth: 1,
-        borderBottomWidth: 0,
-        borderColor: RULE_08,
         paddingTop: 24,
         paddingHorizontal: 20,
     },
+    label: {
+        marginBottom: 6,
+        marginLeft: 2,
+        fontSize: 14,
+        lineHeight: 18,
+        fontWeight: "600",
+        color: INK,
+    },
+    labelGap: {
+        marginTop: 14,
+    },
+    // White fields drawn with a line, not a grey fill: the sheet stays one
+    // clean surface and the focused field is the only heavy stroke on it.
     fieldShell: {
         flexDirection: "row",
         alignItems: "stretch",
-        minHeight: 62,
-        backgroundColor: SURFACE,
+        minHeight: 58,
+        backgroundColor: CARD,
         borderWidth: 1.5,
-        borderColor: "transparent",
+        borderColor: RULE_16,
         borderRadius: 16,
         overflow: "hidden",
     },
-    fieldGap: {
-        marginTop: 10,
-    },
     fieldFocused: {
-        backgroundColor: CARD,
         borderColor: INK,
     },
     prefix: {
@@ -847,6 +899,13 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         color: COPPER_DEEP,
     },
+    error: {
+        marginTop: 18,
+        fontSize: 14,
+        fontWeight: "700",
+        lineHeight: 20,
+        color: RED,
+    },
     actions: {
         marginTop: 22,
         flexDirection: "row",
@@ -877,7 +936,8 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: SURFACE,
+        borderWidth: 1.5,
+        borderColor: RULE_16,
     },
     disabled: {
         opacity: 0.6,
