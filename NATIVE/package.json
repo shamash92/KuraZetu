@@ -49,7 +49,7 @@
         "react-native": "0.86.0",
         "react-native-fast-opencv": "1.0.1",
         "react-native-gesture-handler": "~2.32.0",
-        "react-native-gifted-charts": "^1.4.61",
+        "react-native-gifted-charts": "^1.4.81",
         "react-native-linear-gradient": "^2.8.3",
         "react-native-maps": "1.27.2",
         "react-native-modal": "^14.0.0-rc.1",
