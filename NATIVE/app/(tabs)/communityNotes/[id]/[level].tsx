@@ -1,16 +1,18 @@
 import {
     Dimensions,
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
-import {MessageCircle, Plus, ThumbsUp} from "lucide-react-native";
+import {MessageCircle, ThumbsUp} from "lucide-react-native";
 import React, {useEffect, useState} from "react";
 
 import {AddFormModal} from "./_components/AddFormModal";
 import {CounterEvidenceModal} from "./_components/CounterEvidenceModal";
+import {EmptyResults} from "./_components/EmptyResults";
 import {IPollingStationResult, TLevelTabs} from "@/app/types";
 import {RESULTS_FORMS} from "@/components/resultsForm";
 import {ResultsTable} from "./_components/ResultsTable";
@@ -21,8 +23,9 @@ import {perk} from "@/app/_utils/colors";
 import {sampleElectionData} from "../_sampleData";
 import useAuthStore from "@/app/_utils/authStore";
 import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
-import {Redirect, useLocalSearchParams} from "expo-router";
+import {Redirect, Stack, useLocalSearchParams} from "expo-router";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {toTitleCase} from "@/app/_utils/toTitleCase";
 import {useStationInfo} from "@/hooks/useStationInfo";
 
 const windowHeight = Dimensions.get("window").height;
@@ -56,8 +59,12 @@ export default function LevelResultsScreen() {
     const [addModalVisible, setAddModalVisible] = useState(false);
 
     const [upvoted, setUpvoted] = useState(false);
+    // Null until the station answers, so a slow request is not read as "none".
     const [results, setResults] = useState<IPollingStationResult[] | null>(null);
     const [extraData, setExtraData] = useState<IPollingStationExtraData | null>(null);
+    // A request that did not come back is not the same as a station with no tally.
+    const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
 
     const station = useStationInfo();
 
@@ -83,6 +90,7 @@ export default function LevelResultsScreen() {
         }
 
         const fetchStationResults = async () => {
+            setFailed(false);
             try {
                 const response = await fetch(
                     `${apiBaseURL}/api/results/polling-station/${id}/results/${level}/`,
@@ -91,23 +99,42 @@ export default function LevelResultsScreen() {
                     },
                 );
                 if (await handleUnauthorized(response)) return;
+                if (!response.ok) {
+                    setFailed(true);
+                    return;
+                }
                 const data = await response.json();
 
-                setResults(data["data"]);
+                setResults(data["data"] ?? []);
                 setExtraData(data["extra_data"]);
             } catch (error) {
                 console.error("Error fetching polling station results:", error);
+                setFailed(true);
             }
         };
 
         fetchStationResults();
-    }, [id, userToken, addModalVisible, level]);
+    }, [id, userToken, addModalVisible, level, attempt]);
 
     if (!level) {
         return <Redirect href={`/communityNotes/${id}`} />;
     }
 
     const levelLabel = LEVEL_LABELS[level];
+
+    // Context only: which centre and stream these results belong to.
+    const stationHeader = station ? (
+        <View style={styles.stationHeader}>
+            <Text style={styles.stationName} numberOfLines={2}>
+                {toTitleCase(station.polling_center)}
+            </Text>
+            <Text style={styles.stationMeta} numberOfLines={1}>
+                Stream {station.stream_number} ·{" "}
+                {station.registered_voters.toLocaleString()} voters ·{" "}
+                <Text style={styles.stationCode}>{station.code}</Text>
+            </Text>
+        </View>
+    ) : null;
 
     return (
         <View
@@ -128,41 +155,70 @@ export default function LevelResultsScreen() {
                 level={level}
             />
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.stationHeader}>
-                    <Text style={styles.stationHeaderLabel}>
-                        {levelLabel.toUpperCase()} · THIS STATION
-                    </Text>
-                    <Text style={styles.stationName}>
-                        {station?.polling_center}
-                    </Text>
-                    <Text style={styles.stationMeta}>
-                        Stream {station?.stream_number} · {station?.code} ·{" "}
-                        {station?.constituency}
-                    </Text>
-                </View>
+            {/* The navigation bar names the race. */}
+            <Stack.Screen options={{headerTitle: `${levelLabel} results`}} />
 
-                {/* Original results form image */}
-                {extraData && extraData.form_34A && (
-                    <View style={{paddingHorizontal: 8}}>
-                        <Text style={styles.formLabel}>
-                            Original {RESULTS_FORMS[level].name}
+            {failed && !results ? (
+                <>
+                    {stationHeader}
+                    <View style={styles.failed}>
+                        <Text style={styles.failedTitle} accessibilityRole="header">
+                            Could not load {levelLabel} results
                         </Text>
-                        <View style={{height: 0.5 * windowHeight}}>
-                            <ZoomableImage uri={extraData.form_34A} />
-                        </View>
+                        <Text style={styles.failedBody}>
+                            The request did not go through. Check your connection and
+                            try again.
+                        </Text>
+                        <Pressable
+                            style={({pressed}) => [
+                                styles.retry,
+                                pressed && styles.retryPressed,
+                            ]}
+                            onPress={() => setAttempt((count) => count + 1)}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.retryLabel}>Try again</Text>
+                        </Pressable>
                     </View>
-                )}
+                </>
+            ) : null}
 
-                {/* Digital Tabulation */}
-                <View
-                    style={{
-                        paddingHorizontal: 8,
-                        paddingTop: 8,
-                    }}
-                >
-                    {results && results.length > 0 ? (
-                        <>
+            {results && results.length === 0 ? (
+                <>
+                    {stationHeader}
+                    <EmptyResults
+                        levelLabel={levelLabel}
+                        formName={RESULTS_FORMS[level].name}
+                        bottomOffset={insets.bottom + 16}
+                        onAdd={() => setAddModalVisible(true)}
+                    />
+                </>
+            ) : null}
+
+            {results && results.length > 0 ? (
+                <>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        {stationHeader}
+
+                        {/* Original results form image */}
+                        {extraData && extraData.form_34A && (
+                            <View style={{paddingHorizontal: 8}}>
+                                <Text style={styles.formLabel}>
+                                    Original {RESULTS_FORMS[level].name}
+                                </Text>
+                                <View style={{height: 0.5 * windowHeight}}>
+                                    <ZoomableImage uri={extraData.form_34A} />
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Digital Tabulation */}
+                        <View
+                            style={{
+                                paddingHorizontal: 8,
+                                paddingTop: 8,
+                            }}
+                        >
                             <ResultsTable
                                 results={results}
                                 title={`${levelLabel} Election Results`}
@@ -178,31 +234,19 @@ export default function LevelResultsScreen() {
                                     registeredVoters={extraData.registered_voters}
                                 />
                             )}
-                        </>
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyTitle}>No results yet</Text>
-                            <Text style={styles.emptyBody}>
-                                No {levelLabel} tally has been submitted for this
-                                station yet.
-                            </Text>
                         </View>
-                    )}
-                </View>
-            </ScrollView>
+                    </ScrollView>
 
-            {/* Floating Action Buttons */}
-            <View
-                style={{
-                    position: "absolute",
-                    right: 20,
-                    bottom: insets.bottom + 16,
-                    flexDirection: "column",
-                    gap: 16,
-                }}
-            >
-                {results && results.length > 0 ? (
-                    <>
+                    {/* Floating Action Buttons */}
+                    <View
+                        style={{
+                            position: "absolute",
+                            right: 20,
+                            bottom: insets.bottom + 16,
+                            flexDirection: "column",
+                            gap: 16,
+                        }}
+                    >
                         <TouchableOpacity
                             style={[
                                 styles.fab,
@@ -222,51 +266,75 @@ export default function LevelResultsScreen() {
                         >
                             <MessageCircle size={24} color={perk.card} />
                         </TouchableOpacity>
-                    </>
-                ) : (
-                    <TouchableOpacity
-                        style={[styles.fab, styles.addFab]}
-                        onPress={() => setAddModalVisible(true)}
-                        activeOpacity={0.85}
-                    >
-                        <Plus size={26} color={perk.limeInk} strokeWidth={2.6} />
-                    </TouchableOpacity>
-                )}
-            </View>
+                    </View>
+                </>
+            ) : null}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     stationHeader: {
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 12,
-        backgroundColor: perk.card,
-        borderBottomWidth: 1,
-        borderBottomColor: perk.rule08,
-    },
-    stationHeaderLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 9.5,
-        fontWeight: "700",
-        letterSpacing: 1.6,
-        color: perk.mute,
+        paddingHorizontal: 20,
+        paddingTop: 8,
+        paddingBottom: 18,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: perk.rule16,
     },
     stationName: {
-        fontSize: 16,
-        fontWeight: "900",
+        fontSize: 17,
+        lineHeight: 22,
+        fontWeight: "700",
         letterSpacing: -0.2,
-        textTransform: "uppercase",
         color: perk.ink,
-        marginTop: 4,
     },
     stationMeta: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 9,
+        marginTop: 2,
+        fontSize: 14,
+        lineHeight: 19,
         color: perk.mute,
-        letterSpacing: 0.6,
-        marginTop: 3,
+        fontVariant: ["tabular-nums"],
+    },
+    stationCode: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 12,
+        letterSpacing: 0.2,
+    },
+    failed: {
+        paddingHorizontal: 20,
+        paddingTop: 36,
+        alignItems: "flex-start",
+    },
+    failedTitle: {
+        fontSize: 28,
+        lineHeight: 32,
+        fontWeight: "900",
+        letterSpacing: -0.9,
+        color: perk.ink,
+    },
+    failedBody: {
+        marginTop: 8,
+        maxWidth: 320,
+        fontSize: 16,
+        lineHeight: 23,
+        color: perk.mute,
+    },
+    retry: {
+        marginTop: 20,
+        height: 48,
+        borderRadius: 24,
+        paddingHorizontal: 22,
+        justifyContent: "center",
+        backgroundColor: perk.ink,
+    },
+    retryPressed: {
+        backgroundColor: perk.inkSoft,
+        transform: [{scale: 0.97}],
+    },
+    retryLabel: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: perk.paper,
     },
     formLabel: {
         fontFamily: "SpaceMono-Regular",
@@ -276,26 +344,6 @@ const styles = StyleSheet.create({
         color: perk.mute,
         textAlign: "center",
         marginBottom: 6,
-    },
-    emptyState: {
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 32,
-        paddingVertical: 48,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontWeight: "900",
-        letterSpacing: -0.3,
-        color: perk.ink,
-    },
-    emptyBody: {
-        fontSize: 13.5,
-        color: perk.mute,
-        textAlign: "center",
-        lineHeight: 19,
-        marginTop: 6,
-        maxWidth: 260,
     },
     fab: {
         width: 58,
@@ -317,10 +365,5 @@ const styles = StyleSheet.create({
     },
     commentFab: {
         backgroundColor: perk.coralDeep,
-    },
-    addFab: {
-        backgroundColor: perk.lime,
-        shadowColor: perk.limeDeep,
-        shadowOpacity: 0.5,
     },
 });

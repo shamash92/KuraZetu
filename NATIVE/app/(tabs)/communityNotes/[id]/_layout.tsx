@@ -55,6 +55,7 @@ export default function CommunityNotesDetailLayout() {
                     options={{
                         headerShown: true,
                         headerBackVisible: true,
+                        headerShadowVisible: false,
                         headerTitle: "Results",
                     }}
                 />
