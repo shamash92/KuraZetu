@@ -1,5 +1,8 @@
 import {
     Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     PressableProps,
     ScrollView,
@@ -13,6 +16,8 @@ import {
 } from "react-native";
 import Animated, {
     Easing,
+    FadeIn,
+    FadeOut,
     cubicBezier,
     useAnimatedStyle,
     useSharedValue,
@@ -89,6 +94,11 @@ const PRESS_TRANSITION = {
     transitionProperty: "transform",
     transitionDuration: "120ms",
     transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+} as const;
+const ATLAS_FADE = {
+    transitionProperty: "opacity",
+    transitionDuration: "200ms",
+    transitionTimingFunction: "ease-out",
 } as const;
 const PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY = "passwordLoginLockoutExpiry";
 
@@ -212,6 +222,32 @@ function KineticGreeting() {
     );
 }
 
+/** True from the moment the keyboard starts rising until it starts leaving. */
+function useKeyboardOpen() {
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        // iOS announces the keyboard before it moves, so the screen can move
+        // with it; Android only reports once it has landed.
+        const isIos = Platform.OS === "ios";
+        const show = Keyboard.addListener(
+            isIos ? "keyboardWillShow" : "keyboardDidShow",
+            () => setIsOpen(true),
+        );
+        const hide = Keyboard.addListener(
+            isIos ? "keyboardWillHide" : "keyboardDidHide",
+            () => setIsOpen(false),
+        );
+
+        return () => {
+            show.remove();
+            hide.remove();
+        };
+    }, []);
+
+    return isOpen;
+}
+
 function PressableScale({
     style,
     containerStyle,
@@ -270,6 +306,7 @@ export default function LoginScreen() {
     const hasCommittedPasswordSignIn = useRef(false);
     const phoneInput = useRef<TextInput>(null);
     const passwordInput = useRef<TextInput>(null);
+    const isKeyboardOpen = useKeyboardOpen();
     const isOffline = useNetworkStatus() === "offline";
 
     const handleTallyAnimationComplete = useCallback(() => {
@@ -461,40 +498,64 @@ export default function LoginScreen() {
     }
 
     return (
-        <View style={styles.screen}>
+        <KeyboardAvoidingView
+            style={styles.screen}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
             <UpdateCheckerModal />
 
             <ScrollView
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
-                automaticallyAdjustKeyboardInsets
                 bounces={false}
             >
-                <View style={[styles.hero, {paddingTop: insets.top + 14}]}>
-                    <Svg
-                        style={[styles.atlas, {top: insets.top + 6}]}
-                        width={ATLAS_WIDTH}
-                        height={ATLAS_HEIGHT}
-                        viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
+                {/* With the keyboard up the hero gives its room to the form:
+                    the atlas and wordmark step back and the greeting stays. */}
+                <View
+                    style={[
+                        styles.hero,
+                        {paddingTop: insets.top + 14},
+                        isKeyboardOpen && styles.heroCompact,
+                    ]}
+                >
+                    <Animated.View
+                        style={[
+                            styles.atlas,
+                            {top: insets.top + 6, opacity: isKeyboardOpen ? 0 : 1},
+                            ATLAS_FADE,
+                        ]}
                     >
-                        <Path
-                            d={COUNTY_ATLAS_PATH}
-                            fill="none"
-                            stroke={RULE_16}
-                            strokeWidth={1.8}
-                            strokeLinejoin="round"
-                        />
-                    </Svg>
+                        <Svg
+                            width={ATLAS_WIDTH}
+                            height={ATLAS_HEIGHT}
+                            viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
+                        >
+                            <Path
+                                d={COUNTY_ATLAS_PATH}
+                                fill="none"
+                                stroke={RULE_16}
+                                strokeWidth={1.8}
+                                strokeLinejoin="round"
+                            />
+                        </Svg>
+                    </Animated.View>
 
-                    <View>
-                        <Text style={styles.wordmark}>
-                            Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
-                        </Text>
-                        <Text style={styles.disclaimer}>
-                            Citizen tally · Not an IEBC system
-                        </Text>
-                    </View>
+                    {isKeyboardOpen ? (
+                        <View />
+                    ) : (
+                        <Animated.View
+                            entering={FadeIn.duration(200)}
+                            exiting={FadeOut.duration(120)}
+                        >
+                            <Text style={styles.wordmark}>
+                                Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
+                            </Text>
+                            <Text style={styles.disclaimer}>
+                                Citizen tally · Not an IEBC system
+                            </Text>
+                        </Animated.View>
+                    )}
 
                     <KineticGreeting />
                 </View>
@@ -630,7 +691,7 @@ export default function LoginScreen() {
                     </View>
                 </View>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -651,6 +712,9 @@ const styles = StyleSheet.create({
         paddingBottom: 26,
         justifyContent: "space-between",
         overflow: "hidden",
+    },
+    heroCompact: {
+        minHeight: 0,
     },
     atlas: {
         position: "absolute",
