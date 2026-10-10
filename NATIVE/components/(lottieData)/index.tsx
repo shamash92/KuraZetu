@@ -3,7 +3,6 @@ export type TLottiePropsName =
     | "login-fingerprint"
     | "chat"
     | "signup"
-    | "maps-loading"
     | "notifications-enabled"
     | "notifications-disabled"
     | "network-lost"
@@ -34,11 +33,6 @@ export const LOTTIE_DATA: ILottiePropsType[] = [
         id: 1,
         title: "login",
         image: require("../../assets/lottie/loginLoading.json"),
-    },
-    {
-        id: 2,
-        title: "maps-loading",
-        image: require("../../assets/lottie/mapsLoading.json"),
     },
 
     {

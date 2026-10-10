@@ -5,13 +5,34 @@ import {useEffect, useState} from "react";
 
 import {ICountyFeature} from "../types";
 import {Ionicons} from "@expo/vector-icons";
-import LottieComponent from "@/components/lottieLoading";
+import LottieView from "lottie-react-native";
 import React from "react";
 import {apiBaseURL} from "../_utils/apiBaseURL";
 import {perk} from "../_utils/colors";
 import {Redirect, router, useLocalSearchParams} from "expo-router";
+import Animated, {useReducedMotion} from "react-native-reanimated";
+import {ProgressSweep} from "@/components/auth/authLoading";
 
 type Step = "county" | "constituency" | "ward" | "centre";
+
+// boundariesLoading.json runs 124 frames at 30fps. Hold for one full pass of
+// the atlas inking itself plus a beat on the finished map, so a fast response
+// does not flash the scene and cut it.
+const BOUNDARIES_INTRO_MS = (124 / 30) * 1000 + 300;
+// The finished atlas never sits dead still while the request is outstanding.
+const ATLAS_DRIFT = {
+    animationName: {
+        from: {transform: [{scale: 1}]},
+        to: {transform: [{scale: 1.06}]},
+    },
+    animationDuration: 9000,
+    animationTimingFunction: "ease-in-out",
+    animationIterationCount: "infinite",
+    animationDirection: "alternate",
+} as const;
+// Every signup step mounts this screen and refetches; only the first one in a
+// session waits for the drawing.
+let hasPlayedBoundariesIntro = false;
 
 export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     const params = useLocalSearchParams<{
@@ -25,6 +46,10 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     const [counties, setCounties] = useState<ICountyFeature[] | null>(null);
     const [countyLoadError, setCountyLoadError] = useState<string | null>(null);
     const [countyLoadAttempt, setCountyLoadAttempt] = useState(0);
+    const reduceMotion = useReducedMotion();
+    const [isIntroPlaying, setIsIntroPlaying] = useState(
+        () => !hasPlayedBoundariesIntro && !reduceMotion,
+    );
     const [selectedCounty, setSelectedCounty] = useState<number | null>(null);
     const [selectedCountyName, setSelectedCountyName] = useState<string | null>(null);
     const [constituencies, setConstituencies] = useState<
@@ -133,6 +158,17 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
                 longitudeDelta: 0.0005,
             });
     };
+
+    useEffect(() => {
+        if (!isIntroPlaying) return;
+
+        const timer = setTimeout(() => {
+            hasPlayedBoundariesIntro = true;
+            setIsIntroPlaying(false);
+        }, BOUNDARIES_INTRO_MS);
+
+        return () => clearTimeout(timer);
+    }, [isIntroPlaying]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -278,7 +314,7 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
                 ? (wards?.features ?? [])
                 : [];
 
-    if (counties === null)
+    if (counties === null || (isIntroPlaying && countyLoadError === null))
         return (
             <Loading
                 error={countyLoadError}
@@ -454,22 +490,47 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
 }
 
 function Loading({error, onRetry}: {error: string | null; onRetry: () => void}) {
+    const reduceMotion = useReducedMotion();
+
     return (
-        <View style={styles.loading}>
-            <LottieComponent
-                name="maps-loading"
-                backgroundColor={perk.paper}
-                width={windowWidth}
-            />
-            <Text style={styles.loadingTitle}>Loading map data</Text>
-            <Text style={styles.loadingText}>
-                {error ?? "Fetching the latest boundaries and polling centres."}
-            </Text>
+        <View
+            style={styles.loading}
+            accessible={error === null}
+            accessibilityRole="progressbar"
+            accessibilityLabel="Loading map data"
+        >
+            <Animated.View
+                style={[
+                    StyleSheet.absoluteFill,
+                    !reduceMotion && ATLAS_DRIFT,
+                    error !== null && styles.loadingArtDimmed,
+                ]}
+            >
+                <LottieView
+                    source={require("../../assets/lottie/boundariesLoading.json")}
+                    style={StyleSheet.absoluteFill}
+                    resizeMode="cover"
+                    autoPlay={!reduceMotion}
+                    loop={false}
+                    // Reduced motion rests on the finished atlas instead of drawing it.
+                    progress={reduceMotion ? 1 : undefined}
+                />
+            </Animated.View>
+
             {error ? (
-                <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
-                    <Text style={styles.retryText}>Try again</Text>
-                </TouchableOpacity>
-            ) : null}
+                <View style={styles.loadingFoot}>
+                    <Text style={styles.loadingTitle}>Map data did not load</Text>
+                    <Text style={styles.loadingText}>{error}</Text>
+                    <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+                        <Text style={styles.retryText}>Try again</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <View style={styles.loadingFoot}>
+                    <Text style={styles.loadingLabel}>Loading map data</Text>
+                    <ProgressSweep />
+                </View>
+            )}
         </View>
     );
 }
@@ -575,19 +636,35 @@ const styles = StyleSheet.create({
     },
     loading: {
         flex: 1,
-        alignItems: "center",
         backgroundColor: perk.paper,
-        paddingHorizontal: 32,
+        overflow: "hidden",
     },
-    loadingTitle: {fontSize: 21, fontWeight: "800", color: perk.ink},
+    loadingArtDimmed: {opacity: 0.25},
+    // The south-west corner of the atlas is open ground: Kenya's border runs
+    // diagonally from Lake Victoria to the coast, so the readout sits there.
+    loadingFoot: {
+        position: "absolute",
+        left: 24,
+        right: 24,
+        bottom: 56,
+    },
+    loadingLabel: {
+        marginBottom: 14,
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 11,
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        color: perk.mute,
+    },
+    loadingTitle: {fontSize: 24, fontWeight: "800", color: perk.ink},
     loadingText: {
         marginTop: 8,
-        fontSize: 14,
-        lineHeight: 20,
+        fontSize: 15,
+        lineHeight: 21,
         color: perk.mute,
-        textAlign: "center",
     },
     retryButton: {
+        alignSelf: "flex-start",
         marginTop: 20,
         paddingHorizontal: 20,
         paddingVertical: 12,

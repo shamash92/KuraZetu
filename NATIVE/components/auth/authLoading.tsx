@@ -36,7 +36,7 @@ function Squiggle() {
 }
 
 /** Indeterminate bar: a short segment sweeping the full track, forever. */
-function ProgressSweep() {
+export function ProgressSweep() {
     const [trackWidth, setTrackWidth] = useState(0);
     const shift = useSharedValue(0);
 
