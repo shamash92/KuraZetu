@@ -1,13 +1,7 @@
 import React, {useEffect, useState} from "react";
-import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import {Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
 
-import {ChevronRight} from "lucide-react-native";
+import {ArrowRight} from "lucide-react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
@@ -32,6 +26,26 @@ export interface IPollingStation {
     registered_voters: number;
     stream_number: number;
 }
+
+// Sponsors and bodies that prefix school and hall names in the register. They
+// stay in capitals when the rest of a name is set in title case.
+const NAME_ACRONYMS = new Set([
+    "ABC", "ACC", "ACK", "AGC", "AIC", "AIPCA", "AP", "CCM", "CDF", "DEB", "ECD",
+    "ECDE", "ELCK", "FPFK", "GK", "KAG", "KMTC", "KWS", "MCK", "NYS", "PAG",
+    "PCEA", "PEFA", "RC", "SA", "SDA", "TTC",
+]);
+
+// Names arrive in capitals from the register. Set as running text they read as
+// a place, not a label.
+const toTitleCase = (text: string) =>
+    text
+        .split(/(\s+|[-/()])/)
+        .map((word) =>
+            NAME_ACRONYMS.has(word.replace(/\./g, "").toUpperCase())
+                ? word.toUpperCase()
+                : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
+        .join("");
 
 const ElectionResultsApp = () => {
     const [pollingCenterInfo, setPollingCenterInfo] =
@@ -74,6 +88,13 @@ const ElectionResultsApp = () => {
         0,
     );
 
+    const place = pollingCenterInfo
+        ? [pollingCenterInfo.ward, pollingCenterInfo.constituency, pollingCenterInfo.county]
+              .filter(Boolean)
+              .map(toTitleCase)
+        : [];
+    if (place.length > 0 && pollingCenterInfo?.ward) place[0] = `${place[0]} Ward`;
+
     return (
         <SafeAreaView style={styles.screen}>
             <ScrollView
@@ -81,85 +102,69 @@ const ElectionResultsApp = () => {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Centre card */}
-                <View key={pollingCenterInfo?.code} style={styles.centreCard}>
-                    <Text style={styles.centreName}>{pollingCenterInfo?.name}</Text>
-                    <Text style={styles.centreMeta}>
-                        {pollingCenterInfo?.county} · {pollingCenterInfo?.constituency}{" "}
-                        · {pollingCenterInfo?.ward} Ward
-                    </Text>
-
-                    <View style={styles.centreStats}>
-                        <View style={styles.centreStat}>
-                            <Text style={styles.centreStatValue}>
-                                {stations?.length.toLocaleString()}
-                            </Text>
-                            <Text style={styles.centreStatLabel}>STATIONS</Text>
-                        </View>
-                        <View style={styles.centreStat}>
-                            <Text style={styles.centreStatValue}>
-                                {totalVoters?.toLocaleString()}
-                            </Text>
-                            <Text style={styles.centreStatLabel}>TOTAL VOTERS</Text>
-                        </View>
+                {/* Context only: which centre this is. The streams below are
+                    what the screen is for, so this stays small and flat. */}
+                {pollingCenterInfo ? (
+                    <View style={styles.centre}>
+                        <Text style={styles.centreName} numberOfLines={2}>
+                            {toTitleCase(pollingCenterInfo.name)}
+                        </Text>
+                        <Text style={styles.centrePlace}>{place.join(" · ")}</Text>
                     </View>
-                </View>
+                ) : null}
 
-                {/* Polling stations */}
-                <Text style={styles.sectionLabel}>POLLING STATIONS</Text>
-                {stations &&
-                    stations.map((station) => {
-                        const lead = station.stream_number === 1;
-                        return (
-                            <TouchableOpacity
+                {stations.length > 0 ? (
+                    <>
+                        <View style={styles.promptRow}>
+                            <Text style={styles.prompt} accessibilityRole="header">
+                                {stations.length === 1
+                                    ? "Open your stream"
+                                    : "Choose a stream"}
+                            </Text>
+                            <Text style={styles.promptTotal}>
+                                {totalVoters.toLocaleString()} voters
+                            </Text>
+                        </View>
+
+                        {stations.map((station) => (
+                            <Pressable
                                 key={station.code}
-                                style={[styles.streamRow, lead && styles.streamRowLead]}
+                                // Feedback on touch-down; the push happens on release.
+                                style={({pressed}) => [
+                                    styles.stream,
+                                    pressed && styles.streamPressed,
+                                ]}
                                 onPress={() => {
                                     router.navigate(`/communityNotes/${station.code}`);
                                 }}
-                                activeOpacity={0.9}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Open stream ${station.stream_number}, ${station.registered_voters.toLocaleString()} registered voters`}
                             >
-                                <View
-                                    style={[
-                                        styles.streamNum,
-                                        lead && styles.streamNumLead,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.streamNumValue,
-                                            lead && styles.streamNumValueLead,
-                                        ]}
-                                    >
-                                        {station.stream_number}
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.streamNumLabel,
-                                            lead && styles.streamNumLabelLead,
-                                        ]}
-                                    >
-                                        STRM
-                                    </Text>
-                                </View>
                                 <View style={styles.streamText}>
                                     <Text style={styles.streamName}>
                                         Stream {station.stream_number}
                                     </Text>
-                                    <Text style={styles.streamCode}>
-                                        {station.code}
+                                    <Text style={styles.streamVoters} numberOfLines={1}>
+                                        {station.registered_voters.toLocaleString()}{" "}
+                                        voters ·{" "}
+                                        <Text style={styles.streamCode}>
+                                            {station.code}
+                                        </Text>
                                     </Text>
                                 </View>
-                                <View style={styles.streamVv}>
-                                    <Text style={styles.streamVvValue}>
-                                        {station.registered_voters.toLocaleString()}
-                                    </Text>
-                                    <Text style={styles.streamVvLabel}>VOTERS</Text>
+                                {/* Lime is the app's action colour: the round
+                                    button is what says the card opens. */}
+                                <View style={styles.streamGo}>
+                                    <ArrowRight
+                                        size={20}
+                                        color={perk.limeInk}
+                                        strokeWidth={2.4}
+                                    />
                                 </View>
-                                <ChevronRight size={18} color={perk.copperDeep} />
-                            </TouchableOpacity>
-                        );
-                    })}
+                            </Pressable>
+                        ))}
+                    </>
+                ) : null}
             </ScrollView>
         </SafeAreaView>
     );
@@ -177,138 +182,92 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: 20,
-        paddingTop: 12,
-        paddingBottom: 40,
+        paddingTop: 20,
+        // Clears the floating tab bar.
+        paddingBottom: 132,
     },
-    centreCard: {
-        backgroundColor: perk.surface,
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 16,
+    centre: {
+        paddingBottom: 18,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: perk.rule16,
     },
     centreName: {
-        fontSize: 16,
-        fontWeight: "900",
+        fontSize: 17,
+        lineHeight: 22,
+        fontWeight: "700",
         letterSpacing: -0.2,
-        textTransform: "uppercase",
-        color: perk.limeDeep,
-    },
-    centreMeta: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 10,
-        color: perk.mute,
-        letterSpacing: 0.8,
-        marginTop: 3,
-        textTransform: "uppercase",
-    },
-    centreStats: {
-        flexDirection: "row",
-        marginTop: 12,
-        paddingTop: 10,
-        borderTopWidth: 1,
-        borderTopColor: perk.rule08,
-    },
-    centreStat: {
-        flex: 1,
-        alignItems: "center",
-    },
-    centreStatValue: {
-        fontSize: 22,
-        fontWeight: "900",
-        letterSpacing: -0.4,
         color: perk.ink,
     },
-    centreStatLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 9,
-        fontWeight: "700",
-        letterSpacing: 1.4,
-        color: perk.mute,
+    centrePlace: {
         marginTop: 2,
+        fontSize: 14,
+        lineHeight: 19,
+        color: perk.mute,
     },
-    sectionLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 10,
-        fontWeight: "700",
-        letterSpacing: 1.8,
+    promptRow: {
+        flexDirection: "row",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        gap: 12,
+        marginTop: 22,
+        marginBottom: 10,
+    },
+    prompt: {
+        fontSize: 15,
+        lineHeight: 20,
+        fontWeight: "600",
+        letterSpacing: -0.1,
         color: perk.ink,
-        marginBottom: 8,
     },
-    streamRow: {
+    promptTotal: {
+        fontSize: 14,
+        color: perk.mute,
+        fontVariant: ["tabular-nums"],
+    },
+    stream: {
         flexDirection: "row",
         alignItems: "center",
         gap: 12,
-        backgroundColor: perk.card,
-        borderWidth: 1.5,
-        borderColor: perk.ink,
-        borderRadius: 13,
-        paddingVertical: 11,
-        paddingHorizontal: 12,
-        marginBottom: 9,
-    },
-    streamRowLead: {},
-    streamNum: {
-        width: 40,
-        alignSelf: "stretch",
-        borderRadius: 9,
         backgroundColor: perk.surface,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 6,
+        borderRadius: 16,
+        paddingVertical: 14,
+        paddingLeft: 18,
+        paddingRight: 14,
+        marginBottom: 8,
     },
-    streamNumLead: {
-        backgroundColor: perk.lime,
-    },
-    streamNumValue: {
-        fontSize: 17,
-        fontWeight: "900",
-        color: perk.ink,
-    },
-    streamNumValueLead: {
-        color: perk.limeInk,
-    },
-    streamNumLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 7,
-        fontWeight: "700",
-        letterSpacing: 1,
-        color: perk.mute,
-        marginTop: 1,
-    },
-    streamNumLabelLead: {
-        color: perk.limeInk,
+    streamPressed: {
+        backgroundColor: perk.paperVivid,
+        transform: [{scale: 0.98}],
     },
     streamText: {
         flex: 1,
         minWidth: 0,
     },
     streamName: {
-        fontSize: 13,
+        fontSize: 17,
+        lineHeight: 22,
         fontWeight: "800",
         letterSpacing: -0.2,
         color: perk.ink,
     },
+    streamVoters: {
+        marginTop: 2,
+        fontSize: 14,
+        lineHeight: 19,
+        color: perk.mute,
+        fontVariant: ["tabular-nums"],
+    },
     streamCode: {
         fontFamily: "SpaceMono-Regular",
-        fontSize: 9,
-        color: perk.mute,
-        letterSpacing: 0.6,
-        marginTop: 3,
+        fontSize: 12,
+        letterSpacing: 0.2,
     },
-    streamVv: {
-        alignItems: "flex-end",
-    },
-    streamVvValue: {
-        fontSize: 15,
-        fontWeight: "900",
-        color: perk.ink,
-    },
-    streamVvLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 7,
-        fontWeight: "700",
-        letterSpacing: 1,
-        color: perk.mute,
-        marginTop: 1,
+    streamGo: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: perk.lime,
     },
 });
