@@ -1,8 +1,4 @@
-import {useEffect, useState} from "react";
 import {
-    Animated,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
     ScrollView,
     StyleSheet,
     Text,
@@ -11,9 +7,8 @@ import {
     useWindowDimensions,
 } from "react-native";
 
-import {BarChart} from "react-native-gifted-charts";
-import {ChevronDown} from "lucide-react-native";
 import {perk} from "@/app/_utils/colors";
+import {useState} from "react";
 
 //TODO: Pull the data from the API
 const presidentialData = [
@@ -83,46 +78,42 @@ const offices = [
     },
 ];
 
+const PAGE_GUTTER = 20;
+const BAR_AREA_HEIGHT = 190;
+const BAR_GAP = 12;
+// A race with more candidates than fit keeps this width and scrolls sideways;
+// the bar cut off at the edge is what says there are more.
+const BAR_MIN_WIDTH = 64;
+const BAR_MAX_WIDTH = 96;
+
 export default function ResultsLandingPage() {
     const {width: screenWidth} = useWindowDimensions();
     const [officeIndex, setOfficeIndex] = useState<number>(0);
-    const [showHint, setShowHint] = useState(true);
-    const [bob] = useState(() => new Animated.Value(0));
 
     const totalPresVotes = presidentialData.reduce((sum, c) => sum + c.votes, 0);
     const maxPresVotes = Math.max(...presidentialData.map((c) => c.votes));
 
     const activeOffice = offices[officeIndex];
-
-    useEffect(() => {
-        const loop = Animated.loop(
-            Animated.sequence([
-                Animated.timing(bob, {
-                    toValue: 1,
-                    duration: 750,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(bob, {
-                    toValue: 0,
-                    duration: 750,
-                    useNativeDriver: true,
-                }),
-            ]),
-        );
-        loop.start();
-        return () => loop.stop();
-    }, [bob]);
-
-    const onPresScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const {contentOffset, contentSize, layoutMeasurement} = e.nativeEvent;
-        const atBottom =
-            contentOffset.y + layoutMeasurement.height >= contentSize.height - 8;
-        setShowHint(!atBottom);
-    };
+    const ranked = [...activeOffice.data].sort((a, b) => b.value - a.value);
+    const maxOfficeVotes = ranked[0]?.value ?? 0;
+    const chartWidth = screenWidth - PAGE_GUTTER * 2;
+    const barWidth = Math.min(
+        BAR_MAX_WIDTH,
+        Math.max(
+            BAR_MIN_WIDTH,
+            (chartWidth - BAR_GAP * (ranked.length - 1)) / ranked.length,
+        ),
+    );
 
     return (
-        <View style={styles.container}>
-            <View style={styles.content}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.content}
+            // The office tabs stay in reach while a long race scrolls under them.
+            stickyHeaderIndices={[1]}
+            showsVerticalScrollIndicator={false}
+        >
+            <View>
                 {/* Brand row */}
                 <View style={styles.brandRow}>
                     <View>
@@ -141,68 +132,42 @@ export default function ResultsLandingPage() {
                 </View>
 
                 {/* Presidential results */}
-                <Text style={styles.sectionLabel}>PRESIDENTIAL RESULTS</Text>
-                <View style={styles.presScrollWrap}>
-                    <ScrollView
-                        style={styles.presScroll}
-                        showsVerticalScrollIndicator={false}
-                        onScroll={onPresScroll}
-                        scrollEventThrottle={16}
-                    >
-                        {presidentialData.map((candidate) => {
-                            const pct = (
-                                (candidate.votes / totalPresVotes) *
-                                100
-                            ).toFixed(1);
-                            const barPct = (candidate.votes / maxPresVotes) * 100;
-                            return (
-                                <View key={candidate.name} style={styles.presCard}>
-                                    <Text style={styles.presPct}>{pct}%</Text>
-                                    <Text style={styles.presName}>
-                                        {candidate.name} · {candidate.party}
-                                    </Text>
-                                    <Text style={styles.presVotes}>
-                                        {candidate.votes.toLocaleString()} VOTES
-                                    </Text>
-                                    <View style={styles.presBarTrack}>
-                                        <View
-                                            style={[
-                                                styles.presBarFill,
-                                                {
-                                                    width: `${barPct}%`,
-                                                    backgroundColor: candidate.color,
-                                                },
-                                            ]}
-                                        />
-                                    </View>
+                <View
+                    style={styles.presList}
+                    accessibilityLabel="Presidential results"
+                >
+                    {presidentialData.map((candidate) => {
+                        const pct = ((candidate.votes / totalPresVotes) * 100).toFixed(1);
+                        const barPct = (candidate.votes / maxPresVotes) * 100;
+                        return (
+                            <View key={candidate.name} style={styles.presCard}>
+                                <Text style={styles.presPct}>{pct}%</Text>
+                                <Text style={styles.presName} numberOfLines={2}>
+                                    {candidate.name} · {candidate.party}
+                                </Text>
+                                <Text style={styles.presVotes}>
+                                    {candidate.votes.toLocaleString()} VOTES
+                                </Text>
+                                <View style={styles.presBarTrack}>
+                                    <View
+                                        style={[
+                                            styles.presBarFill,
+                                            {
+                                                width: `${barPct}%`,
+                                                backgroundColor: candidate.color,
+                                            },
+                                        ]}
+                                    />
                                 </View>
-                            );
-                        })}
-                    </ScrollView>
-                    {showHint && (
-                        <Animated.View
-                            pointerEvents="none"
-                            style={[
-                                styles.scrollHint,
-                                {
-                                    transform: [
-                                        {
-                                            translateY: bob.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: [0, 4],
-                                            }),
-                                        },
-                                    ],
-                                },
-                            ]}
-                        >
-                            <ChevronDown size={14} color={perk.limeInk} />
-                        </Animated.View>
-                    )}
+                            </View>
+                        );
+                    })}
                 </View>
+            </View>
 
-                {/* Office tabs */}
-                <View style={styles.officeTabs}>
+            {/* Office tabs */}
+            <View style={styles.officeTabsBar}>
+                <View style={styles.officeTabs} accessibilityRole="tablist">
                     {offices.map((office, idx) => {
                         const on = idx === officeIndex;
                         return (
@@ -211,6 +176,9 @@ export default function ResultsLandingPage() {
                                 style={[styles.officeTab, on && styles.officeTabOn]}
                                 onPress={() => setOfficeIndex(idx)}
                                 activeOpacity={0.8}
+                                accessibilityRole="tab"
+                                accessibilityState={{selected: on}}
+                                accessibilityLabel={office.title}
                             >
                                 <Text
                                     style={[
@@ -224,33 +192,58 @@ export default function ResultsLandingPage() {
                         );
                     })}
                 </View>
-
-                {/* Chart */}
-                <Text style={styles.chartTitle}>
-                    {activeOffice.title}{" "}
-                    <Text style={styles.chartGeo}>· {activeOffice.geo}</Text>
-                </Text>
-                <BarChart
-                    data={activeOffice.data}
-                    isAnimated
-                    rotateLabel
-                    animationDuration={500}
-                    width={screenWidth - 40}
-                    adjustToWidth
-                    hideYAxisText
-                    yAxisLabelWidth={0}
-                    yAxisThickness={0}
-                    hideRules
-                    xAxisColor={perk.ink}
-                    xAxisThickness={1.5}
-                    barBorderTopLeftRadius={4}
-                    barBorderTopRightRadius={4}
-                    showValuesAsTopLabel
-                    topLabelTextStyle={styles.chartTopLabel}
-                    xAxisLabelTextStyle={styles.chartXLabel}
-                />
             </View>
-        </View>
+
+            {/* Office results */}
+            <View>
+                <Text style={styles.raceTitle}>
+                    {activeOffice.title}{" "}
+                    <Text style={styles.raceGeo}>· {activeOffice.geo}</Text>
+                </Text>
+
+                <ScrollView
+                    // Remount per race so a new tab starts at its leader.
+                    key={activeOffice.key}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.chartScroll}
+                    contentContainerStyle={styles.chartContent}
+                >
+                    {ranked.map((candidate) => (
+                        <View
+                            key={candidate.label}
+                            // The gap lives inside the column so the baseline
+                            // under the bars runs unbroken.
+                            style={{width: barWidth + BAR_GAP}}
+                            accessible
+                            accessibilityLabel={`${candidate.label}, ${candidate.value.toLocaleString()} votes`}
+                        >
+                            <View style={styles.barArea}>
+                                <Text style={styles.barValue}>
+                                    {candidate.value.toLocaleString()}
+                                </Text>
+                                <View
+                                    style={[
+                                        styles.bar,
+                                        {
+                                            height: Math.max(
+                                                4,
+                                                (candidate.value / maxOfficeVotes) *
+                                                    BAR_AREA_HEIGHT,
+                                            ),
+                                            backgroundColor: candidate.frontColor,
+                                        },
+                                    ]}
+                                />
+                            </View>
+                            <Text style={styles.barName} numberOfLines={2}>
+                                {candidate.label}
+                            </Text>
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
+        </ScrollView>
     );
 }
 
@@ -260,9 +253,10 @@ const styles = StyleSheet.create({
         backgroundColor: perk.card,
     },
     content: {
-        paddingHorizontal: 20,
+        paddingHorizontal: PAGE_GUTTER,
         paddingTop: 20,
-        paddingBottom: 40,
+        // Clears the floating tab bar.
+        paddingBottom: 132,
     },
     brandRow: {
         flexDirection: "row",
@@ -317,37 +311,8 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         backgroundColor: perk.green,
     },
-    sectionLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 10,
-        fontWeight: "700",
-        letterSpacing: 1.8,
-        color: perk.ink,
-        marginTop: 18,
-        marginBottom: 10,
-    },
-    presScrollWrap: {
-        position: "relative",
-        maxHeight: 220,
-    },
-    presScroll: {
-        paddingRight: 28,
-    },
-    scrollHint: {
-        position: "absolute",
-        right: -8,
-        bottom: 4,
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        backgroundColor: perk.lime,
-        alignItems: "center",
-        justifyContent: "center",
-        shadowColor: perk.ink,
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.14,
-        shadowRadius: 4,
-        elevation: 3,
+    presList: {
+        marginTop: 20,
     },
     presCard: {
         backgroundColor: perk.surface,
@@ -370,7 +335,8 @@ const styles = StyleSheet.create({
         fontWeight: "800",
         letterSpacing: -0.2,
         color: perk.ink,
-        paddingRight: 50,
+        // Keeps a wrapped name clear of the percentage pinned top right.
+        paddingRight: 72,
     },
     presVotes: {
         fontFamily: "SpaceMono-Regular",
@@ -389,13 +355,17 @@ const styles = StyleSheet.create({
         height: "100%",
         borderRadius: 3,
     },
+    // Opaque, so rows do not show through once the tabs stick.
+    officeTabsBar: {
+        backgroundColor: perk.card,
+        paddingTop: 10,
+        paddingBottom: 16,
+    },
     officeTabs: {
         flexDirection: "row",
         backgroundColor: perk.surface,
         borderRadius: 10,
         overflow: "hidden",
-        marginTop: 16,
-        marginBottom: 16,
     },
     officeTab: {
         flex: 1,
@@ -416,25 +386,49 @@ const styles = StyleSheet.create({
     officeTabTextOn: {
         color: perk.ink,
     },
-    chartTitle: {
+    raceTitle: {
         fontSize: 15,
         fontWeight: "800",
         letterSpacing: -0.2,
         color: perk.ink,
-        marginBottom: 12,
+        marginBottom: 4,
     },
-    chartGeo: {
+    raceGeo: {
         color: perk.copperDeep,
         fontWeight: "700",
     },
-    chartTopLabel: {
-        fontSize: 9,
-        fontWeight: "900",
-        color: perk.ink,
+    // Runs to the screen edge so a further candidate shows as a cut-off bar.
+    chartScroll: {
+        marginTop: 8,
+        marginRight: -PAGE_GUTTER,
     },
-    chartXLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 8,
-        color: perk.mute,
+    chartContent: {
+        paddingRight: PAGE_GUTTER,
+    },
+    barArea: {
+        height: BAR_AREA_HEIGHT + 22,
+        justifyContent: "flex-end",
+        borderBottomWidth: 1.5,
+        borderBottomColor: perk.ink,
+    },
+    barValue: {
+        marginBottom: 4,
+        fontSize: 12,
+        fontWeight: "800",
+        color: perk.ink,
+        fontVariant: ["tabular-nums"],
+    },
+    bar: {
+        marginRight: BAR_GAP,
+        borderTopLeftRadius: 4,
+        borderTopRightRadius: 4,
+    },
+    barName: {
+        marginTop: 8,
+        paddingRight: BAR_GAP,
+        fontSize: 13,
+        fontWeight: "600",
+        lineHeight: 17,
+        color: perk.ink,
     },
 });
