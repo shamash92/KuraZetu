@@ -1,14 +1,19 @@
 import {
     Alert,
+    Pressable,
+    PressableProps,
     ScrollView,
+    StyleProp,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
+    ViewStyle,
 } from "react-native";
 import Animated, {
     Easing,
+    cubicBezier,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
@@ -19,7 +24,6 @@ import {
     Eye,
     EyeOff,
     Fingerprint,
-    Lock,
     ScanFace,
 } from "lucide-react-native";
 import {
@@ -30,7 +34,9 @@ import {
     LIME,
     LIME_INK,
     MUTE,
-    MUTE_2,
+    PAPER,
+    RED,
+    RULE_08,
     RULE_16,
     SURFACE,
 } from "../_utils/colors";
@@ -38,8 +44,14 @@ import {Link, router} from "expo-router";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
+import {
+    COUNTY_ATLAS_HEIGHT,
+    COUNTY_ATLAS_PATH,
+    COUNTY_ATLAS_WIDTH,
+} from "@/components/auth/countyAtlas";
 import LoginLockout from "@/components/auth/lockout";
 import LoginLoading from "@/components/auth/login";
+import Svg, {Path} from "react-native-svg";
 import UpdateCheckerModal from "../_utils/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
 import {
@@ -61,14 +73,23 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 // real request. Development only — must be false on any branch that merges.
 const PREVIEW_SIGNING_IN = false;
 
-const HEADING_LINE_HEIGHT = 38;
+const HEADING_LINE_HEIGHT = 42;
 // Mask is taller than the text line so Gĩkũyũ/Kĩkamba diacritics (ĩ, ũ) and bold
 // ascenders are not shaved by overflow:hidden. Slide distance = mask height.
-const GREETING_MASK_HEIGHT = 48;
+const GREETING_MASK_HEIGHT = 54;
 const SWAP_MS = 480;
 const CHAR_STAGGER_MS = 22;
 const HOLD_MS = 1800;
 const LONGEST_GREETING = Math.max(...GREETINGS.map((g) => g.length));
+// The county atlas sits behind the greeting and runs off the trailing edge.
+const ATLAS_WIDTH = 260;
+const ATLAS_HEIGHT = (ATLAS_WIDTH * COUNTY_ATLAS_HEIGHT) / COUNTY_ATLAS_WIDTH;
+// Press feedback: 120ms and 3% is the ceiling for a control touched this often.
+const PRESS_TRANSITION = {
+    transitionProperty: "transform",
+    transitionDuration: "120ms",
+    transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+} as const;
 const PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY = "passwordLoginLockoutExpiry";
 
 function getRemainingLockoutSeconds(lockoutExpiresAt: number) {
@@ -191,10 +212,44 @@ function KineticGreeting() {
     );
 }
 
+function PressableScale({
+    style,
+    containerStyle,
+    children,
+    ...props
+}: Omit<PressableProps, "style" | "children"> & {
+    style?: StyleProp<ViewStyle>;
+    containerStyle?: StyleProp<ViewStyle>;
+    children: React.ReactNode;
+}) {
+    const [pressed, setPressed] = useState(false);
+
+    return (
+        <Pressable
+            {...props}
+            style={containerStyle}
+            onPressIn={() => setPressed(true)}
+            onPressOut={() => setPressed(false)}
+            pressRetentionOffset={16}
+        >
+            <Animated.View
+                style={[
+                    style,
+                    PRESS_TRANSITION,
+                    {transform: [{scale: pressed ? 0.97 : 1}]},
+                ]}
+            >
+                {children}
+            </Animated.View>
+        </Pressable>
+    );
+}
+
 export default function LoginScreen() {
     const [phoneNumber, setPhoneNumber] = useState("+254");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [focusedField, setFocusedField] = useState<"phone" | "password" | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isTallyAnimationVisible, setIsTallyAnimationVisible] = useState(false);
 
@@ -213,6 +268,8 @@ export default function LoginScreen() {
 
     const insets = useSafeAreaInsets();
     const hasCommittedPasswordSignIn = useRef(false);
+    const phoneInput = useRef<TextInput>(null);
+    const passwordInput = useRef<TextInput>(null);
     const isOffline = useNetworkStatus() === "offline";
 
     const handleTallyAnimationComplete = useCallback(() => {
@@ -408,124 +465,169 @@ export default function LoginScreen() {
             <UpdateCheckerModal />
 
             <ScrollView
-                contentContainerStyle={[
-                    styles.content,
-                    {
-                        paddingTop: insets.top + 24,
-                        paddingBottom: insets.bottom + 28,
-                    },
-                ]}
+                contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
+                automaticallyAdjustKeyboardInsets
+                bounces={false}
             >
-                <KineticGreeting />
+                <View style={[styles.hero, {paddingTop: insets.top + 14}]}>
+                    <Svg
+                        style={[styles.atlas, {top: insets.top + 6}]}
+                        width={ATLAS_WIDTH}
+                        height={ATLAS_HEIGHT}
+                        viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
+                    >
+                        <Path
+                            d={COUNTY_ATLAS_PATH}
+                            fill="none"
+                            stroke={RULE_16}
+                            strokeWidth={1.8}
+                            strokeLinejoin="round"
+                        />
+                    </Svg>
 
-                <View style={styles.formBlock}>
-                    {/* Phone number */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Phone number</Text>
-                        <View style={styles.phoneInput}>
-                            <View style={styles.prefix}>
-                                <Text style={styles.flag}>🇰🇪</Text>
-                                <Text style={styles.prefixText}>+254</Text>
-                            </View>
+                    <View>
+                        <Text style={styles.wordmark}>
+                            Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
+                        </Text>
+                        <Text style={styles.disclaimer}>
+                            Citizen tally · Not an IEBC system
+                        </Text>
+                    </View>
+
+                    <KineticGreeting />
+                </View>
+
+                <View style={[styles.sheet, {paddingBottom: insets.bottom + 18}]}>
+                    <Pressable
+                        style={[
+                            styles.fieldShell,
+                            focusedField === "phone" && styles.fieldFocused,
+                        ]}
+                        onPress={() => phoneInput.current?.focus()}
+                        accessible={false}
+                    >
+                        <View style={styles.prefix}>
+                            <Text style={styles.flag}>🇰🇪</Text>
+                            <Text style={styles.prefixText}>+254</Text>
+                        </View>
+                        <View style={styles.fieldBody}>
                             <TextInput
-                                style={styles.phoneField}
+                                ref={phoneInput}
+                                style={styles.fieldInput}
+                                accessibilityLabel="Phone number"
                                 placeholder="712 345 678"
-                                placeholderTextColor={MUTE_2}
+                                placeholderTextColor={MUTE}
                                 value={nationalNumber}
                                 onChangeText={handlePhoneChange}
                                 keyboardType="phone-pad"
+                                textContentType="telephoneNumber"
                                 maxLength={9}
-                                returnKeyType="next"
+                                onFocus={() => setFocusedField("phone")}
+                                onBlur={() => setFocusedField(null)}
                             />
                         </View>
-                    </View>
+                    </Pressable>
 
-                    {/* Password */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Password</Text>
-                        <View style={styles.fieldShell}>
-                            <View style={styles.lead}>
-                                <Lock size={18} color={MUTE} strokeWidth={1.9} />
-                            </View>
+                    <Pressable
+                        style={[
+                            styles.fieldShell,
+                            styles.fieldGap,
+                            focusedField === "password" && styles.fieldFocused,
+                        ]}
+                        onPress={() => passwordInput.current?.focus()}
+                        accessible={false}
+                    >
+                        <View style={[styles.fieldBody, styles.fieldBodyLead]}>
                             <TextInput
-                                style={styles.pwField}
-                                placeholder="••••••••"
-                                placeholderTextColor={MUTE_2}
+                                ref={passwordInput}
+                                style={styles.fieldInput}
+                                accessibilityLabel="Password"
+                                placeholder="Password"
+                                placeholderTextColor={MUTE}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry={!showPassword}
-                                returnKeyType="send"
-                                returnKeyLabel="Submit"
+                                textContentType="password"
+                                autoCapitalize="none"
+                                returnKeyType="go"
+                                onSubmitEditing={() => handleLogin()}
+                                onFocus={() => setFocusedField("password")}
+                                onBlur={() => setFocusedField(null)}
                             />
-                            <TouchableOpacity
-                                style={styles.trail}
-                                onPress={() => setShowPassword(!showPassword)}
-                                hitSlop={8}
-                            >
-                                {showPassword ? (
-                                    <EyeOff size={18} color={MUTE} strokeWidth={1.9} />
-                                ) : (
-                                    <Eye size={18} color={MUTE} strokeWidth={1.9} />
-                                )}
-                            </TouchableOpacity>
                         </View>
-                    </View>
-                </View>
+                        <TouchableOpacity
+                            style={styles.trail}
+                            onPress={() => setShowPassword(!showPassword)}
+                            hitSlop={12}
+                            accessibilityRole="button"
+                            accessibilityLabel={
+                                showPassword ? "Hide password" : "Show password"
+                            }
+                        >
+                            {showPassword ? (
+                                <EyeOff size={22} color={MUTE} strokeWidth={1.9} />
+                            ) : (
+                                <Eye size={22} color={MUTE} strokeWidth={1.9} />
+                            )}
+                        </TouchableOpacity>
+                    </Pressable>
 
-                <Link href="/auth/forgot-password" asChild>
-                    <TouchableOpacity style={styles.forgotRow}>
-                        <Text style={styles.forgot}>Forgot password?</Text>
-                    </TouchableOpacity>
-                </Link>
-
-                {isOffline ? (
-                    <Text style={styles.offline} accessibilityLiveRegion="polite">
-                        You&apos;re offline. Connect to the internet to sign in.
-                    </Text>
-                ) : null}
-
-                <TouchableOpacity
-                    style={[
-                        styles.primary,
-                        (isSubmitting || isOffline) && styles.disabled,
-                    ]}
-                    onPress={() => handleLogin()}
-                    disabled={isSubmitting || isOffline}
-                    activeOpacity={0.85}
-                >
-                    <Text style={styles.primaryText}>
-                        {isSubmitting ? "Signing in…" : "Sign in"}
-                    </Text>
-                    <ArrowRight size={18} color={LIME_INK} strokeWidth={2.4} />
-                </TouchableOpacity>
-
-                {biometricUnlock === "on" ? (
-                    <TouchableOpacity
-                        style={[styles.secondary, isOffline && styles.disabled]}
-                        onPress={lock}
-                        disabled={isOffline}
-                        activeOpacity={0.85}
-                    >
-                        {biometricLabel === "Face ID" ? (
-                            <ScanFace size={18} color={INK} strokeWidth={2.2} />
-                        ) : (
-                            <Fingerprint size={18} color={INK} strokeWidth={2.2} />
-                        )}
-                        <Text style={styles.secondaryText}>
-                            Unlock with {biometricLabel}
-                        </Text>
-                    </TouchableOpacity>
-                ) : null}
-
-                <View style={styles.foot}>
-                    <Text style={styles.footText}>Don&apos;t have an account? </Text>
-                    <Link href="/auth/signUp" asChild>
-                        <TouchableOpacity>
-                            <Text style={styles.footLink}>Create account</Text>
+                    <Link href="/auth/forgot-password" asChild>
+                        <TouchableOpacity style={styles.forgotRow} hitSlop={8}>
+                            <Text style={styles.forgot}>Forgot password?</Text>
                         </TouchableOpacity>
                     </Link>
+
+                    {isOffline ? (
+                        <Text style={styles.offline} accessibilityLiveRegion="polite">
+                            You&apos;re offline. Connect to the internet to sign in.
+                        </Text>
+                    ) : null}
+
+                    <View style={styles.actions}>
+                        <PressableScale
+                            containerStyle={styles.primaryHost}
+                            style={[
+                                styles.primary,
+                                (isSubmitting || isOffline) && styles.disabled,
+                            ]}
+                            onPress={() => handleLogin()}
+                            disabled={isSubmitting || isOffline}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.primaryText}>
+                                {isSubmitting ? "Signing in…" : "Sign in"}
+                            </Text>
+                            <ArrowRight size={20} color={LIME_INK} strokeWidth={2.4} />
+                        </PressableScale>
+
+                        {biometricUnlock === "on" ? (
+                            <PressableScale
+                                style={[styles.biometric, isOffline && styles.disabled]}
+                                onPress={lock}
+                                disabled={isOffline}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Unlock with ${biometricLabel}`}
+                            >
+                                {biometricLabel === "Face ID" ? (
+                                    <ScanFace size={26} color={INK} strokeWidth={1.9} />
+                                ) : (
+                                    <Fingerprint size={26} color={INK} strokeWidth={1.9} />
+                                )}
+                            </PressableScale>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.foot}>
+                        <Text style={styles.footText}>New to Kura Zetu? </Text>
+                        <Link href="/auth/signUp" asChild>
+                            <TouchableOpacity hitSlop={8}>
+                                <Text style={styles.footLink}>Create account</Text>
+                            </TouchableOpacity>
+                        </Link>
+                    </View>
                 </View>
             </ScrollView>
         </View>
@@ -535,16 +637,46 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: CARD,
+        backgroundColor: PAPER,
     },
     content: {
         flexGrow: 1,
+    },
+    // Brand and greeting on paper; the form rises from the bottom edge, where
+    // the thumb already is.
+    hero: {
+        flexGrow: 1,
+        minHeight: 300,
         paddingHorizontal: 24,
+        paddingBottom: 26,
+        justifyContent: "space-between",
+        overflow: "hidden",
+    },
+    atlas: {
+        position: "absolute",
+        right: -64,
+    },
+    wordmark: {
+        fontFamily: "PublicSans-ExtraBold",
+        fontSize: 22,
+        letterSpacing: -0.7,
+        color: INK,
+    },
+    wordmarkDot: {
+        color: RED,
+    },
+    disclaimer: {
+        marginTop: 6,
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 10.5,
+        letterSpacing: 1.2,
+        textTransform: "uppercase",
+        color: MUTE,
     },
     heading: {
-        fontSize: 30,
+        fontSize: 34,
         fontWeight: "900",
-        letterSpacing: -0.7,
+        letterSpacing: -0.9,
         lineHeight: HEADING_LINE_HEIGHT,
         color: INK,
     },
@@ -571,153 +703,133 @@ const styles = StyleSheet.create({
         includeFontPadding: false,
         textAlignVertical: "bottom",
     },
-    formBlock: {
-        marginTop: 40,
-        gap: 24,
+    sheet: {
+        backgroundColor: CARD,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        borderColor: RULE_08,
+        paddingTop: 24,
+        paddingHorizontal: 20,
     },
-    field: {
-        gap: 10,
-    },
-    label: {
-        fontSize: 10.5,
-        fontWeight: "700",
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        color: COPPER,
-    },
-    phoneInput: {
+    fieldShell: {
         flexDirection: "row",
         alignItems: "stretch",
-        backgroundColor: CARD,
+        minHeight: 62,
+        backgroundColor: SURFACE,
         borderWidth: 1.5,
-        borderColor: INK,
-        borderRadius: 14,
+        borderColor: "transparent",
+        borderRadius: 16,
         overflow: "hidden",
+    },
+    fieldGap: {
+        marginTop: 10,
+    },
+    fieldFocused: {
+        backgroundColor: CARD,
+        borderColor: INK,
     },
     prefix: {
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
         paddingHorizontal: 14,
-        backgroundColor: SURFACE,
         borderRightWidth: 1,
         borderRightColor: RULE_16,
     },
     flag: {
-        fontSize: 16,
+        fontSize: 18,
     },
     prefixText: {
-        fontSize: 14,
+        fontSize: 17,
         fontWeight: "700",
         color: INK,
-        letterSpacing: 0.5,
     },
-    phoneField: {
+    fieldBody: {
         flex: 1,
         minWidth: 0,
+        justifyContent: "center",
         paddingHorizontal: 14,
-        paddingVertical: 16,
-        fontSize: 16,
+    },
+    fieldBodyLead: {
+        paddingLeft: 16,
+    },
+    fieldInput: {
+        padding: 0,
+        fontSize: 18,
         fontWeight: "600",
         color: INK,
-        letterSpacing: 0.3,
-    },
-    fieldShell: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: CARD,
-        borderWidth: 1.5,
-        borderColor: INK,
-        borderRadius: 14,
-        overflow: "hidden",
-    },
-    lead: {
-        paddingLeft: 14,
-        paddingRight: 10,
-    },
-    pwField: {
-        flex: 1,
-        minWidth: 0,
-        paddingVertical: 16,
-        paddingRight: 14,
-        fontSize: 16,
-        fontWeight: "600",
-        color: INK,
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
     },
     trail: {
-        paddingLeft: 8,
-        paddingRight: 14,
+        paddingHorizontal: 16,
         alignItems: "center",
         justifyContent: "center",
     },
     forgotRow: {
         alignSelf: "flex-end",
-        marginTop: 18,
+        marginTop: 14,
     },
     forgot: {
-        fontSize: 13,
-        fontWeight: "800",
-        color: COPPER_DEEP,
+        fontSize: 15,
+        fontWeight: "700",
+        color: INK,
     },
     offline: {
-        marginTop: 24,
-        fontSize: 13,
+        marginTop: 18,
+        fontSize: 14,
         fontWeight: "700",
-        lineHeight: 18,
+        lineHeight: 20,
         color: COPPER_DEEP,
-        textAlign: "center",
+    },
+    actions: {
+        marginTop: 22,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    primaryHost: {
+        flex: 1,
     },
     primary: {
-        marginTop: 30,
+        height: 60,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
         backgroundColor: LIME,
-        borderRadius: 14,
-        paddingVertical: 16,
-        paddingHorizontal: 22,
+        borderRadius: 999,
+        paddingHorizontal: 24,
     },
-    secondary: {
-        marginTop: 12,
-        flexDirection: "row",
+    primaryText: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: LIME_INK,
+    },
+    biometric: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         alignItems: "center",
         justifyContent: "center",
-        gap: 10,
-        backgroundColor: CARD,
-        borderWidth: 1.5,
-        borderColor: INK,
-        borderRadius: 14,
-        paddingVertical: 15,
-        paddingHorizontal: 22,
-    },
-    secondaryText: {
-        fontSize: 15,
-        fontWeight: "800",
-        color: INK,
+        backgroundColor: SURFACE,
     },
     disabled: {
         opacity: 0.6,
     },
-    primaryText: {
-        fontSize: 15,
-        fontWeight: "800",
-        color: LIME_INK,
-    },
     foot: {
-        marginTop: "auto",
-        paddingTop: 22,
+        marginTop: 20,
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
     },
     footText: {
-        fontSize: 13,
+        fontSize: 15,
         color: MUTE,
     },
     footLink: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "800",
         color: INK,
         borderBottomWidth: 2,
