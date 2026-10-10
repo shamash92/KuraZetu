@@ -682,7 +682,7 @@ export default function LoginScreen() {
                     </View>
 
                     <View style={styles.foot}>
-                        <Text style={styles.footText}>New to Kura Zetu? </Text>
+                        <Text style={styles.footText}>New to Kura Zetu?</Text>
                         <Link href="/auth/signUp" asChild>
                             <TouchableOpacity hitSlop={8}>
                                 <Text style={styles.footLink}>Create account</Text>
@@ -886,14 +886,19 @@ const styles = StyleSheet.create({
         marginTop: 20,
         flexDirection: "row",
         justifyContent: "center",
-        alignItems: "center",
+        // Top-aligned with one shared line height, so both sit on the same
+        // baseline and the link's underline hangs below it.
+        alignItems: "flex-start",
+        gap: 8,
     },
     footText: {
         fontSize: 15,
+        lineHeight: 20,
         color: MUTE,
     },
     footLink: {
         fontSize: 15,
+        lineHeight: 20,
         fontWeight: "800",
         color: INK,
         borderBottomWidth: 2,
