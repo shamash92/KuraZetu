@@ -1,15 +1,28 @@
 import {
-    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    LayoutChangeEvent,
+    Platform,
+    Pressable,
+    PressableProps,
     ScrollView,
+    StyleProp,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
+    ViewStyle,
+    useWindowDimensions,
 } from "react-native";
 import Animated, {
     Easing,
+    FadeIn,
+    FadeOut,
+    cubicBezier,
+    useAnimatedProps,
     useAnimatedStyle,
+    useReducedMotion,
     useSharedValue,
     withDelay,
     withTiming,
@@ -19,27 +32,32 @@ import {
     Eye,
     EyeOff,
     Fingerprint,
-    Lock,
     ScanFace,
 } from "lucide-react-native";
 import {
     CARD,
-    COPPER,
     COPPER_DEEP,
     INK,
     LIME,
     LIME_INK,
     MUTE,
-    MUTE_2,
+    RED,
     RULE_16,
-    SURFACE,
 } from "../_utils/colors";
-import {Link, router} from "expo-router";
+import * as Device from "expo-device";
+import {Link, Stack, router} from "expo-router";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
+import {
+    COUNTY_ATLAS_HEIGHT,
+    COUNTY_ATLAS_LONGEST_OUTLINE,
+    COUNTY_ATLAS_PATH,
+    COUNTY_ATLAS_WIDTH,
+} from "@/components/auth/countyAtlas";
 import LoginLockout from "@/components/auth/lockout";
 import LoginLoading from "@/components/auth/login";
+import Svg, {Path} from "react-native-svg";
 import UpdateCheckerModal from "../_utils/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
 import {
@@ -61,14 +79,49 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 // real request. Development only — must be false on any branch that merges.
 const PREVIEW_SIGNING_IN = false;
 
-const HEADING_LINE_HEIGHT = 38;
+const HEADING_LINE_HEIGHT = 42;
 // Mask is taller than the text line so Gĩkũyũ/Kĩkamba diacritics (ĩ, ũ) and bold
 // ascenders are not shaved by overflow:hidden. Slide distance = mask height.
-const GREETING_MASK_HEIGHT = 48;
+const GREETING_MASK_HEIGHT = 54;
 const SWAP_MS = 480;
 const CHAR_STAGGER_MS = 22;
 const HOLD_MS = 1800;
 const LONGEST_GREETING = Math.max(...GREETINGS.map((g) => g.length));
+// The county atlas is the hero's one image: the country in lime, its 47
+// counties cut in ink. It takes all the room the hero has and runs off the
+// trailing edge, stopping short of the greeting.
+const ATLAS_ASPECT = COUNTY_ATLAS_HEIGHT / COUNTY_ATLAS_WIDTH;
+const ATLAS_MAX_WIDTH_RATIO = 0.8;
+const ATLAS_BLEED_RATIO = 0.24;
+const ATLAS_TOP_GAP = 4;
+// The southern border runs down and away to the right, and has cleared the
+// greeting's side of the screen about this far down the atlas. Everything
+// below that point is coast, off to the trailing edge.
+const ATLAS_BORDER_CLEAR_RATIO = 0.84;
+// Greeting line plus the hero's bottom padding, and air above the greeting.
+const ATLAS_GREETING_RESERVE = 82;
+const ATLAS_DRAW_DELAY_MS = 200;
+const ATLAS_DRAW_MS = 1500;
+const ATLAS_FILL_MS = 450;
+// The atlas is redrawn in software on every frame of its draw-in. Phones on
+// Android 9 or older, or with under 3 GB of memory, get the finished map.
+const LOW_MEMORY_BYTES = 3 * 1024 ** 3;
+const IS_MODEST_ANDROID =
+    Platform.OS === "android" &&
+    (Platform.Version < 29 ||
+        (Device.totalMemory !== null && Device.totalMemory < LOW_MEMORY_BYTES));
+const PHONE_DIGITS = 9;
+// Press feedback: 120ms and 3% is the ceiling for a control touched this often.
+const PRESS_TRANSITION = {
+    transitionProperty: "transform",
+    transitionDuration: "120ms",
+    transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+} as const;
+const ATLAS_FADE = {
+    transitionProperty: "opacity",
+    transitionDuration: "200ms",
+    transitionTimingFunction: "ease-out",
+} as const;
 const PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY = "passwordLoginLockoutExpiry";
 
 function getRemainingLockoutSeconds(lockoutExpiresAt: number) {
@@ -191,10 +244,134 @@ function KineticGreeting() {
     );
 }
 
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+/**
+ * The country, drawn once when the screen opens: every county outline is
+ * traced in lime at the same time, then the land fills in behind them.
+ */
+function CountyAtlas({width, height}: {width: number; height: number}) {
+    const still = useReducedMotion() || IS_MODEST_ANDROID;
+    const drawn = useSharedValue(0);
+    const filled = useSharedValue(0);
+
+    useEffect(() => {
+        if (still) {
+            drawn.value = 1;
+            filled.value = 1;
+            return;
+        }
+
+        drawn.value = withDelay(
+            ATLAS_DRAW_DELAY_MS,
+            withTiming(1, {
+                duration: ATLAS_DRAW_MS,
+                easing: Easing.bezier(0.22, 0.61, 0.36, 1),
+            }),
+        );
+        // The fill starts as the last long outlines are closing.
+        filled.value = withDelay(
+            ATLAS_DRAW_DELAY_MS + ATLAS_DRAW_MS * 0.7,
+            withTiming(1, {duration: ATLAS_FILL_MS, easing: Easing.out(Easing.cubic)}),
+        );
+    }, [still, drawn, filled]);
+
+    const outlineProps = useAnimatedProps(() => ({
+        strokeDashoffset: (1 - drawn.value) * COUNTY_ATLAS_LONGEST_OUTLINE,
+    }));
+    const landProps = useAnimatedProps(() => ({opacity: filled.value}));
+
+    return (
+        <Svg
+            width={width}
+            height={height}
+            viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
+        >
+            <AnimatedPath
+                d={COUNTY_ATLAS_PATH}
+                fill="none"
+                stroke={LIME}
+                strokeWidth={1.6}
+                strokeLinejoin="round"
+                strokeDasharray={COUNTY_ATLAS_LONGEST_OUTLINE}
+                animatedProps={outlineProps}
+            />
+            <AnimatedPath
+                d={COUNTY_ATLAS_PATH}
+                fill={LIME}
+                stroke={INK}
+                strokeWidth={2.2}
+                strokeLinejoin="round"
+                animatedProps={landProps}
+            />
+        </Svg>
+    );
+}
+
+/** True from the moment the keyboard starts rising until it starts leaving. */
+function useKeyboardOpen() {
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        // iOS announces the keyboard before it moves, so the screen can move
+        // with it; Android only reports once it has landed.
+        const isIos = Platform.OS === "ios";
+        const show = Keyboard.addListener(
+            isIos ? "keyboardWillShow" : "keyboardDidShow",
+            () => setIsOpen(true),
+        );
+        const hide = Keyboard.addListener(
+            isIos ? "keyboardWillHide" : "keyboardDidHide",
+            () => setIsOpen(false),
+        );
+
+        return () => {
+            show.remove();
+            hide.remove();
+        };
+    }, []);
+
+    return isOpen;
+}
+
+function PressableScale({
+    style,
+    containerStyle,
+    children,
+    ...props
+}: Omit<PressableProps, "style" | "children"> & {
+    style?: StyleProp<ViewStyle>;
+    containerStyle?: StyleProp<ViewStyle>;
+    children: React.ReactNode;
+}) {
+    const [pressed, setPressed] = useState(false);
+
+    return (
+        <Pressable
+            {...props}
+            style={containerStyle}
+            onPressIn={() => setPressed(true)}
+            onPressOut={() => setPressed(false)}
+            pressRetentionOffset={16}
+        >
+            <Animated.View
+                style={[
+                    style,
+                    PRESS_TRANSITION,
+                    {transform: [{scale: pressed ? 0.97 : 1}]},
+                ]}
+            >
+                {children}
+            </Animated.View>
+        </Pressable>
+    );
+}
+
 export default function LoginScreen() {
     const [phoneNumber, setPhoneNumber] = useState("+254");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [focusedField, setFocusedField] = useState<"phone" | "password" | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isTallyAnimationVisible, setIsTallyAnimationVisible] = useState(false);
 
@@ -212,7 +389,12 @@ export default function LoginScreen() {
     const {logIn, lock} = useAuthStore();
 
     const insets = useSafeAreaInsets();
+    const {width: windowWidth} = useWindowDimensions();
+    const [heroHeight, setHeroHeight] = useState<number | null>(null);
     const hasCommittedPasswordSignIn = useRef(false);
+    const phoneInput = useRef<TextInput>(null);
+    const passwordInput = useRef<TextInput>(null);
+    const isKeyboardOpen = useKeyboardOpen();
     const isOffline = useNetworkStatus() === "offline";
 
     const handleTallyAnimationComplete = useCallback(() => {
@@ -281,14 +463,23 @@ export default function LoginScreen() {
     }, []);
 
     const handleLogin = () => {
-        if (!phoneNumber || phoneNumber === "+254") {
-            Alert.alert("Error", "Please enter your phone number");
+        if (nationalNumber.length === 0) {
+            setError("Enter your phone number.");
+            phoneInput.current?.focus();
+            return;
+        }
+        if (nationalNumber.length < PHONE_DIGITS) {
+            setError(`Your phone number needs ${PHONE_DIGITS} digits after +254.`);
+            phoneInput.current?.focus();
             return;
         }
         if (!password) {
-            Alert.alert("Error", "Please enter your password");
+            setError("Enter your password.");
+            passwordInput.current?.focus();
             return;
         }
+
+        setError(null);
 
         hasCommittedPasswordSignIn.current = false;
         setIsTallyAnimationComplete(false);
@@ -335,27 +526,15 @@ export default function LoginScreen() {
                         }
 
                         setError(data["error"]);
-                        Alert.alert("Please try again later", data["error"]);
                     } else if (data["error"] === "Invalid credentials") {
-                        console.log("Invalid credentials");
-                        setError(data["error"]);
-                        Alert.alert(
-                            "Invalid credentials",
-                            "Please check your phone number and password.",
-                        );
+                        setError("Wrong phone number or password.");
                     } else if (
                         data["error"] === "Invalid data" &&
                         data["details"]["phone_number"]
                     ) {
-                        console.log("Phone number error");
-                        setError(data["details"]["phone_number"]);
-                        Alert.alert(
-                            "Phone number error",
-                            data["details"]["phone_number"][0],
-                        );
+                        setError(data["details"]["phone_number"][0]);
                     } else {
                         setError(data["error"]);
-                        Alert.alert("Unable to log in", data["error"]);
                     }
                 } else if (data["message"] === "User login successful") {
                     let token = data["data"]["token"];
@@ -372,189 +551,334 @@ export default function LoginScreen() {
                     }
                 } else {
                     setIsSubmitting(false);
-                    Alert.alert("Unable to log in", "Please try again.");
+                    setError("Could not sign you in. Try again.");
                 }
             })
             .catch(() => {
                 setIsSubmitting(false);
-                Alert.alert("Unable to log in", "Check your connection and try again.");
+                setError("Could not sign you in. Check your connection and try again.");
             });
     };
 
     // National number digits only (without the +254 country code).
     const nationalNumber = phoneNumber.replace(/^\+254/, "");
+    // Shown in threes, the way the number is read out: 712 345 678.
+    const groupedNumber = nationalNumber.replace(/(\d{3})(?=\d)/g, "$1 ");
     const handlePhoneChange = (text: string) => {
-        const digits = text.replace(/[^0-9]/g, "").slice(0, 9);
+        const digits = text.replace(/[^0-9]/g, "").slice(0, PHONE_DIGITS);
         setPhoneNumber("+254" + digits);
+        setError(null);
+        // The number pad has no next key, so a full number moves on by itself.
+        if (digits.length === PHONE_DIGITS && nationalNumber.length < PHONE_DIGITS) {
+            passwordInput.current?.focus();
+        }
     };
+    const handlePasswordChange = (text: string) => {
+        setPassword(text);
+        setError(null);
+    };
+
+    const atlasTop = insets.top + ATLAS_TOP_GAP;
+    const atlasHeight =
+        heroHeight === null
+            ? 0
+            : Math.max(
+                  0,
+                  Math.min(
+                      windowWidth * ATLAS_MAX_WIDTH_RATIO * ATLAS_ASPECT,
+                      (heroHeight - atlasTop - ATLAS_GREETING_RESERVE) /
+                          ATLAS_BORDER_CLEAR_RATIO,
+                      heroHeight - atlasTop - 8,
+                  ),
+              );
+    const atlasWidth = atlasHeight / ATLAS_ASPECT;
 
     if (!isLockoutRestored) return null;
 
     if (lockoutExpiresAt !== null) {
         return (
-            <LoginLockout
-                lockoutExpiresAt={lockoutExpiresAt}
-                onComplete={handleLockoutComplete}
-            />
+            <>
+                <Stack.Screen options={{statusBarStyle: "auto"}} />
+                <LoginLockout
+                    lockoutExpiresAt={lockoutExpiresAt}
+                    onComplete={handleLockoutComplete}
+                />
+            </>
         );
     }
 
     if (isTallyAnimationVisible || PREVIEW_SIGNING_IN) {
-        return <LoginLoading onTallyAnimationComplete={handleTallyAnimationComplete} />;
+        return (
+            <>
+                <Stack.Screen options={{statusBarStyle: "auto"}} />
+                <LoginLoading onTallyAnimationComplete={handleTallyAnimationComplete} />
+            </>
+        );
     }
 
     return (
-        <View style={styles.screen}>
+        <KeyboardAvoidingView
+            style={styles.screen}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+            {/* The hero is ink whatever the system theme is. */}
+            <Stack.Screen options={{statusBarStyle: "light"}} />
             <UpdateCheckerModal />
 
             <ScrollView
-                contentContainerStyle={[
-                    styles.content,
-                    {
-                        paddingTop: insets.top + 24,
-                        paddingBottom: insets.bottom + 28,
-                    },
-                ]}
+                contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
+                bounces={false}
             >
-                <KineticGreeting />
+                {/* With the keyboard up the hero gives its room to the form:
+                    the atlas and wordmark step back and the greeting stays. */}
+                <View
+                    style={[
+                        styles.hero,
+                        {paddingTop: insets.top + 14},
+                        isKeyboardOpen && styles.heroCompact,
+                    ]}
+                    onLayout={(event: LayoutChangeEvent) => {
+                        // Keep the tallest height seen. The keyboard shrinks
+                        // the hero, and Android reports that before it says
+                        // the keyboard is up; the atlas is hidden by then.
+                        const {height} = event.nativeEvent.layout;
+                        setHeroHeight((tallest) =>
+                            tallest === null ? height : Math.max(tallest, height),
+                        );
+                    }}
+                >
+                    <Animated.View
+                        style={[
+                            styles.atlas,
+                            {
+                                top: atlasTop,
+                                right: -atlasWidth * ATLAS_BLEED_RATIO,
+                                opacity: isKeyboardOpen || atlasHeight === 0 ? 0 : 1,
+                            },
+                            ATLAS_FADE,
+                        ]}
+                        pointerEvents="none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                    >
+                        {atlasHeight > 0 ? (
+                            <CountyAtlas width={atlasWidth} height={atlasHeight} />
+                        ) : null}
+                    </Animated.View>
 
-                <View style={styles.formBlock}>
-                    {/* Phone number */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Phone number</Text>
-                        <View style={styles.phoneInput}>
-                            <View style={styles.prefix}>
-                                <Text style={styles.flag}>🇰🇪</Text>
-                                <Text style={styles.prefixText}>+254</Text>
-                            </View>
-                            <TextInput
-                                style={styles.phoneField}
-                                placeholder="712 345 678"
-                                placeholderTextColor={MUTE_2}
-                                value={nationalNumber}
-                                onChangeText={handlePhoneChange}
-                                keyboardType="phone-pad"
-                                maxLength={9}
-                                returnKeyType="next"
-                            />
-                        </View>
-                    </View>
+                    {isKeyboardOpen ? (
+                        <View />
+                    ) : (
+                        <Animated.Text
+                            style={styles.wordmark}
+                            entering={FadeIn.duration(200)}
+                            exiting={FadeOut.duration(120)}
+                        >
+                            Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
+                        </Animated.Text>
+                    )}
 
-                    {/* Password */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Password</Text>
-                        <View style={styles.fieldShell}>
-                            <View style={styles.lead}>
-                                <Lock size={18} color={MUTE} strokeWidth={1.9} />
-                            </View>
-                            <TextInput
-                                style={styles.pwField}
-                                placeholder="••••••••"
-                                placeholderTextColor={MUTE_2}
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                                returnKeyType="send"
-                                returnKeyLabel="Submit"
-                            />
-                            <TouchableOpacity
-                                style={styles.trail}
-                                onPress={() => setShowPassword(!showPassword)}
-                                hitSlop={8}
-                            >
-                                {showPassword ? (
-                                    <EyeOff size={18} color={MUTE} strokeWidth={1.9} />
-                                ) : (
-                                    <Eye size={18} color={MUTE} strokeWidth={1.9} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                    <KineticGreeting />
                 </View>
 
-                <Link href="/auth/forgot-password" asChild>
-                    <TouchableOpacity style={styles.forgotRow}>
-                        <Text style={styles.forgot}>Forgot password?</Text>
-                    </TouchableOpacity>
-                </Link>
-
-                {isOffline ? (
-                    <Text style={styles.offline} accessibilityLiveRegion="polite">
-                        You&apos;re offline. Connect to the internet to sign in.
-                    </Text>
-                ) : null}
-
-                <TouchableOpacity
-                    style={[
-                        styles.primary,
-                        (isSubmitting || isOffline) && styles.disabled,
-                    ]}
-                    onPress={() => handleLogin()}
-                    disabled={isSubmitting || isOffline}
-                    activeOpacity={0.85}
-                >
-                    <Text style={styles.primaryText}>
-                        {isSubmitting ? "Signing in…" : "Sign in"}
-                    </Text>
-                    <ArrowRight size={18} color={LIME_INK} strokeWidth={2.4} />
-                </TouchableOpacity>
-
-                {biometricUnlock === "on" ? (
-                    <TouchableOpacity
-                        style={[styles.secondary, isOffline && styles.disabled]}
-                        onPress={lock}
-                        disabled={isOffline}
-                        activeOpacity={0.85}
+                <View style={[styles.sheet, {paddingBottom: Math.max(insets.bottom, 12) + 2}]}>
+                    <Text style={styles.label}>Phone number</Text>
+                    <Pressable
+                        style={[
+                            styles.fieldShell,
+                            focusedField === "phone" && styles.fieldFocused,
+                        ]}
+                        onPress={() => phoneInput.current?.focus()}
+                        accessible={false}
                     >
-                        {biometricLabel === "Face ID" ? (
-                            <ScanFace size={18} color={INK} strokeWidth={2.2} />
-                        ) : (
-                            <Fingerprint size={18} color={INK} strokeWidth={2.2} />
-                        )}
-                        <Text style={styles.secondaryText}>
-                            Unlock with {biometricLabel}
-                        </Text>
-                    </TouchableOpacity>
-                ) : null}
+                        <View style={styles.prefix}>
+                            <Text style={styles.flag}>🇰🇪</Text>
+                            <Text style={styles.prefixText}>+254</Text>
+                        </View>
+                        <View style={styles.fieldBody}>
+                            <TextInput
+                                ref={phoneInput}
+                                style={styles.fieldInput}
+                                accessibilityLabel="Phone number"
+                                placeholder="712 345 678"
+                                placeholderTextColor={MUTE}
+                                value={groupedNumber}
+                                onChangeText={handlePhoneChange}
+                                keyboardType="number-pad"
+                                textContentType="telephoneNumber"
+                                autoComplete="tel-national"
+                                onFocus={() => setFocusedField("phone")}
+                                onBlur={() => setFocusedField(null)}
+                            />
+                        </View>
+                    </Pressable>
 
-                <View style={styles.foot}>
-                    <Text style={styles.footText}>Don&apos;t have an account? </Text>
-                    <Link href="/auth/signUp" asChild>
-                        <TouchableOpacity>
-                            <Text style={styles.footLink}>Create account</Text>
+                    <Text style={[styles.label, styles.labelGap]}>Password</Text>
+                    <Pressable
+                        style={[
+                            styles.fieldShell,
+                            focusedField === "password" && styles.fieldFocused,
+                        ]}
+                        onPress={() => passwordInput.current?.focus()}
+                        accessible={false}
+                    >
+                        <View style={[styles.fieldBody, styles.fieldBodyLead]}>
+                            <TextInput
+                                ref={passwordInput}
+                                style={styles.fieldInput}
+                                accessibilityLabel="Password"
+                                value={password}
+                                onChangeText={handlePasswordChange}
+                                secureTextEntry={!showPassword}
+                                textContentType="password"
+                                autoComplete="current-password"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                returnKeyType="go"
+                                onSubmitEditing={() => handleLogin()}
+                                onFocus={() => setFocusedField("password")}
+                                onBlur={() => setFocusedField(null)}
+                            />
+                        </View>
+                        <TouchableOpacity
+                            style={styles.trail}
+                            onPress={() => setShowPassword(!showPassword)}
+                            hitSlop={12}
+                            accessibilityRole="button"
+                            accessibilityLabel={
+                                showPassword ? "Hide password" : "Show password"
+                            }
+                        >
+                            {showPassword ? (
+                                <EyeOff size={22} color={MUTE} strokeWidth={1.9} />
+                            ) : (
+                                <Eye size={22} color={MUTE} strokeWidth={1.9} />
+                            )}
+                        </TouchableOpacity>
+                    </Pressable>
+
+                    <Link href="/auth/forgot-password" asChild>
+                        <TouchableOpacity style={styles.forgotRow} hitSlop={8}>
+                            <Text style={styles.forgot}>Forgot password?</Text>
                         </TouchableOpacity>
                     </Link>
+
+                    {isOffline ? (
+                        <Text style={styles.offline} accessibilityLiveRegion="polite">
+                            You&apos;re offline. Connect to the internet to sign in.
+                        </Text>
+                    ) : error ? (
+                        <Text
+                            style={styles.error}
+                            accessibilityRole="alert"
+                            accessibilityLiveRegion="assertive"
+                        >
+                            {error}
+                        </Text>
+                    ) : null}
+
+                    <View style={styles.actions}>
+                        <PressableScale
+                            containerStyle={styles.primaryHost}
+                            style={[
+                                styles.primary,
+                                (isSubmitting || isOffline) && styles.disabled,
+                            ]}
+                            onPress={() => handleLogin()}
+                            disabled={isSubmitting || isOffline}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.primaryText}>
+                                {isSubmitting ? "Signing in…" : "Sign in"}
+                            </Text>
+                            <ArrowRight size={20} color={LIME_INK} strokeWidth={2.4} />
+                        </PressableScale>
+
+                        {biometricUnlock === "on" ? (
+                            <PressableScale
+                                style={[styles.biometric, isOffline && styles.disabled]}
+                                onPress={lock}
+                                disabled={isOffline}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Unlock with ${biometricLabel}`}
+                            >
+                                {biometricLabel === "Face ID" ? (
+                                    <ScanFace size={26} color={INK} strokeWidth={1.9} />
+                                ) : (
+                                    <Fingerprint size={26} color={INK} strokeWidth={1.9} />
+                                )}
+                            </PressableScale>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.foot}>
+                        <Text style={styles.footText}>New to Kura Zetu?</Text>
+                        <Link href="/auth/signUp" asChild>
+                            <TouchableOpacity hitSlop={8}>
+                                <Text style={styles.footLink}>Create account</Text>
+                            </TouchableOpacity>
+                        </Link>
+                    </View>
+
+                    <Text style={styles.disclaimer}>
+                        Citizen tally · Not an IEBC system
+                    </Text>
                 </View>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: CARD,
+        backgroundColor: INK,
     },
     content: {
         flexGrow: 1,
+    },
+    // Brand, atlas and greeting on ink; the form rises from the bottom edge,
+    // where the thumb already is.
+    hero: {
+        flexGrow: 1,
+        minHeight: 250,
         paddingHorizontal: 24,
+        paddingBottom: 22,
+        justifyContent: "space-between",
+        overflow: "hidden",
+    },
+    heroCompact: {
+        minHeight: 0,
+    },
+    atlas: {
+        position: "absolute",
+    },
+    wordmark: {
+        fontFamily: "PublicSans-ExtraBold",
+        fontSize: 22,
+        letterSpacing: -0.7,
+        color: CARD,
+    },
+    wordmarkDot: {
+        color: RED,
+    },
+    disclaimer: {
+        marginTop: 16,
+        textAlign: "center",
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 10.5,
+        letterSpacing: 1.2,
+        textTransform: "uppercase",
+        color: MUTE,
     },
     heading: {
-        fontSize: 30,
+        fontSize: 34,
         fontWeight: "900",
-        letterSpacing: -0.7,
+        letterSpacing: -0.9,
         lineHeight: HEADING_LINE_HEIGHT,
-        color: INK,
-    },
-    langLabel: {
-        fontSize: 10.5,
-        fontWeight: "700",
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        color: COPPER,
-        marginBottom: 6,
+        color: CARD,
     },
     greetingMask: {
         height: GREETING_MASK_HEIGHT,
@@ -571,153 +895,152 @@ const styles = StyleSheet.create({
         includeFontPadding: false,
         textAlignVertical: "bottom",
     },
-    formBlock: {
-        marginTop: 40,
-        gap: 24,
-    },
-    field: {
-        gap: 10,
+    sheet: {
+        backgroundColor: CARD,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingTop: 20,
+        paddingHorizontal: 20,
     },
     label: {
-        fontSize: 10.5,
-        fontWeight: "700",
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        color: COPPER,
+        marginBottom: 6,
+        marginLeft: 2,
+        fontSize: 14,
+        lineHeight: 18,
+        fontWeight: "600",
+        color: INK,
     },
-    phoneInput: {
+    labelGap: {
+        marginTop: 12,
+    },
+    // White fields drawn with a line, not a grey fill: the sheet stays one
+    // clean surface and the focused field is the only heavy stroke on it.
+    fieldShell: {
         flexDirection: "row",
         alignItems: "stretch",
+        minHeight: 58,
         backgroundColor: CARD,
         borderWidth: 1.5,
-        borderColor: INK,
-        borderRadius: 14,
+        borderColor: RULE_16,
+        borderRadius: 16,
         overflow: "hidden",
+    },
+    fieldFocused: {
+        borderColor: INK,
     },
     prefix: {
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
         paddingHorizontal: 14,
-        backgroundColor: SURFACE,
         borderRightWidth: 1,
         borderRightColor: RULE_16,
     },
     flag: {
-        fontSize: 16,
+        fontSize: 18,
     },
     prefixText: {
-        fontSize: 14,
+        fontSize: 17,
         fontWeight: "700",
         color: INK,
-        letterSpacing: 0.5,
     },
-    phoneField: {
+    fieldBody: {
         flex: 1,
         minWidth: 0,
+        justifyContent: "center",
         paddingHorizontal: 14,
-        paddingVertical: 16,
-        fontSize: 16,
+    },
+    fieldBodyLead: {
+        paddingLeft: 16,
+    },
+    fieldInput: {
+        padding: 0,
+        fontSize: 18,
         fontWeight: "600",
         color: INK,
-        letterSpacing: 0.3,
-    },
-    fieldShell: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: CARD,
-        borderWidth: 1.5,
-        borderColor: INK,
-        borderRadius: 14,
-        overflow: "hidden",
-    },
-    lead: {
-        paddingLeft: 14,
-        paddingRight: 10,
-    },
-    pwField: {
-        flex: 1,
-        minWidth: 0,
-        paddingVertical: 16,
-        paddingRight: 14,
-        fontSize: 16,
-        fontWeight: "600",
-        color: INK,
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
     },
     trail: {
-        paddingLeft: 8,
-        paddingRight: 14,
+        paddingHorizontal: 16,
         alignItems: "center",
         justifyContent: "center",
     },
     forgotRow: {
         alignSelf: "flex-end",
-        marginTop: 18,
+        marginTop: 14,
     },
     forgot: {
-        fontSize: 13,
-        fontWeight: "800",
-        color: COPPER_DEEP,
+        fontSize: 15,
+        fontWeight: "700",
+        color: INK,
     },
     offline: {
-        marginTop: 24,
-        fontSize: 13,
+        marginTop: 18,
+        fontSize: 14,
         fontWeight: "700",
-        lineHeight: 18,
+        lineHeight: 20,
         color: COPPER_DEEP,
-        textAlign: "center",
+    },
+    error: {
+        marginTop: 18,
+        fontSize: 14,
+        fontWeight: "700",
+        lineHeight: 20,
+        color: RED,
+    },
+    actions: {
+        marginTop: 18,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    primaryHost: {
+        flex: 1,
     },
     primary: {
-        marginTop: 30,
+        height: 60,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
         backgroundColor: LIME,
-        borderRadius: 14,
-        paddingVertical: 16,
-        paddingHorizontal: 22,
+        borderRadius: 999,
+        paddingHorizontal: 24,
     },
-    secondary: {
-        marginTop: 12,
-        flexDirection: "row",
+    primaryText: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: LIME_INK,
+    },
+    biometric: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         alignItems: "center",
         justifyContent: "center",
-        gap: 10,
-        backgroundColor: CARD,
         borderWidth: 1.5,
-        borderColor: INK,
-        borderRadius: 14,
-        paddingVertical: 15,
-        paddingHorizontal: 22,
-    },
-    secondaryText: {
-        fontSize: 15,
-        fontWeight: "800",
-        color: INK,
+        borderColor: RULE_16,
     },
     disabled: {
         opacity: 0.6,
     },
-    primaryText: {
-        fontSize: 15,
-        fontWeight: "800",
-        color: LIME_INK,
-    },
     foot: {
-        marginTop: "auto",
-        paddingTop: 22,
+        marginTop: 18,
         flexDirection: "row",
         justifyContent: "center",
-        alignItems: "center",
+        // Top-aligned with one shared line height, so both sit on the same
+        // baseline and the link's underline hangs below it.
+        alignItems: "flex-start",
+        gap: 8,
     },
     footText: {
-        fontSize: 13,
+        fontSize: 15,
+        lineHeight: 20,
         color: MUTE,
     },
     footLink: {
-        fontSize: 13,
+        fontSize: 15,
+        lineHeight: 20,
         fontWeight: "800",
         color: INK,
         borderBottomWidth: 2,

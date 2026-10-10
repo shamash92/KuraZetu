@@ -1,7 +1,7 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
-import {InteractionManager, Platform} from "react-native";
+import {Platform} from "react-native";
 import React, {useEffect} from "react";
 
 import Constants from "expo-constants";
@@ -56,11 +56,11 @@ function RegisterPushNotifications() {
 
         // This layout mounts after the launch continuation and any future
         // onboarding route, so the OS prompt cannot interrupt either flow.
-        const interaction = InteractionManager.runAfterInteractions(() => {
+        const idle = requestIdleCallback(() => {
             void registerForPushNotificationsAsync();
         });
 
-        return () => interaction.cancel();
+        return () => cancelIdleCallback(idle);
     }, [setExpoPushToken, userToken]);
 
     return null;

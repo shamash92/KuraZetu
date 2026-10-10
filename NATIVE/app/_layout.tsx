@@ -18,7 +18,6 @@ import Animated, {
 import {INK, MUTE, MUTE_2, PAPER, PAPER_DEEP, RED, RULE_08} from "@/app/_utils/colors";
 import {
     Image,
-    InteractionManager,
     Platform,
     StyleSheet,
     Text,
@@ -290,11 +289,11 @@ function AppLocationPermission() {
     useEffect(() => {
         if (Platform.OS === "web") return;
 
-        const interaction = InteractionManager.runAfterInteractions(() => {
+        const idle = requestIdleCallback(() => {
             void Location.requestForegroundPermissionsAsync();
         });
 
-        return () => interaction.cancel();
+        return () => cancelIdleCallback(idle);
     }, []);
 
     return null;
