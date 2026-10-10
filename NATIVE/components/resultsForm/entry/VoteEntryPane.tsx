@@ -59,9 +59,6 @@ export function VoteEntryPane({
                 contentContainerStyle={styles.contentInner}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.sectionLabel}>
-                    CAPTURE {formName.toUpperCase()}
-                </Text>
                 {captured ? (
                     <View style={styles.capturedRow}>
                         <Text style={styles.capturedText}>✓ {formName} captured</Text>
@@ -150,7 +147,7 @@ const styles = StyleSheet.create({
     content: {flex: 1},
     contentInner: {
         paddingHorizontal: 16,
-        paddingTop: 4,
+        paddingTop: 12,
         paddingBottom: 16,
     },
     sectionLabel: {
