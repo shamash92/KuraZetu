@@ -6,6 +6,8 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
 import {router} from "expo-router";
+import {toTitleCase} from "@/app/_utils/toTitleCase";
+import {rememberStation} from "@/hooks/useStationInfo";
 import useAuthStore from "@/app/_utils/authStore";
 import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
 
@@ -26,26 +28,6 @@ export interface IPollingStation {
     registered_voters: number;
     stream_number: number;
 }
-
-// Sponsors and bodies that prefix school and hall names in the register. They
-// stay in capitals when the rest of a name is set in title case.
-const NAME_ACRONYMS = new Set([
-    "ABC", "ACC", "ACK", "AGC", "AIC", "AIPCA", "AP", "CCM", "CDF", "DEB", "ECD",
-    "ECDE", "ELCK", "FPFK", "GK", "KAG", "KMTC", "KWS", "MCK", "NYS", "PAG",
-    "PCEA", "PEFA", "RC", "SA", "SDA", "TTC",
-]);
-
-// Names arrive in capitals from the register. Set as running text they read as
-// a place, not a label.
-const toTitleCase = (text: string) =>
-    text
-        .split(/(\s+|[-/()])/)
-        .map((word) =>
-            NAME_ACRONYMS.has(word.replace(/\./g, "").toUpperCase())
-                ? word.toUpperCase()
-                : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-        )
-        .join("");
 
 const ElectionResultsApp = () => {
     const [pollingCenterInfo, setPollingCenterInfo] =
@@ -135,6 +117,18 @@ const ElectionResultsApp = () => {
                                     pressed && styles.streamPressed,
                                 ]}
                                 onPress={() => {
+                                    if (pollingCenterInfo) {
+                                        rememberStation({
+                                            code: station.code,
+                                            polling_center: pollingCenterInfo.name,
+                                            stream_number: station.stream_number,
+                                            registered_voters: station.registered_voters,
+                                            is_verified: station.is_verified,
+                                            ward: pollingCenterInfo.ward,
+                                            constituency: pollingCenterInfo.constituency,
+                                            county: pollingCenterInfo.county,
+                                        });
+                                    }
                                     router.navigate(`/communityNotes/${station.code}`);
                                 }}
                                 accessibilityRole="button"

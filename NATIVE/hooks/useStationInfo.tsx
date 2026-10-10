@@ -4,7 +4,7 @@ import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/authStore";
 import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
 
-interface IStationInfo {
+export interface IStationInfo {
     code: string;
     polling_center: string;
     stream_number: number;
@@ -17,6 +17,14 @@ interface IStationInfo {
 
 const StationInfoContext = createContext<IStationInfo | null>(null);
 
+// What is already known about a station, by code. The stream list has every
+// field before it opens a stream, so the next screen draws without waiting.
+const knownStations = new Map<string, IStationInfo>();
+
+export function rememberStation(station: IStationInfo) {
+    knownStations.set(station.code, station);
+}
+
 export function StationInfoProvider({
     code,
     children,
@@ -24,7 +32,9 @@ export function StationInfoProvider({
     code: string;
     children: React.ReactNode;
 }) {
-    const [station, setStation] = useState<IStationInfo | null>(null);
+    const [station, setStation] = useState<IStationInfo | null>(
+        () => knownStations.get(code) ?? null,
+    );
 
     const {userToken} = useAuthStore();
 
@@ -44,7 +54,12 @@ export function StationInfoProvider({
                 if (await handleUnauthorized(response)) return;
                 const data = await response.json();
                 // An unknown station comes back as 200 with an `error` key.
-                setStation(data.error ? null : data);
+                if (data.error) {
+                    setStation(null);
+                    return;
+                }
+                rememberStation(data);
+                setStation(data);
             } catch (error) {
                 console.error("Error fetching polling station info:", error);
             }
