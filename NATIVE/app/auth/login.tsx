@@ -20,7 +20,9 @@ import Animated, {
     FadeIn,
     FadeOut,
     cubicBezier,
+    useAnimatedProps,
     useAnimatedStyle,
+    useReducedMotion,
     useSharedValue,
     withDelay,
     withTiming,
@@ -39,16 +41,17 @@ import {
     LIME,
     LIME_INK,
     MUTE,
-    MUTE_2,
     RED,
     RULE_16,
 } from "../_utils/colors";
-import {Link, router} from "expo-router";
+import * as Device from "expo-device";
+import {Link, Stack, router} from "expo-router";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
 import {
     COUNTY_ATLAS_HEIGHT,
+    COUNTY_ATLAS_LONGEST_OUTLINE,
     COUNTY_ATLAS_PATH,
     COUNTY_ATLAS_WIDTH,
 } from "@/components/auth/countyAtlas";
@@ -88,12 +91,25 @@ const LONGEST_GREETING = Math.max(...GREETINGS.map((g) => g.length));
 // counties cut in ink. It takes all the room the hero has and runs off the
 // trailing edge, stopping short of the greeting.
 const ATLAS_ASPECT = COUNTY_ATLAS_HEIGHT / COUNTY_ATLAS_WIDTH;
-const ATLAS_MAX_WIDTH_RATIO = 0.74;
-const ATLAS_BLEED_RATIO = 0.2;
+const ATLAS_MAX_WIDTH_RATIO = 0.8;
+const ATLAS_BLEED_RATIO = 0.24;
 const ATLAS_TOP_GAP = 4;
-// Room kept under the atlas for the greeting. The coast runs away to the
-// right there, so the greeting sits in the clear below the southern border.
-const ATLAS_GREETING_RESERVE = 64;
+// The southern border runs down and away to the right, and has cleared the
+// greeting's side of the screen about this far down the atlas. Everything
+// below that point is coast, off to the trailing edge.
+const ATLAS_BORDER_CLEAR_RATIO = 0.84;
+// Greeting line plus the hero's bottom padding, and air above the greeting.
+const ATLAS_GREETING_RESERVE = 82;
+const ATLAS_DRAW_DELAY_MS = 200;
+const ATLAS_DRAW_MS = 1500;
+const ATLAS_FILL_MS = 450;
+// The atlas is redrawn in software on every frame of its draw-in. Phones on
+// Android 9 or older, or with under 3 GB of memory, get the finished map.
+const LOW_MEMORY_BYTES = 3 * 1024 ** 3;
+const IS_MODEST_ANDROID =
+    Platform.OS === "android" &&
+    (Platform.Version < 29 ||
+        (Device.totalMemory !== null && Device.totalMemory < LOW_MEMORY_BYTES));
 const PHONE_DIGITS = 9;
 // Press feedback: 120ms and 3% is the ceiling for a control touched this often.
 const PRESS_TRANSITION = {
@@ -225,6 +241,70 @@ function KineticGreeting() {
                 <GreetingRow key={i} slot={slot} />
             ))}
         </View>
+    );
+}
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+/**
+ * The country, drawn once when the screen opens: every county outline is
+ * traced in lime at the same time, then the land fills in behind them.
+ */
+function CountyAtlas({width, height}: {width: number; height: number}) {
+    const still = useReducedMotion() || IS_MODEST_ANDROID;
+    const drawn = useSharedValue(0);
+    const filled = useSharedValue(0);
+
+    useEffect(() => {
+        if (still) {
+            drawn.value = 1;
+            filled.value = 1;
+            return;
+        }
+
+        drawn.value = withDelay(
+            ATLAS_DRAW_DELAY_MS,
+            withTiming(1, {
+                duration: ATLAS_DRAW_MS,
+                easing: Easing.bezier(0.22, 0.61, 0.36, 1),
+            }),
+        );
+        // The fill starts as the last long outlines are closing.
+        filled.value = withDelay(
+            ATLAS_DRAW_DELAY_MS + ATLAS_DRAW_MS * 0.7,
+            withTiming(1, {duration: ATLAS_FILL_MS, easing: Easing.out(Easing.cubic)}),
+        );
+    }, [still, drawn, filled]);
+
+    const outlineProps = useAnimatedProps(() => ({
+        strokeDashoffset: (1 - drawn.value) * COUNTY_ATLAS_LONGEST_OUTLINE,
+    }));
+    const landProps = useAnimatedProps(() => ({opacity: filled.value}));
+
+    return (
+        <Svg
+            width={width}
+            height={height}
+            viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
+        >
+            <AnimatedPath
+                d={COUNTY_ATLAS_PATH}
+                fill="none"
+                stroke={LIME}
+                strokeWidth={1.6}
+                strokeLinejoin="round"
+                strokeDasharray={COUNTY_ATLAS_LONGEST_OUTLINE}
+                animatedProps={outlineProps}
+            />
+            <AnimatedPath
+                d={COUNTY_ATLAS_PATH}
+                fill={LIME}
+                stroke={INK}
+                strokeWidth={2.2}
+                strokeLinejoin="round"
+                animatedProps={landProps}
+            />
+        </Svg>
     );
 }
 
@@ -506,7 +586,9 @@ export default function LoginScreen() {
                   0,
                   Math.min(
                       windowWidth * ATLAS_MAX_WIDTH_RATIO * ATLAS_ASPECT,
-                      heroHeight - atlasTop - ATLAS_GREETING_RESERVE,
+                      (heroHeight - atlasTop - ATLAS_GREETING_RESERVE) /
+                          ATLAS_BORDER_CLEAR_RATIO,
+                      heroHeight - atlasTop - 8,
                   ),
               );
     const atlasWidth = atlasHeight / ATLAS_ASPECT;
@@ -515,15 +597,23 @@ export default function LoginScreen() {
 
     if (lockoutExpiresAt !== null) {
         return (
-            <LoginLockout
-                lockoutExpiresAt={lockoutExpiresAt}
-                onComplete={handleLockoutComplete}
-            />
+            <>
+                <Stack.Screen options={{statusBarStyle: "auto"}} />
+                <LoginLockout
+                    lockoutExpiresAt={lockoutExpiresAt}
+                    onComplete={handleLockoutComplete}
+                />
+            </>
         );
     }
 
     if (isTallyAnimationVisible || PREVIEW_SIGNING_IN) {
-        return <LoginLoading onTallyAnimationComplete={handleTallyAnimationComplete} />;
+        return (
+            <>
+                <Stack.Screen options={{statusBarStyle: "auto"}} />
+                <LoginLoading onTallyAnimationComplete={handleTallyAnimationComplete} />
+            </>
+        );
     }
 
     return (
@@ -531,6 +621,8 @@ export default function LoginScreen() {
             style={styles.screen}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
+            {/* The hero is ink whatever the system theme is. */}
+            <Stack.Screen options={{statusBarStyle: "light"}} />
             <UpdateCheckerModal />
 
             <ScrollView
@@ -548,11 +640,13 @@ export default function LoginScreen() {
                         isKeyboardOpen && styles.heroCompact,
                     ]}
                     onLayout={(event: LayoutChangeEvent) => {
-                        // Sized once, at rest: the keyboard shrinks the hero
-                        // and the atlas is hidden by then anyway.
-                        if (!isKeyboardOpen) {
-                            setHeroHeight(event.nativeEvent.layout.height);
-                        }
+                        // Keep the tallest height seen. The keyboard shrinks
+                        // the hero, and Android reports that before it says
+                        // the keyboard is up; the atlas is hidden by then.
+                        const {height} = event.nativeEvent.layout;
+                        setHeroHeight((tallest) =>
+                            tallest === null ? height : Math.max(tallest, height),
+                        );
                     }}
                 >
                     <Animated.View
@@ -569,19 +663,9 @@ export default function LoginScreen() {
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                     >
-                        <Svg
-                            width={atlasWidth}
-                            height={atlasHeight}
-                            viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
-                        >
-                            <Path
-                                d={COUNTY_ATLAS_PATH}
-                                fill={LIME}
-                                stroke={INK}
-                                strokeWidth={2.2}
-                                strokeLinejoin="round"
-                            />
-                        </Svg>
+                        {atlasHeight > 0 ? (
+                            <CountyAtlas width={atlasWidth} height={atlasHeight} />
+                        ) : null}
                     </Animated.View>
 
                     {isKeyboardOpen ? (
@@ -596,17 +680,10 @@ export default function LoginScreen() {
                         </Animated.Text>
                     )}
 
-                    <View>
-                        {isKeyboardOpen ? null : (
-                            <Text style={styles.disclaimer}>
-                                Citizen tally · Not an IEBC system
-                            </Text>
-                        )}
-                        <KineticGreeting />
-                    </View>
+                    <KineticGreeting />
                 </View>
 
-                <View style={[styles.sheet, {paddingBottom: insets.bottom + 18}]}>
+                <View style={[styles.sheet, {paddingBottom: Math.max(insets.bottom, 12) + 2}]}>
                     <Text style={styles.label}>Phone number</Text>
                     <Pressable
                         style={[
@@ -744,6 +821,10 @@ export default function LoginScreen() {
                             </TouchableOpacity>
                         </Link>
                     </View>
+
+                    <Text style={styles.disclaimer}>
+                        Citizen tally · Not an IEBC system
+                    </Text>
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -784,12 +865,13 @@ const styles = StyleSheet.create({
         color: RED,
     },
     disclaimer: {
-        marginBottom: 2,
+        marginTop: 16,
+        textAlign: "center",
         fontFamily: "SpaceMono-Regular",
         fontSize: 10.5,
         letterSpacing: 1.2,
         textTransform: "uppercase",
-        color: MUTE_2,
+        color: MUTE,
     },
     heading: {
         fontSize: 34,
@@ -817,7 +899,7 @@ const styles = StyleSheet.create({
         backgroundColor: CARD,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        paddingTop: 24,
+        paddingTop: 20,
         paddingHorizontal: 20,
     },
     label: {
@@ -829,7 +911,7 @@ const styles = StyleSheet.create({
         color: INK,
     },
     labelGap: {
-        marginTop: 14,
+        marginTop: 12,
     },
     // White fields drawn with a line, not a grey fill: the sheet stays one
     // clean surface and the focused field is the only heavy stroke on it.
@@ -907,7 +989,7 @@ const styles = StyleSheet.create({
         color: RED,
     },
     actions: {
-        marginTop: 22,
+        marginTop: 18,
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
@@ -943,7 +1025,7 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     foot: {
-        marginTop: 20,
+        marginTop: 18,
         flexDirection: "row",
         justifyContent: "center",
         // Top-aligned with one shared line height, so both sit on the same

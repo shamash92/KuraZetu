@@ -7,3 +7,7 @@ export const LOGIN_SCREEN_GREETINGS = [
     "Mulembe, wakhola.", // Luhya
     "Welcome back.", // English
 ];
+
+export default function GreetingsRoute() {
+    return null;
+}
