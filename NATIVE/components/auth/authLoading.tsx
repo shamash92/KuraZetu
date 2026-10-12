@@ -12,7 +12,6 @@ import {StyleSheet, Text, View} from "react-native";
 import Svg, {Path} from "react-native-svg";
 
 import {LinearGradient} from "expo-linear-gradient";
-import MeshGrid from "../meshGrid";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 const STATUS_HOLD_MS = 2000;
@@ -37,7 +36,7 @@ function Squiggle() {
 }
 
 /** Indeterminate bar: a short segment sweeping the full track, forever. */
-function ProgressSweep() {
+export function ProgressSweep() {
     const [trackWidth, setTrackWidth] = useState(0);
     const shift = useSharedValue(0);
 
@@ -123,8 +122,6 @@ export default function AuthLoading({
                 {paddingTop: insets.top + 26, paddingBottom: insets.bottom + 22},
             ]}
         >
-            <MeshGrid />
-
             <View style={styles.mark}>
                 <Text style={styles.wordmark}>KuraZetu</Text>
                 <Squiggle />
