@@ -1,10 +1,10 @@
 import {AppState} from "react-native";
-import {router} from "expo-router";
 import {useEffect, useState} from "react";
 
 import useAuthStore from "./authStore";
 import {getBiometricUnlock} from "./biometricUnlock";
 import {shouldLock} from "./lockRules";
+import {signOut} from "./session";
 
 // Returns true while the app is not in front, so a cover can hide it from the
 // app switcher. Only time in the background counts towards the lock: a long
@@ -24,7 +24,7 @@ export function useBackgroundLock() {
 
             const leftAt = backgroundedAt;
             backgroundedAt = null;
-            const {isLoggedIn, isLocked, lock, logOut} = useAuthStore.getState();
+            const {isLoggedIn, isLocked, lock} = useAuthStore.getState();
 
             if (leftAt !== null && isLoggedIn && !isLocked) {
                 const biometricUnlock = (await getBiometricUnlock()) === "on";
@@ -33,8 +33,8 @@ export function useBackgroundLock() {
                     if (biometricUnlock) {
                         lock();
                     } else {
-                        await logOut();
-                        router.replace("/auth/login");
+                        // Nothing to drop: this branch only runs with unlock not on.
+                        await signOut("keep");
                     }
                 }
             }

@@ -6,14 +6,10 @@ import {router} from "expo-router";
 
 import {COPPER_DEEP, INK, LIME, LIME_INK, MUTE} from "../../app/_utils/colors";
 import {apiBaseURL} from "../../app/_utils/apiBaseURL";
-import {
-    disableBiometricUnlock,
-    expireBiometricToken,
-    readBiometricToken,
-    useBiometricLabel,
-} from "../../app/_utils/auth/biometricUnlock";
+import {readBiometricToken, useBiometricLabel} from "../../app/_utils/auth/biometricUnlock";
 import {isCancelledPrompt, sessionCheck} from "../../app/_utils/auth/lockRules";
 import useAuthStore from "../../app/_utils/auth/authStore";
+import {signOut} from "../../app/_utils/auth/session";
 
 // Blurs the app while it is locked or not in front. When locked, it asks for
 // Face ID or a fingerprint once, then shows buttons to retry or use the password.
@@ -21,12 +17,6 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
     const biometricLabel = useBiometricLabel();
     const [isUnlocking, setIsUnlocking] = useState(false);
     const hasPrompted = useRef(false);
-
-    const signInWithPassword = useCallback(async () => {
-        const {isLoggedIn, logOut} = useAuthStore.getState();
-        await logOut();
-        if (isLoggedIn) router.replace("/auth/login");
-    }, []);
 
     const unlock = useCallback(async () => {
         setIsUnlocking(true);
@@ -42,8 +32,7 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
             }
 
             if (!token) {
-                await disableBiometricUnlock();
-                await signInWithPassword();
+                await signOut("turn_off");
                 Alert.alert(
                     "Biometrics changed on this phone",
                     "Sign in with your password.",
@@ -61,8 +50,7 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
                 useAuthStore.getState().logIn(token);
                 if (!wasLoggedIn) router.replace("/(tabs)");
             } else if (session === "expired") {
-                await expireBiometricToken();
-                await signInWithPassword();
+                await signOut("expire");
                 Alert.alert("Your session has ended", "Sign in with your password.");
             } else {
                 Alert.alert(
@@ -74,7 +62,7 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
         } finally {
             setIsUnlocking(false);
         }
-    }, [signInWithPassword]);
+    }, []);
 
     useEffect(() => {
         if (!isLocked || hasPrompted.current) return;
@@ -107,7 +95,7 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() => void signInWithPassword()}
+                        onPress={() => void signOut("keep")}
                         disabled={isUnlocking}
                         hitSlop={8}
                     >

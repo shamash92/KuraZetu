@@ -1,27 +1,8 @@
-import {router} from "expo-router";
-
-import useAuthStore from "./authStore";
-import {expireBiometricToken} from "./biometricUnlock";
-
-let signOutPromise: Promise<void> | null = null;
-
-async function signOutForInvalidToken() {
-    if (!signOutPromise) {
-        signOutPromise = expireBiometricToken()
-            .catch(() => {})
-            .then(() => useAuthStore.getState().logOut())
-            .finally(() => {
-                router.replace("/auth/login");
-                signOutPromise = null;
-            });
-    }
-
-    await signOutPromise;
-}
+import {signOut} from "./session";
 
 export async function handleUnauthorized(response: Response) {
     if (response.status !== 401) return false;
 
-    await signOutForInvalidToken();
+    await signOut("expire");
     return true;
 }

@@ -27,6 +27,12 @@ export function sessionCheck(status: number | null): SessionCheck {
     return "unreachable";
 }
 
+// What a sign-out does with the biometric copy of the token:
+//   expire   - drop the copy, keep the preference (see BiometricUnlock).
+//   turn_off - drop the copy and the preference.
+//   keep     - leave both, so the login screen still offers biometric unlock.
+export type BiometricCopy = "expire" | "turn_off" | "keep";
+
 // iOS and Android report a dismissed biometric prompt only in the error message.
 export function isCancelledPrompt(error: unknown): boolean {
     return error instanceof Error && /cancel/i.test(error.message);
