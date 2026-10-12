@@ -7,6 +7,7 @@ const {
     isCancelledPrompt,
     sessionCheck,
     shouldLock,
+    unlockOutcome,
 } = require("../../app/_utils/auth/lockRules.ts");
 
 test("password-only users lock after five minutes in the background", () => {
@@ -39,4 +40,53 @@ test("recognises a dismissed prompt on both platforms", () => {
     assert.equal(isCancelledPrompt(android), true);
     assert.equal(isCancelledPrompt(lockout), false);
     assert.equal(isCancelledPrompt("cancel"), false);
+});
+
+// Runs the unlock with fake steps and records what it did to the session.
+async function unlock({token = "knox-token", promptError, status = 200}) {
+    const done = [];
+    const outcome = await unlockOutcome({
+        async readToken() {
+            if (promptError) throw promptError;
+            return token;
+        },
+        checkSession: async () => status,
+        logIn: (loggedInWith) => done.push(`logIn ${loggedInWith}`),
+        signOut: async (biometricCopy) => done.push(`signOut ${biometricCopy}`),
+    });
+    return {outcome, done};
+}
+
+test("a valid session signs in with the token Face ID released", async () => {
+    assert.deepEqual(await unlock({status: 200}), {
+        outcome: "unlocked",
+        done: ["logIn knox-token"],
+    });
+});
+
+test("an ended session drops the copy and signs out", async () => {
+    assert.deepEqual(await unlock({status: 401}), {
+        outcome: "session_ended",
+        done: ["signOut expire"],
+    });
+});
+
+test("changed biometrics turn unlock off and sign out", async () => {
+    assert.deepEqual(await unlock({token: null}), {
+        outcome: "biometrics_changed",
+        done: ["signOut turn_off"],
+    });
+});
+
+test("an unreachable server or a failed prompt leaves the session alone", async () => {
+    assert.deepEqual(await unlock({status: null}), {outcome: "unreachable", done: []});
+    assert.deepEqual(await unlock({status: 500}), {outcome: "unreachable", done: []});
+    assert.deepEqual(await unlock({promptError: new Error("User canceled")}), {
+        outcome: "cancelled",
+        done: [],
+    });
+    assert.deepEqual(await unlock({promptError: new Error("Lockout")}), {
+        outcome: "prompt_failed",
+        done: [],
+    });
 });

@@ -2,14 +2,25 @@ import {Alert, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {BlurView} from "expo-blur";
 import {Fingerprint, ScanFace} from "lucide-react-native";
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {router} from "expo-router";
 
 import {COPPER_DEEP, INK, LIME, LIME_INK, MUTE} from "../../app/_utils/colors";
-import {apiBaseURL} from "../../app/_utils/apiBaseURL";
-import {readBiometricToken, useBiometricLabel} from "../../app/_utils/auth/biometricUnlock";
-import {isCancelledPrompt, sessionCheck} from "../../app/_utils/auth/lockRules";
-import useAuthStore from "../../app/_utils/auth/authStore";
-import {signOut} from "../../app/_utils/auth/session";
+import {useBiometricLabel} from "../../app/_utils/auth/biometricUnlock";
+import {UnlockOutcome} from "../../app/_utils/auth/lockRules";
+import {signOut, unlockWithBiometrics} from "../../app/_utils/auth/session";
+
+// Title and message for the outcomes the user needs to hear about.
+const UNLOCK_ALERTS: Partial<Record<UnlockOutcome, [string, string]>> = {
+    prompt_failed: ["Couldn't unlock", "Try again, or use your password."],
+    biometrics_changed: [
+        "Biometrics changed on this phone",
+        "Sign in with your password.",
+    ],
+    session_ended: ["Your session has ended", "Sign in with your password."],
+    unreachable: [
+        "Couldn't unlock",
+        "Unable to connect to the server. Check your connection and try again.",
+    ],
+};
 
 // Blurs the app while it is locked or not in front. When locked, it asks for
 // Face ID or a fingerprint once, then shows buttons to retry or use the password.
@@ -21,44 +32,8 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
     const unlock = useCallback(async () => {
         setIsUnlocking(true);
         try {
-            let token: string | null;
-            try {
-                token = await readBiometricToken();
-            } catch (error) {
-                if (!isCancelledPrompt(error)) {
-                    Alert.alert("Couldn't unlock", "Try again, or use your password.");
-                }
-                return;
-            }
-
-            if (!token) {
-                await signOut("turn_off");
-                Alert.alert(
-                    "Biometrics changed on this phone",
-                    "Sign in with your password.",
-                );
-                return;
-            }
-
-            const response = await fetch(`${apiBaseURL}/api/accounts/native/session/`, {
-                headers: {Authorization: `Bearer ${token}`},
-            }).catch(() => null);
-            const session = sessionCheck(response?.status ?? null);
-
-            if (session === "valid") {
-                const wasLoggedIn = useAuthStore.getState().isLoggedIn;
-                useAuthStore.getState().logIn(token);
-                if (!wasLoggedIn) router.replace("/(tabs)");
-            } else if (session === "expired") {
-                await signOut("expire");
-                Alert.alert("Your session has ended", "Sign in with your password.");
-            } else {
-                Alert.alert(
-                    "Couldn't unlock",
-                    "Unable to connect to the server. " +
-                        "Check your connection and try again.",
-                );
-            }
+            const alert = UNLOCK_ALERTS[await unlockWithBiometrics()];
+            if (alert) Alert.alert(alert[0], alert[1]);
         } finally {
             setIsUnlocking(false);
         }
