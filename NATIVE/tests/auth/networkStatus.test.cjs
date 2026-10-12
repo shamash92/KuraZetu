@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const {networkStatus} = require("../../app/_utils/networkStatus.ts");
+const {networkStatus} = require("../../app/_utils/device/networkStatus.ts");
 
 test("reports offline only when there is no connection", () => {
     assert.equal(networkStatus({isConnected: false}), "offline");

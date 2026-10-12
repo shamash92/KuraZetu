@@ -1,7 +1,7 @@
 import {NativeTabs} from "expo-router/unstable-native-tabs";
 import {DynamicColorIOS, Platform} from "react-native";
 
-import RegisterPushNotifications from "@/app/_utils/registerPushNotifications";
+import RegisterPushNotifications from "@/components/registerPushNotifications";
 
 const tabTintColor =
     Platform.OS === "ios"

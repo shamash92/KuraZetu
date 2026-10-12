@@ -1,7 +1,7 @@
 import {deleteItemAsync} from "expo-secure-store";
 
 import {create} from "zustand";
-import {saveToSecureStore} from "./secureStore";
+import {saveToSecureStore} from "../device/secureStore";
 
 type UserState = {
     isLoggedIn: boolean;

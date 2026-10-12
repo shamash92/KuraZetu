@@ -8,8 +8,8 @@ import {perk} from "@/app/_utils/colors";
 import {router} from "expo-router";
 import {toTitleCase} from "@/app/_utils/toTitleCase";
 import {rememberStation} from "@/hooks/useStationInfo";
-import useAuthStore from "@/app/_utils/authStore";
-import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
+import useAuthStore from "@/app/_utils/auth/authStore";
+import {handleUnauthorized} from "@/app/_utils/auth/handleUnauthorized";
 
 export interface IPollingCenterInfo {
     code: string;

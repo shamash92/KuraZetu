@@ -1,6 +1,6 @@
 import {FlatList, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import MapView, {Geojson, GeojsonProps, Marker} from "react-native-maps";
-import {statusBarHeight, windowHeight, windowWidth} from "../_utils/screenDimensions";
+import {statusBarHeight, windowHeight, windowWidth} from "../_utils/device/screenDimensions";
 import {useEffect, useState} from "react";
 
 import {ICountyFeature} from "../types";

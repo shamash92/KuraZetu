@@ -58,21 +58,21 @@ import {
 import LoginLockout from "@/components/auth/lockout";
 import LoginLoading from "@/components/auth/login";
 import Svg, {Path} from "react-native-svg";
-import UpdateCheckerModal from "../_utils/updateModal";
+import UpdateCheckerModal from "@/components/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
 import {
     afterPasswordSignIn,
     BiometricUnlock,
     getBiometricUnlock,
     useBiometricLabel,
-} from "../_utils/biometricUnlock";
+} from "../_utils/auth/biometricUnlock";
 import {
     deleteFromSecureStore,
     getFromSecureStore,
     saveToSecureStore,
-} from "../_utils/secureStore";
-import useAuthStore from "../_utils/authStore";
-import {useNetworkStatus} from "../_utils/useNetworkStatus";
+} from "../_utils/device/secureStore";
+import useAuthStore from "../_utils/auth/authStore";
+import {useNetworkStatus} from "../_utils/device/useNetworkStatus";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 // Pins the sign-in screen on so the animation can be watched without racing a

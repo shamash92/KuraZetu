@@ -5,9 +5,9 @@ import {Platform} from "react-native";
 import React, {useEffect} from "react";
 
 import Constants from "expo-constants";
-import {apiBaseURL} from "./apiBaseURL";
-import useAuthStore from "./authStore";
-import {handleUnauthorized} from "./handleUnauthorized";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import useAuthStore from "@/app/_utils/auth/authStore";
+import {handleUnauthorized} from "@/app/_utils/auth/handleUnauthorized";
 
 function RegisterPushNotifications() {
     const {setExpoPushToken, userToken} = useAuthStore();

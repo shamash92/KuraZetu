@@ -31,7 +31,7 @@ import {
     PhoneVerificationRequestError,
     startPasswordResetVerification,
     verifyPhoneCode,
-} from "../_utils/phoneVerification";
+} from "../_utils/auth/phoneVerification";
 
 type Challenge = {
     expiresAt: number;

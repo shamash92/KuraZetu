@@ -23,7 +23,7 @@ import {
 import MapView, {Marker, PROVIDER_GOOGLE} from "react-native-maps";
 import {Navigation, RefreshCw} from "lucide-react-native";
 import React, {useEffect, useRef, useState} from "react";
-import {windowHeight, windowWidth} from "@/app/_utils/screenDimensions";
+import {windowHeight, windowWidth} from "@/app/_utils/device/screenDimensions";
 
 import LocationEditDrawer from "./_components/LocationEditDrawer";
 import LocationItem from "./_components/PollingCenterItem";

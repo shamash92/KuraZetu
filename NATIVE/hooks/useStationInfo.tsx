@@ -1,8 +1,8 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
 
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
-import useAuthStore from "@/app/_utils/authStore";
-import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
+import useAuthStore from "@/app/_utils/auth/authStore";
+import {handleUnauthorized} from "@/app/_utils/auth/handleUnauthorized";
 
 export interface IStationInfo {
     code: string;

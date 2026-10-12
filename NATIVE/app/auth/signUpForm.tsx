@@ -12,11 +12,11 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {router, useLocalSearchParams} from "expo-router";
 
 import SignupLoading from "@/components/auth/signup";
-import {afterPasswordSignIn} from "@/app/_utils/biometricUnlock";
+import {afterPasswordSignIn} from "@/app/_utils/auth/biometricUnlock";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
-import {useAuthStore} from "@/app/_utils/authStore";
-import {useSignupVerificationStore} from "@/app/_utils/signupVerificationStore";
+import {useAuthStore} from "@/app/_utils/auth/authStore";
+import {useSignupVerificationStore} from "@/app/_utils/auth/signupVerificationStore";
 
 type SignupData = {
     age: number;
