@@ -7,7 +7,7 @@ const {
     isCancelledPrompt,
     sessionCheck,
     shouldLock,
-} = require("../../app/_utils/lockRules.ts");
+} = require("../../app/_utils/auth/lockRules.ts");
 
 test("password-only users lock after five minutes in the background", () => {
     assert.equal(shouldLock(0, PASSWORD_LOCK_AFTER_MS - 1, false), false);

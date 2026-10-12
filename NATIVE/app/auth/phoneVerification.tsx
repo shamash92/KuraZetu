@@ -16,8 +16,8 @@ import {
     PhoneVerificationRequestError,
     startSignupPhoneVerification,
     verifyPhoneCode,
-} from "@/app/_utils/phoneVerification";
-import {useSignupVerificationStore} from "@/app/_utils/signupVerificationStore";
+} from "@/app/_utils/auth/phoneVerification";
+import {useSignupVerificationStore} from "@/app/_utils/auth/signupVerificationStore";
 import {INK, LIME, LIME_INK, MUTE, MUTE_2, PAPER, RED, RULE_16, SURFACE} from "@/app/_utils/colors";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 

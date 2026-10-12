@@ -7,7 +7,7 @@ import {Dimensions, Image, StyleSheet, Text, View} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
 import React from "react";
-import { windowWidth } from "@/app/_utils/screenDimensions";
+import { windowWidth } from "@/app/_utils/device/screenDimensions";
 
 const {width: screenWidth} = Dimensions.get("window");
 
@@ -102,7 +102,7 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
                         }
                         style={{
                             width: windowWidth,
-                            height: "100%", 
+                            height: "100%",
                             borderRadius: 12,
                             // backgroundColor: "#F8F8F8",
                         }}

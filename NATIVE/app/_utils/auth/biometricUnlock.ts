@@ -8,7 +8,7 @@ import {
     deleteFromSecureStore,
     getFromSecureStore,
     saveToSecureStore,
-} from "./secureStore";
+} from "../device/secureStore";
 
 // A copy of the Knox token that only Face ID or a fingerprint can read. The
 // preference is stored apart from it, so an expired token can be dropped

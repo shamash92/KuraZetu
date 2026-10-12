@@ -11,9 +11,9 @@ import {
     expireBiometricToken,
     readBiometricToken,
     useBiometricLabel,
-} from "../../app/_utils/biometricUnlock";
-import {isCancelledPrompt, sessionCheck} from "../../app/_utils/lockRules";
-import useAuthStore from "../../app/_utils/authStore";
+} from "../../app/_utils/auth/biometricUnlock";
+import {isCancelledPrompt, sessionCheck} from "../../app/_utils/auth/lockRules";
+import useAuthStore from "../../app/_utils/auth/authStore";
 
 // Blurs the app while it is locked or not in front. When locked, it asks for
 // Face ID or a fingerprint once, then shows buttons to retry or use the password.

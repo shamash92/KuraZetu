@@ -5,8 +5,8 @@ import {useEffect, useState} from "react";
 import {ResultsFormCandidate, ResultsFormCapture} from "@/components/resultsForm";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
-import useAuthStore from "@/app/_utils/authStore";
-import {handleUnauthorized} from "@/app/_utils/handleUnauthorized";
+import useAuthStore from "@/app/_utils/auth/authStore";
+import {handleUnauthorized} from "@/app/_utils/auth/handleUnauthorized";
 import {router, useLocalSearchParams} from "expo-router";
 
 export interface IAspirant {

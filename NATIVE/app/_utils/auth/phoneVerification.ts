@@ -1,4 +1,4 @@
-import {apiBaseURL} from "./apiBaseURL";
+import {apiBaseURL} from "../apiBaseURL";
 
 type ApiErrorBody = {
     code?: unknown;

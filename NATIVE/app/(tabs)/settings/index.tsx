@@ -22,8 +22,8 @@ import {NEUTRAL, PRIMARY} from "../../_utils/colors";
 import React, {useCallback, useState} from "react";
 
 import {router, useFocusEffect} from "expo-router";
-import {statusBarHeight} from "@/app/_utils/screenDimensions";
-import useAuthStore from "@/app/_utils/authStore";
+import {statusBarHeight} from "@/app/_utils/device/screenDimensions";
+import useAuthStore from "@/app/_utils/auth/authStore";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {
     BiometricUnlock,
@@ -33,8 +33,8 @@ import {
     expireBiometricToken,
     getBiometricUnlock,
     useBiometricLabel,
-} from "@/app/_utils/biometricUnlock";
-import {isCancelledPrompt} from "@/app/_utils/lockRules";
+} from "@/app/_utils/auth/biometricUnlock";
+import {isCancelledPrompt} from "@/app/_utils/auth/lockRules";
 
 interface SettingItemProps {
     icon: React.ReactNode;
