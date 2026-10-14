@@ -283,10 +283,10 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-# max upload size 20gb
-DATA_UPLOAD_MAX_MEMORY_SIZE = 21474836480  # 20 * 1024 * 1024 * 1024
-MAX_UPLOAD_SIZE = 21474836480
-FILE_UPLOAD_MAX_MEMORY_SIZE = 21474836480
+# Non-file request data is capped at 10 MB. Uploaded files above Django's
+# 2.5 MB default spill to a temporary file instead of being held in memory.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 
 
