@@ -52,13 +52,14 @@ import type {TLevelTabs} from "@/app/types";
 const DEFAULT_ASPECT: CaptureAspect = "4:3";
 
 /**
- * The largest photo the sensor offers at each aspect. VisionCamera settles on
- * the closest size the device supports, so this is the full sensor wherever
- * it is available: every extra pixel lands on handwritten vote figures.
+ * A 12 MP photo at each aspect. VisionCamera settles on the closest size the
+ * device supports, so a phone with a smaller sensor still shoots at its full
+ * resolution, while a 50–200 MP sensor stops at a size that stays readable
+ * and uploads over a weak connection.
  */
 const PHOTO_RESOLUTION: Record<CaptureAspect, Size> = {
-    "16:9": CommonResolutions.HIGHEST_16_9,
-    "4:3": CommonResolutions.HIGHEST_4_3,
+    "16:9": CommonResolutions.UHD_16_9,
+    "4:3": CommonResolutions.UHD_4_3,
 };
 
 /** A bounded in-memory image for the full-screen review step. */
