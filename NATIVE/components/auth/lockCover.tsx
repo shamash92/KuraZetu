@@ -4,7 +4,7 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {router} from "expo-router";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 
-import {INK, LIME, LIME_INK, MUTE_2, PAPER} from "../../app/_utils/colors";
+import {CARD, INK, LIME, MUTE} from "../../app/_utils/colors";
 import {Mark} from "@/components/brand/mark";
 import {apiBaseURL} from "../../app/_utils/apiBaseURL";
 import {
@@ -18,7 +18,7 @@ import {
 import {isCancelledPrompt, sessionCheck} from "../../app/_utils/auth/lockRules";
 import useAuthStore from "../../app/_utils/auth/authStore";
 
-// Covers the app in ink while it is locked or not in front. When locked, it asks for
+// Covers the app in white while it is locked or not in front. When locked, it asks for
 // Face ID or a fingerprint once, then shows buttons to retry or use the password.
 export default function LockCover({isLocked}: {isLocked: boolean}) {
     const biometricLabel = useBiometricLabel();
@@ -101,7 +101,7 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
             ]}
         >
             <View style={styles.stage}>
-                <Mark width={96} />
+                <Mark width={96} ground="light" />
                 {isLocked ? (
                     <View style={styles.heading}>
                         <Text style={styles.title}>{capitalizeLabel(biometricLabel)} required</Text>
@@ -118,7 +118,7 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
                         disabled={isUnlocking}
                         activeOpacity={0.85}
                     >
-                        <BiometricIcon size={22} color={LIME_INK} strokeWidth={2} />
+                        <BiometricIcon size={22} color={CARD} strokeWidth={2} />
                         <Text style={styles.primaryText}>
                             Unlock with {biometricLabel}
                         </Text>
@@ -139,7 +139,7 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
 
 const styles = StyleSheet.create({
     cover: {
-        backgroundColor: INK,
+        backgroundColor: CARD,
         paddingHorizontal: 24,
     },
     stage: {
@@ -156,11 +156,11 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: "800",
         letterSpacing: -0.6,
-        color: PAPER,
+        color: INK,
     },
     subtitle: {
         fontSize: 16,
-        color: MUTE_2,
+        color: MUTE,
     },
     actions: {
         alignItems: "center",
@@ -173,13 +173,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        backgroundColor: LIME,
+        backgroundColor: INK,
         borderRadius: 999,
     },
     primaryText: {
         fontSize: 18,
         fontWeight: "800",
-        color: LIME_INK,
+        color: CARD,
     },
     disabled: {
         opacity: 0.6,
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 20,
         fontWeight: "800",
-        color: PAPER,
+        color: INK,
         borderBottomWidth: 2,
         borderBottomColor: LIME,
         paddingBottom: 1,
