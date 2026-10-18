@@ -64,6 +64,7 @@ import {
     afterPasswordSignIn,
     BiometricUnlock,
     getBiometricUnlock,
+    isFaceLabel,
     useBiometricLabel,
 } from "../_utils/auth/biometricUnlock";
 import {
@@ -804,7 +805,7 @@ export default function LoginScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={`Unlock with ${biometricLabel}`}
                             >
-                                {biometricLabel === "Face ID" ? (
+                                {isFaceLabel(biometricLabel) ? (
                                     <ScanFace size={26} color={INK} strokeWidth={1.9} />
                                 ) : (
                                     <Fingerprint size={26} color={INK} strokeWidth={1.9} />
