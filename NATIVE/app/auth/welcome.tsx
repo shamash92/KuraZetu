@@ -3,7 +3,7 @@ import {Stack, router} from "expo-router";
 import React, {useState} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 
-import {INK, LIME, LIME_INK, MUTE_2, PAPER, RED} from "@/app/_utils/colors";
+import {CARD, INK, MUTE, RED} from "@/app/_utils/colors";
 import {Mark} from "@/components/brand/mark";
 
 // The mark takes most of the width, capped so it stays a mark on tablets.
@@ -26,10 +26,10 @@ export default function WelcomeScreen() {
                 },
             ]}
         >
-            <Stack.Screen options={{statusBarStyle: "light"}} />
+            <Stack.Screen options={{statusBarStyle: "dark"}} />
 
             <View style={styles.stage}>
-                <Mark width={markWidth} />
+                <Mark width={markWidth} ground="light" />
                 <Text style={styles.wordmark}>
                     Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
                 </Text>
@@ -71,7 +71,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: INK,
+        backgroundColor: CARD,
         paddingHorizontal: 24,
     },
     stage: {
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
         fontFamily: "PublicSans-ExtraBold",
         fontSize: 40,
         letterSpacing: -1.4,
-        color: PAPER,
+        color: INK,
     },
     wordmarkDot: {
         color: RED,
@@ -96,13 +96,13 @@ const styles = StyleSheet.create({
         height: 60,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: LIME,
+        backgroundColor: INK,
         borderRadius: 999,
     },
     primaryText: {
         fontSize: 18,
         fontWeight: "800",
-        color: LIME_INK,
+        color: CARD,
     },
     secondary: {
         height: 60,
@@ -110,12 +110,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         borderRadius: 999,
         borderWidth: 1.5,
-        borderColor: PAPER,
+        borderColor: INK,
     },
     secondaryText: {
         fontSize: 18,
         fontWeight: "800",
-        color: PAPER,
+        color: INK,
     },
     pressed: {
         transform: [{scale: 0.97}],
@@ -127,6 +127,6 @@ const styles = StyleSheet.create({
         fontSize: 10.5,
         letterSpacing: 1.2,
         textTransform: "uppercase",
-        color: MUTE_2,
+        color: MUTE,
     },
 });
