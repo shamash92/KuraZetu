@@ -5,7 +5,7 @@ import {LandingNav} from "./index";
 
 jest.mock("../App", () => ({useAuth: () => false}));
 
-test("the blog is linked from desktop and mobile navigation", async () => {
+test("the blog and brand pages are linked from desktop and mobile navigation", async () => {
     const user = userEvent.setup();
     render(<LandingNav />);
 
@@ -15,6 +15,12 @@ test("the blog is linked from desktop and mobile navigation", async () => {
             {name: "Blog"},
         ),
     ).toHaveAttribute("href", "/blog/");
+    expect(
+        within(screen.getByRole("navigation", {name: "Main navigation"})).getByRole(
+            "link",
+            {name: "Brand"},
+        ),
+    ).toHaveAttribute("href", "/ui/brand/");
 
     // What a developer needs sits together under one entry.
     const developers = screen.getByText("Developers").closest("details")!;
@@ -31,4 +37,9 @@ test("the blog is linked from desktop and mobile navigation", async () => {
             screen.getByRole("navigation", {name: "Mobile navigation"}),
         ).getByRole("link", {name: "Blog"}),
     ).toHaveAttribute("href", "/blog/");
+    expect(
+        within(
+            screen.getByRole("navigation", {name: "Mobile navigation"}),
+        ).getByRole("link", {name: "Brand"}),
+    ).toHaveAttribute("href", "/ui/brand/");
 });

@@ -51,6 +51,8 @@ them. Read the schema instead of crawling the endpoints.
   verifies polling station locations.
 - [Download the Android app](https://kurazetu.com/ui/download-apk/): the app
   agents use to submit and verify results from a phone.
+- [Brand guidelines](https://kurazetu.com/ui/brand/): the logo, colours,
+  typefaces, and templates for screens, posts, slides, and merchandise.
 
 ## Source
 

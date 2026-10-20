@@ -19,6 +19,7 @@ STATIC_LOCATIONS = (
     StaticLocation("/accounts/ui/signup/", "monthly", 0.8),
     StaticLocation("/ui/game/", "weekly", 0.9),
     StaticLocation("/ui/download-apk/", "weekly", 0.9),
+    StaticLocation("/ui/brand/", "monthly", 0.6),
     StaticLocation("/api/schema/swagger/", "monthly", 0.7),
     StaticLocation("/api/schema/redoc/", "monthly", 0.7),
     StaticLocation("/api/schema/rapidoc/", "monthly", 0.7),

@@ -40,6 +40,11 @@ class TestLlmsTxt:
         assert "kurazetu.com/api/results/" not in body
         assert "kurazetu.com/api/stations/" not in body
 
+    def test_links_the_brand_guidelines(self, client):
+        body = get_llms_txt(client)
+
+        assert "https://kurazetu.com/ui/brand/" in body
+
     def test_keeps_the_framing_unofficial(self, client):
         # Unwrapped, so the assertions do not depend on where lines break.
         prose = " ".join(get_llms_txt(client).split())

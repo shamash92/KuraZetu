@@ -11,6 +11,7 @@ import PasswordReset from "../auth/passwordReset/PasswordReset";
 import UserDashBoard from "../dashboards/results";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
+import BrandLayout, {BrandIndex, BrandSection} from "../brand";
 import GameLandingPage from "../game";
 import {
     DocumentSetPage,
@@ -86,6 +87,10 @@ function RoutesApp() {
         <Routes>
             <Route path="/ui/" element={<LandingPage />} />
             <Route path="/ui/download-apk/" element={<APKDownloadPage />} />
+            <Route path="/ui/brand/" element={<BrandLayout />}>
+                <Route index element={<BrandIndex />} />
+                <Route path=":section/" element={<BrandSection />} />
+            </Route>
             <Route path="/ui/game/" element={<GameLandingPage />} />
             <Route path="/ui/password-reset/" element={<PasswordReset />} />
             <Route path="/ui/specs/" element={<Library />} />

@@ -68,6 +68,7 @@ def test_sitemap_preserves_static_urls_and_lists_only_published_posts(
     locations = xml_locations(response)
     assert "https://kurazetu.test/" in locations
     assert "https://kurazetu.test/api/schema/rapidoc/" in locations
+    assert "https://kurazetu.test/ui/brand/" in locations
     assert "https://kurazetu.test/blog/" in locations
     assert "https://kurazetu.test/blog/a-shipped-title/" in locations
     assert "https://kurazetu.test/blog/a-draft/" not in locations
