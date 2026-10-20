@@ -21,7 +21,7 @@ import {
 import {NEUTRAL, PRIMARY} from "../../_utils/colors";
 import React, {useCallback, useState} from "react";
 
-import {router, useFocusEffect} from "expo-router";
+import {useFocusEffect} from "expo-router";
 import {statusBarHeight} from "@/app/_utils/device/screenDimensions";
 import useAuthStore from "@/app/_utils/auth/authStore";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
@@ -31,12 +31,12 @@ import {
     capitalizeLabel,
     disableBiometricUnlock,
     enableBiometricUnlock,
-    expireBiometricToken,
     getBiometricUnlock,
     isFaceLabel,
     useBiometricLabel,
 } from "@/app/_utils/auth/biometricUnlock";
 import {isCancelledPrompt} from "@/app/_utils/auth/lockRules";
+import {signOut} from "@/app/_utils/auth/session";
 
 interface SettingItemProps {
     icon: React.ReactNode;
@@ -115,7 +115,7 @@ export default function ProfileScreen() {
     const biometricLabel = useBiometricLabel();
     const canUseBiometrics = canUseBiometricUnlock();
 
-    const {logOut, userToken} = useAuthStore();
+    const {userToken} = useAuthStore();
 
     // Sign-in can turn biometric unlock on after this tab has mounted.
     useFocusEffect(
@@ -164,10 +164,7 @@ export default function ProfileScreen() {
                 return;
             }
             // Keep Face ID on: the next password sign-in stores the new token.
-            await expireBiometricToken().catch(() => {});
-            await logOut();
-
-            router.replace("/auth/login");
+            await signOut("expire");
         } catch (error) {
             console.error("Logout failed:", error);
             Alert.alert("Error", "Failed to log out. Please try again.");

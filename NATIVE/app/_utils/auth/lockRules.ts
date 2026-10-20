@@ -27,7 +27,55 @@ export function sessionCheck(status: number | null): SessionCheck {
     return "unreachable";
 }
 
+// What a sign-out does with the biometric copy of the token:
+//   expire   - drop the copy, keep the preference (see BiometricUnlock).
+//   turn_off - drop the copy and the preference.
+//   keep     - leave both, so the login screen still offers biometric unlock.
+export type BiometricCopy = "expire" | "turn_off" | "keep";
+
 // iOS and Android report a dismissed biometric prompt only in the error message.
 export function isCancelledPrompt(error: unknown): boolean {
     return error instanceof Error && /cancel/i.test(error.message);
+}
+
+export type UnlockOutcome =
+    | "unlocked"
+    | "cancelled"
+    | "prompt_failed"
+    | "biometrics_changed"
+    | "session_ended"
+    | "unreachable";
+
+// Everything that happens after the biometric prompt. The steps are passed in
+// so this file stays free of React Native imports.
+export async function unlockOutcome(steps: {
+    // Prompts. Resolves null when the biometrics changed since the copy was saved.
+    readToken: () => Promise<string | null>;
+    // Resolves the HTTP status, or null when the server did not answer.
+    checkSession: (token: string) => Promise<number | null>;
+    logIn: (token: string) => void;
+    signOut: (biometricCopy: BiometricCopy) => Promise<void>;
+}): Promise<UnlockOutcome> {
+    let token: string | null;
+    try {
+        token = await steps.readToken();
+    } catch (error) {
+        return isCancelledPrompt(error) ? "cancelled" : "prompt_failed";
+    }
+
+    if (!token) {
+        await steps.signOut("turn_off");
+        return "biometrics_changed";
+    }
+
+    const session = sessionCheck(await steps.checkSession(token));
+    if (session === "valid") {
+        steps.logIn(token);
+        return "unlocked";
+    }
+    if (session === "expired") {
+        await steps.signOut("expire");
+        return "session_ended";
+    }
+    return "unreachable";
 }
