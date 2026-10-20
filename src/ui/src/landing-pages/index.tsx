@@ -25,6 +25,7 @@ import {useEffect, useRef, useState} from "react";
 
 import ResultsDashboard from "../dashboards/results";
 import {useAuth} from "../App";
+import {Lockup} from "../brand/Mark";
 import "./kenya-counties";
 import "./landing.css";
 
@@ -115,7 +116,7 @@ const trustItems = [
 function Brand() {
     return (
         <a className="kz-brand" href="/ui/" aria-label="KuraZetu home">
-            <span className="kz-brand-name">KuraZetu</span>
+            <Lockup width={125} />
             <span className="kz-brand-tag">Powered by Kiongozi</span>
         </a>
     );
@@ -686,6 +687,26 @@ function PublicLanding() {
 
             <section className="kz-cta-wrap">
                 <div className="kz-cta">
+                    <svg className="kz-cta-pattern" viewBox="80 124 352 280" aria-hidden="true">
+                        {[136, 228, 320].map((x) => (
+                            <rect
+                                key={x}
+                                x={x}
+                                y="152"
+                                width="56"
+                                height="224"
+                                rx="28"
+                                fill="#1f1f1f"
+                            />
+                        ))}
+                        <path
+                            d="M108 376 L404 152"
+                            stroke="#c4ff5e"
+                            strokeWidth="56"
+                            strokeLinecap="round"
+                            fill="none"
+                        />
+                    </svg>
                     <div>
                         <h2>
                             Your phone.
@@ -695,8 +716,8 @@ function PublicLanding() {
                             Your verified Form&nbsp;34A.
                         </h2>
                         <p>
-                            All you need is a phone number. No password, no email,
-                            and no public name.
+                            Sign up with your phone number and a password. No email
+                            needed.
                         </p>
                     </div>
                     <div>

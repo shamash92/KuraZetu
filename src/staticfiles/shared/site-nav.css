@@ -38,16 +38,14 @@
   color: #0d0d0d;
   line-height: 1;
 }
-.site-brand__name {
-  font-size: 24px;
-  font-weight: 800;
+.site-brand__lockup {
+  width: 125px;
+  height: auto;
 }
-.site-brand__name > span {
-  color: #c44539;
-  font-weight: 900;
-}
+/* Starts the tag under the wordmark, past the mark (118 of the lockup's 428 units). */
 .site-brand__tag {
   margin-top: 4px;
+  margin-left: calc(125px * 118 / 428);
   color: #6b6d72;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
