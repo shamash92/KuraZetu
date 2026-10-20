@@ -9,9 +9,10 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import {ArrowLeft, ArrowRight, ChevronDown, Eye, EyeOff} from "lucide-react-native";
+import {ArrowLeft, ArrowRight, Check, ChevronDown, Eye, EyeOff} from "lucide-react-native";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {router, useLocalSearchParams} from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 
 import type {TextInputProps} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
@@ -24,6 +25,7 @@ import {useAuthStore} from "@/app/_utils/auth/authStore";
 import {useSignupVerificationStore} from "@/app/_utils/auth/signupVerificationStore";
 
 type SignupData = {
+    accepted_terms: true;
     age: number;
     client: "native";
     first_name: string;
@@ -90,6 +92,7 @@ export default function SignupScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showGenderDropdown, setShowGenderDropdown] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isBallotAnimationComplete, setIsBallotAnimationComplete] = useState(false);
     const [error, setError] = useState<string>("");
@@ -140,6 +143,10 @@ export default function SignupScreen() {
         setFormData((previous) => ({...previous, [field]: value}));
     };
 
+    const canSubmit =
+        acceptedTerms &&
+        Object.values(formData).every((value) => value.trim() !== "");
+
     const handleBallotAnimationComplete = useCallback(() => {
         setIsBallotAnimationComplete(true);
     }, []);
@@ -184,6 +191,7 @@ export default function SignupScreen() {
         setIsLoading(true);
         let accountCreated = false;
         const data: SignupData = {
+            accepted_terms: true,
             age: Number.parseInt(formData.age, 10),
             client: "native",
             first_name: formData.firstName.trim(),
@@ -394,13 +402,45 @@ export default function SignupScreen() {
                             value={formData.confirmPassword}
                         />
                     </View>
+
+                    <TouchableOpacity
+                        accessibilityRole="checkbox"
+                        accessibilityState={{checked: acceptedTerms}}
+                        activeOpacity={0.7}
+                        onPress={() => setAcceptedTerms((value) => !value)}
+                        style={styles.termsRow}
+                    >
+                        <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+                            {acceptedTerms ? <Check color={perk.card} size={15} strokeWidth={3} /> : null}
+                        </View>
+                        <Text style={styles.termsText}>
+                            I am 18 or older and accept the{" "}
+                            <Text
+                                accessibilityRole="link"
+                                onPress={() => void WebBrowser.openBrowserAsync(`${apiBaseURL}/legal/terms/`)}
+                                style={styles.termsLink}
+                            >
+                                Terms of use
+                            </Text>{" "}
+                            and{" "}
+                            <Text
+                                accessibilityRole="link"
+                                onPress={() => void WebBrowser.openBrowserAsync(`${apiBaseURL}/legal/privacy/`)}
+                                style={styles.termsLink}
+                            >
+                                Privacy policy
+                            </Text>
+                        </Text>
+                    </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityState={{disabled: !canSubmit}}
                     activeOpacity={0.85}
+                    disabled={!canSubmit}
                     onPress={() => void handleSignup()}
-                    style={styles.createButton}
+                    style={[styles.createButton, !canSubmit && styles.createButtonDisabled]}
                 >
                     <Text style={styles.createText}>Create account</Text>
                     <ArrowRight color={perk.limeInk} size={20} strokeWidth={2} />
@@ -478,5 +518,11 @@ const styles = StyleSheet.create({
     dropdownText: {color: perk.ink, fontSize: 16},
     fieldError: {color: perk.coralDeep, fontSize: 12, fontWeight: "500", lineHeight: 17, marginTop: 6},
     createButton: {alignItems: "center", backgroundColor: perk.lime, borderRadius: 14, flexDirection: "row", gap: 12, minHeight: 54, justifyContent: "center", marginTop: 28, paddingHorizontal: 20, paddingVertical: 14},
+    createButtonDisabled: {opacity: 0.4},
     createText: {color: perk.limeInk, fontSize: 16, fontWeight: "700"},
+    termsRow: {alignItems: "flex-start", flexDirection: "row", gap: 12},
+    checkbox: {alignItems: "center", borderColor: perk.rule16, borderRadius: 6, borderWidth: 1.5, height: 22, justifyContent: "center", marginTop: 1, width: 22},
+    checkboxChecked: {backgroundColor: perk.ink, borderColor: perk.ink},
+    termsText: {color: perk.inkSoft, flex: 1, fontSize: 14, lineHeight: 21},
+    termsLink: {color: perk.ink, fontWeight: "600", textDecorationLine: "underline"},
 });
