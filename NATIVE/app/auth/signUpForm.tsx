@@ -1,5 +1,7 @@
 import {
     Alert,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -7,9 +9,12 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import {ArrowLeft, ChevronDown, Eye, EyeOff, Lock, User} from "lucide-react-native";
+import {ArrowLeft, ArrowRight, ChevronDown, Eye, EyeOff} from "lucide-react-native";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {router, useLocalSearchParams} from "expo-router";
+
+import type {TextInputProps} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 import SignupLoading from "@/components/auth/signup";
 import {afterPasswordSignIn} from "@/app/_utils/auth/biometricUnlock";
@@ -73,6 +78,7 @@ function responseError(response: SignupResponse, fieldErrors: SignupFieldErrors)
 }
 
 export default function SignupScreen() {
+    const insets = useSafeAreaInsets();
     const [formData, setFormData] = useState({
         age: "",
         confirmPassword: "",
@@ -236,20 +242,27 @@ export default function SignupScreen() {
     }
 
     return (
-        <View style={styles.screen}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.screen}
+        >
             <ScrollView
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, {
+                    paddingTop: insets.top + 12,
+                    paddingBottom: insets.bottom + 28,
+                }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
                 <TouchableOpacity
                     accessibilityLabel="Go back"
+                    accessibilityRole="button"
                     onPress={() => router.back()}
                     style={styles.backButton}
                 >
                     <ArrowLeft color={perk.ink} size={20} />
                 </TouchableOpacity>
-                <Text style={styles.title}>Final step</Text>
+                <Text accessibilityRole="header" style={styles.title}>Final step</Text>
                 {error ? <Text accessibilityRole="alert" style={styles.formError}>{error}</Text> : null}
 
                 <View style={styles.form}>
@@ -258,8 +271,9 @@ export default function SignupScreen() {
                             <FieldLabel label="First name" />
                             <Input
                                 accessibilityLabel="First name"
+                                autoComplete="given-name"
+                                textContentType="givenName"
                                 error={fieldErrors.firstName}
-                                icon={<User color={perk.mute} size={17} />}
                                 onChangeText={(value: string) => updateFormData("firstName", value)}
                                 value={formData.firstName}
                             />
@@ -268,8 +282,9 @@ export default function SignupScreen() {
                             <FieldLabel label="Last name" />
                             <Input
                                 accessibilityLabel="Last name"
+                                autoComplete="family-name"
+                                textContentType="familyName"
                                 error={fieldErrors.lastName}
-                                icon={<User color={perk.mute} size={17} />}
                                 onChangeText={(value: string) => updateFormData("lastName", value)}
                                 value={formData.lastName}
                             />
@@ -280,7 +295,10 @@ export default function SignupScreen() {
                         <View style={styles.gender}>
                             <FieldLabel label="Gender" />
                             <TouchableOpacity
+                                accessibilityLabel="Gender"
                                 accessibilityRole="button"
+                                accessibilityState={{expanded: showGenderDropdown}}
+                                activeOpacity={0.7}
                                 onPress={() => setShowGenderDropdown((value) => !value)}
                                 style={[styles.selectShell, fieldErrors.gender && styles.inputShellError]}
                             >
@@ -310,6 +328,7 @@ export default function SignupScreen() {
                         <View style={styles.age}>
                             <FieldLabel label="Age" />
                             <Input
+                                accessibilityLabel="Age"
                                 keyboardType="numeric"
                                 error={fieldErrors.age}
                                 onChangeText={(value: string) =>
@@ -321,58 +340,73 @@ export default function SignupScreen() {
                         </View>
                     </View>
 
-                    <FieldLabel label="Password" />
-                    <Input
-                        autoComplete="new-password"
-                        error={fieldErrors.password}
-                        icon={<Lock color={perk.mute} size={17} />}
-                        onChangeText={(value: string) => updateFormData("password", value)}
-                        placeholder="At least 8 characters"
-                        secureTextEntry={!showPassword}
-                        textContentType="newPassword"
-                        trailing={
-                            <TouchableOpacity onPress={() => setShowPassword((value) => !value)}>
-                                {showPassword ? (
-                                    <EyeOff color={perk.mute} size={18} />
-                                ) : (
-                                    <Eye color={perk.mute} size={18} />
-                                )}
-                            </TouchableOpacity>
-                        }
-                        value={formData.password}
-                    />
-                    <FieldLabel label="Confirm password" />
-                    <Input
-                        autoComplete="new-password"
-                        error={fieldErrors.confirmPassword}
-                        icon={<Lock color={perk.mute} size={17} />}
-                        onChangeText={(value: string) => updateFormData("confirmPassword", value)}
-                        placeholder="Repeat your password"
-                        secureTextEntry={!showConfirmPassword}
-                        textContentType="newPassword"
-                        trailing={
-                            <TouchableOpacity onPress={() => setShowConfirmPassword((value) => !value)}>
-                                {showConfirmPassword ? (
-                                    <EyeOff color={perk.mute} size={18} />
-                                ) : (
-                                    <Eye color={perk.mute} size={18} />
-                                )}
-                            </TouchableOpacity>
-                        }
-                        value={formData.confirmPassword}
-                    />
+                    <View>
+                        <FieldLabel label="Password" />
+                        <Input
+                            accessibilityLabel="Password"
+                            autoComplete="new-password"
+                            error={fieldErrors.password}
+                            onChangeText={(value: string) => updateFormData("password", value)}
+                            placeholder="At least 8 characters"
+                            secureTextEntry={!showPassword}
+                            textContentType="newPassword"
+                            trailing={
+                                <TouchableOpacity
+                                    accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                                    accessibilityRole="button"
+                                    onPress={() => setShowPassword((value) => !value)}
+                                    style={styles.visibilityButton}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff color={perk.mute} size={18} />
+                                    ) : (
+                                        <Eye color={perk.mute} size={18} />
+                                    )}
+                                </TouchableOpacity>
+                            }
+                            value={formData.password}
+                        />
+                    </View>
+                    <View>
+                        <FieldLabel label="Confirm password" />
+                        <Input
+                            accessibilityLabel="Confirm password"
+                            autoComplete="new-password"
+                            error={fieldErrors.confirmPassword}
+                            onChangeText={(value: string) => updateFormData("confirmPassword", value)}
+                            placeholder="Repeat your password"
+                            secureTextEntry={!showConfirmPassword}
+                            textContentType="newPassword"
+                            trailing={
+                                <TouchableOpacity
+                                    accessibilityLabel={showConfirmPassword ? "Hide confirmed password" : "Show confirmed password"}
+                                    accessibilityRole="button"
+                                    onPress={() => setShowConfirmPassword((value) => !value)}
+                                    style={styles.visibilityButton}
+                                >
+                                    {showConfirmPassword ? (
+                                        <EyeOff color={perk.mute} size={18} />
+                                    ) : (
+                                        <Eye color={perk.mute} size={18} />
+                                    )}
+                                </TouchableOpacity>
+                            }
+                            value={formData.confirmPassword}
+                        />
+                    </View>
                 </View>
 
                 <TouchableOpacity
+                    accessibilityRole="button"
                     activeOpacity={0.85}
                     onPress={() => void handleSignup()}
                     style={styles.createButton}
                 >
                     <Text style={styles.createText}>Create account</Text>
-                    <Text style={styles.arrow}>→</Text>
+                    <ArrowRight color={perk.limeInk} size={20} strokeWidth={2} />
                 </TouchableOpacity>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -384,13 +418,34 @@ function FieldError({message}: {message: string}) {
     return <Text accessibilityRole="alert" style={styles.fieldError}>{message}</Text>;
 }
 
-function Input({error, icon, trailing, ...props}: any) {
+function Input({error, trailing, onFocus, onBlur, ...props}: TextInputProps & {
+    error?: string;
+    trailing?: React.ReactNode;
+}) {
+    const [focused, setFocused] = useState(false);
+
     return (
-        <View style={styles.inputGroup}>
-            <View style={[styles.inputShell, error && styles.inputShellError]}>
-                {icon ? <View style={styles.leading}>{icon}</View> : null}
-                <TextInput {...props} placeholderTextColor={perk.mute2} style={styles.input} />
-                {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
+        <View>
+            <View style={[
+                styles.inputShell,
+                focused && styles.inputShellFocused,
+                error && styles.inputShellError,
+            ]}>
+                <TextInput
+                    {...props}
+                    onBlur={(event) => {
+                        setFocused(false);
+                        onBlur?.(event);
+                    }}
+                    onFocus={(event) => {
+                        setFocused(true);
+                        onFocus?.(event);
+                    }}
+                    placeholderTextColor={perk.mute}
+                    selectionColor={perk.ink}
+                    style={styles.input}
+                />
+                {trailing}
             </View>
             {error ? <FieldError message={error} /> : null}
         </View>
@@ -399,31 +454,29 @@ function Input({error, icon, trailing, ...props}: any) {
 
 const styles = StyleSheet.create({
     screen: {backgroundColor: perk.card, flex: 1},
-    scrollContent: {paddingBottom: 36, paddingHorizontal: 22, paddingTop: 56},
-    backButton: {alignItems: "center", backgroundColor: perk.surface, borderRadius: 19, height: 38, justifyContent: "center", marginBottom: 17, width: 38},
-    title: {color: perk.ink, fontFamily: "PublicSans-ExtraBold", fontSize: 31, letterSpacing: -1, lineHeight: 35},
-    form: {marginTop: 27},
-    formError: {backgroundColor: perk.coral, borderRadius: 10, color: perk.ink, fontSize: 13, fontWeight: "800", lineHeight: 18, marginTop: 18, paddingHorizontal: 14, paddingVertical: 11},
-    label: {color: perk.copper, fontFamily: "SpaceMono-Regular", fontSize: 10, fontWeight: "700", letterSpacing: 1.7, marginBottom: 8, textTransform: "uppercase"},
-    nameRow: {flexDirection: "row", gap: 10},
-    half: {flex: 1},
-    inputGroup: {marginBottom: 18},
-    inputShell: {alignItems: "center", backgroundColor: perk.card, borderColor: perk.ink, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", height: 51},
-    inputShellError: {borderColor: perk.coralDeep, borderWidth: 2},
-    leading: {paddingLeft: 13, paddingRight: 9},
-    input: {color: perk.ink, flex: 1, fontSize: 15, fontWeight: "600", height: "100%", paddingHorizontal: 13},
-    trailing: {paddingRight: 13},
-    demographicRow: {flexDirection: "row", gap: 10},
-    gender: {flex: 1.25, zIndex: 2},
-    age: {flex: 0.75},
-    selectShell: {alignItems: "center", borderColor: perk.ink, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", height: 51, justifyContent: "space-between", paddingHorizontal: 14},
-    selectText: {color: perk.mute, fontSize: 15},
+    scrollContent: {paddingHorizontal: 24},
+    backButton: {alignItems: "center", backgroundColor: perk.surface, borderRadius: 22, height: 44, justifyContent: "center", marginBottom: 24, width: 44},
+    title: {color: perk.ink, fontFamily: "PublicSans-ExtraBold", fontSize: 30, letterSpacing: -0.7, lineHeight: 38},
+    form: {gap: 20, marginTop: 28},
+    formError: {backgroundColor: perk.coral, borderRadius: 10, color: perk.ink, fontSize: 13, fontWeight: "600", lineHeight: 18, marginTop: 18, paddingHorizontal: 14, paddingVertical: 11},
+    label: {color: perk.inkSoft, fontSize: 14, fontWeight: "500", lineHeight: 20, marginBottom: 8},
+    nameRow: {gap: 20},
+    half: {width: "100%"},
+    inputShell: {alignItems: "center", backgroundColor: perk.card, borderColor: perk.rule16, borderRadius: 12, borderWidth: 1, flexDirection: "row", minHeight: 52},
+    inputShellFocused: {borderColor: perk.ink},
+    inputShellError: {borderColor: perk.coralDeep},
+    input: {color: perk.ink, flex: 1, fontSize: 16, fontWeight: "400", minHeight: 50, paddingHorizontal: 14, paddingVertical: 12},
+    visibilityButton: {alignItems: "center", justifyContent: "center", minHeight: 50, width: 48},
+    demographicRow: {flexDirection: "row", gap: 16},
+    gender: {flex: 1.5, zIndex: 2},
+    age: {flex: 1},
+    selectShell: {alignItems: "center", borderColor: perk.rule16, borderRadius: 12, borderWidth: 1, flexDirection: "row", minHeight: 52, justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12},
+    selectText: {color: perk.mute, fontSize: 16},
     selectedText: {color: perk.ink},
-    dropdown: {backgroundColor: perk.card, borderColor: perk.rule16, borderRadius: 12, borderWidth: 1, elevation: 6, left: 0, paddingVertical: 4, position: "absolute", right: 0, shadowColor: perk.ink, shadowOpacity: 0.14, shadowRadius: 12, top: 72},
-    dropdownOption: {paddingHorizontal: 14, paddingVertical: 12},
-    dropdownText: {color: perk.ink, fontSize: 14, fontWeight: "700"},
-    fieldError: {color: perk.coralDeep, fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 6},
-    createButton: {alignItems: "center", backgroundColor: perk.lime, borderRadius: 14, flexDirection: "row", height: 53, justifyContent: "space-between", marginTop: 20, paddingHorizontal: 20},
-    createText: {color: perk.limeInk, fontSize: 15, fontWeight: "800"},
-    arrow: {color: perk.limeInk, fontSize: 21, fontWeight: "800", lineHeight: 22},
+    dropdown: {backgroundColor: perk.card, borderColor: perk.rule16, borderRadius: 12, borderWidth: 1, elevation: 6, left: 0, paddingVertical: 4, position: "absolute", right: 0, shadowColor: perk.ink, shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.1, shadowRadius: 12, top: 84},
+    dropdownOption: {paddingHorizontal: 14, paddingVertical: 14},
+    dropdownText: {color: perk.ink, fontSize: 16},
+    fieldError: {color: perk.coralDeep, fontSize: 12, fontWeight: "500", lineHeight: 17, marginTop: 6},
+    createButton: {alignItems: "center", backgroundColor: perk.lime, borderRadius: 14, flexDirection: "row", gap: 12, minHeight: 54, justifyContent: "center", marginTop: 28, paddingHorizontal: 20, paddingVertical: 14},
+    createText: {color: perk.limeInk, fontSize: 16, fontWeight: "700"},
 });
