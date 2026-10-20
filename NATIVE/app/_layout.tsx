@@ -43,6 +43,7 @@ import {DarkTheme, DefaultTheme, Stack, ThemeProvider, router} from "expo-router
 import {getFromSecureStore, saveToSecureStore} from "./_utils/device/secureStore";
 import {useAuthStore} from "./_utils/auth/authStore";
 import {useBackgroundLock} from "./_utils/auth/useBackgroundLock";
+import {useTermsCheck} from "./_utils/auth/useTermsCheck";
 import {getBiometricUnlock} from "./_utils/auth/biometricUnlock";
 import LockCover from "@/components/auth/lockCover";
 import {useFonts} from "expo-font";
@@ -397,9 +398,10 @@ function AppLocationPermission() {
 }
 
 function RootLayoutNav() {
-    const {isLoggedIn, isLocked, shouldCreateAccount} = useAuthStore();
+    const {isLoggedIn, isLocked, shouldCreateAccount, termsOutdated} = useAuthStore();
     const colorScheme = useColorScheme();
     const isAway = useBackgroundLock();
+    useTermsCheck();
     const isCovered = isLocked || (isAway && isLoggedIn);
 
     return (
@@ -415,8 +417,14 @@ function RootLayoutNav() {
                         <Stack.Screen name="auth/signUp" />
                     </Stack.Protected>
                 </Stack.Protected>
-                <Stack.Protected guard={isLoggedIn}>
+                <Stack.Protected guard={isLoggedIn && !termsOutdated}>
                     <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+                </Stack.Protected>
+                <Stack.Protected guard={isLoggedIn && termsOutdated}>
+                    <Stack.Screen
+                        name="acceptTerms"
+                        options={{headerShown: false, gestureEnabled: false}}
+                    />
                 </Stack.Protected>
             </Stack>
             {isCovered ? <LockCover isLocked={isLocked} /> : null}

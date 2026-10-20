@@ -403,6 +403,9 @@ export default function LoginScreen() {
                     }
                 } else if (data["message"] === "User login successful") {
                     let token = data["data"]["token"];
+                    useAuthStore
+                        .getState()
+                        .setTermsOutdated(data["data"]["terms_outdated"] === true);
 
                     if (typeof token === "string" && token.length > 0) {
                         setIsSubmitting(false);
