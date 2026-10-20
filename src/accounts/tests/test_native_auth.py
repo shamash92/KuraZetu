@@ -247,3 +247,41 @@ def test_admin_password_change_signs_the_account_out_of_the_app(user, client):
 
     assert response["Location"] == reverse("admin:accounts_user_change", args=[user.pk])
     assert session_status(token) == 401
+
+
+@pytest.mark.parametrize(
+    "version, outdated",
+    [("", True), ("2000-01-01", True), (settings.TERMS_VERSION, False)],
+)
+def test_login_and_session_say_whether_terms_need_accepting(user, version, outdated):
+    user.terms_version = version
+    user.save(update_fields=("terms_version",))
+
+    login = native_login().json()["data"]
+    session = APIClient().get(reverse("native_session_api"), **bearer(login["token"]))
+
+    assert login["terms_outdated"] is outdated
+    assert session.json()["data"]["terms_outdated"] is outdated
+
+
+def test_accepting_saves_the_current_terms_version_and_logs_it(user, monkeypatch):
+    events = []
+    monkeypatch.setattr(
+        "accounts.api.views.log_event",
+        lambda request, event, **kwargs: events.append((event, kwargs)),
+    )
+    _, token = issue_native_token(user)
+
+    response = APIClient().post(reverse("accept_terms_api"), **bearer(token))
+
+    user.refresh_from_db()
+    assert response.status_code == 204
+    assert user.terms_version == settings.TERMS_VERSION
+    assert user.terms_accepted_at is not None
+    assert events == [
+        ("auth.terms_accepted", {"user": user, "terms_version": settings.TERMS_VERSION})
+    ]
+
+
+def test_accepting_needs_a_signed_in_person():
+    assert APIClient().post(reverse("accept_terms_api")).status_code == 401

@@ -9,6 +9,7 @@ from accounts.api.phone_verification_views import (
     SignupPhoneVerificationStartView,
 )
 from accounts.api.views import (
+    AcceptTermsView,
     NativeLoginView,
     NativeLogoutView,
     NativeSessionView,
@@ -30,6 +31,11 @@ urlpatterns = [
         "native/logout/",
         NativeLogoutView.as_view(),
         name="native_logout_api",
+    ),
+    path(
+        "terms/accept/",
+        AcceptTermsView.as_view(),
+        name="accept_terms_api",
     ),
     path(
         "push-token/",
