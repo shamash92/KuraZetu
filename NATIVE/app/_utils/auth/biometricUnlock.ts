@@ -49,12 +49,31 @@ export function canUseBiometricUnlock() {
 }
 
 async function biometricLabel() {
-    if (Platform.OS === "android") return "fingerprint";
-
     const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-    return types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
-        ? "Face ID"
-        : "Touch ID";
+    const hasFace = types.includes(
+        LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION,
+    );
+
+    if (Platform.OS === "ios") return hasFace ? "Face ID" : "Touch ID";
+
+    // Android lets the phone choose which strong biometric to ask for, so
+    // name one only when it is the only kind the phone has.
+    const hasFingerprint = types.includes(
+        LocalAuthentication.AuthenticationType.FINGERPRINT,
+    );
+    if (hasFingerprint && !hasFace) return "fingerprint";
+    if (hasFace && !hasFingerprint) return "face unlock";
+    return "biometrics";
+}
+
+/** True when the label names a face scan, for picking the icon. */
+export function isFaceLabel(label: string) {
+    return label === "Face ID" || label === "face unlock";
+}
+
+/** The label at the start of a sentence: "fingerprint" becomes "Fingerprint". */
+export function capitalizeLabel(label: string) {
+    return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export function useBiometricLabel() {

@@ -1,7 +1,5 @@
 import {
-    Keyboard,
     KeyboardAvoidingView,
-    LayoutChangeEvent,
     Platform,
     Pressable,
     PressableProps,
@@ -13,16 +11,11 @@ import {
     TouchableOpacity,
     View,
     ViewStyle,
-    useWindowDimensions,
 } from "react-native";
 import Animated, {
     Easing,
-    FadeIn,
-    FadeOut,
     cubicBezier,
-    useAnimatedProps,
     useAnimatedStyle,
-    useReducedMotion,
     useSharedValue,
     withDelay,
     withTiming,
@@ -44,26 +37,19 @@ import {
     RED,
     RULE_16,
 } from "../_utils/colors";
-import * as Device from "expo-device";
 import {Link, Stack, router} from "expo-router";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {LOGIN_SCREEN_GREETINGS as GREETINGS} from "../_utils/auth/greetings";
-import {
-    COUNTY_ATLAS_HEIGHT,
-    COUNTY_ATLAS_LONGEST_OUTLINE,
-    COUNTY_ATLAS_PATH,
-    COUNTY_ATLAS_WIDTH,
-} from "@/components/auth/countyAtlas";
 import LoginLockout from "@/components/auth/lockout";
 import LoginLoading from "@/components/auth/login";
-import Svg, {Path} from "react-native-svg";
 import UpdateCheckerModal from "@/components/updateModal";
 import {apiBaseURL} from "../_utils/apiBaseURL";
 import {
     afterPasswordSignIn,
     BiometricUnlock,
     getBiometricUnlock,
+    isFaceLabel,
     useBiometricLabel,
 } from "../_utils/auth/biometricUnlock";
 import {
@@ -87,40 +73,12 @@ const SWAP_MS = 480;
 const CHAR_STAGGER_MS = 22;
 const HOLD_MS = 1800;
 const LONGEST_GREETING = Math.max(...GREETINGS.map((g) => g.length));
-// The county atlas is the hero's one image: the country in lime, its 47
-// counties cut in ink. It takes all the room the hero has and runs off the
-// trailing edge, stopping short of the greeting.
-const ATLAS_ASPECT = COUNTY_ATLAS_HEIGHT / COUNTY_ATLAS_WIDTH;
-const ATLAS_MAX_WIDTH_RATIO = 0.8;
-const ATLAS_BLEED_RATIO = 0.24;
-const ATLAS_TOP_GAP = 4;
-// The southern border runs down and away to the right, and has cleared the
-// greeting's side of the screen about this far down the atlas. Everything
-// below that point is coast, off to the trailing edge.
-const ATLAS_BORDER_CLEAR_RATIO = 0.84;
-// Greeting line plus the hero's bottom padding, and air above the greeting.
-const ATLAS_GREETING_RESERVE = 82;
-const ATLAS_DRAW_DELAY_MS = 200;
-const ATLAS_DRAW_MS = 1500;
-const ATLAS_FILL_MS = 450;
-// The atlas is redrawn in software on every frame of its draw-in. Phones on
-// Android 9 or older, or with under 3 GB of memory, get the finished map.
-const LOW_MEMORY_BYTES = 3 * 1024 ** 3;
-const IS_MODEST_ANDROID =
-    Platform.OS === "android" &&
-    (Platform.Version < 29 ||
-        (Device.totalMemory !== null && Device.totalMemory < LOW_MEMORY_BYTES));
 const PHONE_DIGITS = 9;
 // Press feedback: 120ms and 3% is the ceiling for a control touched this often.
 const PRESS_TRANSITION = {
     transitionProperty: "transform",
     transitionDuration: "120ms",
     transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
-} as const;
-const ATLAS_FADE = {
-    transitionProperty: "opacity",
-    transitionDuration: "200ms",
-    transitionTimingFunction: "ease-out",
 } as const;
 const PASSWORD_LOGIN_LOCKOUT_EXPIRY_KEY = "passwordLoginLockoutExpiry";
 
@@ -244,96 +202,6 @@ function KineticGreeting() {
     );
 }
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-
-/**
- * The country, drawn once when the screen opens: every county outline is
- * traced in lime at the same time, then the land fills in behind them.
- */
-function CountyAtlas({width, height}: {width: number; height: number}) {
-    const still = useReducedMotion() || IS_MODEST_ANDROID;
-    const drawn = useSharedValue(0);
-    const filled = useSharedValue(0);
-
-    useEffect(() => {
-        if (still) {
-            drawn.value = 1;
-            filled.value = 1;
-            return;
-        }
-
-        drawn.value = withDelay(
-            ATLAS_DRAW_DELAY_MS,
-            withTiming(1, {
-                duration: ATLAS_DRAW_MS,
-                easing: Easing.bezier(0.22, 0.61, 0.36, 1),
-            }),
-        );
-        // The fill starts as the last long outlines are closing.
-        filled.value = withDelay(
-            ATLAS_DRAW_DELAY_MS + ATLAS_DRAW_MS * 0.7,
-            withTiming(1, {duration: ATLAS_FILL_MS, easing: Easing.out(Easing.cubic)}),
-        );
-    }, [still, drawn, filled]);
-
-    const outlineProps = useAnimatedProps(() => ({
-        strokeDashoffset: (1 - drawn.value) * COUNTY_ATLAS_LONGEST_OUTLINE,
-    }));
-    const landProps = useAnimatedProps(() => ({opacity: filled.value}));
-
-    return (
-        <Svg
-            width={width}
-            height={height}
-            viewBox={`0 0 ${COUNTY_ATLAS_WIDTH} ${COUNTY_ATLAS_HEIGHT}`}
-        >
-            <AnimatedPath
-                d={COUNTY_ATLAS_PATH}
-                fill="none"
-                stroke={LIME}
-                strokeWidth={1.6}
-                strokeLinejoin="round"
-                strokeDasharray={COUNTY_ATLAS_LONGEST_OUTLINE}
-                animatedProps={outlineProps}
-            />
-            <AnimatedPath
-                d={COUNTY_ATLAS_PATH}
-                fill={LIME}
-                stroke={INK}
-                strokeWidth={2.2}
-                strokeLinejoin="round"
-                animatedProps={landProps}
-            />
-        </Svg>
-    );
-}
-
-/** True from the moment the keyboard starts rising until it starts leaving. */
-function useKeyboardOpen() {
-    const [isOpen, setIsOpen] = useState(false);
-
-    useEffect(() => {
-        // iOS announces the keyboard before it moves, so the screen can move
-        // with it; Android only reports once it has landed.
-        const isIos = Platform.OS === "ios";
-        const show = Keyboard.addListener(
-            isIos ? "keyboardWillShow" : "keyboardDidShow",
-            () => setIsOpen(true),
-        );
-        const hide = Keyboard.addListener(
-            isIos ? "keyboardWillHide" : "keyboardDidHide",
-            () => setIsOpen(false),
-        );
-
-        return () => {
-            show.remove();
-            hide.remove();
-        };
-    }, []);
-
-    return isOpen;
-}
-
 function PressableScale({
     style,
     containerStyle,
@@ -389,12 +257,9 @@ export default function LoginScreen() {
     const {logIn, lock} = useAuthStore();
 
     const insets = useSafeAreaInsets();
-    const {width: windowWidth} = useWindowDimensions();
-    const [heroHeight, setHeroHeight] = useState<number | null>(null);
     const hasCommittedPasswordSignIn = useRef(false);
     const phoneInput = useRef<TextInput>(null);
     const passwordInput = useRef<TextInput>(null);
-    const isKeyboardOpen = useKeyboardOpen();
     const isOffline = useNetworkStatus() === "offline";
 
     const handleTallyAnimationComplete = useCallback(() => {
@@ -578,21 +443,6 @@ export default function LoginScreen() {
         setError(null);
     };
 
-    const atlasTop = insets.top + ATLAS_TOP_GAP;
-    const atlasHeight =
-        heroHeight === null
-            ? 0
-            : Math.max(
-                  0,
-                  Math.min(
-                      windowWidth * ATLAS_MAX_WIDTH_RATIO * ATLAS_ASPECT,
-                      (heroHeight - atlasTop - ATLAS_GREETING_RESERVE) /
-                          ATLAS_BORDER_CLEAR_RATIO,
-                      heroHeight - atlasTop - 8,
-                  ),
-              );
-    const atlasWidth = atlasHeight / ATLAS_ASPECT;
-
     if (!isLockoutRestored) return null;
 
     if (lockoutExpiresAt !== null) {
@@ -621,69 +471,24 @@ export default function LoginScreen() {
             style={styles.screen}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-            {/* The hero is ink whatever the system theme is. */}
-            <Stack.Screen options={{statusBarStyle: "light"}} />
+            <Stack.Screen options={{statusBarStyle: "dark"}} />
             <UpdateCheckerModal />
 
             <ScrollView
-                contentContainerStyle={styles.content}
+                contentContainerStyle={[
+                    styles.content,
+                    {
+                        paddingTop: insets.top + 40,
+                        paddingBottom: Math.max(insets.bottom, 12) + 2,
+                    },
+                ]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
                 bounces={false}
             >
-                {/* With the keyboard up the hero gives its room to the form:
-                    the atlas and wordmark step back and the greeting stays. */}
-                <View
-                    style={[
-                        styles.hero,
-                        {paddingTop: insets.top + 14},
-                        isKeyboardOpen && styles.heroCompact,
-                    ]}
-                    onLayout={(event: LayoutChangeEvent) => {
-                        // Keep the tallest height seen. The keyboard shrinks
-                        // the hero, and Android reports that before it says
-                        // the keyboard is up; the atlas is hidden by then.
-                        const {height} = event.nativeEvent.layout;
-                        setHeroHeight((tallest) =>
-                            tallest === null ? height : Math.max(tallest, height),
-                        );
-                    }}
-                >
-                    <Animated.View
-                        style={[
-                            styles.atlas,
-                            {
-                                top: atlasTop,
-                                right: -atlasWidth * ATLAS_BLEED_RATIO,
-                                opacity: isKeyboardOpen || atlasHeight === 0 ? 0 : 1,
-                            },
-                            ATLAS_FADE,
-                        ]}
-                        pointerEvents="none"
-                        accessibilityElementsHidden
-                        importantForAccessibility="no-hide-descendants"
-                    >
-                        {atlasHeight > 0 ? (
-                            <CountyAtlas width={atlasWidth} height={atlasHeight} />
-                        ) : null}
-                    </Animated.View>
+                <KineticGreeting />
 
-                    {isKeyboardOpen ? (
-                        <View />
-                    ) : (
-                        <Animated.Text
-                            style={styles.wordmark}
-                            entering={FadeIn.duration(200)}
-                            exiting={FadeOut.duration(120)}
-                        >
-                            Kura Zetu<Text style={styles.wordmarkDot}>.</Text>
-                        </Animated.Text>
-                    )}
-
-                    <KineticGreeting />
-                </View>
-
-                <View style={[styles.sheet, {paddingBottom: Math.max(insets.bottom, 12) + 2}]}>
+                <View style={styles.form}>
                     <Text style={styles.label}>Phone number</Text>
                     <Pressable
                         style={[
@@ -804,7 +609,7 @@ export default function LoginScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={`Unlock with ${biometricLabel}`}
                             >
-                                {biometricLabel === "Face ID" ? (
+                                {isFaceLabel(biometricLabel) ? (
                                     <ScanFace size={26} color={INK} strokeWidth={1.9} />
                                 ) : (
                                     <Fingerprint size={26} color={INK} strokeWidth={1.9} />
@@ -812,20 +617,9 @@ export default function LoginScreen() {
                             </PressableScale>
                         ) : null}
                     </View>
-
-                    <View style={styles.foot}>
-                        <Text style={styles.footText}>New to Kura Zetu?</Text>
-                        <Link href="/auth/signUp" asChild>
-                            <TouchableOpacity hitSlop={8}>
-                                <Text style={styles.footLink}>Create account</Text>
-                            </TouchableOpacity>
-                        </Link>
-                    </View>
-
-                    <Text style={styles.disclaimer}>
-                        Citizen tally · Not an IEBC system
-                    </Text>
                 </View>
+
+                <Text style={styles.disclaimer}>Citizen tally · Not an IEBC system</Text>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -834,38 +628,19 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: INK,
+        backgroundColor: CARD,
     },
     content: {
         flexGrow: 1,
-    },
-    // Brand, atlas and greeting on ink; the form rises from the bottom edge,
-    // where the thumb already is.
-    hero: {
-        flexGrow: 1,
-        minHeight: 250,
         paddingHorizontal: 24,
-        paddingBottom: 22,
-        justifyContent: "space-between",
-        overflow: "hidden",
     },
-    heroCompact: {
-        minHeight: 0,
+    form: {
+        marginTop: 24,
     },
-    atlas: {
-        position: "absolute",
-    },
-    wordmark: {
-        fontFamily: "PublicSans-ExtraBold",
-        fontSize: 22,
-        letterSpacing: -0.7,
-        color: CARD,
-    },
-    wordmarkDot: {
-        color: RED,
-    },
+    // Pushed to the foot of the screen.
     disclaimer: {
-        marginTop: 16,
+        marginTop: "auto",
+        paddingTop: 24,
         textAlign: "center",
         fontFamily: "SpaceMono-Regular",
         fontSize: 10.5,
@@ -878,7 +653,7 @@ const styles = StyleSheet.create({
         fontWeight: "900",
         letterSpacing: -0.9,
         lineHeight: HEADING_LINE_HEIGHT,
-        color: CARD,
+        color: INK,
     },
     greetingMask: {
         height: GREETING_MASK_HEIGHT,
@@ -894,13 +669,6 @@ const styles = StyleSheet.create({
         lineHeight: GREETING_MASK_HEIGHT,
         includeFontPadding: false,
         textAlignVertical: "bottom",
-    },
-    sheet: {
-        backgroundColor: CARD,
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        paddingTop: 20,
-        paddingHorizontal: 20,
     },
     label: {
         marginBottom: 6,
@@ -967,7 +735,7 @@ const styles = StyleSheet.create({
     },
     forgotRow: {
         alignSelf: "flex-end",
-        marginTop: 14,
+        marginTop: 12,
     },
     forgot: {
         fontSize: 15,
@@ -989,7 +757,7 @@ const styles = StyleSheet.create({
         color: RED,
     },
     actions: {
-        marginTop: 18,
+        marginTop: 28,
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
@@ -1002,13 +770,14 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: 10,
+        gap: 8,
         backgroundColor: LIME,
         borderRadius: 999,
         paddingHorizontal: 24,
     },
     primaryText: {
         fontSize: 18,
+        lineHeight: 22,
         fontWeight: "800",
         color: LIME_INK,
     },
@@ -1023,28 +792,5 @@ const styles = StyleSheet.create({
     },
     disabled: {
         opacity: 0.6,
-    },
-    foot: {
-        marginTop: 18,
-        flexDirection: "row",
-        justifyContent: "center",
-        // Top-aligned with one shared line height, so both sit on the same
-        // baseline and the link's underline hangs below it.
-        alignItems: "flex-start",
-        gap: 8,
-    },
-    footText: {
-        fontSize: 15,
-        lineHeight: 20,
-        color: MUTE,
-    },
-    footLink: {
-        fontSize: 15,
-        lineHeight: 20,
-        fontWeight: "800",
-        color: INK,
-        borderBottomWidth: 2,
-        borderBottomColor: LIME,
-        paddingBottom: 1,
     },
 });

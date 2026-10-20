@@ -28,9 +28,11 @@ import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {
     BiometricUnlock,
     canUseBiometricUnlock,
+    capitalizeLabel,
     disableBiometricUnlock,
     enableBiometricUnlock,
     getBiometricUnlock,
+    isFaceLabel,
     useBiometricLabel,
 } from "@/app/_utils/auth/biometricUnlock";
 import {isCancelledPrompt} from "@/app/_utils/auth/lockRules";
@@ -125,7 +127,7 @@ export default function ProfileScreen() {
     const handleBiometricToggle = async (enable: boolean) => {
         if (enable && !canUseBiometrics) {
             Alert.alert(
-                `${biometricLabel} isn't set up`,
+                `${capitalizeLabel(biometricLabel)} isn't set up`,
                 `Set up ${biometricLabel} in your phone's settings first.`,
             );
             return;
@@ -223,7 +225,7 @@ export default function ProfileScreen() {
                     <View style={styles.card}>
                         <SettingItem
                             icon={
-                                biometricLabel === "Face ID" ? (
+                                isFaceLabel(biometricLabel) ? (
                                     <ScanFace size={22} color={PRIMARY[600]} />
                                 ) : (
                                     <Fingerprint size={22} color={PRIMARY[600]} />

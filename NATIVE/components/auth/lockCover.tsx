@@ -1,10 +1,15 @@
 import {Alert, StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import {BlurView} from "expo-blur";
 import {Fingerprint, ScanFace} from "lucide-react-native";
 import React, {useCallback, useEffect, useRef, useState} from "react";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
-import {COPPER_DEEP, INK, LIME, LIME_INK, MUTE} from "../../app/_utils/colors";
-import {useBiometricLabel} from "../../app/_utils/auth/biometricUnlock";
+import {CARD, INK, LIME, MUTE} from "../../app/_utils/colors";
+import {Mark} from "@/components/brand/mark";
+import {
+    capitalizeLabel,
+    isFaceLabel,
+    useBiometricLabel,
+} from "../../app/_utils/auth/biometricUnlock";
 import {UnlockOutcome} from "../../app/_utils/auth/lockRules";
 import {signOut, unlockWithBiometrics} from "../../app/_utils/auth/session";
 
@@ -22,10 +27,11 @@ const UNLOCK_ALERTS: Partial<Record<UnlockOutcome, [string, string]>> = {
     ],
 };
 
-// Blurs the app while it is locked or not in front. When locked, it asks for
+// Covers the app in white while it is locked or not in front. When locked, it asks for
 // Face ID or a fingerprint once, then shows buttons to retry or use the password.
 export default function LockCover({isLocked}: {isLocked: boolean}) {
     const biometricLabel = useBiometricLabel();
+    const insets = useSafeAreaInsets();
     const [isUnlocking, setIsUnlocking] = useState(false);
     const hasPrompted = useRef(false);
 
@@ -46,24 +52,38 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
         void unlock();
     }, [isLocked, unlock]);
 
-    return (
-        <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill}>
-            {isLocked ? (
-                <View style={styles.content}>
-                    {biometricLabel === "Face ID" ? (
-                        <ScanFace size={40} color={INK} strokeWidth={1.8} />
-                    ) : (
-                        <Fingerprint size={40} color={INK} strokeWidth={1.8} />
-                    )}
-                    <Text style={styles.title}>{biometricLabel} required</Text>
-                    <Text style={styles.subtitle}>to open KuraZetu</Text>
+    const BiometricIcon = isFaceLabel(biometricLabel) ? ScanFace : Fingerprint;
 
+    return (
+        <View
+            style={[
+                StyleSheet.absoluteFill,
+                styles.cover,
+                {
+                    paddingTop: insets.top + 24,
+                    paddingBottom: Math.max(insets.bottom, 16) + 8,
+                },
+            ]}
+        >
+            <View style={styles.stage}>
+                <Mark width={96} ground="light" />
+                {isLocked ? (
+                    <View style={styles.heading}>
+                        <Text style={styles.title}>{capitalizeLabel(biometricLabel)} required</Text>
+                        <Text style={styles.subtitle}>to open KuraZetu</Text>
+                    </View>
+                ) : null}
+            </View>
+
+            {isLocked ? (
+                <View style={styles.actions}>
                     <TouchableOpacity
                         style={[styles.primary, isUnlocking && styles.disabled]}
                         onPress={() => void unlock()}
                         disabled={isUnlocking}
                         activeOpacity={0.85}
                     >
+                        <BiometricIcon size={22} color={CARD} strokeWidth={2} />
                         <Text style={styles.primaryText}>
                             Unlock with {biometricLabel}
                         </Text>
@@ -72,54 +92,70 @@ export default function LockCover({isLocked}: {isLocked: boolean}) {
                     <TouchableOpacity
                         onPress={() => void signOut("keep")}
                         disabled={isUnlocking}
-                        hitSlop={8}
+                        hitSlop={12}
                     >
                         <Text style={styles.link}>Use password instead</Text>
                     </TouchableOpacity>
                 </View>
             ) : null}
-        </BlurView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    content: {
+    cover: {
+        backgroundColor: CARD,
+        paddingHorizontal: 24,
+    },
+    stage: {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: 32,
+        gap: 36,
+    },
+    heading: {
+        alignItems: "center",
+        gap: 6,
     },
     title: {
-        marginTop: 16,
-        fontSize: 20,
+        fontSize: 28,
         fontWeight: "800",
+        letterSpacing: -0.6,
         color: INK,
     },
     subtitle: {
-        marginTop: 4,
-        fontSize: 15,
+        fontSize: 16,
         color: MUTE,
     },
-    primary: {
-        marginTop: 32,
-        alignSelf: "stretch",
+    actions: {
         alignItems: "center",
-        backgroundColor: LIME,
-        borderRadius: 14,
-        paddingVertical: 16,
+        gap: 22,
+    },
+    primary: {
+        alignSelf: "stretch",
+        height: 60,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        backgroundColor: INK,
+        borderRadius: 999,
     },
     primaryText: {
-        fontSize: 15,
+        fontSize: 18,
         fontWeight: "800",
-        color: LIME_INK,
+        color: CARD,
     },
     disabled: {
         opacity: 0.6,
     },
     link: {
-        marginTop: 20,
-        fontSize: 13,
+        fontSize: 15,
+        lineHeight: 20,
         fontWeight: "800",
-        color: COPPER_DEEP,
+        color: INK,
+        borderBottomWidth: 2,
+        borderBottomColor: LIME,
+        paddingBottom: 1,
     },
 });
