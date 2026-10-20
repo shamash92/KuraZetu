@@ -51,7 +51,7 @@ def client_ip(request):
     return str(peer)
 
 
-def log_event(request, event, *, credentials=None, user=None):
+def log_event(request, event, *, credentials=None, user=None, terms_version=None):
     """Emit only deliberate fields; callers never supply raw request payloads."""
     if request is None:
         return
@@ -68,6 +68,8 @@ def log_event(request, event, *, credentials=None, user=None):
         extra["account_ref"] = account_reference(
             request, {"phone_number": user.get_username()}
         )
+    if terms_version is not None:
+        extra["terms_version"] = terms_version
     logger.info(event, extra=extra)
 
 

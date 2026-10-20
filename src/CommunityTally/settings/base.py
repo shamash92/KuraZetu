@@ -76,6 +76,10 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 
 AUTH_USER_MODEL = "accounts.User"
 
+# The terms of use a new account accepts, saved on the account at signup.
+# Change it with the "Last updated" date in templates/legal/base.html.
+TERMS_VERSION = "2026-10-20"
+
 # Numbers entered without a country code are read as Kenyan, so 0712345678 and
 # 254712345678 both resolve to +254712345678. International numbers still work
 # when written with their own prefix.

@@ -1,6 +1,7 @@
 import re
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 from django.urls import reverse
@@ -163,6 +164,7 @@ def verified_signup_payload(client, polling_center):
     )
     return {
         "verification_ticket": verified.data["data"]["verification_ticket"],
+        "accepted_terms": True,
         "password": "A-long-unique-password-123!",
         "ward_code": str(polling_center.ward.number),
         "polling_center": polling_center.code,
@@ -190,8 +192,13 @@ def verified_signup_payload(client, polling_center):
     ],
 )
 def test_verified_signup_ticket_creates_a_phone_verified_voter_once(
-    polling_center, requested_role
+    polling_center, requested_role, monkeypatch
 ):
+    events = []
+    monkeypatch.setattr(
+        "accounts.api.phone_verification_views.log_event",
+        lambda request, event, **kwargs: events.append((event, kwargs)),
+    )
     client = APIClient()
     payload = verified_signup_payload(client, polling_center)
     if requested_role is None:
@@ -206,6 +213,14 @@ def test_verified_signup_ticket_creates_a_phone_verified_voter_once(
     user = User.objects.get(phone_number=NUMBER)
     assert client.session["_auth_user_id"] == str(user.pk)
     assert user.is_phone_verified is True
+    assert user.terms_accepted_at is not None
+    assert user.terms_version == settings.TERMS_VERSION
+    assert events == [
+        (
+            "auth.signup_succeeded",
+            {"user": user, "terms_version": settings.TERMS_VERSION},
+        )
+    ]
     assert user.role == "voter"
     assert user.polling_center == polling_center
     assert (
@@ -214,6 +229,24 @@ def test_verified_signup_ticket_creates_a_phone_verified_voter_once(
         ).status_code
         == 400
     )
+
+
+@pytest.mark.parametrize("accepted_terms", [None, False])
+def test_signup_without_accepting_the_terms_makes_no_account(
+    polling_center, accepted_terms
+):
+    client = APIClient()
+    payload = verified_signup_payload(client, polling_center)
+    if accepted_terms is None:
+        payload.pop("accepted_terms")
+    else:
+        payload["accepted_terms"] = accepted_terms
+
+    response = client.post(reverse("signup_completion_api"), payload, format="json")
+
+    assert response.status_code == 400
+    assert "accepted_terms" in response.data
+    assert not User.objects.filter(phone_number=NUMBER).exists()
 
 
 def test_native_signup_issues_a_knox_token_without_a_web_session(polling_center):
