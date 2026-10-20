@@ -12,16 +12,19 @@ import {
     AlertCircle,
     Bell,
     DatabaseIcon,
+    FileText,
     Fingerprint,
     LogOut,
     Moon,
     ScanFace,
+    ShieldCheck,
     User2,
 } from "lucide-react-native";
 import {NEUTRAL, PRIMARY} from "../../_utils/colors";
 import React, {useCallback, useState} from "react";
 
 import {useFocusEffect} from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import {statusBarHeight} from "@/app/_utils/device/screenDimensions";
 import useAuthStore from "@/app/_utils/auth/authStore";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
@@ -270,6 +273,34 @@ export default function ProfileScreen() {
                             titleColor="white"
                             bgColor="#E55050"
                             onPress={() => handleLogout()}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>About</Text>
+
+                    <View style={styles.card}>
+                        <SettingItem
+                            icon={<FileText size={22} color={PRIMARY[600]} />}
+                            title="Terms of use"
+                            onPress={() =>
+                                void WebBrowser.openBrowserAsync(
+                                    `${apiBaseURL}/legal/terms/`,
+                                )
+                            }
+                        />
+
+                        <View style={styles.divider} />
+
+                        <SettingItem
+                            icon={<ShieldCheck size={22} color={PRIMARY[600]} />}
+                            title="Privacy policy"
+                            onPress={() =>
+                                void WebBrowser.openBrowserAsync(
+                                    `${apiBaseURL}/legal/privacy/`,
+                                )
+                            }
                         />
                     </View>
                 </View>
