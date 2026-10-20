@@ -36,6 +36,9 @@ const formSchema = z
         confirm_password: z
             .string()
             .min(8, "Password confirmation must be at least 8 characters long"),
+        accepted_terms: z.boolean().refine((value) => value, {
+            message: "Accept the terms to continue",
+        }),
     })
     .refine((data) => data.password === data.confirm_password, {
         message: "Passwords do not match",
@@ -72,6 +75,7 @@ export default function SignupForm() {
             age: undefined,
             password: "",
             confirm_password: "",
+            accepted_terms: false,
         },
     });
 
@@ -169,6 +173,7 @@ export default function SignupForm() {
     const gender = form.watch("gender");
     const password = form.watch("password");
     const confirmPassword = form.watch("confirm_password");
+    const acceptedTerms = form.watch("accepted_terms");
 
     const isFormIncomplete =
         submitting ||
@@ -180,7 +185,8 @@ export default function SignupForm() {
         !password ||
         password.length < 8 ||
         !confirmPassword ||
-        password !== confirmPassword;
+        password !== confirmPassword ||
+        !acceptedTerms;
 
     const {
         register,
@@ -426,6 +432,20 @@ export default function SignupForm() {
                         </div>
                     </div>
 
+                    <label className="terms-check">
+                        <input type="checkbox" {...register("accepted_terms")} />
+                        <span>
+                            I am 18 or older and accept the{" "}
+                            <a href="/legal/terms/" target="_blank" rel="noopener noreferrer">
+                                Terms of use
+                            </a>{" "}
+                            and{" "}
+                            <a href="/legal/privacy/" target="_blank" rel="noopener noreferrer">
+                                Privacy policy
+                            </a>
+                        </span>
+                    </label>
+
                     {/* Submit */}
                     <button
                         className="submit"
@@ -459,12 +479,6 @@ export default function SignupForm() {
                         Cancel
                     </button>
 
-                    {/* Legal note */}
-                    <p className="terms">
-                        By registering, you agree to our{" "}
-                        <a href="/legal/terms/">Terms of Service</a> and{" "}
-                        <a href="/legal/privacy/">Privacy Policy</a>.
-                    </p>
                 </form>
             </div>
         </div>

@@ -66,12 +66,14 @@ test("a completed signup reaches the success page without storing a token", asyn
     await user.selectOptions(screen.getByRole("combobox"), "F");
     await user.type(field("password"), "long-password");
     await user.type(field("confirm_password"), "long-password");
+    expect(screen.getByRole("button", {name: "Register"})).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", {name: /accept the Terms of use/}));
     await user.click(screen.getByRole("button", {name: "Register"}));
 
     expect(await screen.findByText("Registered")).toBeInTheDocument();
     const signupRequest = jest.mocked(global.fetch).mock.calls[0][1];
     expect(JSON.parse(String(signupRequest?.body))).toEqual(
-        expect.objectContaining({role: "voter"}),
+        expect.objectContaining({role: "voter", accepted_terms: true}),
     );
     expect(localStorage.getItem("token")).toBeNull();
     expect(document.cookie).not.toContain("token=");
