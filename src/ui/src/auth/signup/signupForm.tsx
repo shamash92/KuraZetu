@@ -462,8 +462,8 @@ export default function SignupForm() {
                     {/* Legal note */}
                     <p className="terms">
                         By registering, you agree to our{" "}
-                        <a href="#">Terms of Service</a> and{" "}
-                        <a href="#">Privacy Policy</a>.
+                        <a href="/legal/terms/">Terms of Service</a> and{" "}
+                        <a href="/legal/privacy/">Privacy Policy</a>.
                     </p>
                 </form>
             </div>

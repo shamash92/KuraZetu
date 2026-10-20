@@ -535,6 +535,8 @@ export function LandingFooter() {
                         <a href="https://github.com/shamash92/KuraZetu.git">GitHub</a>
                         <a href="https://kurazetu.readthedocs.io/">Documentation</a>
                         <a href="/api/schema/swagger/">Public API</a>
+                        <a href="/legal/terms/">Terms of use</a>
+                        <a href="/legal/privacy/">Privacy policy</a>
                     </div>
                     <div>
                         <strong>Account</strong>
