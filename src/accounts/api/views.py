@@ -1,7 +1,9 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.signals import user_logged_in, user_logged_out
+from django.utils import timezone
 
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -104,6 +106,7 @@ class NativeLoginView(APIView):
                     "user": UserSerializer(user).data,
                     "token": token,
                     "expiry": instance.expiry,
+                    "terms_outdated": user.terms_outdated,
                 },
             },
             status=status.HTTP_200_OK,
@@ -120,8 +123,34 @@ class NativeSessionView(APIView):
 
     def get(self, request):
         return Response(
-            {"data": {"expiry": request.auth.expiry}}, status=status.HTTP_200_OK
+            {
+                "data": {
+                    "expiry": request.auth.expiry,
+                    "terms_outdated": request.user.terms_outdated,
+                }
+            },
+            status=status.HTTP_200_OK,
         )
+
+
+class AcceptTermsView(APIView):
+    """Record that the signed-in person accepted the current terms version."""
+
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user.terms_accepted_at = timezone.now()
+        user.terms_version = settings.TERMS_VERSION
+        user.save(update_fields=("terms_accepted_at", "terms_version"))
+        log_event(
+            request._request,
+            "auth.terms_accepted",
+            user=user,
+            terms_version=user.terms_version,
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NativeLogoutView(APIView):

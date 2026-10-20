@@ -109,8 +109,8 @@ class User(AbstractBaseUser):
 
     is_verified = models.BooleanField(default=False)
     is_phone_verified = models.BooleanField(default=False)
-    # When the person accepted the terms of use at signup. Empty for accounts
-    # made before signup asked.
+    # When the person last accepted the terms of use, and which version.
+    # Empty for accounts made before signup asked.
     terms_accepted_at = models.DateTimeField(blank=True, null=True)
     terms_version = models.CharField(max_length=20, blank=True)
 
@@ -171,6 +171,11 @@ class User(AbstractBaseUser):
     def is_active(self):
         "Is the user active?"
         return self.active
+
+    @property
+    def terms_outdated(self):
+        "Has the person not yet accepted the current terms version?"
+        return self.terms_version != settings.TERMS_VERSION
 
     objects = UserManager()
 
