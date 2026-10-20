@@ -4,7 +4,7 @@ import {Stack} from "expo-router";
 export default function ExamLayout() {
     return (
         <Stack
-            initialRouteName="welcome"
+            initialRouteName="login"
             screenOptions={{
                 headerShown: false,
                 // headerStyle: {
@@ -16,7 +16,6 @@ export default function ExamLayout() {
                 // },
             }}
         >
-            <Stack.Screen name="welcome" options={{headerShown: false}} />
             <Stack.Screen name="login" options={{headerShown: false}} />
             <Stack.Screen
                 name="signUp"

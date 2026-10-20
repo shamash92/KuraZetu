@@ -15,20 +15,31 @@ import Animated, {
     withSequence,
     withTiming,
 } from "react-native-reanimated";
-import {INK, MUTE, MUTE_2, PAPER, PAPER_DEEP, RED, RULE_08} from "@/app/_utils/colors";
+import {
+    INK,
+    LIME,
+    LIME_INK,
+    MUTE,
+    MUTE_2,
+    PAPER,
+    PAPER_DEEP,
+    RED,
+    RULE_08,
+} from "@/app/_utils/colors";
 import {
     Image,
     Platform,
+    Pressable,
     StyleSheet,
     Text,
     useColorScheme,
     View,
 } from "react-native";
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import LottieView from "lottie-react-native";
-import {DarkTheme, DefaultTheme, Stack, ThemeProvider} from "expo-router";
+import {DarkTheme, DefaultTheme, Stack, ThemeProvider, router} from "expo-router";
 import {getFromSecureStore, saveToSecureStore} from "./_utils/device/secureStore";
 import {useAuthStore} from "./_utils/auth/authStore";
 import {useBackgroundLock} from "./_utils/auth/useBackgroundLock";
@@ -51,31 +62,98 @@ const LAUNCH_DURATION_MS = CROWD_DURATION_MS + FINISHED_FRAME_HOLD_MS;
 const MARK_LOCKUP_SIZE = 58;
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const BOILING_DURATION_MS = 2500;
+// Room the scene makes at the bottom for the buttons once the animation ends.
+const ACTIONS_LIFT = 78;
 
 type LaunchAnimation = "crowd" | "boiling";
+const LAUNCH_ORDER: readonly LaunchAnimation[] = ["crowd", "boiling"];
 
-// First launch is a coin flip; every launch after that alternates.
+// Each launch plays the next animation in turn.
 async function pickLaunchAnimation(): Promise<LaunchAnimation> {
     let last: string | null = null;
     try {
         last = await getFromSecureStore("lastLaunchAnimation");
     } catch {
-        // An unreadable store falls back to the first-launch coin flip.
+        // An unreadable store starts the rotation from a random place.
     }
 
-    const next: LaunchAnimation =
-        last === "crowd"
-            ? "boiling"
-            : last === "boiling"
-              ? "crowd"
-              : Math.random() < 0.5
-                ? "crowd"
-                : "boiling";
+    const lastIndex = LAUNCH_ORDER.indexOf(last as LaunchAnimation);
+    const next =
+        lastIndex === -1
+            ? LAUNCH_ORDER[Math.floor(Math.random() * LAUNCH_ORDER.length)]
+            : LAUNCH_ORDER[(lastIndex + 1) % LAUNCH_ORDER.length];
 
     saveToSecureStore("lastLaunchAnimation", next).catch(() => {});
 
     return next;
 }
+
+/** Moves the scene up to make room for the buttons once they show. */
+function useMakeRoom(isShowingActions: boolean) {
+    const lift = useSharedValue(0);
+
+    useEffect(() => {
+        lift.set(withTiming(isShowingActions ? 1 : 0, {duration: 320, easing: EASE_OUT}));
+    }, [isShowingActions, lift]);
+
+    return useAnimatedStyle(() => ({
+        transform: [{translateY: -ACTIONS_LIFT * lift.get()}],
+    }));
+}
+
+/**
+ * Shown under the launch animation once it ends, for anyone not signed in:
+ * Sign in and Sign up side by side.
+ */
+function LaunchActions({isDark, onDone}: {isDark: boolean; onDone: () => void}) {
+    const appear = useSharedValue(0);
+
+    useEffect(() => {
+        appear.set(withDelay(120, withTiming(1, {duration: 320, easing: EASE_OUT})));
+    }, [appear]);
+
+    const appearStyle = useAnimatedStyle(() => ({
+        opacity: appear.get(),
+        transform: [{translateY: (1 - appear.get()) * 12}],
+    }));
+    const outlineColor = isDark ? PAPER : INK;
+
+    return (
+        <Animated.View style={[styles.actions, appearStyle]}>
+            <Pressable
+                style={({pressed}) => [
+                    styles.action,
+                    styles.signIn,
+                    pressed && styles.pressed,
+                ]}
+                onPress={onDone}
+                accessibilityRole="button"
+            >
+                <Text style={[styles.actionText, styles.signInText]}>Sign in</Text>
+            </Pressable>
+            <Pressable
+                style={({pressed}) => [
+                    styles.action,
+                    {borderWidth: 1.5, borderColor: outlineColor},
+                    pressed && styles.pressed,
+                ]}
+                onPress={() => {
+                    router.push("/auth/signUp");
+                    onDone();
+                }}
+                accessibilityRole="button"
+            >
+                <Text style={[styles.actionText, {color: outlineColor}]}>Sign up</Text>
+            </Pressable>
+        </Animated.View>
+    );
+}
+
+type LaunchProps = {
+    onComplete: () => void;
+    /** The buttons, once the animation has ended for someone not signed in. */
+    actions: React.ReactNode;
+};
 
 function LaunchLockup({isDark}: {isDark: boolean}) {
     return (
@@ -90,9 +168,8 @@ function LaunchLockup({isDark}: {isDark: boolean}) {
                     style={styles.mark}
                 />
                 <Text style={[styles.word, {color: isDark ? PAPER : INK}]}>
-                    KuraZetu
+                    KuraZetu<Text style={styles.dot}>.</Text>
                 </Text>
-                <Text style={styles.dot}>.</Text>
             </View>
             <Text style={[styles.taglineText, {color: isDark ? PAPER_DEEP : MUTE}]}>
                 Citizen tally · Not an IEBC system
@@ -101,7 +178,15 @@ function LaunchLockup({isDark}: {isDark: boolean}) {
     );
 }
 
-function EllipsisDot({index, reduceMotion}: {index: number; reduceMotion: boolean}) {
+function EllipsisDot({
+    index,
+    reduceMotion,
+    color,
+}: {
+    index: number;
+    reduceMotion: boolean;
+    color: string;
+}) {
     const opacity = useSharedValue(reduceMotion ? 1 : 0.2);
 
     useEffect(() => {
@@ -126,10 +211,10 @@ function EllipsisDot({index, reduceMotion}: {index: number; reduceMotion: boolea
 
     const style = useAnimatedStyle(() => ({opacity: opacity.get()}));
 
-    return <Animated.Text style={style}>.</Animated.Text>;
+    return <Animated.Text style={[styles.caption, {color}, style]}>.</Animated.Text>;
 }
 
-function BoilingLaunchScreen({onComplete}: {onComplete: () => void}) {
+function BoilingLaunchScreen({onComplete, actions}: LaunchProps) {
     const colorScheme = useColorScheme();
     const reduceMotion = useReducedMotion();
     const contentProgress = useSharedValue(0);
@@ -160,60 +245,67 @@ function BoilingLaunchScreen({onComplete}: {onComplete: () => void}) {
         transform: [{translateY: (1 - contentProgress.get()) * 8}],
     }));
     const lockupStyle = useAnimatedStyle(() => ({opacity: lockupProgress.get()}));
+    const sceneStyle = useMakeRoom(actions !== null);
 
     return (
         <View
             style={[styles.launch, {backgroundColor: isDark ? INK : PAPER}]}
             accessibilityLabel="KuraZetu is loading"
         >
-            <LottieView
-                source={
-                    isDark
-                        ? require("../assets/lottie/launch-aroma-dark.json")
-                        : require("../assets/lottie/launch-aroma-light.json")
-                }
-                autoPlay={!reduceMotion}
-                loop
-                resizeMode="contain"
-                style={[styles.aroma, {opacity: isDark ? 0.2 : 0.35}]}
-            />
-            <Animated.View
-                style={[styles.boilingContent, contentStyle]}
-                pointerEvents="none"
-            >
+            <Animated.View style={[StyleSheet.absoluteFill, sceneStyle]}>
                 <LottieView
                     source={
                         isDark
-                            ? require("../assets/lottie/launch-boiling-dark.json")
-                            : require("../assets/lottie/launch-boiling-light.json")
+                            ? require("../assets/lottie/launch-aroma-dark.json")
+                            : require("../assets/lottie/launch-aroma-light.json")
                     }
                     autoPlay={!reduceMotion}
                     loop
                     resizeMode="contain"
-                    style={styles.cup}
+                    style={[styles.aroma, {opacity: isDark ? 0.2 : 0.35}]}
                 />
-                <Text style={[styles.caption, {color: isDark ? MUTE_2 : MUTE}]}>
-                    Things are boiling nicely
-                    {[0, 1, 2].map((index) => (
-                        <EllipsisDot
-                            key={index}
-                            index={index}
-                            reduceMotion={reduceMotion}
-                        />
-                    ))}
-                </Text>
+                <Animated.View
+                    style={[styles.boilingContent, contentStyle]}
+                    pointerEvents="none"
+                >
+                    <LottieView
+                        source={
+                            isDark
+                                ? require("../assets/lottie/launch-boiling-dark.json")
+                                : require("../assets/lottie/launch-boiling-light.json")
+                        }
+                        autoPlay={!reduceMotion}
+                        loop
+                        resizeMode="contain"
+                        style={styles.cup}
+                    />
+                    <View style={styles.captionRow}>
+                        <Text style={[styles.caption, {color: isDark ? MUTE_2 : MUTE}]}>
+                            Things are boiling nicely
+                        </Text>
+                        {[0, 1, 2].map((index) => (
+                            <EllipsisDot
+                                key={index}
+                                index={index}
+                                reduceMotion={reduceMotion}
+                                color={isDark ? MUTE_2 : MUTE}
+                            />
+                        ))}
+                    </View>
+                </Animated.View>
+                <Animated.View
+                    style={[styles.lockupArea, lockupStyle]}
+                    pointerEvents="none"
+                >
+                    <LaunchLockup isDark={isDark} />
+                </Animated.View>
             </Animated.View>
-            <Animated.View
-                style={[styles.lockupArea, lockupStyle]}
-                pointerEvents="none"
-            >
-                <LaunchLockup isDark={isDark} />
-            </Animated.View>
+            {actions}
         </View>
     );
 }
 
-function LaunchScreen({onComplete}: {onComplete: () => void}) {
+function LaunchScreen({onComplete, actions}: LaunchProps) {
     const colorScheme = useColorScheme();
     const reduceMotion = useReducedMotion();
     const crowd = useRef<LottieView>(null);
@@ -245,42 +337,47 @@ function LaunchScreen({onComplete}: {onComplete: () => void}) {
     const ruleFillStyle = useAnimatedStyle(() => ({
         transform: [{scaleX: ruleProgress.get()}],
     }));
+    const sceneStyle = useMakeRoom(actions !== null);
 
     return (
         <View
             style={[styles.launch, {backgroundColor: isDark ? INK : PAPER}]}
             accessibilityLabel="KuraZetu is loading"
         >
-            <LottieView
-                ref={crowd}
-                source={
-                    isDark
-                        ? require("../assets/lottie/launch-crowd-dark.json")
-                        : require("../assets/lottie/launch-crowd-light.json")
-                }
-                autoPlay={false}
-                loop={false}
-                resizeMode="contain"
-                style={styles.crowd}
-            />
-            <Animated.View
-                style={[styles.lockupArea, lockupStyle]}
-                pointerEvents="none"
-            >
-                <LaunchLockup isDark={isDark} />
-            </Animated.View>
-            <View
-                style={[styles.rule, {backgroundColor: isDark ? MUTE_2 : RULE_08}]}
-                pointerEvents="none"
-            >
-                <Animated.View
-                    style={[
-                        styles.ruleFill,
-                        {backgroundColor: isDark ? PAPER : INK},
-                        ruleFillStyle,
-                    ]}
+            <Animated.View style={[StyleSheet.absoluteFill, sceneStyle]}>
+                <LottieView
+                    ref={crowd}
+                    source={
+                        isDark
+                            ? require("../assets/lottie/launch-crowd-dark.json")
+                            : require("../assets/lottie/launch-crowd-light.json")
+                    }
+                    autoPlay={false}
+                    loop={false}
+                    resizeMode="contain"
+                    style={styles.crowd}
                 />
-            </View>
+                <Animated.View
+                    style={[styles.lockupArea, lockupStyle]}
+                    pointerEvents="none"
+                >
+                    <LaunchLockup isDark={isDark} />
+                </Animated.View>
+            </Animated.View>
+            {actions ?? (
+                <View
+                    style={[styles.rule, {backgroundColor: isDark ? MUTE_2 : RULE_08}]}
+                    pointerEvents="none"
+                >
+                    <Animated.View
+                        style={[
+                            styles.ruleFill,
+                            {backgroundColor: isDark ? PAPER : INK},
+                            ruleFillStyle,
+                        ]}
+                    />
+                </View>
+            )}
         </View>
     );
 }
@@ -329,7 +426,12 @@ function RootLayoutNav() {
 
 // Export the complete component with provider
 export default function AuthenticatedLayout() {
-    const [launchComplete, setLaunchComplete] = useState(false);
+    // playing: the launch animation runs alone.
+    // choosing: it has ended for someone not signed in; the app is ready
+    //   underneath and the buttons show over the finished animation.
+    // done: the app.
+    const [phase, setPhase] = useState<"playing" | "choosing" | "done">("playing");
+    const colorScheme = useColorScheme();
     const [launchAnimation, setLaunchAnimation] = useState<LaunchAnimation | null>(
         null,
     );
@@ -350,11 +452,20 @@ export default function AuthenticatedLayout() {
         });
     }, []);
 
-    useEffect(() => {
-        if ((!fontsLoaded && !fontError) || !launchAnimation) return;
+    const isLaunchReady =
+        (fontsLoaded || fontError !== null) &&
+        launchAnimation !== null;
 
-        void SplashScreen.hideAsync();
-    }, [fontError, fontsLoaded, launchAnimation]);
+    useEffect(() => {
+        if (isLaunchReady) void SplashScreen.hideAsync();
+    }, [isLaunchReady]);
+
+    // Phones with Face ID or fingerprint unlock on go to the lock screen;
+    // everyone else is offered Sign in and Sign up.
+    const finishLaunch = useCallback(() => {
+        setPhase(useAuthStore.getState().isLocked ? "done" : "choosing");
+    }, []);
+    const enterApp = useCallback(() => setPhase("done"), []);
 
     useQuickActionRouting();
     useEffect(() => {
@@ -372,18 +483,29 @@ export default function AuthenticatedLayout() {
         ]);
     }, []);
 
-    if ((!fontsLoaded && !fontError) || !launchAnimation) {
+    if (!isLaunchReady || !launchAnimation) {
         return null;
     }
 
+    const isDark = colorScheme === "dark";
+    const actions =
+        phase === "choosing" ? (
+            <LaunchActions isDark={isDark} onDone={enterApp} />
+        ) : null;
+
     return (
         <GestureHandlerRootView style={{flex: 1}}>
-            {launchComplete ? (
-                <RootLayoutNav />
-            ) : launchAnimation === "boiling" ? (
-                <BoilingLaunchScreen onComplete={() => setLaunchComplete(true)} />
-            ) : (
-                <LaunchScreen onComplete={() => setLaunchComplete(true)} />
+            {/* The slots keep their places so the launch screen is not
+                remounted when the app appears underneath it. */}
+            {phase === "playing" ? null : <RootLayoutNav />}
+            {phase === "done" ? null : (
+                <View style={StyleSheet.absoluteFill}>
+                    {launchAnimation === "boiling" ? (
+                        <BoilingLaunchScreen onComplete={finishLaunch} actions={actions} />
+                    ) : (
+                        <LaunchScreen onComplete={finishLaunch} actions={actions} />
+                    )}
+                </View>
             )}
         </GestureHandlerRootView>
     );
@@ -422,11 +544,14 @@ const styles = StyleSheet.create({
         width: "44%",
         aspectRatio: 1,
     },
+    captionRow: {
+        marginTop: 8,
+        flexDirection: "row",
+    },
     caption: {
-        marginTop: 4,
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 12,
-        letterSpacing: 0.4,
+        fontSize: 15,
+        lineHeight: 20,
+        fontWeight: "500",
     },
     lockupArea: {
         position: "absolute",
@@ -453,15 +578,11 @@ const styles = StyleSheet.create({
     },
     dot: {
         color: RED,
-        fontFamily: "PublicSans-ExtraBold",
-        fontSize: 30,
-        lineHeight: 32,
     },
     taglineText: {
         fontFamily: "SpaceMono-Regular",
-        fontSize: 8,
-        fontWeight: "600",
-        letterSpacing: 1.12,
+        fontSize: 10.5,
+        letterSpacing: 1.2,
         textAlign: "center",
         textTransform: "uppercase",
     },
@@ -473,6 +594,34 @@ const styles = StyleSheet.create({
         height: 2,
         borderRadius: 2,
         overflow: "hidden",
+    },
+    actions: {
+        position: "absolute",
+        right: 24,
+        bottom: 34,
+        left: 24,
+        flexDirection: "row",
+        gap: 12,
+    },
+    action: {
+        flex: 1,
+        height: 60,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 999,
+    },
+    actionText: {
+        fontSize: 18,
+        fontWeight: "800",
+    },
+    signIn: {
+        backgroundColor: LIME,
+    },
+    signInText: {
+        color: LIME_INK,
+    },
+    pressed: {
+        transform: [{scale: 0.97}],
     },
     ruleFill: {
         width: "100%",
