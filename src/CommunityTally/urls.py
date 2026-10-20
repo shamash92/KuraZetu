@@ -76,6 +76,16 @@ urlpatterns = [
     path("api/historical/", include("historical.api.urls")),
     path("api/specs/", include("specs.api.urls")),
     path("blog/", include("blog.urls")),
+    path(
+        "legal/terms/",
+        TemplateView.as_view(template_name="legal/terms.html"),
+        name="terms",
+    ),
+    path(
+        "legal/privacy/",
+        TemplateView.as_view(template_name="legal/privacy.html"),
+        name="privacy",
+    ),
     path("", home_view, name="home"),
     re_path(r"ui/.*", react_view, name="react"),
 ]
