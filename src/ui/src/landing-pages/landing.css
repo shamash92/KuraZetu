@@ -221,21 +221,18 @@ footer.kz-footer {
   color: var(--ink);
   line-height: 1;
   text-decoration: none;
+  --lockup-width: 125px;
 }
 
-.kz-brand-name {
-  font-size: 24px;
-  font-weight: 800;
+.kz-brand > svg {
+  width: var(--lockup-width);
+  height: auto;
 }
 
-.kz-brand-name::after {
-  content: ".";
-  color: var(--red);
-  font-weight: 900;
-}
-
+/* Starts the tag under the wordmark, past the mark (118 of the lockup's 428 units). */
 .kz-brand-tag {
   margin-top: 4px;
+  margin-left: calc(var(--lockup-width) * 118 / 428);
   color: var(--mute);
   font-family: var(--mono);
   font-size: 11px;
@@ -978,7 +975,19 @@ a.kz-pill:hover {
   background: var(--ink);
 }
 
-.kz-cta h2 { margin: 0 0 18px; font-size: 48px; font-weight: 900; line-height: 1.04; }
+/* The brand banner's bars and strike, cut off by the right edge; the content keeps clear of it. */
+.kz-cta { grid-template-columns: minmax(0, 1fr) 260px; padding-right: calc(24% + 24px); }
+.kz-cta > div { position: relative; }
+.kz-cta-pattern {
+  position: absolute;
+  top: -22%;
+  right: -19%;
+  width: auto;
+  height: 150%;
+  pointer-events: none;
+}
+
+.kz-cta h2 { margin: 0 0 18px; font-size: 42px; font-weight: 900; line-height: 1.04; }
 .kz-cta p { max-width: 520px; margin: 0; color: rgba(247, 246, 243, 0.72); font-size: 15px; line-height: 1.6; }
 .kz-cta > div:last-child { display: flex; flex-direction: column; gap: 11px; }
 
@@ -1121,12 +1130,13 @@ footer.kz-footer {
   .kz-why { grid-template-columns: 1fr; gap: 42px; padding: 72px 24px; }
   .kz-cta-wrap { padding-block: 72px; }
   .kz-cta { grid-template-columns: 1fr; padding: 48px 34px; }
+  .kz-cta-pattern { display: none; }
   .kz-foot-grid { grid-template-columns: 1.4fr 1fr 1fr; }
   .kz-foot-grid > div:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 560px) {
-  .kz-brand-name { font-size: 21px; }
+  .kz-brand { --lockup-width: 110px; }
   .kz-hero { padding-top: 50px; }
   .kz-hero h1 { font-size: 46px; line-height: 0.96; }
   .kz-hero > p { margin-top: 23px; font-size: 15px; }

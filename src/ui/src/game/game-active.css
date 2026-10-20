@@ -53,19 +53,15 @@
   text-decoration: none;
 }
 
-.pv-game-brand strong {
-  font-size: 19px;
-  font-weight: 850;
-  letter-spacing: -0.045em;
+.pv-game-brand > svg {
+  width: 100px;
+  height: auto;
 }
 
-.pv-game-brand strong::after {
-  color: #c44539;
-  content: ".";
-}
-
+/* Starts the tag under the wordmark, past the mark (118 of the lockup's 428 units). */
 .pv-game-brand span {
   margin-top: 4px;
+  margin-left: calc(100px * 118 / 428);
   color: var(--pv-mute);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 8px;

@@ -14,6 +14,7 @@ import {toast} from "sonner";
 import MapComponent from "./Map";
 import {isPinOutsideWard} from "./wardGeometry";
 import {useAuth} from "../App";
+import {Lockup} from "../brand/Mark";
 import {SiteNavLinks} from "../landing-pages";
 import {
     POLLING_CENTER_PARTIALLY_VERIFIED_URL,
@@ -512,7 +513,7 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
         <div className="pv-game">
             <header className="pv-game-nav">
                 <a className="pv-game-brand" href="/ui/">
-                    <strong>KuraZetu</strong>
+                    <Lockup width={100} />
                     <span>Powered by Kiongozi</span>
                 </a>
 

@@ -2,7 +2,17 @@
 <header class="site-nav{% if sticky_nav %} site-nav--sticky{% endif %}">
   <div class="site-nav__inner">
     <a class="site-brand" href="/" aria-label="KuraZetu home">
-      <span class="site-brand__name">KuraZetu<span aria-hidden="true">.</span></span>
+      {# The lockup from src/ui/src/brand/Mark.tsx; inline so the wordmark uses the page's Public Sans. #}
+      <svg class="site-brand__lockup" viewBox="0 0 428 96" width="125" height="28" aria-hidden="true">
+        <g transform="scale(0.1875)">
+          <rect x="136" y="152" width="56" height="224" rx="28" fill="#0d0d0d" />
+          <rect x="228" y="152" width="56" height="224" rx="28" fill="#0d0d0d" />
+          <rect x="320" y="152" width="56" height="224" rx="28" fill="#0d0d0d" />
+          <path d="M108 376 L404 152" stroke="#c4ff5e" stroke-width="56" stroke-linecap="round" fill="none" />
+        </g>
+        <text x="118" y="66" font-family="Public Sans, sans-serif" font-weight="800" font-size="62" letter-spacing="-2.5" fill="#0d0d0d">KuraZetu</text>
+        <circle cx="404" cy="56" r="9" fill="#c44539" />
+      </svg>
       <span class="site-brand__tag">Powered by Kiongozi</span>
     </a>
     <button class="site-nav__toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="site-navigation" hidden>
