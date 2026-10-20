@@ -62,6 +62,7 @@ def test_page_navigation_matches_landing_page(client, page, current):
         "pinVerify254",
         "Docs",
         "Blog",
+        "Brand",
         "Developers",
         "Specs",
         "API",

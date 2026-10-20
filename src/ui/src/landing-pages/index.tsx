@@ -262,7 +262,7 @@ function AtlasBackground() {
     );
 }
 
-type NavSection = "pinverify" | "specs";
+type NavSection = "pinverify" | "specs" | "brand";
 
 /**
  * The site's links, the same wherever a navigation bar appears. The Django
@@ -282,6 +282,9 @@ export function SiteNavLinks({current}: {current?: NavSection}) {
                 Docs
             </a>
             <a href="/blog/">Blog</a>
+            <a href="/ui/brand/" aria-current={current === "brand" ? "page" : undefined}>
+                Brand
+            </a>
             <details
                 className="kz-nav-group"
                 // Closes when focus leaves it, so it does not stay open over
@@ -362,6 +365,7 @@ export function LandingNav({current}: {current?: NavSection} = {}) {
                         <a href="/ui/game/">pinVerify254</a>
                         <a href="https://kurazetu.readthedocs.io/">Docs</a>
                         <a href="/blog/">Blog</a>
+                        <a href="/ui/brand/">Brand</a>
                         <span className="kz-mobile-nav-label">Developers</span>
                         <a href="/ui/specs/">Specs</a>
                         <a href="/api/schema/rapidoc/">API</a>
