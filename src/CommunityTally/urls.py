@@ -78,9 +78,9 @@ urlpatterns = [
     path("blog/", include("blog.urls")),
     path("", home_view, name="home"),
     re_path(r"ui/.*", react_view, name="react"),
-    path("__reload__/", include("django_browser_reload.urls")),
 ]
 
 if settings.DEBUG:
+    urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

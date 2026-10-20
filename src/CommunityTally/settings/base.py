@@ -52,7 +52,6 @@ THIRD_PARTY_APPS = [
     "rest_framework_gis",
     "crispy_forms",
     "crispy_tailwind",
-    "django_browser_reload",
     "drf_spectacular",
     "drf_spectacular_sidecar",
     "admin_honeypot",
@@ -60,6 +59,9 @@ THIRD_PARTY_APPS = [
     "django_otp.plugins.otp_totp",
     "django_tailwind_cli",
 ]
+
+if DEBUG:
+    THIRD_PARTY_APPS.append("django_browser_reload")
 
 MY_APPS = ["accounts", "stations", "ui", "results", "historical", "blog", "specs"]
 
@@ -90,10 +92,12 @@ MIDDLEWARE = [
     "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django_browser_reload.middleware.BrowserReloadMiddleware",
     "CommunityTally.logging_utils.request_id.RequestIDMiddleware",
     "axes.middleware.AxesMiddleware",
 ]
+
+if DEBUG:
+    MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
 
 ROOT_URLCONF = "CommunityTally.urls"
 
