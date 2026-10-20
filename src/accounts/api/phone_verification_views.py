@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.contrib.auth import login
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from knox.models import AuthToken
 from rest_framework import status
@@ -14,6 +16,7 @@ from accounts.api.serializers import (
     SignupCompletionSerializer,
     UserSerializer,
 )
+from accounts.auth_security import log_event
 from accounts.authentication import issue_native_token
 from accounts.models import PhoneVerificationChallenge, User
 from accounts.phone_verification import (
@@ -181,6 +184,7 @@ class SignupCompletionView(PhoneVerificationAPIView):
         verification_ticket = data.pop("verification_ticket")
         password = data.pop("password")
         native_client = data.pop("client", None) == "native"
+        data.pop("accepted_terms")
         ward_code = data.pop("ward_code")
         polling_center_code = data.pop("polling_center")
 
@@ -204,6 +208,8 @@ class SignupCompletionView(PhoneVerificationAPIView):
                     phone_number=ticket.challenge.phone_number,
                     polling_center=polling_center,
                     is_phone_verified=True,
+                    terms_accepted_at=timezone.now(),
+                    terms_version=settings.TERMS_VERSION,
                 )
                 user.set_password(password)
                 user.save()
@@ -230,6 +236,12 @@ class SignupCompletionView(PhoneVerificationAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        log_event(
+            request._request,
+            "auth.signup_succeeded",
+            user=user,
+            terms_version=user.terms_version,
+        )
         response_data = {"user": UserSerializer(user).data}
         if native_client:
             response_data["token"] = token

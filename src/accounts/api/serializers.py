@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
+    BooleanField,
     CharField,
     ChoiceField,
     HiddenField,
@@ -42,11 +43,13 @@ class SignupCompletionSerializer(ModelSerializer):
     polling_center = CharField(max_length=8, write_only=True)
     # The Native app asks for a Knox token instead of a web session.
     client = ChoiceField(choices=("native",), required=False, write_only=True)
+    accepted_terms = BooleanField(write_only=True)
 
     class Meta:
         model = User
         fields = (
             "verification_ticket",
+            "accepted_terms",
             "client",
             "password",
             "ward_code",
@@ -57,6 +60,11 @@ class SignupCompletionSerializer(ModelSerializer):
             "first_name",
             "last_name",
         )
+
+    def validate_accepted_terms(self, value):
+        if not value:
+            raise ValidationError("Accept the terms of use to sign up.")
+        return value
 
     def validate_password(self, value):
         try:

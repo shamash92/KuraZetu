@@ -109,6 +109,10 @@ class User(AbstractBaseUser):
 
     is_verified = models.BooleanField(default=False)
     is_phone_verified = models.BooleanField(default=False)
+    # When the person accepted the terms of use at signup. Empty for accounts
+    # made before signup asked.
+    terms_accepted_at = models.DateTimeField(blank=True, null=True)
+    terms_version = models.CharField(max_length=20, blank=True)
 
     active = models.BooleanField(default=True)
     staff = models.BooleanField(default=False)  # a admin user; non super-user
