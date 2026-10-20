@@ -881,18 +881,26 @@
   color: var(--mute-2);
   cursor: not-allowed;
 }
-.kz-auth .register .terms {
-  margin: 18px 0 0;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.6;
-  letter-spacing: 0.02em;
-  text-align: center;
-  color: var(--mute);
+.kz-auth .register .terms-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 4px 0 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  cursor: pointer;
 }
-.kz-auth .register .terms a {
+.kz-auth .register .terms-check input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--ink);
+}
+.kz-auth .register .terms-check a {
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
