@@ -174,9 +174,30 @@ def verified_signup_payload(client, polling_center):
     }
 
 
-def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_center):
+@pytest.mark.parametrize(
+    "requested_role",
+    [
+        None,
+        "voter",
+        "candidate",
+        "media",
+        "observer",
+        "party_agent",
+        "party_rep",
+        "election_officer",
+        "other",
+        "invalid",
+    ],
+)
+def test_verified_signup_ticket_creates_a_phone_verified_voter_once(
+    polling_center, requested_role
+):
     client = APIClient()
     payload = verified_signup_payload(client, polling_center)
+    if requested_role is None:
+        payload.pop("role")
+    else:
+        payload["role"] = requested_role
 
     response = client.post(reverse("signup_completion_api"), payload, format="json")
 
@@ -185,6 +206,7 @@ def test_verified_signup_ticket_creates_a_phone_verified_user_once(polling_cente
     user = User.objects.get(phone_number=NUMBER)
     assert client.session["_auth_user_id"] == str(user.pk)
     assert user.is_phone_verified is True
+    assert user.role == "voter"
     assert user.polling_center == polling_center
     assert (
         client.post(

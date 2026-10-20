@@ -32,21 +32,6 @@ const formSchema = z
             .min(18, "You must be at least 18 years old to register")
             .max(100, "Are you sure you are this old and using a smartphone?")
             .optional(),
-        role: z.enum(
-            [
-                "voter",
-                "candidate",
-                "media",
-                "observer",
-                "party_agent",
-                "party_rep",
-                "election_officer",
-                "other",
-            ],
-            {
-                required_error: "Please select a role",
-            },
-        ),
         password: z.string().min(8, "Password must be at least 8 characters long"),
         confirm_password: z
             .string()
@@ -85,7 +70,6 @@ export default function SignupForm() {
             first_name: "",
             last_name: "",
             age: undefined,
-            role: "voter",
             password: "",
             confirm_password: "",
         },
@@ -103,6 +87,7 @@ export default function SignupForm() {
                 },
                 body: JSON.stringify({
                     ...values,
+                    role: "voter",
                     verification_ticket: verificationTicket,
                     ward_code: wardCode,
                     polling_center: pollingCenterCode,
@@ -182,7 +167,6 @@ export default function SignupForm() {
     const firstName = form.watch("first_name");
     const lastName = form.watch("last_name");
     const gender = form.watch("gender");
-    const role = form.watch("role");
     const password = form.watch("password");
     const confirmPassword = form.watch("confirm_password");
 
@@ -193,7 +177,6 @@ export default function SignupForm() {
         !lastName ||
         lastName.length < 2 ||
         gender === undefined ||
-        !role ||
         !password ||
         password.length < 8 ||
         !confirmPassword ||
@@ -396,59 +379,6 @@ export default function SignupForm() {
                                 </span>
                             )}
                         </div>
-                    </div>
-
-                    {/* Role */}
-                    <div className="field">
-                        <span className="label">Your Role</span>
-                        <div className="sel-wrap">
-                            <Controller
-                                control={form.control}
-                                name="role"
-                                render={({field}) => (
-                                    <select
-                                        className="sel"
-                                        value={field.value ?? "voter"}
-                                        onChange={(e) => field.onChange(e.target.value)}
-                                    >
-                                        <option value="voter">Voter</option>
-                                        <option value="party_agent">Agent</option>
-                                        <option value="candidate">Candidate</option>
-                                        <option value="media">Media</option>
-                                        <option value="observer">Observer</option>
-                                        <option value="election_officer">
-                                            Election Officer
-                                        </option>
-                                        <option value="party_rep">
-                                            Party Representative
-                                        </option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                )}
-                            />
-                            <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.4"
-                                strokeLinecap="round"
-                            >
-                                <path d="M6 9l6 6 6-6" />
-                            </svg>
-                        </div>
-                        <span className="help">
-                            Select the role that best describes you
-                        </span>
-                        {errors.role && (
-                            <span
-                                style={{
-                                    color: "var(--red)",
-                                    fontSize: "12px",
-                                }}
-                            >
-                                {errors.role.message}
-                            </span>
-                        )}
                     </div>
 
                     {/* Password + Confirm Password */}

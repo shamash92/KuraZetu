@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
     CharField,
     ChoiceField,
+    HiddenField,
     ModelSerializer,
     Serializer,
     UUIDField,
@@ -33,6 +34,8 @@ class PhoneVerificationCodeSerializer(Serializer):
 
 
 class SignupCompletionSerializer(ModelSerializer):
+    # Roles beyond voter are granted only after verification, never at signup.
+    role = HiddenField(default="voter")
     verification_ticket = CharField(min_length=32, max_length=128, write_only=True)
     password = CharField(write_only=True)
     ward_code = CharField(write_only=True)
