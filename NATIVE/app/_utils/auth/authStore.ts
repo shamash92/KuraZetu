@@ -8,12 +8,15 @@ type UserState = {
     // Face ID or a fingerprint is needed before the app is shown again.
     isLocked: boolean;
     shouldCreateAccount: boolean;
+    // The server has a terms version this person has not accepted yet.
+    termsOutdated: boolean;
     userToken: null | string;
     expoPushToken: string | null;
     setExpoPushToken: (expoPushToken: string | null) => void;
     logIn: (userToken: string) => void;
     logOut: () => Promise<void>;
     lock: () => void;
+    setTermsOutdated: (termsOutdated: boolean) => void;
 };
 
 // Builds before Knox persisted a permanent DRF token. Nothing that grants
@@ -28,6 +31,7 @@ export const useAuthStore = create<UserState>((set) => ({
     isLoggedIn: false,
     isLocked: false,
     shouldCreateAccount: false,
+    termsOutdated: false,
     userToken: null,
     expoPushToken: null,
     setExpoPushToken: (expoPushToken: string | null) => {
@@ -60,6 +64,7 @@ export const useAuthStore = create<UserState>((set) => ({
                 ...state,
                 isLoggedIn: false,
                 isLocked: false,
+                termsOutdated: false,
                 userToken: null,
             };
         });
@@ -72,6 +77,7 @@ export const useAuthStore = create<UserState>((set) => ({
             };
         });
     },
+    setTermsOutdated: (termsOutdated: boolean) => set({termsOutdated}),
 }));
 
 export default useAuthStore;
