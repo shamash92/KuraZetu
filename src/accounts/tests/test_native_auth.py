@@ -9,6 +9,8 @@ from django.utils import timezone
 
 import pytest
 from axes.models import AccessAttempt
+from django_otp import DEVICE_ID_SESSION_KEY
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from knox.models import AuthToken
 from rest_framework.test import APIClient
 
@@ -223,3 +225,25 @@ def test_native_endpoints_reject_web_sessions_and_drf_tokens(user):
         .status_code
         == 401
     )
+
+
+def test_admin_password_change_signs_the_account_out_of_the_app(user, client):
+    token = native_login().data["data"]["token"]
+    staff = User.objects.create_superuser("+254700000002", PASSWORD)
+    client.force_login(staff)
+    # The admin also needs a second factor.
+    session = client.session
+    session[DEVICE_ID_SESSION_KEY] = TOTPDevice.objects.create(user=staff).persistent_id
+    session.save()
+
+    response = client.post(
+        reverse("admin:auth_user_password_change", args=[user.pk]),
+        {
+            "usable_password": "true",
+            "password1": "new-password-only",
+            "password2": "new-password-only",
+        },
+    )
+
+    assert response["Location"] == reverse("admin:accounts_user_change", args=[user.pk])
+    assert session_status(token) == 401

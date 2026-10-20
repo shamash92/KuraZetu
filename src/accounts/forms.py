@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import AdminPasswordChangeForm, ReadOnlyPasswordHashField
 
+from knox.models import AuthToken
 from phonenumber_field.formfields import PhoneNumberField
 
 from accounts.models import User
@@ -109,6 +110,8 @@ class MyAdminPasswordChangeForm(AdminPasswordChangeForm):
         self.user.set_password(password)
         if commit:
             self.user.save()
+            # Sign the account out of the native app on every phone.
+            AuthToken.objects.filter(user=self.user).delete()
         return self.user
 
 
