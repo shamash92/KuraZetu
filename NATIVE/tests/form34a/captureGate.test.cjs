@@ -102,10 +102,11 @@ test("a usable frame that is not yet ready says hold still", () => {
         label: "Hold still",
         hint: null,
         ok: true,
+        settling: true,
     });
 });
 
-test("the brackets are red when unusable, copper when usable, lime when ready", () => {
+test("the brackets are red when unusable, yellow when usable, lime when ready", () => {
     const unusable = run([[BLURRY, PAGE, 0]]);
     const usable = run([[GOOD, PAGE, 0]]);
     const ready = run([
@@ -165,7 +166,7 @@ test("the guidance keeps naming the problem while capture anyway is offered", ()
     });
 });
 
-test("a usable frame without a camera time keeps copper brackets but no ready run", () => {
+test("a usable frame without a camera time keeps yellow brackets but no ready run", () => {
     const result = run([[GOOD, PAGE, Number.NaN]]);
 
     assert.equal(result.view.bracket, "ok");

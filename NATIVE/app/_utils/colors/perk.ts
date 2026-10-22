@@ -17,6 +17,8 @@ export const CORAL = "#ffd0c0";
 export const CORAL_DEEP = "#a8442a";
 export const RED = "#c44539";
 
+export const YELLOW = "#ffd23f";
+
 export const PERIWINKLE = "#c8d4ff";
 export const PERIWINKLE_DEEP = "#2532a8";
 
@@ -56,6 +58,7 @@ export const perk = {
     coral: CORAL,
     coralDeep: CORAL_DEEP,
     red: RED,
+    yellow: YELLOW,
     periwinkle: PERIWINKLE,
     periwinkleDeep: PERIWINKLE_DEEP,
     copper: COPPER,
