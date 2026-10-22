@@ -1,5 +1,5 @@
 import type {BracketState} from "./FramingBracket";
-import {type FrameQuality, assessQuality} from "./frameQuality.ts";
+import {type FrameQuality, assessQuality, isTooDark} from "./frameQuality.ts";
 
 /** How long usable frames must continue before the shutter is offered. */
 const READY_SECONDS = 2;
@@ -10,6 +10,9 @@ const READY_SECONDS = 2;
  * camera time never advances.
  */
 export const CAPTURE_ANYWAY_MS = 15_000;
+
+/** Camera time the page must stay too dark before the light is suggested or lit. */
+const DARK_SECONDS = 1;
 
 /** The page must occupy enough pixels to preserve handwritten digits. */
 const MIN_PAGE_COVERAGE = 0.35;
@@ -23,6 +26,9 @@ export type PageOutline = {
     areaFraction: number;
     aspectRatio: number;
 };
+
+/** The person's light setting; null when the phone has no torch. */
+export type LightSetting = "off" | "auto" | "on";
 
 /** One smoothed measurement of a preview frame. */
 export type GateReading = {
@@ -40,6 +46,10 @@ export type CaptureGateState = {
     /** Camera time of the first usable frame in the current run. */
     usableSinceSeconds: number | null;
     ready: boolean;
+    /** Camera time of the first too-dark frame in the current dark run. */
+    darkSinceSeconds: number | null;
+    /** Auto has turned the light on; it stays on until the camera closes. */
+    autoLit: boolean;
 };
 
 /** `anyway` offers a photograph without the quality check. */
@@ -61,6 +71,8 @@ export type CaptureGateView = {
     shutter: ShutterState;
     /** Wall-clock time Capture anyway is offered; null before the camera opens. */
     anywayAtMs: number | null;
+    /** Whether the torch should be lit, before the app-in-foreground check. */
+    torchOn: boolean;
 };
 
 export type CaptureGateResult = {
@@ -89,6 +101,7 @@ export const INITIAL_CAPTURE_VIEW: CaptureGateView = {
     bracket: "bad",
     shutter: "waiting",
     anywayAtMs: null,
+    torchOn: false,
 };
 
 /** Start a new gate when the camera opens, on retake, or after a reset. */
@@ -98,14 +111,51 @@ export function startCaptureGate(nowMs: number): CaptureGateState {
         lastReading: null,
         usableSinceSeconds: null,
         ready: false,
+        darkSinceSeconds: null,
+        autoLit: false,
+    };
+}
+
+function isDarkLongEnough(state: CaptureGateState) {
+    return (
+        state.darkSinceSeconds !== null &&
+        !!state.lastReading &&
+        state.lastReading.cameraSeconds - state.darkSinceSeconds >= DARK_SECONDS
+    );
+}
+
+function advanceDark(
+    previous: CaptureGateState,
+    reading: GateReading,
+    light: LightSetting | null,
+): Pick<CaptureGateState, "darkSinceSeconds" | "autoLit"> {
+    const dark = isTooDark(reading.quality);
+    const darkSinceSeconds = !dark
+        ? null
+        : previous.darkSinceSeconds === null ||
+            reading.cameraSeconds < previous.darkSinceSeconds
+          ? reading.cameraSeconds
+          : previous.darkSinceSeconds;
+    const longEnough =
+        darkSinceSeconds !== null &&
+        reading.cameraSeconds - darkSinceSeconds >= DARK_SECONDS;
+
+    return {
+        darkSinceSeconds,
+        autoLit: previous.autoLit || (light === "auto" && longEnough),
     };
 }
 
 function advanceRun(
     previous: CaptureGateState,
     reading: GateReading,
+    light: LightSetting | null,
 ): CaptureGateState {
-    const base = {...previous, lastReading: reading};
+    const base = {
+        ...previous,
+        ...advanceDark(previous, reading, light),
+        lastReading: reading,
+    };
 
     if (!isUsable(reading) || !Number.isFinite(reading.cameraSeconds)) {
         return {...base, usableSinceSeconds: null, ready: false};
@@ -124,9 +174,17 @@ function advanceRun(
     };
 }
 
-function describeGuidance(state: CaptureGateState): Guidance | null {
+function describeGuidance(
+    state: CaptureGateState,
+    light: LightSetting | null,
+): Guidance | null {
     const reading = state.lastReading;
     if (!reading) return null;
+
+    // First: in the dark the page often cannot be found, and light fixes both.
+    if (light === "off" && isDarkLongEnough(state)) {
+        return {label: "Too dark", hint: "Tap the light", ok: false};
+    }
 
     if (!isPageCovered(reading.document)) {
         return {
@@ -146,15 +204,20 @@ function describeGuidance(state: CaptureGateState): Guidance | null {
     return {label: assessment.label, hint: assessment.hint, ok: assessment.ok};
 }
 
-function describeView(state: CaptureGateState, nowMs: number): CaptureGateView {
+function describeView(
+    state: CaptureGateState,
+    nowMs: number,
+    light: LightSetting | null,
+): CaptureGateView {
     const usable = !!state.lastReading && isUsable(state.lastReading);
     const anywayAtMs = state.openedAtMs + CAPTURE_ANYWAY_MS;
 
     return {
-        guidance: describeGuidance(state),
+        guidance: describeGuidance(state, light),
         bracket: !usable ? "bad" : state.ready ? "steady" : "ok",
         shutter: state.ready ? "ready" : nowMs >= anywayAtMs ? "anyway" : "waiting",
         anywayAtMs,
+        torchOn: light === "on" || (light === "auto" && state.autoLit),
     };
 }
 
@@ -167,13 +230,16 @@ function describeView(state: CaptureGateState, nowMs: number): CaptureGateView {
  */
 export function advanceCaptureGate(
     previous: CaptureGateState,
-    input: {nowMs: number; reading?: GateReading},
+    input: {nowMs: number; light?: LightSetting | null; reading?: GateReading},
 ): CaptureGateResult {
-    const state = input.reading ? advanceRun(previous, input.reading) : previous;
+    const light = input.light ?? null;
+    const state = input.reading
+        ? advanceRun(previous, input.reading, light)
+        : previous;
 
     return {
         state,
-        view: describeView(state, input.nowMs),
+        view: describeView(state, input.nowMs, light),
         becameReady: !previous.ready && state.ready,
     };
 }

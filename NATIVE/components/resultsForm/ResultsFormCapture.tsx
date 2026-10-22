@@ -27,6 +27,7 @@ import {File} from "expo-file-system";
 
 import {LiveCameraPane} from "./camera/LiveCameraPane";
 import {CameraPermissionModal} from "./camera/PermissionModal";
+import type {LightSetting} from "./camera/captureGate";
 import {getCameraPermissionRecovery} from "./camera/cameraPermission";
 import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
 import {VoteEntryPane} from "./entry/VoteEntryPane";
@@ -201,6 +202,9 @@ export function ResultsFormCapture({
     const [wasVisible, setWasVisible] = useState(false);
     const device = useCameraDevice("back");
     const [aspect, setAspect] = useState<CaptureAspect>(DEFAULT_ASPECT);
+    /** Starts at Off for each form; kept across retakes until the form closes. */
+    const [light, setLight] = useState<LightSetting>("off");
+    const hasTorch = !!device?.hasTorch;
     const [permissionError, setPermissionError] = useState<string | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [captureError, setCaptureError] = useState<string | null>(null);
@@ -328,6 +332,7 @@ export function ResultsFormCapture({
     const {frameOutput, resetAnalysis, view} = useFrameAnalysis({
         active: visible && showCamera,
         aspect,
+        light: hasTorch ? light : null,
     });
 
     // Reset the form each time the sheet opens (render-phase state adjustment).
@@ -346,6 +351,7 @@ export function ResultsFormCapture({
         setCaptureError(null);
         setStreamCheck(null);
         setUnreadPhotos(0);
+        setLight("off");
     } else if (!visible && wasVisible) {
         setWasVisible(false);
     }
@@ -566,6 +572,8 @@ export function ResultsFormCapture({
                             active={visible && showCamera}
                             aspect={aspect}
                             cameraError={cameraError}
+                            light={hasTorch ? light : null}
+                            onLightChange={setLight}
                             captureError={captureError}
                             device={device}
                             frameOutput={frameOutput}

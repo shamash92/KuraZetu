@@ -183,3 +183,106 @@ test("the view says when capture anyway becomes available", () => {
     assert.equal(opened.view.anywayAtMs, OPENED_MS + 15_000);
     assert.equal(reopened.view.anywayAtMs, OPENED_MS + 45_000);
 });
+
+// Below the "Too dark" brightness cutoff.
+const DARK = {brightness: 40, sharpness: 3000, glare: 0};
+
+/** Feed readings with one light setting; each is [quality, cameraSeconds]. */
+function runLit(light, readings, state = startCaptureGate(OPENED_MS)) {
+    let result;
+    for (const [quality, cameraSeconds] of readings) {
+        result = advanceCaptureGate(state, {
+            nowMs: OPENED_MS,
+            light,
+            reading: {quality, document: PAGE, cameraSeconds},
+        });
+        state = result.state;
+    }
+    return result;
+}
+
+test("with the light off, a page dark for a second says to tap the light", () => {
+    const early = runLit("off", [
+        [DARK, 0],
+        [DARK, 0.9],
+    ]);
+    const late = runLit("off", [[DARK, 1]], early.state);
+
+    assert.equal(early.view.guidance.hint, "Move to better light");
+    assert.deepEqual(late.view.guidance, {
+        label: "Too dark",
+        hint: "Tap the light",
+        ok: false,
+    });
+    assert.equal(late.view.torchOn, false);
+});
+
+test("a phone without a light never says to tap it", () => {
+    const result = runLit(null, [
+        [DARK, 0],
+        [DARK, 2],
+    ]);
+
+    assert.equal(result.view.guidance.hint, "Move to better light");
+    assert.equal(result.view.torchOn, false);
+});
+
+test("one brighter reading restarts the dark second", () => {
+    const result = runLit("auto", [
+        [DARK, 0],
+        [GOOD, 0.5],
+        [DARK, 0.6],
+        [DARK, 1.5],
+    ]);
+
+    assert.equal(result.view.torchOn, false);
+});
+
+test("auto turns the light on after a dark second and leaves it on", () => {
+    const lit = runLit("auto", [
+        [DARK, 0],
+        [DARK, 1],
+    ]);
+    const brightAgain = runLit("auto", [[GOOD, 2]], lit.state);
+
+    assert.equal(lit.view.torchOn, true);
+    assert.equal(brightAgain.view.torchOn, true);
+});
+
+test("reopening the camera on auto starts with the light off", () => {
+    const result = advanceCaptureGate(startCaptureGate(OPENED_MS), {
+        nowMs: OPENED_MS,
+        light: "auto",
+    });
+
+    assert.equal(result.view.torchOn, false);
+});
+
+test("on lights at once and off keeps it dark", () => {
+    const on = advanceCaptureGate(startCaptureGate(OPENED_MS), {
+        nowMs: OPENED_MS,
+        light: "on",
+    });
+    const off = runLit("off", [
+        [DARK, 0],
+        [DARK, 3],
+    ]);
+
+    assert.equal(on.view.torchOn, true);
+    assert.equal(off.view.torchOn, false);
+});
+
+test("the light hint comes before page guidance, since a dark page cannot be found", () => {
+    let state = startCaptureGate(OPENED_MS);
+    let result;
+    for (const cameraSeconds of [0, 1]) {
+        result = advanceCaptureGate(state, {
+            nowMs: OPENED_MS,
+            light: "off",
+            reading: {quality: DARK, document: null, cameraSeconds},
+        });
+        state = result.state;
+    }
+
+    assert.equal(result.view.guidance.hint, "Tap the light");
+});

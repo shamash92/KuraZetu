@@ -145,6 +145,11 @@ const THRESHOLDS = {
     glareBad: 0.05,
 };
 
+/** Whether the page is too dark to read: the "Too dark" brightness grade. */
+export function isTooDark(quality: FrameQuality): boolean {
+    return quality.brightness < THRESHOLDS.brightnessDark;
+}
+
 /**
  * Turn raw metrics into grades plus a single instruction.
  *
