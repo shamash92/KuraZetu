@@ -363,7 +363,7 @@ LOG_FORMAT = config("LOG_FORMAT", default="console" if DEBUG else "json")
 # A JSON file alongside stdout, for tools that want a path to tail rather than a
 # journalctl call: the log-reading agent, and anything correlating application
 # events with nginx access logs while chasing bad traffic. The tracked local
-# template writes to logs/app.json under BASE_DIR, and .gitignore keeps it out
+# template writes to logs/app.log under BASE_DIR, and .gitignore keeps it out
 # of commits. Empty disables file logging.
 #
 # WatchedFileHandler, never RotatingFileHandler: it reopens the file when
@@ -472,7 +472,7 @@ if LOG_FILE:
     for _logger in LOGGING["loggers"].values():
         _logger["handlers"].append("logfile")
 
-# Auth records have their own JSON destination and do not propagate to app.json.
+# Auth records have their own JSON destination and do not propagate to app.log.
 # They still reach stdout/journald, including when the file is unavailable.
 AUTH_LOG_FILE = config("AUTH_LOG_FILE", default="logs/auth_logs.log")
 if AUTH_LOG_FILE:

@@ -7,7 +7,7 @@ machine that made them and are ignored by Git.
 
 The decision point is mostly operational policy: where logs live, who rotates
 them, and how hard we enforce redaction. Kura Zetu keeps stdout and journald as
-the baseline, makes `LOG_FILE=logs/app.json` a first-class repo-local option,
+the baseline, makes `LOG_FILE=logs/app.log` a first-class repo-local option,
 rotates production files outside the app with `logrotate` (see
 [How to configure log rotation](../how-to-guides/configure-log-rotation.md)),
 and aggressively deletes or converts unsafe `print()` calls.
@@ -25,9 +25,9 @@ The journal is storage, not a passing stream. Records survive restarts and
 reboots, and `journalctl` queries them by unit, time and field. Locally there
 is no systemd, so standard output is the terminal running `runserver`.
 
-Setting `LOG_FILE` adds a JSON file next to stdout, for tools that would rather
-tail a path: the log-reading agent, or anything correlating application events
-with nginx while chasing bad traffic. Keeping that file in the ignored
+Setting `LOG_FILE` adds a file of JSON records next to stdout, for tools that
+would rather tail a path: the log-reading agent, or anything correlating
+application events with nginx while chasing bad traffic. Keeping that file in the ignored
 `logs/` directory also lets an agent inspect runtime evidence and source code
 inside one workspace. It uses `WatchedFileHandler`, so `logrotate` owns
 production rotation and several Gunicorn workers can share one file without
@@ -39,17 +39,17 @@ Three paths are worth knowing:
   journald is running in volatile mode and everything is discarded on reboot,
   which no amount of application configuration can fix. Ubuntu creates it, but
   it is worth confirming on a new server rather than assuming.
-- `logs/app.json` is the repo-local `LOG_FILE` used by the tracked local
+- `logs/app.log` is the repo-local `LOG_FILE` used by the tracked local
   template. Relative paths are resolved under Django's `BASE_DIR`, which is the
   `src/` directory.
-- `/var/log/kurazetu/app.json` is a production-friendly absolute `LOG_FILE`
+- `/var/log/kurazetu/app.log` is a production-friendly absolute `LOG_FILE`
   value, owned by the user Gunicorn runs as.
 - `/var/log/nginx/access.log` is the separate record of requests that arrived,
   including the ones the application never saw.
 
 ## Nothing breaks on a fresh clone
 
-The tracked `.env.local` template sets `LOG_FILE=logs/app.json`. The directory
+The tracked `.env.local` template sets `LOG_FILE=logs/app.log`. The directory
 is ignored by Git and created at startup, so a new contributor gets a file an
 agent can inspect without creating tracked runtime state.
 
