@@ -8,6 +8,7 @@ import {
 } from "react-native-vision-camera";
 
 import {FramingBracket, type BracketState} from "./FramingBracket";
+import {ShutterCountdown} from "./ShutterCountdown";
 import type {CaptureGateView, Guidance, ShutterState} from "./captureGate";
 import type {CaptureAspect} from "./useFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
@@ -149,11 +150,17 @@ function CaptureGuidance({
 
 interface CaptureControlProps {
     shutter: ShutterState;
+    anywayAtMs: number | null;
     onCapture: (qualityChecked: boolean) => void;
     onClose: () => void;
 }
 
-function CaptureControl({shutter, onCapture, onClose}: CaptureControlProps) {
+function CaptureControl({
+    shutter,
+    anywayAtMs,
+    onCapture,
+    onClose,
+}: CaptureControlProps) {
     return (
         <View style={styles.cameraControls}>
             <View style={styles.controlSlot}>
@@ -192,10 +199,7 @@ function CaptureControl({shutter, onCapture, onClose}: CaptureControlProps) {
                         </Text>
                     </TouchableOpacity>
                 ) : (
-                    <View
-                        style={styles.captureButtonWaiting}
-                        importantForAccessibility="no"
-                    />
+                    <ShutterCountdown anywayAtMs={anywayAtMs} />
                 )}
             </View>
             {/* Empty third slot keeps the capture button centred. */}
@@ -257,6 +261,7 @@ export function LiveCameraPane({
             />
             <CaptureControl
                 shutter={cameraAvailable ? view.shutter : "waiting"}
+                anywayAtMs={cameraAvailable ? view.anywayAtMs : null}
                 onCapture={onCapture}
                 onClose={onClose}
             />
@@ -394,12 +399,5 @@ const styles = StyleSheet.create({
         fontWeight: "800",
         lineHeight: 15,
         textAlign: "center",
-    },
-    captureButtonWaiting: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.35)",
     },
 });

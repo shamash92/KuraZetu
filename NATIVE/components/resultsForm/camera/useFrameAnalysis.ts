@@ -43,8 +43,11 @@ const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
     "4:3": CommonResolutions.VGA_4_3,
 };
 
-/** How often the gate is checked when no frame arrives, for Capture anyway. */
-const GATE_TICK_MS = 1000;
+/**
+ * How often the gate is checked when no frame arrives, for Capture anyway.
+ * Short enough that the button follows the full countdown ring at once.
+ */
+const GATE_TICK_MS = 250;
 
 interface UseFrameAnalysisOptions {
     active: boolean;
@@ -193,8 +196,9 @@ export function useFrameAnalysis({
     const resetAnalysis = React.useCallback(() => {
         invalidateAnalysis();
         smoothedRef.current = null;
-        gateRef.current = startCaptureGate(Date.now());
-        setView(INITIAL_CAPTURE_VIEW);
+        const nowMs = Date.now();
+        gateRef.current = startCaptureGate(nowMs);
+        setView(advanceCaptureGate(gateRef.current, {nowMs}).view);
     }, [invalidateAnalysis]);
 
     React.useEffect(() => {

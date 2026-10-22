@@ -171,3 +171,15 @@ test("a usable frame without a camera time keeps copper brackets but no ready ru
     assert.equal(result.view.bracket, "ok");
     assert.equal(result.view.shutter, "waiting");
 });
+
+test("the view says when capture anyway becomes available", () => {
+    const opened = advanceCaptureGate(startCaptureGate(OPENED_MS), {
+        nowMs: OPENED_MS + 4_000,
+    });
+    const reopened = advanceCaptureGate(startCaptureGate(OPENED_MS + 30_000), {
+        nowMs: OPENED_MS + 31_000,
+    });
+
+    assert.equal(opened.view.anywayAtMs, OPENED_MS + 15_000);
+    assert.equal(reopened.view.anywayAtMs, OPENED_MS + 45_000);
+});

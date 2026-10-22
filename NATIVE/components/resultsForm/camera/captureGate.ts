@@ -9,7 +9,7 @@ const READY_SECONDS = 2;
  * Wall clock, not camera time: on a phone whose frames are never measured,
  * camera time never advances.
  */
-const CAPTURE_ANYWAY_MS = 15_000;
+export const CAPTURE_ANYWAY_MS = 15_000;
 
 /** The page must occupy enough pixels to preserve handwritten digits. */
 const MIN_PAGE_COVERAGE = 0.35;
@@ -59,6 +59,8 @@ export type CaptureGateView = {
     guidance: Guidance | null;
     bracket: BracketState;
     shutter: ShutterState;
+    /** Wall-clock time Capture anyway is offered; null before the camera opens. */
+    anywayAtMs: number | null;
 };
 
 export type CaptureGateResult = {
@@ -86,6 +88,7 @@ export const INITIAL_CAPTURE_VIEW: CaptureGateView = {
     guidance: null,
     bracket: "bad",
     shutter: "waiting",
+    anywayAtMs: null,
 };
 
 /** Start a new gate when the camera opens, on retake, or after a reset. */
@@ -145,12 +148,13 @@ function describeGuidance(state: CaptureGateState): Guidance | null {
 
 function describeView(state: CaptureGateState, nowMs: number): CaptureGateView {
     const usable = !!state.lastReading && isUsable(state.lastReading);
-    const anywayDue = nowMs - state.openedAtMs >= CAPTURE_ANYWAY_MS;
+    const anywayAtMs = state.openedAtMs + CAPTURE_ANYWAY_MS;
 
     return {
         guidance: describeGuidance(state),
         bracket: !usable ? "bad" : state.ready ? "steady" : "ok",
-        shutter: state.ready ? "ready" : anywayDue ? "anyway" : "waiting",
+        shutter: state.ready ? "ready" : nowMs >= anywayAtMs ? "anyway" : "waiting",
+        anywayAtMs,
     };
 }
 
