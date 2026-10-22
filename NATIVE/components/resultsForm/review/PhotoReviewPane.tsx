@@ -1,4 +1,6 @@
+import {useState} from "react";
 import {Image, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {Image as FullSizeImage} from "expo-image";
 import {Check} from "lucide-react-native";
 import {
     NativeNitroImage,
@@ -6,6 +8,7 @@ import {
 } from "react-native-nitro-image";
 
 import type {StreamCheck} from "./streamCheck";
+import {ZoomableFrame} from "./ZoomableFrame";
 import {perk} from "@/app/_utils/colors";
 
 interface PhotoReviewPaneProps {
@@ -89,6 +92,9 @@ export function PhotoReviewPane({
     onGoBack,
 }: PhotoReviewPaneProps) {
     const imageStyle = [styles.reviewImage, {aspectRatio: previewAspect}];
+    // The preview is a small copy; zoomed in, only the saved photo shows
+    // whether handwritten digits are readable.
+    const [showFullSize, setShowFullSize] = useState(false);
     const notice = streamNotice(streamCheck, canUsePhoto);
     const otherStream =
         streamCheck !== null &&
@@ -109,23 +115,38 @@ export function PhotoReviewPane({
     return (
         <View style={styles.reviewContainer}>
             <View style={styles.reviewImageFrame}>
-                {preview ? (
-                    <NativeNitroImage
-                        image={preview}
-                        style={imageStyle}
-                        resizeMode="contain"
-                        accessible
-                        accessibilityLabel={`Captured ${formName} preview`}
-                    />
-                ) : (
-                    <Image
-                        source={{uri: imageUri}}
-                        style={imageStyle}
-                        resizeMode="contain"
-                        accessible
-                        accessibilityLabel={`Captured ${formName} preview`}
-                    />
-                )}
+                <ZoomableFrame
+                    borderRadius={12}
+                    onZoomIn={() => setShowFullSize(true)}
+                >
+                    {preview ? (
+                        <NativeNitroImage
+                            image={preview}
+                            style={imageStyle}
+                            resizeMode="contain"
+                            accessible
+                            accessibilityLabel={`Captured ${formName} preview`}
+                            accessibilityHint="Pinch or double-tap to zoom"
+                        />
+                    ) : (
+                        <Image
+                            source={{uri: imageUri}}
+                            style={imageStyle}
+                            resizeMode="contain"
+                            accessible
+                            accessibilityLabel={`Captured ${formName} preview`}
+                            accessibilityHint="Pinch or double-tap to zoom"
+                        />
+                    )}
+                    {showFullSize && (
+                        <FullSizeImage
+                            source={{uri: imageUri}}
+                            style={StyleSheet.absoluteFill}
+                            contentFit="contain"
+                            allowDownscaling={false}
+                        />
+                    )}
+                </ZoomableFrame>
             </View>
             <Text
                 style={styles.reviewPrompt}
