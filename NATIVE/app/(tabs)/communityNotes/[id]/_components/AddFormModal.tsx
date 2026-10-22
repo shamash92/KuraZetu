@@ -72,11 +72,13 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
 
     const handleSubmit = ({
         image,
+        qualityChecked,
         votes,
         rejectedVotes,
         disputedVotes,
     }: {
         image: string;
+        qualityChecked: boolean;
         votes: Record<string, number>;
         rejectedVotes: number;
         disputedVotes: number;
@@ -106,6 +108,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                                 votes: candidateVotes,
                                 rejected_votes: rejectedVotes,
                                 disputed_votes: disputedVotes,
+                                quality_checked: qualityChecked,
                             }),
                         );
 

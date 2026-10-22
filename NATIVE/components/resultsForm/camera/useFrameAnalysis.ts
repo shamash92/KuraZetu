@@ -6,18 +6,18 @@ import {scheduleOnRN} from "react-native-worklets";
 
 import * as Haptics from "expo-haptics";
 
-import type {BracketState} from "./FramingBracket";
 import {
-    CaptureReadiness,
-    INITIAL_CAPTURE_READINESS,
-    advanceCaptureReadiness,
-} from "./captureReadiness";
-import {DetectedDocument, detectDocument} from "./documentDetection";
+    CaptureGateState,
+    CaptureGateView,
+    INITIAL_CAPTURE_VIEW,
+    advanceCaptureGate,
+    startCaptureGate,
+} from "./captureGate";
+import {detectDocument} from "./documentDetection";
 import {
     FrameQuality,
     LumaThumbnail,
     analyseLumaPlane,
-    assessQuality,
     extractLumaThumbnail,
     smoothQuality,
 } from "./frameQuality";
@@ -43,21 +43,8 @@ const FRAME_RESOLUTION: Record<CaptureAspect, Size> = {
     "4:3": CommonResolutions.VGA_4_3,
 };
 
-/** The detected form must occupy enough pixels to preserve handwritten digits. */
-const MIN_DOCUMENT_COVERAGE = 0.35;
-
-/** A wide range for a perspective-distorted A4 portrait page. */
-const MIN_DOCUMENT_ASPECT = 0.45;
-const MAX_DOCUMENT_ASPECT = 1.0;
-
-function isDocumentCovered(document: DetectedDocument | null) {
-    return (
-        !!document &&
-        document.areaFraction >= MIN_DOCUMENT_COVERAGE &&
-        document.aspectRatio >= MIN_DOCUMENT_ASPECT &&
-        document.aspectRatio <= MAX_DOCUMENT_ASPECT
-    );
-}
+/** How often the gate is checked when no frame arrives, for Capture anyway. */
+const GATE_TICK_MS = 1000;
 
 interface UseFrameAnalysisOptions {
     active: boolean;
@@ -67,20 +54,18 @@ interface UseFrameAnalysisOptions {
 /**
  * Own the complete live-analysis pipeline behind one camera-facing interface.
  *
- * The form only consumes guidance, diagnostics, readiness, a reset operation,
- * and the configured frame output. Worklet scheduling, OpenCV, smoothing and
- * native-frame disposal remain private to this module.
+ * The form only consumes the gate's view, a reset operation, and the
+ * configured frame output. Worklet scheduling, OpenCV, smoothing and
+ * native-frame disposal remain private to this module; what the screen shows
+ * is decided by the capture gate.
  */
 export function useFrameAnalysis({
     active,
     aspect,
 }: UseFrameAnalysisOptions) {
-    const [quality, setQuality] = useState<FrameQuality | null>(null);
-    const [document, setDocument] = useState<DetectedDocument | null>(null);
-    const [readiness, setReadiness] = useState<CaptureReadiness>(
-        INITIAL_CAPTURE_READINESS,
-    );
-    const readinessRef = React.useRef(INITIAL_CAPTURE_READINESS);
+    const [view, setView] = useState<CaptureGateView>(INITIAL_CAPTURE_VIEW);
+    /** Null until the camera opens; resetAnalysis starts each gate. */
+    const gateRef = React.useRef<CaptureGateState | null>(null);
     const smoothedRef = React.useRef<FrameQuality | null>(null);
 
     // At most one copied thumbnail may wait for the React Native thread. The
@@ -100,15 +85,11 @@ export function useFrameAnalysis({
         ) => {
             try {
                 if (generation !== analysisGeneration.get()) return;
+                if (!gateRef.current) return;
 
                 const found = detectDocument(thumbnail);
-                setDocument(found);
-
                 const smoothed = smoothQuality(smoothedRef.current, measured);
                 smoothedRef.current = smoothed;
-                setQuality(smoothed);
-
-                const covered = isDocumentCovered(found);
 
                 if (LOG_READINGS)
                     console.log(
@@ -122,15 +103,18 @@ export function useFrameAnalysis({
                             `ratio=${found ? found.aspectRatio.toFixed(2) : "-"}`,
                     );
 
-                const transition = advanceCaptureReadiness(
-                    readinessRef.current,
-                    assessQuality(smoothed).ok && covered,
-                    timestampSeconds,
-                );
-                readinessRef.current = transition.state;
-                setReadiness(transition.state);
+                const result = advanceCaptureGate(gateRef.current, {
+                    nowMs: Date.now(),
+                    reading: {
+                        quality: smoothed,
+                        document: found,
+                        cameraSeconds: timestampSeconds,
+                    },
+                });
+                gateRef.current = result.state;
+                setView(result.view);
 
-                if (transition.becameReady) {
+                if (result.becameReady) {
                     Haptics.notificationAsync(
                         Haptics.NotificationFeedbackType.Success,
                     );
@@ -143,35 +127,6 @@ export function useFrameAnalysis({
         },
         [analysisGeneration, analysisInFlightRequest],
     );
-
-    const rawAssessment = quality ? assessQuality(quality) : null;
-    const covered = isDocumentCovered(document);
-    const assessment =
-        rawAssessment && !covered
-            ? {
-                  ...rawAssessment,
-                  label: document ? "Move closer" : "Show the whole form",
-                  hint: document
-                      ? "Fill the brackets with the form"
-                      : "Fit all four edges inside the brackets",
-                  ok: false,
-              }
-            : rawAssessment?.ok &&
-                readiness.goodSinceSeconds !== null &&
-                !readiness.ready
-              ? {
-                    ...rawAssessment,
-                    label: "Hold still",
-                    hint: null,
-                }
-              : rawAssessment;
-
-    const readyToCapture = readiness.ready;
-    const bracketState: BracketState = !assessment?.ok
-        ? "bad"
-        : readyToCapture
-          ? "steady"
-          : "ok";
 
     const frameOutput = useFrameOutput({
         targetResolution: FRAME_RESOLUTION[aspect],
@@ -237,22 +192,35 @@ export function useFrameAnalysis({
 
     const resetAnalysis = React.useCallback(() => {
         invalidateAnalysis();
-        setQuality(null);
-        setDocument(null);
         smoothedRef.current = null;
-        readinessRef.current = INITIAL_CAPTURE_READINESS;
-        setReadiness(INITIAL_CAPTURE_READINESS);
+        gateRef.current = startCaptureGate(Date.now());
+        setView(INITIAL_CAPTURE_VIEW);
     }, [invalidateAnalysis]);
 
     React.useEffect(() => {
         if (!active) invalidateAnalysis();
     }, [active, invalidateAnalysis]);
 
+    // Capture anyway runs on the wall clock, so it must appear even on a
+    // phone whose frames are never measured. Between frames only the
+    // shutter can change, so other ticks leave the view alone.
+    React.useEffect(() => {
+        if (!active) return;
+        const interval = setInterval(() => {
+            if (!gateRef.current) return;
+            const result = advanceCaptureGate(gateRef.current, {
+                nowMs: Date.now(),
+            });
+            setView((previous) =>
+                previous.shutter === result.view.shutter ? previous : result.view,
+            );
+        }, GATE_TICK_MS);
+        return () => clearInterval(interval);
+    }, [active]);
+
     return {
-        assessment,
-        bracketState,
         frameOutput,
-        readyToCapture,
         resetAnalysis,
+        view,
     };
 }
