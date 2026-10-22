@@ -193,3 +193,73 @@ def test_accounts_cannot_be_deleted_any_other_way(user):
     with pytest.raises(DeletionRefused), transaction.atomic():
         User.objects.filter(pk=user.pk).delete()
     assert User.objects.filter(pk=user.pk).exists()
+
+
+def test_deleting_an_account_on_the_web_while_signed_out(
+    user, client, deletion_log, django_capture_on_commit_callbacks
+):
+    assert client.get(reverse("delete_account")).status_code == 200
+    assert client.get(reverse("delete_account_confirm")).status_code == 200
+
+    wrong = client.post(
+        reverse("delete_account_confirm"),
+        {"phone_number": NUMBER, "password": "wrong-password"},
+    )
+    assert wrong.status_code == 200
+    assert "Invalid phone number or password." in wrong.content.decode()
+    assert User.objects.filter(pk=user.pk).exists()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        response = client.post(
+            reverse("delete_account_confirm"),
+            {"phone_number": NUMBER, "password": PASSWORD},
+            follow=True,
+        )
+
+    assert response.redirect_chain[-1][0] == reverse("delete_account_done")
+    assert "Your account is deleted" in response.content.decode()
+    assert not User.objects.filter(pk=user.pk).exists()
+    assert json.loads(deletion_log[0])["channel"] == "web"
+
+
+def test_deleting_the_signed_in_account_on_the_web_signs_it_out(user, client):
+    client.force_login(user)
+
+    client.post(
+        reverse("delete_account_confirm"),
+        {"phone_number": NUMBER, "password": PASSWORD},
+    )
+
+    assert "_auth_user_id" not in client.session
+    assert not User.objects.filter(pk=user.pk).exists()
+
+
+def test_a_signed_in_staff_account_is_refused_on_the_web(user, client):
+    user.staff = True
+    user.save()
+    client.force_login(user)
+
+    response = client.post(
+        reverse("delete_account_confirm"),
+        {"phone_number": NUMBER, "password": PASSWORD},
+    )
+
+    assert "Ask one to delete it." in response.content.decode()
+    assert User.objects.filter(pk=user.pk).exists()
+
+
+def test_the_web_form_shows_the_sign_in_lock(user, client, settings):
+    settings.AXES_FAILURE_LIMIT = 1
+    client.post(
+        reverse("delete_account_confirm"),
+        {"phone_number": NUMBER, "password": "wrong-password"},
+    )
+
+    response = client.post(
+        reverse("delete_account_confirm"),
+        {"phone_number": NUMBER, "password": PASSWORD},
+    )
+
+    assert response.status_code == 429
+    assert "Too many failed login attempts." in response.content.decode()
+    assert User.objects.filter(pk=user.pk).exists()

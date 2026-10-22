@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Kura Zetu - Delete your account</title>
+{% endblock %}
+
+{% block extra_head %}
+    <meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="{% static 'shared/site-nav.css' %}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <style>
+      .kz-delete-page { display: flex; flex-direction: column; min-height: 100vh; background: #f7f6f3; }
+      .kz-delete {
+        --lime: #c4ff5e; --lime-deep: #a8e63a; --lime-ink: #0a0a0a;
+        --coral: #ffd0c0; --coral-deep: #a8442a;
+        --paper: #f7f6f3; --card: #ffffff;
+        --ink: #0d0d0d; --mute: #6b6d72; --mute-2: #9a9da3;
+        --rule-08: rgba(13,13,13,0.07); --rule-16: rgba(13,13,13,0.14);
+        --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+        flex: 1;
+        display: flex; align-items: center; justify-content: center;
+        padding: 32px 16px;
+        font-family: var(--sans);
+        color: var(--ink);
+        background: var(--paper);
+      }
+      .kz-delete * { box-sizing: border-box; }
+
+      .kz-delete-card {
+        width: 100%; max-width: 480px;
+        padding: 44px 40px;
+        background: var(--card);
+        border: 1px solid var(--rule-08);
+        border-radius: 24px;
+        box-shadow: 0 24px 60px rgba(13,13,13,0.10);
+      }
+      .kz-delete h1 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; }
+      .kz-delete h2 { margin: 26px 0 8px; font-size: 16px; font-weight: 800; }
+      .kz-delete p, .kz-delete li { font-size: 15px; line-height: 1.55; color: var(--ink); }
+      .kz-delete .lede { margin: 12px 0 0; color: var(--mute); }
+      .kz-delete ul { margin: 0; padding-left: 20px; }
+      .kz-delete li + li { margin-top: 4px; }
+      .kz-delete p { margin: 0; }
+
+      .kz-delete form { margin-top: 26px; }
+      .kz-delete .kz-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+      .kz-delete .kz-field label { font-size: 14px; font-weight: 700; }
+      .kz-delete .kz-field input,
+      .kz-delete .kz-field select {
+        appearance: none; width: 100%;
+        padding: 14px;
+        border: 1.5px solid var(--rule-16); border-radius: 12px;
+        background: var(--card); color: var(--ink);
+        font-family: var(--sans); font-size: 16px; font-weight: 600;
+        outline: none;
+      }
+      .kz-delete .kz-field input:focus,
+      .kz-delete .kz-field select:focus { border-color: var(--ink); }
+      .kz-delete .kz-field select { margin-bottom: 8px; }
+      .kz-delete .kz-err { margin: 0; font-size: 13px; color: var(--coral-deep); font-weight: 600; }
+      .kz-delete .kz-nonfield {
+        margin-bottom: 20px; padding: 13px 16px;
+        background: var(--coral); color: var(--coral-deep);
+        border-radius: 12px; font-size: 14px; line-height: 1.5;
+      }
+
+      .kz-delete .kz-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+      .kz-delete .kz-button {
+        flex: 1 1 160px;
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 15px 22px;
+        border: 0; border-radius: 14px;
+        font-family: var(--sans); font-size: 15px; font-weight: 800;
+        text-decoration: none; cursor: pointer;
+      }
+      .kz-delete .kz-next { background: var(--lime); color: var(--lime-ink); }
+      .kz-delete .kz-next:hover { background: var(--lime-deep); }
+      .kz-delete .kz-danger { background: var(--coral-deep); color: var(--paper); }
+      .kz-delete .kz-danger:hover { opacity: 0.9; }
+      .kz-delete .kz-cancel { background: transparent; color: var(--ink); border: 1.5px solid var(--rule-16); }
+      .kz-delete .kz-cancel:hover { border-color: var(--ink); }
+
+      .kz-delete .kz-links { margin-top: 22px; font-size: 14px; color: var(--mute); }
+      .kz-delete .kz-links a { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+      @media (max-width: 520px) {
+        .kz-delete-card { padding: 34px 22px; }
+      }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="kz-delete-page">
+    {% include "shared/site_nav.html" with sticky_nav=True %}
+    <div class="kz-delete">
+        <main class="kz-delete-card">
+            {% if step == "about" %}
+                <h1>Delete your account</h1>
+                <p class="lede">Your account is deleted at once. This cannot be undone.</p>
+
+                <h2>What is deleted</h2>
+                <ul>
+                    <li>Your phone number, name, age, gender, role, and polling centre.</li>
+                    <li>Your sign-ins on every phone and browser.</li>
+                    <li>Your phone verification records.</li>
+                </ul>
+
+                <h2>What is kept</h2>
+                <p>Results forms and polling centre checks you uploaded stay published, without your name or phone number.</p>
+
+                <div class="kz-actions">
+                    <a class="kz-button kz-next" href="{% url 'delete_account_confirm' %}">Next</a>
+                    <a class="kz-button kz-cancel" href="/">Cancel</a>
+                </div>
+
+            {% elif step == "confirm" %}
+                <h1>Enter your phone number and password</h1>
+                <p class="lede">Use the phone number and password of the account you want to delete.</p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if lockout_message %}
+                        <div class="kz-nonfield" role="alert">{{ lockout_message }}</div>
+                    {% elif refused %}
+                        <div class="kz-nonfield" role="alert">{{ refused }}</div>
+                    {% elif form.non_field_errors %}
+                        <div class="kz-nonfield" role="alert">{{ form.non_field_errors|join:", " }}</div>
+                    {% endif %}
+
+                    <div class="kz-field">
+                        <label for="{{ form.phone_number.id_for_label }}">Phone number</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                            <p class="kz-err">{{ form.phone_number.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="kz-field">
+                        <label for="{{ form.password.id_for_label }}">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <p class="kz-err">{{ form.password.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="kz-actions">
+                        <button type="submit" class="kz-button kz-danger">Delete account</button>
+                        <a class="kz-button kz-cancel" href="/">Cancel</a>
+                    </div>
+                </form>
+
+                <p class="kz-links">Forgot your password? <a href="{% url 'password_reset' %}">Reset it</a></p>
+
+            {% else %}
+                <h1>Your account is deleted</h1>
+                <p class="lede">Your personal data is deleted, and you are signed out on every phone and browser.</p>
+
+                <div class="kz-actions">
+                    <a class="kz-button kz-next" href="/">Back to homepage</a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+    </div>
+{% endblock %}
