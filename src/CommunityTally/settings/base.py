@@ -509,3 +509,42 @@ if AUTH_LOG_FILE:
         "filters": ["redaction", "request_context"],
     }
     LOGGING["loggers"]["accounts.security"]["handlers"].append("auth_file")
+
+# One line per deleted account, kept forever (see
+# .deploy/logrotate/kurazetu.conf). File only: journald does not keep records
+# that long. Stdout is used only when the file cannot be written.
+DELETE_ACCOUNT_LOG_FILE = config(
+    "DELETE_ACCOUNT_LOG_FILE", default="logs/delete_account.log"
+)
+if DELETE_ACCOUNT_LOG_FILE:
+    if not os.path.isabs(DELETE_ACCOUNT_LOG_FILE):
+        DELETE_ACCOUNT_LOG_FILE = os.path.join(BASE_DIR, DELETE_ACCOUNT_LOG_FILE)
+    try:
+        os.makedirs(os.path.dirname(DELETE_ACCOUNT_LOG_FILE), exist_ok=True)
+        fd = os.open(
+            DELETE_ACCOUNT_LOG_FILE, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o600
+        )
+        os.close(fd)
+    except OSError as exc:
+        sys.stderr.write(
+            f"DELETE_ACCOUNT_LOG_FILE is not writable ({exc.strerror}); "
+            "account deletions logging to stdout only.\n"
+        )
+        DELETE_ACCOUNT_LOG_FILE = ""
+
+if DELETE_ACCOUNT_LOG_FILE:
+    LOGGING["handlers"]["delete_account_file"] = {
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": DELETE_ACCOUNT_LOG_FILE,
+        "encoding": "utf-8",
+        "formatter": "json",
+        "filters": ["redaction", "request_context"],
+    }
+    _delete_account_handler = "delete_account_file"
+else:
+    _delete_account_handler = "auth_console"
+LOGGING["loggers"]["accounts.deletion"] = {
+    "level": "INFO",
+    "handlers": [_delete_account_handler],
+    "propagate": False,
+}

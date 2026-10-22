@@ -6,4 +6,4 @@ class AccountsConfig(AppConfig):
     name = "accounts"
 
     def ready(self):
-        from accounts import signals  # noqa: F401
+        from accounts import deletion, signals  # noqa: F401

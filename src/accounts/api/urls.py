@@ -10,6 +10,7 @@ from accounts.api.phone_verification_views import (
 )
 from accounts.api.views import (
     AcceptTermsView,
+    NativeDeleteAccountView,
     NativeLoginView,
     NativeLogoutView,
     NativeSessionView,
@@ -31,6 +32,11 @@ urlpatterns = [
         "native/logout/",
         NativeLogoutView.as_view(),
         name="native_logout_api",
+    ),
+    path(
+        "native/delete/",
+        NativeDeleteAccountView.as_view(),
+        name="native_delete_account_api",
     ),
     path(
         "terms/accept/",
