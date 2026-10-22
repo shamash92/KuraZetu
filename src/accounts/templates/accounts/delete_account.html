@@ -13,7 +13,7 @@
     <style>
       .kz-delete {
         --lime: #c4ff5e; --lime-deep: #a8e63a; --lime-ink: #0a0a0a;
-        --coral: #ffd0c0; --coral-deep: #a8442a; --red: #c44539; --red-deep: #a8362c;
+        --coral: #ffd0c0; --coral-deep: #a8442a;
         --paper: #f7f6f3; --card: #ffffff;
         --ink: #0d0d0d; --mute: #6b6d72; --mute-2: #9a9da3;
         --rule-08: rgba(13,13,13,0.07); --rule-16: rgba(13,13,13,0.14);
@@ -59,7 +59,7 @@
       .kz-delete .kz-field input:focus,
       .kz-delete .kz-field select:focus { border-color: var(--ink); }
       .kz-delete .kz-field select { margin-bottom: 8px; }
-      .kz-delete .kz-err { margin: 0; font-size: 13px; color: var(--red); font-weight: 600; }
+      .kz-delete .kz-err { margin: 0; font-size: 13px; color: var(--coral-deep); font-weight: 600; }
       .kz-delete .kz-nonfield {
         margin-bottom: 20px; padding: 13px 16px;
         background: var(--coral); color: var(--coral-deep);
@@ -77,8 +77,8 @@
       }
       .kz-delete .kz-next { background: var(--lime); color: var(--lime-ink); }
       .kz-delete .kz-next:hover { background: var(--lime-deep); }
-      .kz-delete .kz-danger { background: var(--red); color: #fff; }
-      .kz-delete .kz-danger:hover { background: var(--red-deep); }
+      .kz-delete .kz-danger { background: var(--coral-deep); color: var(--paper); }
+      .kz-delete .kz-danger:hover { opacity: 0.9; }
       .kz-delete .kz-cancel { background: transparent; color: var(--ink); border: 1.5px solid var(--rule-16); }
       .kz-delete .kz-cancel:hover { border-color: var(--ink); }
 
