@@ -105,6 +105,9 @@ class PollingCenter(gis_models.Model):
         null=True,
         blank=True,
     )
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     def __str__(self):
         return str(self.name)
@@ -193,6 +196,9 @@ class PollingStation(models.Model):
         null=True,
         blank=True,
     )
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     def __str__(self):
         return f"{self.polling_center} - Stream {self.code}"
@@ -234,6 +240,9 @@ class PollingCenterVerification(gis_models.Model):
         null=True,
         blank=True,
     )
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     ai_suggestion = models.BooleanField(default=False)
     ai_model = models.CharField(

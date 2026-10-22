@@ -17,6 +17,7 @@ from accounts.authentication import (
     WEB_AND_NATIVE_AUTHENTICATION,
     issue_native_token,
 )
+from accounts.deletion import DeletionRefused, delete_account
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +163,45 @@ class NativeLogoutView(APIView):
         user_logged_out.send(
             sender=request.user.__class__, request=request._request, user=request.user
         )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class NativeDeleteAccountView(APIView):
+    """Delete the signed-in account once its password is entered again."""
+
+    authentication_classes = NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        password = (
+            request.data.get("password") if isinstance(request.data, dict) else None
+        )
+        if not isinstance(password, str) or not password:
+            return Response(
+                {"error": "Password is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # authenticate() so a wrong password counts towards the sign-in lock.
+        user = authenticate(
+            request=request._request,
+            phone_number=str(request.user.phone_number),
+            password=password,
+        )
+        if user is None:
+            return Response(
+                {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            delete_account(user, channel="app")
+        except DeletionRefused:
+            return Response(
+                {
+                    "code": "deletion_refused",
+                    "error": "This account can only be deleted by an administrator.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

@@ -2,13 +2,14 @@ from django.contrib import admin
 
 from leaflet.admin import LeafletGeoAdmin
 
+from accounts.admin import KeptContributionAdmin
 from stations.models import (
     Constituency,
     County,
     PollingCenter,
+    PollingCenterVerification,
     PollingStation,
     Ward,
-    PollingCenterVerification,
 )
 
 
@@ -45,7 +46,7 @@ class WardAdmin(LeafletGeoAdmin):
 
 
 @admin.register(PollingCenter)
-class PollingCenterAdmin(LeafletGeoAdmin):
+class PollingCenterAdmin(KeptContributionAdmin, LeafletGeoAdmin):
     readonly_fields = ("code",)
     list_display = (
         "name",
@@ -69,7 +70,7 @@ class PollingCenterAdmin(LeafletGeoAdmin):
 
 
 @admin.register(PollingStation)
-class PollingStationAdmin(LeafletGeoAdmin):
+class PollingStationAdmin(KeptContributionAdmin, LeafletGeoAdmin):
     list_display = (
         "polling_center",
         "code",
@@ -91,10 +92,10 @@ class PollingStationAdmin(LeafletGeoAdmin):
 
 
 @admin.register(PollingCenterVerification)
-class PollingCenterVerificationAdmin(LeafletGeoAdmin):
+class PollingCenterVerificationAdmin(KeptContributionAdmin, LeafletGeoAdmin):
     list_display = (
         "polling_center",
-        "verified_by",
+        "account",
         "is_upvote",
         "ai_suggestion",
         "ai_model",

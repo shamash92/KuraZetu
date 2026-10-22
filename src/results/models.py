@@ -39,6 +39,9 @@ class Party(models.Model):
         null=True,
         blank=True,
     )
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
@@ -100,6 +103,9 @@ class Aspirant(models.Model):
         null=True,
         blank=True,
     )
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     def clean(self):
         # Ensure the correct administrative boundary is selected based on the level
@@ -183,6 +189,9 @@ class PollingStationPresidentialResults(models.Model):
         blank=True,
         related_name="presidential_results_uploaded_by",
     )
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     def clean(self):
         if self.presidential_candidate.level != "president":
@@ -235,6 +244,9 @@ class PollingStationPresidentialExtras(models.Model):
         blank=True,
         related_name="presidential_extras_uploaded_by",
     )
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     # TODO: We need to make sure that the form_34A is uploaded
 

@@ -15,6 +15,21 @@ from .models import (
 )
 
 
+class KeptContributionAdmin:
+    """For models whose rows stay when the linked account is deleted."""
+
+    account_link = "verified_by"
+
+    @admin.display(description="Account")
+    def account(self, obj):
+        if obj.account_deleted:
+            return f"Deleted account {obj.deletion_id}"
+        return getattr(obj, self.account_link) or "-"
+
+    def get_readonly_fields(self, request, obj=None):
+        return (*super().get_readonly_fields(request, obj), "account")
+
+
 class UserAdmin(BaseUserAdmin):
     # The forms to add and change user instances
 
@@ -71,6 +86,11 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ("phone_number",)
     ordering = ("phone_number",)
     filter_horizontal = ()
+
+    def has_delete_permission(self, request, obj=None):
+        # A person deletes their own account, so their uploads are marked
+        # and the deletion is logged. See accounts.deletion.
+        return False
 
 
 admin.site.register(User, UserAdmin)

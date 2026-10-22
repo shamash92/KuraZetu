@@ -1,19 +1,20 @@
 from django.contrib import admin
 
+from accounts.admin import KeptContributionAdmin
 from results.models import (
     Aspirant,
     Party,
     PollingStationGovernorResults,
     PollingStationMCAResults,
     PollingStationMpResults,
+    PollingStationPresidentialExtras,
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
-    PollingStationPresidentialExtras,
 )
 
 
-class AspirantAdmin(admin.ModelAdmin):
+class AspirantAdmin(KeptContributionAdmin, admin.ModelAdmin):
     list_display = (
         "first_name",
         "last_name",
@@ -43,7 +44,7 @@ class AspirantAdmin(admin.ModelAdmin):
 admin.site.register(Aspirant, AspirantAdmin)
 
 
-class PartyAdmin(admin.ModelAdmin):
+class PartyAdmin(KeptContributionAdmin, admin.ModelAdmin):
     list_display = ("name", "short_name", "is_verified", "party_colour_hex")
     search_fields = ("name", "short_name")
     list_filter = ("is_verified",)
@@ -53,7 +54,8 @@ class PartyAdmin(admin.ModelAdmin):
 admin.site.register(Party, PartyAdmin)
 
 
-class PollingStationPresidentialResultsAdmin(admin.ModelAdmin):
+class PollingStationPresidentialResultsAdmin(KeptContributionAdmin, admin.ModelAdmin):
+    account_link = "added_by"
     list_display = (
         "polling_station",
         "presidential_candidate",
@@ -79,7 +81,8 @@ admin.site.register(
 )
 
 
-class PollingStationPresidentialExtrasAdmin(admin.ModelAdmin):
+class PollingStationPresidentialExtrasAdmin(KeptContributionAdmin, admin.ModelAdmin):
+    account_link = "added_by"
 
     list_display = (
         "polling_station",
@@ -88,7 +91,7 @@ class PollingStationPresidentialExtrasAdmin(admin.ModelAdmin):
         "disputed_votes",
         "valid_votes_cast",
         "is_verified",
-        "added_by",
+        "account",
     )
 
     autocomplete_fields = [
