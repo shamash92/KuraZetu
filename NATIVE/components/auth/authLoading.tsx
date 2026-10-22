@@ -6,12 +6,12 @@ import Animated, {
     withSequence,
     withTiming,
 } from "react-native-reanimated";
-import {INK, LIME, MUTE, PAPER, PAPER_DEEP, RULE_08} from "../../app/_utils/colors";
+import {INK, MUTE, PAPER, PAPER_DEEP, RED, RULE_08} from "../../app/_utils/colors";
 import React, {useEffect, useState} from "react";
 import {StyleSheet, Text, View} from "react-native";
-import Svg, {Path} from "react-native-svg";
 
 import {LinearGradient} from "expo-linear-gradient";
+import {Mark} from "@/components/brand/mark";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 const STATUS_HOLD_MS = 2000;
@@ -19,21 +19,6 @@ const STATUS_FADE_MS = 180;
 
 const SWEEP_MS = 1700;
 const SWEEP_EASING = Easing.bezier(0.66, 0, 0.34, 1);
-
-/** The lime squiggle under the wordmark, as on the paper screens. */
-function Squiggle() {
-    return (
-        <Svg width={82} height={7} viewBox="0 0 82 7">
-            <Path
-                d="M1 4.6C11 1.4 21 1.4 31 4.2 41 7 51 7 61 4.4 68 2.6 75 2.2 81 3.4"
-                fill="none"
-                stroke={LIME}
-                strokeWidth={3}
-                strokeLinecap="round"
-            />
-        </Svg>
-    );
-}
 
 /** Indeterminate bar: a short segment sweeping the full track, forever. */
 export function ProgressSweep() {
@@ -123,9 +108,12 @@ export default function AuthLoading({
             ]}
         >
             <View style={styles.mark}>
-                <Text style={styles.wordmark}>KuraZetu</Text>
-                <Squiggle />
-                <Text style={styles.tagline}>Citizen tally</Text>
+                <View style={styles.lockup}>
+                    <Mark width={32} ground="light" />
+                    <Text style={styles.wordmark}>
+                        KuraZetu<Text style={styles.dot}>.</Text>
+                    </Text>
+                </View>
             </View>
 
             <View style={styles.mid}>
@@ -151,20 +139,20 @@ const styles = StyleSheet.create({
     },
     mark: {
         alignItems: "center",
-        gap: 5,
+    },
+    lockup: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
     },
     wordmark: {
-        fontSize: 15,
-        fontWeight: "900",
-        letterSpacing: -0.3,
+        fontFamily: "PublicSans-ExtraBold",
+        fontSize: 28,
+        letterSpacing: -1,
         color: INK,
     },
-    tagline: {
-        fontSize: 9.5,
-        fontWeight: "600",
-        letterSpacing: 2.3,
-        textTransform: "uppercase",
-        color: MUTE,
+    dot: {
+        color: RED,
     },
     mid: {
         flex: 1,
