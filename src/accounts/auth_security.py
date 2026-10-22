@@ -17,6 +17,11 @@ from phonenumber_field.phonenumber import PhoneNumber
 
 logger = logging.getLogger("accounts.security")
 LOCKOUT_MESSAGE = "Too many failed login attempts. Please try again later."
+# Pages whose phone and password form shows the lockout in place.
+PASSWORD_FORM_PAGES = {
+    "/accounts/login/": ("accounts/login.html", {}),
+    "/accounts/delete/confirm/": ("accounts/delete_account.html", {"step": "confirm"}),
+}
 
 
 def account_reference(request, credentials=None):
@@ -119,15 +124,16 @@ def lockout_response(request, original_response=None, credentials=None):
             },
             status=429,
         )
-    elif request.path_info == "/accounts/login/":
+    elif request.path_info in PASSWORD_FORM_PAGES:
         from accounts.forms import LoginForm
 
         form = LoginForm(request=request)
+        template, context = PASSWORD_FORM_PAGES[request.path_info]
         # An unbound form displays the lockout without re-running authentication.
         response = render(
             request,
-            "accounts/login.html",
-            {"form": form, "lockout_message": LOCKOUT_MESSAGE},
+            template,
+            {**context, "form": form, "lockout_message": LOCKOUT_MESSAGE},
             status=429,
         )
     else:
