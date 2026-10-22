@@ -62,6 +62,8 @@ export type Guidance = {
     hint: string | null;
     /** True when the frame is usable. */
     ok: boolean;
+    /** True while a usable frame must stay still before the shutter is ready. */
+    settling?: boolean;
 };
 
 export type CaptureGateView = {
@@ -197,7 +199,7 @@ function describeGuidance(
     }
 
     if (state.usableSinceSeconds !== null && !state.ready) {
-        return {label: "Hold still", hint: null, ok: true};
+        return {label: "Hold still", hint: null, ok: true, settling: true};
     }
 
     const assessment = assessQuality(reading.quality);

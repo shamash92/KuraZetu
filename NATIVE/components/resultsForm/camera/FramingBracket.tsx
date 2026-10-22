@@ -7,7 +7,7 @@ export type BracketState = "bad" | "ok" | "steady";
 /** Also used by the capture tips, so the drawings match the live camera. */
 export const BRACKET_COLOR: Record<BracketState, string> = {
     bad: perk.coralDeep,
-    ok: perk.copperDeep,
+    ok: perk.yellow,
     steady: perk.lime,
 };
 

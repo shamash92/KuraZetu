@@ -520,7 +520,7 @@ function hint(label: string) {
 }
 
 /**
- * The form wobbles inside copper brackets under "Hold still", steadies, the
+ * The form wobbles inside yellow brackets under "Hold still", steadies, the
  * brackets turn lime with "Looks good", and the shutter appears.
  */
 function TapArt({fit}: ArtProps) {

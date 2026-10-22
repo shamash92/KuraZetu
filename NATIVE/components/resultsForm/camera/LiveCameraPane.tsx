@@ -1,6 +1,15 @@
 import {AppState, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {useEffect, useState} from "react";
-import {Camera as CameraIcon, Flashlight, FlashlightOff, X} from "lucide-react-native";
+import {
+    Camera as CameraIcon,
+    CircleAlert,
+    CircleCheck,
+    Flashlight,
+    FlashlightOff,
+    Hand,
+    TriangleAlert,
+    X,
+} from "lucide-react-native";
 import {
     Camera,
     type CameraDevice,
@@ -115,47 +124,68 @@ interface CaptureGuidanceProps {
     captureError: string | null;
 }
 
+type GuidanceTone = "good" | "settling" | "caution" | "bad";
+
+// Each tone sets the banner, icon and text colours together so text never
+// lands on a background it cannot be read against.
+const TONE = {
+    good: {Icon: CircleCheck, background: perk.lime, icon: perk.limeInk, text: perk.limeInk},
+    settling: {Icon: Hand, background: perk.yellow, icon: perk.ink, text: perk.ink},
+    caution: {
+        Icon: TriangleAlert,
+        background: perk.copperSoft,
+        icon: perk.copperDeep,
+        text: perk.ink,
+    },
+    bad: {Icon: CircleAlert, background: perk.coralDeep, icon: perk.card, text: perk.card},
+} as const;
+
+/** A usable frame with advice is a caution, and one still settling is not yet a pass. */
+function guidanceTone(guidance: Guidance): GuidanceTone {
+    if (!guidance.ok) return "bad";
+    if (guidance.hint) return "caution";
+    return guidance.settling ? "settling" : "good";
+}
+
 function CaptureGuidance({
     guidance,
     cameraAvailable,
     captureError,
 }: CaptureGuidanceProps) {
     if (captureError) {
-        return (
-            <View
-                style={[styles.qualityBanner, styles.qualityBannerBad]}
-                accessibilityRole="alert"
-                accessibilityLiveRegion="polite"
-            >
-                <Text style={[styles.qualityLabel, styles.qualityLabelBad]}>
-                    {captureError}
-                </Text>
-            </View>
-        );
+        return <GuidanceBanner tone="bad" label={captureError} hint={null} />;
     }
 
     if (!guidance || !cameraAvailable) return null;
 
     return (
+        <GuidanceBanner
+            tone={guidanceTone(guidance)}
+            label={guidance.label}
+            hint={guidance.hint}
+        />
+    );
+}
+
+interface GuidanceBannerProps {
+    tone: GuidanceTone;
+    label: string;
+    hint: string | null;
+}
+
+function GuidanceBanner({tone, label, hint}: GuidanceBannerProps) {
+    const {Icon, background, icon, text} = TONE[tone];
+    return (
         <View
-            style={[
-                styles.qualityBanner,
-                guidance.ok ? styles.qualityBannerOk : styles.qualityBannerBad,
-            ]}
+            style={[styles.qualityBanner, {backgroundColor: background}]}
             accessibilityRole="alert"
             accessibilityLiveRegion="polite"
         >
-            <Text
-                style={[
-                    styles.qualityLabel,
-                    guidance.ok ? styles.qualityLabelOk : styles.qualityLabelBad,
-                ]}
-            >
-                {guidance.label}
-            </Text>
-            {!!guidance.hint && (
-                <Text style={styles.qualityHint}>{guidance.hint}</Text>
-            )}
+            <Icon size={22} color={icon} strokeWidth={2.4} />
+            <View style={styles.qualityText}>
+                <Text style={[styles.qualityLabel, {color: text}]}>{label}</Text>
+                {!!hint && <Text style={[styles.qualityHint, {color: text}]}>{hint}</Text>}
+            </View>
         </View>
     );
 }
@@ -418,27 +448,26 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: 14,
         alignSelf: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 9,
-        borderRadius: 12,
+        flexDirection: "row",
         alignItems: "center",
-        maxWidth: "88%",
+        gap: 12,
+        paddingLeft: 14,
+        paddingRight: 18,
+        paddingVertical: 11,
+        borderRadius: 14,
+        maxWidth: "90%",
     },
-    qualityBannerOk: {backgroundColor: perk.lime},
-    qualityBannerBad: {backgroundColor: perk.coralDeep},
+    qualityText: {flexShrink: 1},
     qualityLabel: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: "900",
         letterSpacing: -0.2,
     },
-    qualityLabelOk: {color: perk.limeInk},
-    qualityLabelBad: {color: perk.card},
     qualityHint: {
-        fontSize: 11.5,
-        fontWeight: "700",
-        color: perk.card,
+        fontSize: 13,
+        fontWeight: "600",
+        lineHeight: 17,
         marginTop: 2,
-        textAlign: "center",
     },
     cameraControls: {
         position: "absolute",
