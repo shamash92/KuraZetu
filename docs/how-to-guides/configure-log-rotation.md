@@ -35,6 +35,12 @@ This guide assumes a production server running Gunicorn under systemd, with
     grep -E "^(LOG_FILE|AUTH_LOG_FILE|DELETE_ACCOUNT_LOG_FILE)=" src/.env
     ```
 
+    When the files live outside `/var/log`, such as the repo-local
+    `src/logs/` directory, add `su <user> <group>` to each block, matching
+    that block's `create` line. Without it `logrotate` refuses to rotate a
+    file in a group-writable directory, and reports the parent directory as
+    having insecure permissions.
+
 3. **Install it**
 
     ```bash
