@@ -127,6 +127,8 @@ export interface ResultsFormCandidate {
 
 interface ResultsFormSubmission {
     image: string;
+    /** False when the photograph was taken with Capture anyway. */
+    qualityChecked: boolean;
     votes: Record<string, number>;
     rejectedVotes: number;
     disputedVotes: number;
@@ -227,6 +229,8 @@ export function ResultsFormCapture({
     const captureGenerationRef = React.useRef(0);
     const pendingImageRef = React.useRef<string | null>(null);
     const capturedImageRef = React.useRef<string | null>(null);
+    const pendingQualityCheckedRef = React.useRef(true);
+    const capturedQualityCheckedRef = React.useRef(true);
 
     // A Nitro Image owns native memory. Release the previous preview only
     // after React commits the replacement, so the native view never receives
@@ -253,7 +257,7 @@ export function ResultsFormCapture({
         if (captured !== pending) deleteTemporaryPhoto(captured);
     }, []);
 
-    const takePicture = React.useCallback(async () => {
+    const takePicture = React.useCallback(async (qualityChecked: boolean) => {
         // A second capture while one is in flight throws, and the shutter is
         // tappable again the moment the first press is registered.
         if (capturingRef.current) return;
@@ -305,6 +309,7 @@ export function ResultsFormCapture({
             // the cheapest moment to catch a bad shot.
             deleteTemporaryPhoto(pendingImageRef.current);
             pendingImageRef.current = uri;
+            pendingQualityCheckedRef.current = qualityChecked;
             setPendingImage(uri);
             setPendingPreview(preview.current);
             preview.current = null;
@@ -320,13 +325,7 @@ export function ResultsFormCapture({
 
     // Portrait: a 4:3 sensor frame shown upright is 3 wide by 4 tall.
     const previewAspect = aspect === "4:3" ? 3 / 4 : 9 / 16;
-    const {
-        assessment,
-        bracketState,
-        frameOutput,
-        readyToCapture,
-        resetAnalysis,
-    } = useFrameAnalysis({
+    const {frameOutput, resetAnalysis, view} = useFrameAnalysis({
         active: visible && showCamera,
         aspect,
     });
@@ -370,6 +369,7 @@ export function ResultsFormCapture({
 
         onSubmit({
             image: capturedImage,
+            qualityChecked: capturedQualityCheckedRef.current,
             votes,
             rejectedVotes,
             disputedVotes,
@@ -436,6 +436,7 @@ export function ResultsFormCapture({
 
         deleteTemporaryPhoto(capturedImageRef.current);
         capturedImageRef.current = uri;
+        capturedQualityCheckedRef.current = pendingQualityCheckedRef.current;
         pendingImageRef.current = null;
         setCapturedImage(uri);
         setPendingImage(null);
@@ -564,15 +565,13 @@ export function ResultsFormCapture({
                         <LiveCameraPane
                             active={visible && showCamera}
                             aspect={aspect}
-                            assessment={assessment}
-                            bracketState={bracketState}
                             cameraError={cameraError}
                             captureError={captureError}
                             device={device}
                             frameOutput={frameOutput}
                             photoOutput={photoOutput}
                             previewAspect={previewAspect}
-                            readyToCapture={readyToCapture}
+                            view={view}
                             onCameraError={handleCameraError}
                             onCapture={takePicture}
                             onClose={closeCamera}

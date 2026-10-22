@@ -8,24 +8,24 @@ import {
 } from "react-native-vision-camera";
 
 import {FramingBracket, type BracketState} from "./FramingBracket";
-import type {QualityAssessment} from "./frameQuality";
+import {ShutterCountdown} from "./ShutterCountdown";
+import type {CaptureGateView, Guidance, ShutterState} from "./captureGate";
 import type {CaptureAspect} from "./useFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
 
 interface LiveCameraPaneProps {
     active: boolean;
     aspect: CaptureAspect;
-    assessment: QualityAssessment | null;
-    bracketState: BracketState;
     cameraError: string | null;
     captureError: string | null;
     device: CameraDevice | undefined;
     frameOutput: CameraFrameOutput;
     photoOutput: CameraPhotoOutput;
     previewAspect: number;
-    readyToCapture: boolean;
+    view: CaptureGateView;
     onCameraError: (error: Error) => void;
-    onCapture: () => void;
+    /** `qualityChecked` is false for a photograph taken with Capture anyway. */
+    onCapture: (qualityChecked: boolean) => void;
     onClose: () => void;
     onRetry: () => void;
     onToggleAspect: () => void;
@@ -98,13 +98,13 @@ function CameraSurface({
 }
 
 interface CaptureGuidanceProps {
-    assessment: QualityAssessment | null;
+    guidance: Guidance | null;
     cameraAvailable: boolean;
     captureError: string | null;
 }
 
 function CaptureGuidance({
-    assessment,
+    guidance,
     cameraAvailable,
     captureError,
 }: CaptureGuidanceProps) {
@@ -122,13 +122,13 @@ function CaptureGuidance({
         );
     }
 
-    if (!assessment || !cameraAvailable) return null;
+    if (!guidance || !cameraAvailable) return null;
 
     return (
         <View
             style={[
                 styles.qualityBanner,
-                assessment.ok ? styles.qualityBannerOk : styles.qualityBannerBad,
+                guidance.ok ? styles.qualityBannerOk : styles.qualityBannerBad,
             ]}
             accessibilityRole="alert"
             accessibilityLiveRegion="polite"
@@ -136,25 +136,31 @@ function CaptureGuidance({
             <Text
                 style={[
                     styles.qualityLabel,
-                    assessment.ok ? styles.qualityLabelOk : styles.qualityLabelBad,
+                    guidance.ok ? styles.qualityLabelOk : styles.qualityLabelBad,
                 ]}
             >
-                {assessment.label}
+                {guidance.label}
             </Text>
-            {!!assessment.hint && (
-                <Text style={styles.qualityHint}>{assessment.hint}</Text>
+            {!!guidance.hint && (
+                <Text style={styles.qualityHint}>{guidance.hint}</Text>
             )}
         </View>
     );
 }
 
 interface CaptureControlProps {
-    enabled: boolean;
-    onCapture: () => void;
+    shutter: ShutterState;
+    anywayAtMs: number | null;
+    onCapture: (qualityChecked: boolean) => void;
     onClose: () => void;
 }
 
-function CaptureControl({enabled, onCapture, onClose}: CaptureControlProps) {
+function CaptureControl({
+    shutter,
+    anywayAtMs,
+    onCapture,
+    onClose,
+}: CaptureControlProps) {
     return (
         <View style={styles.cameraControls}>
             <View style={styles.controlSlot}>
@@ -170,21 +176,30 @@ function CaptureControl({enabled, onCapture, onClose}: CaptureControlProps) {
                 </TouchableOpacity>
             </View>
             <View style={styles.controlSlot}>
-                {enabled ? (
+                {shutter === "ready" ? (
                     <TouchableOpacity
                         style={styles.captureButton}
-                        onPress={onCapture}
+                        onPress={() => onCapture(true)}
                         accessibilityRole="button"
                         accessibilityLabel="Take photo"
                         accessibilityHint="Captures the results form for review"
                     >
                         <CameraIcon size={32} color={perk.limeInk} />
                     </TouchableOpacity>
+                ) : shutter === "anyway" ? (
+                    <TouchableOpacity
+                        style={styles.captureAnywayButton}
+                        onPress={() => onCapture(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Capture anyway"
+                        accessibilityHint="Takes the photo without the quality check"
+                    >
+                        <Text style={styles.captureAnywayText}>
+                            Capture{"\n"}anyway
+                        </Text>
+                    </TouchableOpacity>
                 ) : (
-                    <View
-                        style={styles.captureButtonWaiting}
-                        importantForAccessibility="no"
-                    />
+                    <ShutterCountdown anywayAtMs={anywayAtMs} />
                 )}
             </View>
             {/* Empty third slot keeps the capture button centred. */}
@@ -197,15 +212,13 @@ function CaptureControl({enabled, onCapture, onClose}: CaptureControlProps) {
 export function LiveCameraPane({
     active,
     aspect,
-    assessment,
-    bracketState,
     cameraError,
     captureError,
     device,
     frameOutput,
     photoOutput,
     previewAspect,
-    readyToCapture,
+    view,
     onCameraError,
     onCapture,
     onClose,
@@ -232,7 +245,7 @@ export function LiveCameraPane({
             <CameraSurface
                 active={active}
                 available={cameraAvailable}
-                bracketState={bracketState}
+                bracketState={view.bracket}
                 error={cameraError}
                 device={device}
                 frameOutput={frameOutput}
@@ -242,12 +255,13 @@ export function LiveCameraPane({
                 onRetry={onRetry}
             />
             <CaptureGuidance
-                assessment={assessment}
+                guidance={view.guidance}
                 cameraAvailable={cameraAvailable}
                 captureError={captureError}
             />
             <CaptureControl
-                enabled={readyToCapture && cameraAvailable}
+                shutter={cameraAvailable ? view.shutter : "waiting"}
+                anywayAtMs={cameraAvailable ? view.anywayAtMs : null}
                 onCapture={onCapture}
                 onClose={onClose}
             />
@@ -370,11 +384,20 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-    captureButtonWaiting: {
+    captureAnywayButton: {
         width: 80,
         height: 80,
         borderRadius: 40,
         borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.35)",
+        borderColor: perk.lime,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    captureAnywayText: {
+        color: perk.lime,
+        fontSize: 12,
+        fontWeight: "800",
+        lineHeight: 15,
+        textAlign: "center",
     },
 });
