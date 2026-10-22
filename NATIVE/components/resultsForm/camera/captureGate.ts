@@ -11,6 +11,13 @@ const READY_SECONDS = 2;
  */
 export const CAPTURE_ANYWAY_MS = 15_000;
 
+/**
+ * Wall-clock time without a measured frame after which the screen stops
+ * trusting the last one. Measuring can stall or throw; a ready shutter must
+ * still mean a recent frame passed.
+ */
+const STALE_READING_MS = 1000;
+
 /** The page must occupy enough pixels to preserve handwritten digits. */
 const MIN_PAGE_COVERAGE = 0.35;
 
@@ -37,6 +44,8 @@ export type CaptureGateState = {
     openedAtMs: number;
     /** The latest reading, kept so a clock tick can redraw the screen. */
     lastReading: GateReading | null;
+    /** Wall-clock time of the latest reading, in milliseconds. */
+    lastReadingAtMs: number | null;
     /** Camera time of the first usable frame in the current run. */
     usableSinceSeconds: number | null;
     ready: boolean;
@@ -96,16 +105,25 @@ export function startCaptureGate(nowMs: number): CaptureGateState {
     return {
         openedAtMs: nowMs,
         lastReading: null,
+        lastReadingAtMs: null,
         usableSinceSeconds: null,
         ready: false,
     };
 }
 
+function isStale(state: CaptureGateState, nowMs: number) {
+    return (
+        state.lastReadingAtMs !== null &&
+        nowMs - state.lastReadingAtMs > STALE_READING_MS
+    );
+}
+
 function advanceRun(
     previous: CaptureGateState,
     reading: GateReading,
+    nowMs: number,
 ): CaptureGateState {
-    const base = {...previous, lastReading: reading};
+    const base = {...previous, lastReading: reading, lastReadingAtMs: nowMs};
 
     if (!isUsable(reading) || !Number.isFinite(reading.cameraSeconds)) {
         return {...base, usableSinceSeconds: null, ready: false};
@@ -113,7 +131,8 @@ function advanceRun(
 
     if (
         previous.usableSinceSeconds === null ||
-        reading.cameraSeconds < previous.usableSinceSeconds
+        reading.cameraSeconds < previous.usableSinceSeconds ||
+        isStale(previous, nowMs)
     ) {
         return {...base, usableSinceSeconds: reading.cameraSeconds, ready: false};
     }
@@ -147,13 +166,15 @@ function describeGuidance(state: CaptureGateState): Guidance | null {
 }
 
 function describeView(state: CaptureGateState, nowMs: number): CaptureGateView {
-    const usable = !!state.lastReading && isUsable(state.lastReading);
+    const stale = isStale(state, nowMs);
+    const usable = !stale && !!state.lastReading && isUsable(state.lastReading);
+    const ready = !stale && state.ready;
     const anywayAtMs = state.openedAtMs + CAPTURE_ANYWAY_MS;
 
     return {
-        guidance: describeGuidance(state),
-        bracket: !usable ? "bad" : state.ready ? "steady" : "ok",
-        shutter: state.ready ? "ready" : nowMs >= anywayAtMs ? "anyway" : "waiting",
+        guidance: stale ? null : describeGuidance(state),
+        bracket: !usable ? "bad" : ready ? "steady" : "ok",
+        shutter: ready ? "ready" : nowMs >= anywayAtMs ? "anyway" : "waiting",
         anywayAtMs,
     };
 }
@@ -169,7 +190,9 @@ export function advanceCaptureGate(
     previous: CaptureGateState,
     input: {nowMs: number; reading?: GateReading},
 ): CaptureGateResult {
-    const state = input.reading ? advanceRun(previous, input.reading) : previous;
+    const state = input.reading
+        ? advanceRun(previous, input.reading, input.nowMs)
+        : previous;
 
     return {
         state,

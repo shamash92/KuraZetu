@@ -139,6 +139,7 @@ test("capture anyway is offered even when no frame was ever measured", () => {
 test("the ready shutter replaces capture anyway", () => {
     const result = run([
         [GOOD, PAGE, 0, OPENED_MS + 20_000],
+        [GOOD, PAGE, 1, OPENED_MS + 21_000],
         [GOOD, PAGE, 2, OPENED_MS + 22_000],
     ]);
 
@@ -182,4 +183,42 @@ test("the view says when capture anyway becomes available", () => {
 
     assert.equal(opened.view.anywayAtMs, OPENED_MS + 15_000);
     assert.equal(reopened.view.anywayAtMs, OPENED_MS + 45_000);
+});
+
+test("ready lapses when no frame has been measured for a second", () => {
+    const ready = run([
+        [GOOD, PAGE, 0, OPENED_MS],
+        [GOOD, PAGE, 1, OPENED_MS + 1_000],
+        [GOOD, PAGE, 2, OPENED_MS + 2_000],
+    ]);
+    const stillReady = advanceCaptureGate(ready.state, {
+        nowMs: OPENED_MS + 3_000,
+    });
+    const lapsed = advanceCaptureGate(ready.state, {
+        nowMs: OPENED_MS + 3_001,
+    });
+
+    assert.equal(stillReady.view.shutter, "ready");
+    assert.equal(lapsed.view.shutter, "waiting");
+    assert.equal(lapsed.view.bracket, "bad");
+    assert.equal(lapsed.view.guidance, null);
+});
+
+test("frames that return after a gap start a new two seconds", () => {
+    const ready = run([
+        [GOOD, PAGE, 0, OPENED_MS],
+        [GOOD, PAGE, 1, OPENED_MS + 1_000],
+        [GOOD, PAGE, 2, OPENED_MS + 2_000],
+    ]);
+    const returned = run([[GOOD, PAGE, 3.5, OPENED_MS + 3_500]], ready.state);
+    const readyAgain = run(
+        [
+            [GOOD, PAGE, 4.5, OPENED_MS + 4_500],
+            [GOOD, PAGE, 5.5, OPENED_MS + 5_500],
+        ],
+        returned.state,
+    );
+
+    assert.equal(returned.view.shutter, "waiting");
+    assert.equal(readyAgain.view.shutter, "ready");
 });
