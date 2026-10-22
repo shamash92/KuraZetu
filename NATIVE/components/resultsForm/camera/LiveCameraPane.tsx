@@ -1,5 +1,6 @@
-import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import {Camera as CameraIcon, X} from "lucide-react-native";
+import {AppState, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {useEffect, useState} from "react";
+import {Camera as CameraIcon, Flashlight, FlashlightOff, X} from "lucide-react-native";
 import {
     Camera,
     type CameraDevice,
@@ -9,7 +10,12 @@ import {
 
 import {FramingBracket, type BracketState} from "./FramingBracket";
 import {ShutterCountdown} from "./ShutterCountdown";
-import type {CaptureGateView, Guidance, ShutterState} from "./captureGate";
+import type {
+    CaptureGateView,
+    Guidance,
+    LightSetting,
+    ShutterState,
+} from "./captureGate";
 import type {CaptureAspect} from "./useFrameAnalysis";
 import {perk} from "@/app/_utils/colors";
 
@@ -17,6 +23,9 @@ interface LiveCameraPaneProps {
     active: boolean;
     aspect: CaptureAspect;
     cameraError: string | null;
+    /** The light setting; null hides the button on a phone without a torch. */
+    light: LightSetting | null;
+    onLightChange: (light: LightSetting) => void;
     captureError: string | null;
     device: CameraDevice | undefined;
     frameOutput: CameraFrameOutput;
@@ -33,6 +42,7 @@ interface LiveCameraPaneProps {
 
 interface CameraSurfaceProps {
     active: boolean;
+    torchOn: boolean;
     available: boolean;
     bracketState: BracketState;
     error: string | null;
@@ -46,6 +56,7 @@ interface CameraSurfaceProps {
 
 function CameraSurface({
     active,
+    torchOn,
     available,
     bracketState,
     error,
@@ -68,6 +79,7 @@ function CameraSurface({
                     style={styles.camera}
                     device={device}
                     isActive={active}
+                    torchMode={torchOn ? "on" : "off"}
                     outputs={[photoOutput, frameOutput]}
                     resizeMode="contain"
                     onError={onCameraError}
@@ -148,9 +160,64 @@ function CaptureGuidance({
     );
 }
 
+const NEXT_LIGHT: Record<LightSetting, LightSetting> = {
+    off: "auto",
+    auto: "on",
+    on: "off",
+};
+
+const LIGHT_WORD: Record<LightSetting, string> = {
+    off: "Off",
+    auto: "Auto",
+    on: "On",
+};
+
+interface LightButtonProps {
+    light: LightSetting;
+    lit: boolean;
+    onChange: (light: LightSetting) => void;
+}
+
+/** Cycles Off, Auto, On. Lime while the torch is lit. */
+function LightButton({light, lit, onChange}: LightButtonProps) {
+    const color = lit ? perk.lime : perk.card;
+    const Icon = light === "off" ? FlashlightOff : Flashlight;
+
+    return (
+        <TouchableOpacity
+            style={styles.lightButton}
+            onPress={() => onChange(NEXT_LIGHT[light])}
+            accessibilityRole="button"
+            accessibilityLabel={`Light, ${LIGHT_WORD[light]}`}
+            accessibilityHint="Changes the light setting"
+            hitSlop={8}
+        >
+            <Icon size={20} color={color} />
+            <Text style={[styles.lightWord, {color}]}>{LIGHT_WORD[light]}</Text>
+        </TouchableOpacity>
+    );
+}
+
+/** Whether the app is in the foreground; the torch goes off in the background. */
+function useAppInForeground() {
+    const [foreground, setForeground] = useState(
+        AppState.currentState === "active",
+    );
+    useEffect(() => {
+        const subscription = AppState.addEventListener("change", (state) =>
+            setForeground(state === "active"),
+        );
+        return () => subscription.remove();
+    }, []);
+    return foreground;
+}
+
 interface CaptureControlProps {
     shutter: ShutterState;
     anywayAtMs: number | null;
+    light: LightSetting | null;
+    lit: boolean;
+    onLightChange: (light: LightSetting) => void;
     onCapture: (qualityChecked: boolean) => void;
     onClose: () => void;
 }
@@ -158,6 +225,9 @@ interface CaptureControlProps {
 function CaptureControl({
     shutter,
     anywayAtMs,
+    light,
+    lit,
+    onLightChange,
     onCapture,
     onClose,
 }: CaptureControlProps) {
@@ -202,8 +272,12 @@ function CaptureControl({
                     <ShutterCountdown anywayAtMs={anywayAtMs} />
                 )}
             </View>
-            {/* Empty third slot keeps the capture button centred. */}
-            <View style={styles.controlSlot} />
+            {/* The third slot keeps the capture button centred, with or without a torch. */}
+            <View style={styles.controlSlot}>
+                {light !== null && (
+                    <LightButton light={light} lit={lit} onChange={onLightChange} />
+                )}
+            </View>
         </View>
     );
 }
@@ -213,6 +287,8 @@ export function LiveCameraPane({
     active,
     aspect,
     cameraError,
+    light,
+    onLightChange,
     captureError,
     device,
     frameOutput,
@@ -226,6 +302,10 @@ export function LiveCameraPane({
     onToggleAspect,
 }: LiveCameraPaneProps) {
     const cameraAvailable = !!device && !cameraError;
+    const foreground = useAppInForeground();
+    // The pane unmounts on review and on close, which turns the torch off;
+    // the background needs this check.
+    const torchOn = view.torchOn && foreground && cameraAvailable;
 
     return (
         <View style={styles.container}>
@@ -244,6 +324,7 @@ export function LiveCameraPane({
 
             <CameraSurface
                 active={active}
+                torchOn={torchOn}
                 available={cameraAvailable}
                 bracketState={view.bracket}
                 error={cameraError}
@@ -262,6 +343,9 @@ export function LiveCameraPane({
             <CaptureControl
                 shutter={cameraAvailable ? view.shutter : "waiting"}
                 anywayAtMs={cameraAvailable ? view.anywayAtMs : null}
+                light={cameraAvailable ? light : null}
+                lit={torchOn}
+                onLightChange={onLightChange}
                 onCapture={onCapture}
                 onClose={onClose}
             />
@@ -383,6 +467,19 @@ const styles = StyleSheet.create({
         backgroundColor: perk.lime,
         justifyContent: "center",
         alignItems: "center",
+    },
+    lightButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: "rgba(13,13,13,0.6)",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 2,
+    },
+    lightWord: {
+        fontSize: 11,
+        fontWeight: "800",
     },
     captureAnywayButton: {
         width: 80,

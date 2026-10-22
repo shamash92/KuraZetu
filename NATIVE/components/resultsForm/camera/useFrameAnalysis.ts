@@ -10,6 +10,7 @@ import {
     CaptureGateState,
     CaptureGateView,
     INITIAL_CAPTURE_VIEW,
+    LightSetting,
     advanceCaptureGate,
     startCaptureGate,
 } from "./captureGate";
@@ -53,6 +54,8 @@ const GATE_TICK_MS = 250;
 interface UseFrameAnalysisOptions {
     active: boolean;
     aspect: CaptureAspect;
+    /** The person's light setting; null when the phone has no torch. */
+    light: LightSetting | null;
 }
 
 /**
@@ -66,11 +69,17 @@ interface UseFrameAnalysisOptions {
 export function useFrameAnalysis({
     active,
     aspect,
+    light,
 }: UseFrameAnalysisOptions) {
     const [view, setView] = useState<CaptureGateView>(INITIAL_CAPTURE_VIEW);
     /** Null until the camera opens; resetAnalysis starts each gate. */
     const gateRef = React.useRef<CaptureGateState | null>(null);
     const smoothedRef = React.useRef<FrameQuality | null>(null);
+    /** Read by readings and ticks; a change shows on the next of either. */
+    const lightRef = React.useRef(light);
+    React.useEffect(() => {
+        lightRef.current = light;
+    }, [light]);
     /** The newest reading shown; an older one arriving late is ignored. */
     const lastAppliedRequestRef = React.useRef(0);
 
@@ -115,6 +124,7 @@ export function useFrameAnalysis({
 
                 const result = advanceCaptureGate(gateRef.current, {
                     nowMs: Date.now(),
+                    light: lightRef.current,
                     reading: {
                         quality: smoothed,
                         document: found,
@@ -214,7 +224,10 @@ export function useFrameAnalysis({
         smoothedRef.current = null;
         const nowMs = Date.now();
         gateRef.current = startCaptureGate(nowMs);
-        setView(advanceCaptureGate(gateRef.current, {nowMs}).view);
+        setView(
+            advanceCaptureGate(gateRef.current, {nowMs, light: lightRef.current})
+                .view,
+        );
     }, [invalidateAnalysis]);
 
     React.useEffect(() => {
@@ -223,16 +236,20 @@ export function useFrameAnalysis({
 
     // Capture anyway runs on the wall clock, so it must appear even on a
     // phone whose frames are never measured. Between frames only the
-    // shutter can change, so other ticks leave the view alone.
+    // shutter and the light can change, so other ticks leave the view alone.
     React.useEffect(() => {
         if (!active) return;
         const interval = setInterval(() => {
             if (!gateRef.current) return;
             const result = advanceCaptureGate(gateRef.current, {
                 nowMs: Date.now(),
+                light: lightRef.current,
             });
             setView((previous) =>
-                previous.shutter === result.view.shutter ? previous : result.view,
+                previous.shutter === result.view.shutter &&
+                previous.torchOn === result.view.torchOn
+                    ? previous
+                    : result.view,
             );
         }, GATE_TICK_MS);
         return () => clearInterval(interval);
