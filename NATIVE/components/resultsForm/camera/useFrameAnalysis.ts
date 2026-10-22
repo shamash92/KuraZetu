@@ -206,9 +206,8 @@ export function useFrameAnalysis({
     }, [active, invalidateAnalysis]);
 
     // Capture anyway runs on the wall clock, so it must appear even on a
-    // phone whose frames are never measured, and a stalled measurement must
-    // end ready. Between frames only the shutter, the bracket and whether
-    // there is guidance can change; other ticks leave the view alone.
+    // phone whose frames are never measured. Between frames only the
+    // shutter can change, so other ticks leave the view alone.
     React.useEffect(() => {
         if (!active) return;
         const interval = setInterval(() => {
@@ -217,11 +216,7 @@ export function useFrameAnalysis({
                 nowMs: Date.now(),
             });
             setView((previous) =>
-                previous.shutter === result.view.shutter &&
-                previous.bracket === result.view.bracket &&
-                (previous.guidance === null) === (result.view.guidance === null)
-                    ? previous
-                    : result.view,
+                previous.shutter === result.view.shutter ? previous : result.view,
             );
         }, GATE_TICK_MS);
         return () => clearInterval(interval);
