@@ -118,6 +118,18 @@ export async function disableBiometricUnlock() {
     await deleteFromSecureStore("biometricUnlock");
 }
 
+// Asks for Face ID or a fingerprint before a sensitive step when biometric
+// unlock is on. True when the check passes or biometric unlock is off.
+export async function confirmWithBiometrics(promptMessage: string) {
+    if ((await getBiometricUnlock()) === "off") return true;
+
+    const result = await LocalAuthentication.authenticateAsync({
+        promptMessage,
+        disableDeviceFallback: true,
+    });
+    return result.success;
+}
+
 // The token was revoked or rejected: drop the copy but keep the preference.
 export async function expireBiometricToken() {
     if ((await getBiometricUnlock()) !== "on") return;

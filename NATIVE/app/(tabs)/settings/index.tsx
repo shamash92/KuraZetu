@@ -18,12 +18,13 @@ import {
     Moon,
     ScanFace,
     ShieldCheck,
+    Trash2,
     User2,
 } from "lucide-react-native";
-import {NEUTRAL, PRIMARY} from "../../_utils/colors";
+import {NEUTRAL, PRIMARY, perk} from "../../_utils/colors";
 import React, {useCallback, useState} from "react";
 
-import {useFocusEffect} from "expo-router";
+import {router, useFocusEffect} from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import {statusBarHeight} from "@/app/_utils/device/screenDimensions";
 import useAuthStore from "@/app/_utils/auth/authStore";
@@ -32,6 +33,7 @@ import {
     BiometricUnlock,
     canUseBiometricUnlock,
     capitalizeLabel,
+    confirmWithBiometrics,
     disableBiometricUnlock,
     enableBiometricUnlock,
     getBiometricUnlock,
@@ -46,7 +48,7 @@ interface SettingItemProps {
     title: string;
     description?: string;
     titleColor?: string | null;
-    bgColor?: string | null;
+    iconBgColor?: string;
     toggle?: boolean;
     toggleValue?: boolean;
     onToggle?: (value: boolean) => void;
@@ -63,19 +65,23 @@ const SettingItem = ({
     toggleValue,
     onToggle,
     onPress,
-    bgColor,
+    iconBgColor,
 }: SettingItemProps) => (
     <TouchableOpacity
         style={{
             flexDirection: "row",
             alignItems: "center",
             padding: 16,
-            backgroundColor: bgColor || "white",
+            backgroundColor: "white",
         }}
         onPress={onPress}
         activeOpacity={onPress ? 0.5 : 1}
     >
-        <View style={styles.settingIcon}>{icon}</View>
+        <View
+            style={[styles.settingIcon, iconBgColor ? {backgroundColor: iconBgColor} : null]}
+        >
+            {icon}
+        </View>
         <View style={styles.settingContent}>
             <Text
                 style={{
@@ -174,6 +180,13 @@ export default function ProfileScreen() {
         }
     };
 
+    const openDeleteAccount = async () => {
+        const confirmed = await confirmWithBiometrics("Delete your account").catch(
+            () => false,
+        );
+        if (confirmed) router.push("/deleteAccount");
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -264,15 +277,27 @@ export default function ProfileScreen() {
                                 console.log("Navigate to data storage settings")
                             }
                         />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <View style={styles.card}>
+                        <SettingItem
+                            icon={<LogOut size={22} color={perk.ink} />}
+                            iconBgColor={perk.surface}
+                            title="Sign out"
+                            titleColor={perk.ink}
+                            onPress={() => handleLogout()}
+                        />
+
                         <View style={styles.divider} />
 
                         <SettingItem
-                            icon={<LogOut size={22} color={PRIMARY[600]} />}
-                            title="Sign out of your account"
-                            // description="Sign out of your account"
-                            titleColor="white"
-                            bgColor="#E55050"
-                            onPress={() => handleLogout()}
+                            icon={<Trash2 size={22} color={perk.coralDeep} />}
+                            iconBgColor={perk.coral}
+                            title="Delete account"
+                            titleColor={perk.coralDeep}
+                            onPress={() => void openDeleteAccount()}
                         />
                     </View>
                 </View>

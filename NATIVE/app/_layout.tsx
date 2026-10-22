@@ -419,6 +419,7 @@ function RootLayoutNav() {
                 </Stack.Protected>
                 <Stack.Protected guard={isLoggedIn && !termsOutdated}>
                     <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+                    <Stack.Screen name="deleteAccount" options={{headerShown: false}} />
                 </Stack.Protected>
                 <Stack.Protected guard={isLoggedIn && termsOutdated}>
                     <Stack.Screen
