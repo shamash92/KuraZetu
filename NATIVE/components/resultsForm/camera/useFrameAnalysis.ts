@@ -14,6 +14,7 @@ import {
     startCaptureGate,
 } from "./captureGate";
 import {detectDocument} from "./documentDetection";
+import {isReadingOverdue} from "./readingSlot";
 import {
     FrameQuality,
     LumaThumbnail,
@@ -70,6 +71,8 @@ export function useFrameAnalysis({
     /** Null until the camera opens; resetAnalysis starts each gate. */
     const gateRef = React.useRef<CaptureGateState | null>(null);
     const smoothedRef = React.useRef<FrameQuality | null>(null);
+    /** The newest reading shown; an older one arriving late is ignored. */
+    const lastAppliedRequestRef = React.useRef(0);
 
     // At most one copied thumbnail may wait for the React Native thread. The
     // tokens also keep callbacks from expired camera sessions out of new ones.
@@ -77,6 +80,8 @@ export function useFrameAnalysis({
     const analysisGeneration = useSharedValue(0);
     const analysisRequestSequence = useSharedValue(0);
     const analysisInFlightRequest = useSharedValue(0);
+    /** Camera time the reading in flight was started, in seconds. */
+    const analysisInFlightSince = useSharedValue(0);
 
     const reportQuality = React.useCallback(
         (
@@ -89,6 +94,8 @@ export function useFrameAnalysis({
             try {
                 if (generation !== analysisGeneration.get()) return;
                 if (!gateRef.current) return;
+                if (requestId <= lastAppliedRequestRef.current) return;
+                lastAppliedRequestRef.current = requestId;
 
                 const found = detectDocument(thumbnail);
                 const smoothed = smoothQuality(smoothedRef.current, measured);
@@ -139,7 +146,15 @@ export function useFrameAnalysis({
             try {
                 frameCounter.value += 1;
                 if (frameCounter.value % FRAME_SAMPLE_INTERVAL !== 0) return;
-                if (analysisInFlightRequest.value !== 0) return;
+                const frameSeconds = frame.timestamp * FRAME_TIMESTAMP_TO_SECONDS;
+                // A reading that never comes back must not stop measuring:
+                // give it up after a while and start another.
+                if (
+                    analysisInFlightRequest.value !== 0 &&
+                    !isReadingOverdue(analysisInFlightSince.value, frameSeconds)
+                ) {
+                    return;
+                }
                 const generation = analysisGeneration.value;
 
                 const planes = frame.getPlanes();
@@ -166,12 +181,13 @@ export function useFrameAnalysis({
                 analysisRequestSequence.value += 1;
                 const requestId = analysisRequestSequence.value;
                 analysisInFlightRequest.value = requestId;
+                analysisInFlightSince.value = frameSeconds;
                 try {
                     scheduleOnRN(
                         reportQuality,
                         measured,
                         thumbnail,
-                        frame.timestamp * FRAME_TIMESTAMP_TO_SECONDS,
+                        frameSeconds,
                         generation,
                         requestId,
                     );
