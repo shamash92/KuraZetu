@@ -494,7 +494,9 @@ export default function GameMap({level, centerId = null, onCenterChange}: GameMa
         needed: 3,
         outliers:
             partiallyVerifiedLocations?.filter(
-                (location) => location.properties.is_outlier,
+                (location) =>
+                    location.properties.is_outlier ||
+                    location.properties.is_outside_ward_boundary,
             ).length ?? 0,
     };
 
