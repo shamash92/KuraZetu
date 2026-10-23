@@ -60,7 +60,8 @@ def recompute_consensus(polling_center):
     """Re-evaluate a center's suggestions and auto-verify on agreement.
 
     - Flags suggestions outside ``CONSENSUS_RADIUS_M`` of the cluster centroid
-      (or outside the ward) as outliers; they never count.
+      as outliers, and suggestions outside the ward as outside the ward.
+      Neither ever counts.
     - When at least ``CONSENSUS_THRESHOLD`` in-cluster suggestions agree, sets
       the center's pin/boundary to the cluster centroid and marks it verified.
 
@@ -83,13 +84,15 @@ def recompute_consensus(polling_center):
 
     agree, outliers = [], []
     for s in suggestions:
-        in_ward = ward_boundary is None or ward_boundary.contains(s.pin_location)
-        near = _haversine_m(s.pin_location, centroid) <= radius_m
-        is_outlier = not (in_ward and near)
-        if s.is_outlier != is_outlier:
-            s.is_outlier = is_outlier
-            s.save(update_fields=["is_outlier"])
-        (outliers if is_outlier else agree).append(s)
+        outside_ward = ward_boundary is not None and not ward_boundary.contains(
+            s.pin_location
+        )
+        far = _haversine_m(s.pin_location, centroid) > radius_m
+        if (s.is_outlier, s.is_outside_ward_boundary) != (far, outside_ward):
+            s.is_outlier = far
+            s.is_outside_ward_boundary = outside_ward
+            s.save(update_fields=["is_outlier", "is_outside_ward_boundary"])
+        (outliers if far or outside_ward else agree).append(s)
 
     # Recompute the centroid from the in-cluster pins only for a tighter centre.
     if agree:

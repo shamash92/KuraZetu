@@ -462,7 +462,7 @@ class VerificationPollingCenterAPIView(APIView):
                         pin_location=polling_center.pin_location,
                         verified_by=user,
                         is_upvote=True,
-                        is_outlier=pin_outside_ward,
+                        is_outside_ward_boundary=pin_outside_ward,
                     )
                 polling_center.refresh_from_db(fields=["location_upvotes"])
 

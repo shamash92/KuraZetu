@@ -96,6 +96,8 @@ class PollingCenter(gis_models.Model):
     boundary = gis_models.PolygonField(blank=True, null=True)
 
     is_verified = models.BooleanField(default=False)
+    # A situation where certain polling centers are actually located outside the provided ward boundaries
+    is_outside_ward_boundary = models.BooleanField(default=False)
     location_upvotes = models.PositiveIntegerField(
         default=0
     )  # TODO: For now the upvotes are not being tied to any user whether authenticated or not. I mean, whoever is bored to keep upvoting, let the be.
@@ -253,9 +255,12 @@ class PollingCenterVerification(gis_models.Model):
     )
     nominatim = models.BooleanField(default=False)
 
-    # Set when the suggestion falls far from the dominant cluster (or outside
-    # the ward). Stored for transparency but ignored by consensus.
+    # Set when the suggestion falls far from the dominant cluster. Stored for
+    # transparency but ignored by consensus.
     is_outlier = models.BooleanField(default=False)
+    # Set when the suggested pin is outside the centre's ward. Also ignored by
+    # consensus; enough of these mark a centre whose site is outside its ward.
+    is_outside_ward_boundary = models.BooleanField(default=False)
 
     date_modified = models.DateTimeField(auto_now=True)
 

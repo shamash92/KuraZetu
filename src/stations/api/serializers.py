@@ -162,6 +162,7 @@ class CommunityNotesPollingCenterSerializer(ModelSerializer):
             "ward",
             "constituency",
             "county",
+            "is_outside_ward_boundary",
         )
 
 
@@ -205,6 +206,7 @@ class PartiallyVerifiedPollingCenterBoundarySerializer(GeoFeatureModelSerializer
             "ai_model",
             "nominatim",
             "is_outlier",
+            "is_outside_ward_boundary",
             "is_upvote",
         )
 
