@@ -18,6 +18,8 @@ export interface IPollingCenterInfo {
     id: number;
     name: string;
     ward: string;
+    /** The centre's site is outside its mapped ward; only a strict check near its pin counts. */
+    is_outside_ward_boundary: boolean;
 }
 
 export interface IPollingStation {
@@ -127,6 +129,8 @@ const ElectionResultsApp = () => {
                                             ward: pollingCenterInfo.ward,
                                             constituency: pollingCenterInfo.constituency,
                                             county: pollingCenterInfo.county,
+                                            is_outside_ward_boundary:
+                                                pollingCenterInfo.is_outside_ward_boundary,
                                         });
                                     }
                                     router.navigate(`/communityNotes/${station.code}`);
