@@ -17,6 +17,9 @@ STORAGES = {
     "staticfiles": {
         "BACKEND": "CommunityTally.aws.utils.StaticRootS3BotoStorage",
     },
+    "uploads": {
+        "BACKEND": "CommunityTally.aws.utils.PrivateUploadS3BotoStorage",
+    },
 }
 
 S3DIRECT_REGION = config("S3_REGION_NAME")

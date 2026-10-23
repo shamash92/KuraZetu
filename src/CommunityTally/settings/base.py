@@ -548,3 +548,16 @@ LOGGING["loggers"]["accounts.deletion"] = {
     "handlers": [_delete_account_handler],
     "propagate": False,
 }
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    # Results form photos. Outside MEDIA_ROOT, so no URL serves them.
+    "uploads": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {"location": os.path.join(BASE_DIR, "private_uploads")},
+    },
+}
+
+# Largest results form photo the server accepts.
+RESULT_UPLOAD_MAX_PHOTO_BYTES = 15 * 1024 * 1024

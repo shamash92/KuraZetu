@@ -1,5 +1,8 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.files.storage import storages
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -400,3 +403,58 @@ class PollingStationMCAResults(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
+
+
+def upload_storage():
+    # Its own storage: results form photos are never served at a public address.
+    return storages["uploads"]
+
+
+def upload_photo_path(instance, filename):
+    # Random, so an address cannot be guessed from the station or the person.
+    return f"result-uploads/{uuid.uuid4().hex}.jpg"
+
+
+class ResultUpload(models.Model):
+    """One photo of a results form and one typed tally, from one account.
+
+    Never changed once stored. A newer upload from the same account for the
+    same station and race replaces it as the current one.
+    """
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["added_by", "polling_station", "race"],
+                condition=models.Q(is_current=True),
+                name="one_current_upload_per_account_station_race",
+            ),
+        ]
+
+    RACE_CHOICES = Aspirant.LEVEL_CHOICES
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Generated once by the application; a repeated request returns this row.
+    key = models.UUIDField(unique=True, editable=False)
+    added_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="result_uploads"
+    )
+    polling_station = models.ForeignKey(
+        PollingStation, on_delete=models.PROTECT, related_name="result_uploads"
+    )
+    race = models.CharField(max_length=40, choices=RACE_CHOICES)
+    # Aspirant id (as text) to votes, for every candidate in the race.
+    votes = models.JSONField()
+    rejected_votes = models.PositiveIntegerField()
+    disputed_votes = models.PositiveIntegerField()
+    photo = models.FileField(storage=upload_storage, upload_to=upload_photo_path)
+    # False when the photo was taken with Capture anyway.
+    quality_checked = models.BooleanField()
+    is_current = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # Set by accounts.deletion when the linked account is deleted.
+    account_deleted = models.BooleanField(default=False, editable=False)
+    deletion_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
+
+    def __str__(self) -> str:
+        return f"{self.polling_station} - {self.race} - {self.created_at}"
