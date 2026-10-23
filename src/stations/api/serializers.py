@@ -236,6 +236,11 @@ class PollingStationInfoSerializer(ModelSerializer):
         ward = self._ward(obj)
         return ward.constituency.county.name if ward else None
 
+    is_outside_ward_boundary = SerializerMethodField()
+
+    def get_is_outside_ward_boundary(self, obj):
+        return bool(obj.polling_center and obj.polling_center.is_outside_ward_boundary)
+
     class Meta:
         model = PollingStation
         fields = (
@@ -247,4 +252,5 @@ class PollingStationInfoSerializer(ModelSerializer):
             "code",
             "registered_voters",
             "is_verified",
+            "is_outside_ward_boundary",
         )
