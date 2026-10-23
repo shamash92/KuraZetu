@@ -22,6 +22,7 @@ from results.models import (
     Party,
     PollingStationPresidentialExtras,
     PollingStationPresidentialResults,
+    ResultUpload,
 )
 from specs.models import is_author
 from stations.models import PollingCenter, PollingCenterVerification, PollingStation
@@ -33,6 +34,7 @@ logger = logging.getLogger("accounts.deletion")
 KEPT_CONTRIBUTIONS = (
     ("presidential_results", PollingStationPresidentialResults, "added_by"),
     ("presidential_extras", PollingStationPresidentialExtras, "added_by"),
+    ("result_uploads", ResultUpload, "added_by"),
     ("parties", Party, "verified_by"),
     ("aspirants", Aspirant, "verified_by"),
     ("polling_centers", PollingCenter, "verified_by"),

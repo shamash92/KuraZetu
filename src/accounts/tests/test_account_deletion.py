@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
@@ -21,6 +22,7 @@ from results.models import (
     Party,
     PollingStationPresidentialExtras,
     PollingStationPresidentialResults,
+    ResultUpload,
 )
 from specs.models import AuthorGrant
 from stations.models import (
@@ -107,6 +109,17 @@ def contributions_by(user):
         ),
         PollingStationPresidentialExtras.objects.create(
             polling_station=station, added_by=user
+        ),
+        ResultUpload.objects.create(
+            key=uuid.uuid4(),
+            added_by=user,
+            polling_station=station,
+            race="president",
+            votes={str(aspirant.id): 10},
+            rejected_votes=0,
+            disputed_votes=0,
+            photo="result-uploads/test.jpg",
+            quality_checked=True,
         ),
     ]
 
