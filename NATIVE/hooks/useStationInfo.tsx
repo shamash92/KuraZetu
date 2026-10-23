@@ -13,6 +13,8 @@ export interface IStationInfo {
     ward: string | null;
     constituency: string | null;
     county: string | null;
+    /** The centre's site is outside its mapped ward; only a strict check near its pin counts. */
+    is_outside_ward_boundary: boolean;
 }
 
 const StationInfoContext = createContext<IStationInfo | null>(null);
