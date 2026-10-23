@@ -58,7 +58,8 @@ jobs:
                   cp .env.local .env
             - name: Installing Geodjango
               run: |
-                  sudo apt-get install binutils libproj-dev gdal-bin
+                  sudo apt-get update
+                  sudo apt-get install -y binutils libproj-dev gdal-bin
             - name: Install Dependencies
               run: |
                   cd src
