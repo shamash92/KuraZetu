@@ -370,7 +370,7 @@ def _upvote(client, center):
 
 
 @pytest.mark.django_db
-def test_confirming_a_pin_outside_its_ward_is_kept_as_an_outlier():
+def test_confirming_a_pin_outside_its_ward_is_marked_outside_the_ward():
     center = PollingCenter.objects.create(
         name="Mtwapa", code="022", ward=_ward(), pin_location=Point(37.5, 0.5)
     )
@@ -380,7 +380,8 @@ def test_confirming_a_pin_outside_its_ward_is_kept_as_an_outlier():
     assert response.status_code == 200
     vote = PollingCenterVerification.objects.get(polling_center=center)
     assert vote.is_upvote is True
-    assert vote.is_outlier is True
+    assert vote.is_outside_ward_boundary is True
+    assert vote.is_outlier is False
 
 
 @pytest.mark.django_db
@@ -391,9 +392,9 @@ def test_confirming_a_pin_inside_its_ward_is_not_an_outlier():
 
     _upvote(_client_for(center), center)
 
-    assert (
-        PollingCenterVerification.objects.get(polling_center=center).is_outlier is False
-    )
+    vote = PollingCenterVerification.objects.get(polling_center=center)
+    assert vote.is_outlier is False
+    assert vote.is_outside_ward_boundary is False
 
 
 @pytest.mark.django_db
@@ -425,3 +426,66 @@ def test_station_info_names_the_ward_constituency_and_county():
     assert response.data["ward"] == "Test Ward"
     assert response.data["constituency"] == "Test Constituency"
     assert response.data["county"] == "Test County"
+
+
+@pytest.mark.django_db
+def test_a_far_off_pin_inside_the_ward_is_an_outlier_not_outside_the_ward():
+    center = PollingCenter.objects.create(
+        name="Far Pin School", code="031", ward=_ward()
+    )
+    for lng in (36.5, 36.5001):
+        PollingCenterVerification.objects.create(
+            polling_center=center, pin_location=Point(lng, 0.5)
+        )
+
+    response = _client_for(center).post(
+        reverse("polling_centers_verification_api"),
+        # About 11 km from the other two, still inside the ward.
+        {"latitude": 0.6, "longitude": 36.5, "pollingCenterDBId": center.id},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    far = PollingCenterVerification.objects.get(
+        polling_center=center, verified_by__isnull=False
+    )
+    assert far.is_outlier is True
+    assert far.is_outside_ward_boundary is False
+    assert response.data["consensus"]["agree"] == 2
+
+
+@pytest.mark.django_db
+def test_the_stations_tab_says_whether_the_centre_is_outside_its_ward():
+    center = PollingCenter.objects.create(
+        name="Outside Ward School",
+        code="041",
+        ward=_ward(),
+        is_outside_ward_boundary=True,
+    )
+
+    response = _client_for(center).get(
+        reverse("community_notes_polling_center_details_api")
+    )
+
+    assert response.status_code == 200
+    assert response.data["data"]["is_outside_ward_boundary"] is True
+
+
+@pytest.mark.django_db
+def test_a_station_says_whether_its_centre_is_outside_its_ward():
+    center = PollingCenter.objects.create(
+        name="Outside Ward School",
+        code="041",
+        ward=_ward(),
+        is_outside_ward_boundary=True,
+    )
+    station = PollingStation.objects.create(
+        polling_center=center, code="000000411", registered_voters=400
+    )
+
+    response = _client_for(center).get(
+        reverse("polling_station_info_api", args=[station.code])
+    )
+
+    assert response.status_code == 200
+    assert response.data["is_outside_ward_boundary"] is True
