@@ -32,6 +32,7 @@ from results.models import (
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
 )
+from results.races import candidates_for, race_from
 from stations.models import PollingCenter, PollingStation, Ward
 
 logger = logging.getLogger(__name__)
@@ -443,50 +444,21 @@ class PollingStationLevelResultsAPIView(APIView):
     authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
 
-    # level -> (results model, results serializer, candidate FK field name)
-    LEVEL_CONFIG = {
-        "president": (
-            PollingStationPresidentialResults,
-            PollingStationPresidentialResultsSerializer,
-            "presidential_candidate",
-        ),
-        "governor": (
-            PollingStationGovernorResults,
-            PollingStationGovernorResultsSerializer,
-            "governor_candidate",
-        ),
-        "senator": (
-            PollingStationSenatorResults,
-            PollingStationSenatorResultsSerializer,
-            "senator_candidate",
-        ),
-        "women_rep": (
-            PollingStationWomenRepResults,
-            PollingStationWomenRepResultsSerializer,
-            "woman_rep_candidate",
-        ),
-        "mp": (
-            PollingStationMpResults,
-            PollingStationMpResultsSerializer,
-            "mp_candidate",
-        ),
-        "mca": (
-            PollingStationMCAResults,
-            PollingStationMCAResultsSerializer,
-            "mca_candidate",
-        ),
+    SERIALIZERS = {
+        "president": PollingStationPresidentialResultsSerializer,
+        "governor": PollingStationGovernorResultsSerializer,
+        "senator": PollingStationSenatorResultsSerializer,
+        "women_rep": PollingStationWomenRepResultsSerializer,
+        "mp": PollingStationMpResultsSerializer,
+        "mca": PollingStationMCAResultsSerializer,
     }
 
     # 5 minutes. TODO: invalidate on submission instead of relying on expiry.
     CACHE_TIMEOUT = 60 * 5
 
     def get(self, request, *args, **kwargs):
-        # The native app uses "womanRep"; the Django level is "women_rep".
-        level = kwargs.get("level")
-        level = {"womanRep": "women_rep"}.get(level, level)
-
-        config = self.LEVEL_CONFIG.get(level)
-        if config is None:
+        race = race_from(kwargs.get("level"))
+        if race is None:
             return Response(
                 {"error": "Invalid level specified."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -496,12 +468,13 @@ class PollingStationLevelResultsAPIView(APIView):
 
         # Per-level, per-station cache key. The level is in the URL path, so each
         # office caches independently and can be invalidated on its own.
-        cache_key = f"polling_station_results:{level}:{polling_station_code}"
+        cache_key = f"polling_station_results:{race.key}:{polling_station_code}"
         cached_payload = cache.get(cache_key)
         if cached_payload is not None:
             return Response(cached_payload)
 
-        model, serializer_class, candidate_field = config
+        model, candidate_field = race.results_model, race.candidate_field
+        serializer_class = self.SERIALIZERS[race.key]
 
         try:
             polling_station = PollingStation.objects.get(code=polling_station_code)
@@ -525,7 +498,7 @@ class PollingStationLevelResultsAPIView(APIView):
         ]
 
         extra_data = None
-        if level == "president":
+        if race.key == "president":
             try:
                 polling_station_extras = PollingStationPresidentialExtras.objects.get(
                     polling_station=polling_station
@@ -609,33 +582,13 @@ class PollingStationCandidatesListAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if level == "president":
-            aspirants = Aspirant.objects.filter(level="president")
-        elif level == "governor":
-            aspirants = Aspirant.objects.filter(
-                level="governor",
-                county=polling_station.polling_center.ward.constituency.county,
-            )
-        elif level == "senator":
-            aspirants = Aspirant.objects.filter(
-                level="senator",
-                county=polling_station.polling_center.ward.constituency.county,
-            )
-        elif level == "mp":
-            aspirants = Aspirant.objects.filter(
-                level="mp",
-                constituency=polling_station.polling_center.ward.constituency,
-            )
-        elif level == "mca":
-            aspirants = Aspirant.objects.filter(
-                level="mca",
-                ward=polling_station.polling_center.ward,
-            )
-        else:
+        race = race_from(level)
+        if race is None:
             return Response(
                 {"error": "Invalid level specified."},
-                status=status.HTTP_200_OK,
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        aspirants = candidates_for(polling_station, race)
 
         aspirants = AspirantSerializer(aspirants, many=True)
 
