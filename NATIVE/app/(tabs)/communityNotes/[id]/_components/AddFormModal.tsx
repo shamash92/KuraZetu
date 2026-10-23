@@ -1,8 +1,11 @@
 import {Alert} from "react-native";
-import {File} from "expo-file-system";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import {ResultsFormCandidate, ResultsFormCapture} from "@/components/resultsForm";
+import {
+    newUploadKey,
+    uploadResultsForm,
+} from "@/components/resultsForm/upload/uploadResultsForm";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/auth/authStore";
@@ -70,6 +73,10 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         party: candidate.party,
     }));
 
+    // One key per photo: tapping Submit again after a lost connection sends
+    // the same key, and the server stores the upload once.
+    const uploadKey = useRef<{image: string; key: string} | null>(null);
+
     const handleSubmit = ({
         image,
         qualityChecked,
@@ -83,10 +90,17 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         rejectedVotes: number;
         disputedVotes: number;
     }) => {
-        const candidateVotes = candidates.map((candidate) => ({
-            id: candidate.id,
-            votes: votes[String(candidate.id)] ?? 0,
-        }));
+        // Submit is enabled only once every box has a typed number.
+        const tally = Object.fromEntries(
+            candidates.map((candidate) => [
+                String(candidate.id),
+                votes[String(candidate.id)],
+            ]),
+        );
+        if (uploadKey.current?.image !== image) {
+            uploadKey.current = {image, key: newUploadKey()};
+        }
+        const key = uploadKey.current.key;
 
         Alert.alert(
             "Submit Results",
@@ -95,58 +109,31 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                 {text: "Cancel", style: "cancel"},
                 {
                     text: "Submit",
-                    onPress: () => {
+                    onPress: async () => {
                         if (!userToken) return;
 
-                        const formData = new FormData();
-                        formData.append(
-                            "data",
-                            JSON.stringify({
-                                polling_station: id,
-                                level: level,
-                                image: image,
-                                votes: candidateVotes,
-                                rejected_votes: rejectedVotes,
-                                disputed_votes: disputedVotes,
-                                quality_checked: qualityChecked,
-                            }),
-                        );
-
-                        // Expo's current FormData implementation accepts Blob-compatible
-                        // values. The legacy React Native {uri, type, name} object causes
-                        // "Unsupported FormDataPart implementation" on the simulator.
-                        formData.append("image", new File(image));
-
-                        fetch(
-                            `${apiBaseURL}/api/results/polling-station/create/${id}/${level}/`,
-                            {
-                                method: "POST",
-                                headers: {
-                                    Accept: "application/json",
-                                    Authorization: `Bearer ${userToken}`,
-                                },
-                                body: formData,
-                            },
-                        )
-                            .then(async (response) => {
-                                if (await handleUnauthorized(response)) return null;
-                                if (!response.ok) {
-                                    throw new Error("Failed to submit results");
-                                }
-                                return response.json();
-                            })
-                            .then((data) => {
-                                if (!data) return;
-                                Alert.alert(
-                                    "Success",
-                                    "Results submitted successfully",
-                                );
-                                onClose();
-                            })
-                            .catch((error) => {
-                                console.error("Error submitting results:", error);
-                                Alert.alert("Error", "Failed to submit results");
-                            });
+                        const outcome = await uploadResultsForm({
+                            token: userToken,
+                            stationCode: String(id),
+                            race: level,
+                            image,
+                            qualityChecked,
+                            votes: tally,
+                            rejectedVotes,
+                            disputedVotes,
+                            key,
+                        });
+                        if (outcome.kind === "stored") {
+                            Alert.alert("Uploaded", "Your results form was uploaded.");
+                            onClose();
+                        } else if (outcome.kind === "refused") {
+                            Alert.alert("Not uploaded", outcome.message);
+                        } else if (outcome.kind === "failed") {
+                            Alert.alert(
+                                "Not uploaded",
+                                "Check your connection and tap Submit again.",
+                            );
+                        }
                     },
                 },
             ],

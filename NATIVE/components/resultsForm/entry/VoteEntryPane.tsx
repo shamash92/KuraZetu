@@ -21,18 +21,18 @@ interface VoteEntryPaneProps {
     captured: boolean;
     /** The results form being captured, e.g. "Form 37A". */
     formName: string;
-    disputedVotes: number;
-    rejectedVotes: number;
+    disputedVotes: number | null;
+    rejectedVotes: number | null;
     submitEnabled: boolean;
     submitLabel: string;
     total: number;
     votes: Record<string, number>;
     onCapture: () => void;
     onClose: () => void;
-    onDisputedVotesChange: (value: number) => void;
-    onRejectedVotesChange: (value: number) => void;
+    onDisputedVotesChange: (value: number | null) => void;
+    onRejectedVotesChange: (value: number | null) => void;
     onSubmit: () => void;
-    onVoteChange: (key: string, value: number) => void;
+    onVoteChange: (key: string, value: number | null) => void;
 }
 
 export function VoteEntryPane({
@@ -85,12 +85,15 @@ export function VoteEntryPane({
                 <Text style={[styles.sectionLabel, styles.voteSectionLabel]}>
                     ENTER VOTE DATA
                 </Text>
+                <Text style={styles.entryHint}>
+                    Type every number from the form, including 0.
+                </Text>
                 {candidates.map((candidate) => (
                     <VoteCountRow
                         key={candidate.key}
                         label={candidate.name}
                         party={candidate.party}
-                        value={votes[candidate.key] ?? 0}
+                        value={votes[candidate.key] ?? null}
                         accessibilityLabel={`Votes for ${candidate.name}`}
                         onChange={(value) => onVoteChange(candidate.key, value)}
                     />
@@ -159,6 +162,11 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     voteSectionLabel: {marginTop: 18},
+    entryHint: {
+        fontSize: 13,
+        color: perk.ink,
+        marginBottom: 10,
+    },
     cameraButton: {
         flexDirection: "row",
         backgroundColor: perk.ink,
