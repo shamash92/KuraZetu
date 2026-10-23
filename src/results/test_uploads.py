@@ -2,6 +2,7 @@ import json
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.contrib.gis.geos import Point, Polygon
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -239,3 +240,164 @@ def test_voters_and_agents_upload_only_in_their_ward(
 def test_signing_in_is_required(station, mca_candidates):
     response = upload(APIClient(), station, mca_candidates)
     assert response.status_code == 401
+
+
+# ── Location check ──────────────────────────────────────────────────────
+
+M_PER_DEG_LAT = 111_320
+CENTRE = (36.5, 0.5)  # lng, lat
+
+
+def north_of_centre(metres):
+    return {"longitude": CENTRE[0], "latitude": CENTRE[1] + metres / M_PER_DEG_LAT}
+
+
+@pytest.fixture
+def located(station):
+    """The station's ward has a boundary and its centre a verified pin."""
+    ward = station.polling_center.ward
+    ward.boundary = Polygon(((36, 0), (37, 0), (37, 1), (36, 1), (36, 0)))
+    ward.save()
+    centre = station.polling_center
+    centre.pin_location = Point(*CENTRE)
+    centre.is_verified = True
+    centre.save()
+    return station
+
+
+@pytest.mark.parametrize(
+    "fix, grade",
+    [
+        ({**north_of_centre(80), "accuracy": 10}, "centre_match"),
+        ({**north_of_centre(500), "accuracy": 10}, "ward_fallback"),
+        ({"longitude": 38.0, "latitude": 0.5, "accuracy": 10}, "location_mismatch"),
+        ({**north_of_centre(10), "accuracy": 150}, "location_unknown"),
+        ({}, "location_unknown"),
+    ],
+)
+def test_the_server_grades_where_the_upload_was_made(
+    client, located, mca_candidates, fix, grade
+):
+    response = upload(client, located, mca_candidates, **fix)
+
+    assert response.status_code == 201
+    assert response.data["location_grade"] == grade
+    stored = ResultUpload.objects.get()
+    assert stored.location_grade == grade
+    assert response.data["countable"] is (grade in ("centre_match", "ward_fallback"))
+
+
+def test_an_upload_that_cannot_count_says_why(client, located, mca_candidates):
+    response = upload(
+        client, located, mca_candidates, accuracy=150, **north_of_centre(5)
+    )
+
+    assert response.data["countable"] is False
+    assert "location" in response.data["location_message"].lower()
+
+
+def test_a_grade_sent_by_the_app_is_ignored(client, located, mca_candidates):
+    response = upload(
+        client,
+        located,
+        mca_candidates,
+        location_grade="centre_match",
+        **{"longitude": 38.0, "latitude": 0.5, "accuracy": 10},
+    )
+
+    assert response.data["location_grade"] == "location_mismatch"
+
+
+@pytest.mark.parametrize("role", ["party_agent", "observer"])
+def test_agents_and_observers_get_the_fix_accuracy_on_top_of_the_radius(
+    client, account, located, mca_candidates, role
+):
+    account.role = role
+    account.save()
+
+    near = upload(client, located, mca_candidates, accuracy=60, **north_of_centre(140))
+    far = upload(client, located, mca_candidates, accuracy=99, **north_of_centre(195))
+
+    assert near.data["location_grade"] == "centre_match"
+    assert far.data["location_grade"] == "centre_match"
+
+
+def test_a_voter_gets_no_allowance_for_accuracy(client, located, mca_candidates):
+    response = upload(
+        client, located, mca_candidates, accuracy=60, **north_of_centre(140)
+    )
+
+    assert response.data["location_grade"] == "ward_fallback"
+
+
+def test_the_agent_allowance_stops_at_200_metres(
+    client, account, located, mca_candidates
+):
+    account.role = "party_agent"
+    account.save()
+
+    response = upload(
+        client, located, mca_candidates, accuracy=99, **north_of_centre(210)
+    )
+
+    assert response.data["location_grade"] == "ward_fallback"
+
+
+@pytest.mark.parametrize("pin", ["unverified", "null_island"])
+def test_only_a_verified_real_pin_gives_a_centre_match(
+    client, located, mca_candidates, pin
+):
+    centre = located.polling_center
+    if pin == "unverified":
+        centre.is_verified = False
+    else:
+        centre.pin_location = Point(0, 0)
+    centre.save()
+
+    response = upload(
+        client, located, mca_candidates, accuracy=10, **north_of_centre(20)
+    )
+
+    assert response.data["location_grade"] == "ward_fallback"
+
+
+def test_an_outside_ward_centre_counts_only_within_100_metres_for_everyone(
+    client, account, located, mca_candidates
+):
+    centre = located.polling_center
+    centre.is_outside_ward_boundary = True
+    centre.save()
+    account.role = "observer"
+    account.save()
+
+    close = upload(client, located, mca_candidates, accuracy=50, **north_of_centre(90))
+    inside_ward = upload(
+        client, located, mca_candidates, accuracy=50, **north_of_centre(140)
+    )
+
+    assert close.data["location_grade"] == "centre_match"
+    assert inside_ward.data["location_grade"] == "location_mismatch"
+
+
+def test_a_ward_without_a_boundary_gives_no_ward_fallback(
+    client, located, mca_candidates
+):
+    ward = located.polling_center.ward
+    ward.boundary = None
+    ward.save()
+
+    response = upload(
+        client, located, mca_candidates, accuracy=10, **north_of_centre(500)
+    )
+
+    assert response.data["location_grade"] == "location_mismatch"
+
+
+def test_the_position_is_kept_apart_from_the_upload(client, located, mca_candidates):
+    upload(client, located, mca_candidates, accuracy=12, **north_of_centre(80))
+
+    stored = ResultUpload.objects.get()
+    assert stored.fix_accuracy_m == 12
+    assert round(stored.distance_to_centre_m) == 80
+    assert stored.device_fix.point.y == pytest.approx(CENTRE[1] + 80 / M_PER_DEG_LAT)
+    assert not hasattr(stored, "latitude")

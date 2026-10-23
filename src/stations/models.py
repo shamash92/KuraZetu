@@ -92,7 +92,8 @@ class PollingCenter(gis_models.Model):
     pin_location = gis_models.PointField(blank=True, null=True)
     pin_location_error = models.CharField(max_length=255, blank=True, null=True)
 
-    radius = models.FloatField(default=0.05, help_text="km")  # 50m
+    # How far an upload may be from the pin and still match the centre.
+    radius = models.FloatField(default=0.1, help_text="km")  # 100 m
     boundary = gis_models.PolygonField(blank=True, null=True)
 
     is_verified = models.BooleanField(default=False)

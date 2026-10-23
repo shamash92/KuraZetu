@@ -1,11 +1,13 @@
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.core.files.storage import storages
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from results.location import GRADES, LOCATION_UNKNOWN
 from stations.models import Constituency, County, PollingStation, Ward
 
 User = get_user_model()
@@ -450,6 +452,16 @@ class ResultUpload(models.Model):
     photo = models.FileField(storage=upload_storage, upload_to=upload_photo_path)
     # False when the photo was taken with Capture anyway.
     quality_checked = models.BooleanField()
+    # Assigned by the server; a grade sent by the application is ignored.
+    # Uploads stored before the check existed had no fix.
+    location_grade = models.CharField(
+        max_length=20, choices=GRADES, default=LOCATION_UNKNOWN
+    )
+    # Kept after the position itself is deleted; alone they place nobody.
+    fix_accuracy_m = models.FloatField(null=True, blank=True)
+    distance_to_centre_m = models.FloatField(null=True, blank=True)
+    # When the device says the photo was taken.
+    captured_at = models.DateTimeField(null=True, blank=True)
     is_current = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     # Set by accounts.deletion when the linked account is deleted.
@@ -458,3 +470,14 @@ class ResultUpload(models.Model):
 
     def __str__(self) -> str:
         return f"{self.polling_station} - {self.race} - {self.created_at}"
+
+
+class UploadDeviceFix(gis_models.Model):
+    """Where the device was, kept apart from the upload so it can be deleted
+    on its own (6 months after election day) and never reaches a response
+    that reads uploads."""
+
+    upload = models.OneToOneField(
+        ResultUpload, on_delete=models.CASCADE, related_name="device_fix"
+    )
+    point = gis_models.PointField(srid=4326)

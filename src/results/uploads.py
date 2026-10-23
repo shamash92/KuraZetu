@@ -3,7 +3,8 @@
 from django.conf import settings
 from django.db import IntegrityError, transaction
 
-from results.models import ResultUpload
+from results.location import grade_location
+from results.models import ResultUpload, UploadDeviceFix
 from results.races import candidates_for, race_from
 from stations.models import PollingStation
 
@@ -33,9 +34,12 @@ def submit_upload(
     photo,
     quality_checked,
     key,
+    fix=None,
+    captured_at=None,
 ):
     """Store an upload, or raise UploadRefused and store nothing.
 
+    ``fix`` is the device's position (a ``results.location.Fix``) or None.
     Returns ``(upload, created)``. A request repeating an earlier ``key``
     returns that upload with ``created`` False.
     """
@@ -57,6 +61,7 @@ def submit_upload(
         raise UploadRefused("unknown_race", "Unknown race.")
     _check_photo(photo)
     _check_tally(votes, candidates_for(station, found))
+    location = grade_location(fix, account, station)
 
     upload = ResultUpload(
         key=key,
@@ -67,6 +72,10 @@ def submit_upload(
         rejected_votes=rejected_votes,
         disputed_votes=disputed_votes,
         quality_checked=quality_checked,
+        location_grade=location.grade,
+        fix_accuracy_m=fix.accuracy_m if fix else None,
+        distance_to_centre_m=location.distance_m,
+        captured_at=captured_at,
     )
     # The file is written first; if the row is not, the file goes too.
     upload.photo.save(photo.name, photo, save=False)
@@ -79,6 +88,8 @@ def submit_upload(
                 is_current=True,
             ).update(is_current=False)
             upload.save(force_insert=True)
+            if fix is not None:
+                UploadDeviceFix.objects.create(upload=upload, point=fix.point)
     except Exception as error:
         upload.photo.delete(save=False)
         if isinstance(error, IntegrityError):
