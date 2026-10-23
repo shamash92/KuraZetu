@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import {Camera as CameraIcon, Check} from "lucide-react-native";
 
+import {ELECTION_YEAR, REGISTER_YEAR} from "./register";
 import {VoteCountRow} from "./VoteCountRow";
 import {perk} from "@/app/_utils/colors";
 
@@ -21,18 +22,18 @@ interface VoteEntryPaneProps {
     captured: boolean;
     /** The results form being captured, e.g. "Form 37A". */
     formName: string;
-    disputedVotes: number | null;
-    rejectedVotes: number | null;
+    /** Digits typed per box, at most three. */
+    disputedVotes: string;
+    rejectedVotes: string;
     submitEnabled: boolean;
     submitLabel: string;
     total: number;
-    votes: Record<string, number>;
+    votes: Record<string, string>;
     onCapture: () => void;
-    onClose: () => void;
-    onDisputedVotesChange: (value: number | null) => void;
-    onRejectedVotesChange: (value: number | null) => void;
+    onDisputedVotesChange: (digits: string) => void;
+    onRejectedVotesChange: (digits: string) => void;
     onSubmit: () => void;
-    onVoteChange: (key: string, value: number | null) => void;
+    onVoteChange: (key: string, digits: string) => void;
 }
 
 export function VoteEntryPane({
@@ -46,7 +47,6 @@ export function VoteEntryPane({
     total,
     votes,
     onCapture,
-    onClose,
     onDisputedVotesChange,
     onRejectedVotesChange,
     onSubmit,
@@ -58,6 +58,10 @@ export function VoteEntryPane({
                 style={styles.content}
                 contentContainerStyle={styles.contentInner}
                 showsVerticalScrollIndicator={false}
+                // Tens of candidates: keep the box being typed in above the keyboard.
+                automaticallyAdjustKeyboardInsets
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
             >
                 {captured ? (
                     <View style={styles.capturedRow}>
@@ -82,18 +86,17 @@ export function VoteEntryPane({
                     </TouchableOpacity>
                 )}
 
-                <Text style={[styles.sectionLabel, styles.voteSectionLabel]}>
-                    ENTER VOTE DATA
-                </Text>
-                <Text style={styles.entryHint}>
-                    Type every number from the form, including 0.
-                </Text>
+                {REGISTER_YEAR !== ELECTION_YEAR && (
+                    <Text style={styles.registerNotice}>
+                        {ELECTION_YEAR} voter numbers not loaded yet
+                    </Text>
+                )}
                 {candidates.map((candidate) => (
                     <VoteCountRow
                         key={candidate.key}
                         label={candidate.name}
                         party={candidate.party}
-                        value={votes[candidate.key] ?? null}
+                        value={votes[candidate.key] ?? ""}
                         accessibilityLabel={`Votes for ${candidate.name}`}
                         onChange={(value) => onVoteChange(candidate.key, value)}
                     />
@@ -118,28 +121,23 @@ export function VoteEntryPane({
                     <Text style={styles.totalLabel}>Total votes</Text>
                     <Text style={styles.totalValue}>{total.toLocaleString()}</Text>
                 </View>
-                <View style={styles.footerButtons}>
-                    <TouchableOpacity
-                        style={styles.cancelButton}
-                        onPress={onClose}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.secondaryButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                <TouchableOpacity
+                    style={[styles.submitButton, !submitEnabled && styles.submitDisabled]}
+                    disabled={!submitEnabled}
+                    accessibilityRole="button"
+                    accessibilityState={{disabled: !submitEnabled}}
+                    onPress={onSubmit}
+                >
+                    <Check size={18} color={submitEnabled ? perk.limeInk : perk.mute} />
+                    <Text
                         style={[
-                            styles.submitButton,
-                            !submitEnabled && styles.disabledButton,
+                            styles.submitText,
+                            !submitEnabled && styles.submitTextDisabled,
                         ]}
-                        disabled={!submitEnabled}
-                        accessibilityRole="button"
-                        accessibilityState={{disabled: !submitEnabled}}
-                        onPress={onSubmit}
                     >
-                        <Check size={18} color={perk.limeInk} />
-                        <Text style={styles.primaryButtonText}>{submitLabel}</Text>
-                    </TouchableOpacity>
-                </View>
+                        {submitLabel}
+                    </Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -153,19 +151,14 @@ const styles = StyleSheet.create({
         paddingTop: 12,
         paddingBottom: 16,
     },
-    sectionLabel: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 10,
-        fontWeight: "700",
-        letterSpacing: 1.8,
-        color: perk.mute,
-        marginBottom: 10,
-    },
-    voteSectionLabel: {marginTop: 18},
-    entryHint: {
+    registerNotice: {
         fontSize: 13,
-        color: perk.ink,
-        marginBottom: 10,
+        color: perk.mute,
+        backgroundColor: perk.surface,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        marginTop: 8,
+        marginBottom: 12,
     },
     cameraButton: {
         flexDirection: "row",
@@ -186,86 +179,64 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: perk.mint,
-        borderRadius: 12,
+        backgroundColor: perk.ink,
         paddingVertical: 12,
         paddingHorizontal: 14,
     },
     capturedText: {
         fontSize: 13,
-        color: perk.greenDeep,
+        color: perk.paper,
         fontWeight: "800",
     },
+    // Retake is the action on this strip, so it carries the lime.
     recaptureText: {
-        color: perk.copperDeep,
+        color: perk.lime,
         fontSize: 13,
         fontWeight: "800",
-        textDecorationLine: "underline",
     },
     footer: {
-        backgroundColor: perk.card,
-        borderWidth: 1.5,
-        borderColor: perk.ink,
-        borderRadius: 16,
-        marginHorizontal: 12,
-        marginBottom: 12,
-        paddingHorizontal: 14,
-        paddingTop: 10,
-        paddingBottom: 12,
-        shadowColor: perk.ink,
-        shadowOffset: {width: 0, height: 10},
-        shadowOpacity: 0.12,
-        shadowRadius: 18,
-        elevation: 10,
+        borderTopWidth: 1,
+        borderTopColor: perk.rule08,
+        backgroundColor: perk.paper,
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        paddingBottom: 16,
+        gap: 12,
     },
     totalRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: "baseline",
     },
     totalLabel: {
         fontSize: 14,
-        fontWeight: "800",
+        fontWeight: "600",
         color: perk.ink,
     },
     totalValue: {
-        fontSize: 20,
-        fontWeight: "900",
-        color: perk.coralDeep,
-    },
-    footerButtons: {
-        flexDirection: "row",
-        gap: 8,
-        marginTop: 10,
-    },
-    cancelButton: {
-        flex: 0.7,
-        paddingVertical: 13,
-        borderRadius: 12,
-        backgroundColor: perk.surface,
-        alignItems: "center",
-    },
-    secondaryButtonText: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 24,
         color: perk.ink,
-        fontSize: 13,
-        fontWeight: "800",
+        fontVariant: ["tabular-nums"],
     },
     submitButton: {
-        flex: 1.3,
         flexDirection: "row",
-        paddingVertical: 13,
-        borderRadius: 12,
+        paddingVertical: 16,
+        borderRadius: 999,
         backgroundColor: perk.lime,
         justifyContent: "center",
         alignItems: "center",
         gap: 8,
     },
-    primaryButtonText: {
-        color: perk.limeInk,
-        fontSize: 13,
-        fontWeight: "800",
+    submitDisabled: {
+        backgroundColor: perk.surface,
     },
-    disabledButton: {
-        backgroundColor: perk.paperDeep,
+    submitText: {
+        color: perk.limeInk,
+        fontSize: 15,
+        fontWeight: "700",
+    },
+    submitTextDisabled: {
+        color: perk.mute,
     },
 });

@@ -1,18 +1,23 @@
+import {useState} from "react";
 import {StyleSheet, Text, TextInput, View} from "react-native";
 
-import {parseVoteCount} from "./voteCount";
+import {VOTE_DIGITS, voteBoxes, voteDigits} from "./voteCount";
 import {perk} from "@/app/_utils/colors";
 
 interface VoteCountRowProps {
     label: string;
     party?: string | null;
-    /** Null until a number is typed; 0 is a typed number. */
-    value: number | null;
+    /** The digits typed so far, at most three; "" until something is typed. */
+    value: string;
     accessibilityLabel: string;
-    onChange: (value: number | null) => void;
+    onChange: (digits: string) => void;
 }
 
-/** A labelled, sanitized vote input shared by every tally row. */
+/**
+ * A labelled vote count in three digit boxes, like the boxes on the form.
+ * They start as a grey 000 and fill from the right as digits are typed. A
+ * see-through input over the boxes takes the typing.
+ */
 export function VoteCountRow({
     label,
     party,
@@ -20,6 +25,9 @@ export function VoteCountRow({
     accessibilityLabel,
     onChange,
 }: VoteCountRowProps) {
+    const [focused, setFocused] = useState(false);
+    const typed = value !== "";
+    const shown = voteBoxes(value);
     return (
         <View style={styles.row}>
             <View style={styles.who}>
@@ -32,14 +40,34 @@ export function VoteCountRow({
                     </Text>
                 )}
             </View>
-            <TextInput
-                style={[styles.input, value !== null && styles.inputSet]}
-                value={value === null ? "" : String(value)}
-                onChangeText={(text) => onChange(parseVoteCount(text))}
-                accessibilityLabel={accessibilityLabel}
-                hitSlop={5}
-                keyboardType="numeric"
-            />
+            <View style={styles.boxes}>
+                {Array.from({length: VOTE_DIGITS}, (_, index) => (
+                    <View
+                        key={index}
+                        style={[
+                            styles.box,
+                            typed && styles.boxTyped,
+                            focused && styles.boxFocused,
+                        ]}
+                    >
+                        <Text style={[styles.digit, !typed && styles.digitUntouched]}>
+                            {shown[index]}
+                        </Text>
+                    </View>
+                ))}
+                <TextInput
+                    style={styles.input}
+                    value={value}
+                    onChangeText={(text) => onChange(voteDigits(text))}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    accessibilityLabel={accessibilityLabel}
+                    keyboardType="number-pad"
+                    maxLength={VOTE_DIGITS}
+                    caretHidden
+                    hitSlop={6}
+                />
+            </View>
         </View>
     );
 }
@@ -58,7 +86,7 @@ const styles = StyleSheet.create({
         paddingRight: 12,
     },
     name: {
-        fontSize: 12.5,
+        fontSize: 13,
         fontWeight: "800",
         color: perk.ink,
     },
@@ -70,22 +98,40 @@ const styles = StyleSheet.create({
         marginTop: 1,
         textTransform: "uppercase",
     },
-    input: {
-        width: 52,
-        height: 34,
+    boxes: {
+        flexDirection: "row",
+        gap: 4,
+    },
+    box: {
+        width: 30,
+        height: 38,
         borderWidth: 1.5,
         borderColor: perk.rule16,
         borderRadius: 9,
-        paddingHorizontal: 4,
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 12,
-        fontWeight: "700",
-        textAlign: "center",
-        color: perk.mute2,
         backgroundColor: perk.card,
+        alignItems: "center",
+        justifyContent: "center",
     },
-    inputSet: {
+    boxTyped: {
         borderColor: perk.ink,
+    },
+    // The row being typed in. Lime Deep: plain lime is too faint as a line.
+    boxFocused: {
+        borderColor: perk.limeDeep,
+        borderWidth: 2,
+    },
+    digit: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 19,
         color: perk.ink,
+        fontVariant: ["tabular-nums"],
+    },
+    digitUntouched: {
+        color: perk.mute2,
+    },
+    input: {
+        ...StyleSheet.absoluteFill,
+        color: "transparent",
+        fontSize: 1,
     },
 });

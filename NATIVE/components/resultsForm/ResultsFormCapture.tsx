@@ -31,6 +31,7 @@ import type {LightSetting} from "./camera/captureGate";
 import {getCameraPermissionRecovery} from "./camera/cameraPermission";
 import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
 import {VoteEntryPane} from "./entry/VoteEntryPane";
+import {isFilled, toCount} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
 import {PhotoReviewPane} from "./review/PhotoReviewPane";
 import {readFormQr} from "./review/formQr";
@@ -156,8 +157,8 @@ interface ResultsFormCaptureProps {
     submitLabel?: string;
     onSubmit: (submission: ResultsFormSubmission) => void;
     /**
-     * Extra gate beyond the built-in rule (a photo plus a number typed in
-     * every box).
+     * Extra gate beyond the built-in rule (a photo plus all three digits
+     * typed in every box).
      * Return false to keep the submit button disabled.
      */
     canSubmit?: (state: {
@@ -197,10 +198,10 @@ export function ResultsFormCapture({
     const [pendingImage, setPendingImage] = useState<string | null>(null);
     const [pendingPreview, setPendingPreview] =
         useState<NitroImageHandle | null>(null);
-    const [votes, setVotes] = useState<Record<string, number>>({});
-    // Null until typed: every box needs a number, including 0.
-    const [rejectedVotes, setRejectedVotes] = useState<number | null>(null);
-    const [disputedVotes, setDisputedVotes] = useState<number | null>(null);
+    // Digits typed per box, at most three; converted to numbers on submit.
+    const [votes, setVotes] = useState<Record<string, string>>({});
+    const [rejectedVotes, setRejectedVotes] = useState("");
+    const [disputedVotes, setDisputedVotes] = useState("");
     const [wasVisible, setWasVisible] = useState(false);
     const device = useCameraDevice("back");
     const [aspect, setAspect] = useState<CaptureAspect>(DEFAULT_ASPECT);
@@ -341,8 +342,8 @@ export function ResultsFormCapture({
     if (visible && !wasVisible) {
         setWasVisible(true);
         setVotes({});
-        setRejectedVotes(null);
-        setDisputedVotes(null);
+        setRejectedVotes("");
+        setDisputedVotes("");
         setCapturedImage(null);
         setPendingImage(null);
         setPendingPreview(null);
@@ -358,32 +359,31 @@ export function ResultsFormCapture({
         setWasVisible(false);
     }
 
-    const setVote = (key: string, value: number | null) =>
-        setVotes((prev) => {
-            const next = {...prev};
-            if (value === null) delete next[key];
-            else next[key] = value;
-            return next;
-        });
+    const setVote = (key: string, digits: string) =>
+        setVotes((prev) => ({...prev, [key]: digits}));
+
+    const counts = Object.fromEntries(
+        Object.entries(votes).map(([key, digits]) => [key, toCount(digits)]),
+    );
 
     const total =
-        Object.values(votes).reduce((sum, v) => sum + (v || 0), 0) +
-        (rejectedVotes ?? 0) +
-        (disputedVotes ?? 0);
+        Object.values(counts).reduce((sum, count) => sum + count, 0) +
+        toCount(rejectedVotes) +
+        toCount(disputedVotes);
 
-    const allTyped =
-        candidates.every((candidate) => votes[candidate.key] !== undefined) &&
-        rejectedVotes !== null &&
-        disputedVotes !== null;
+    const allFilled =
+        candidates.every((candidate) => isFilled(votes[candidate.key] ?? "")) &&
+        isFilled(rejectedVotes) &&
+        isFilled(disputedVotes);
     const extraGate = canSubmit
         ? canSubmit({
-              votes,
-              rejectedVotes: rejectedVotes ?? 0,
-              disputedVotes: disputedVotes ?? 0,
+              votes: counts,
+              rejectedVotes: toCount(rejectedVotes),
+              disputedVotes: toCount(disputedVotes),
               hasImage: !!capturedImage,
           })
         : true;
-    const submitEnabled = !!capturedImage && allTyped && extraGate;
+    const submitEnabled = !!capturedImage && allFilled && extraGate;
 
     const submitForm = () => {
         if (!capturedImage) return;
@@ -391,9 +391,9 @@ export function ResultsFormCapture({
         onSubmit({
             image: capturedImage,
             qualityChecked: capturedQualityCheckedRef.current,
-            votes,
-            rejectedVotes: rejectedVotes ?? 0,
-            disputedVotes: disputedVotes ?? 0,
+            votes: counts,
+            rejectedVotes: toCount(rejectedVotes),
+            disputedVotes: toCount(disputedVotes),
             total,
         });
     };
@@ -619,7 +619,6 @@ export function ResultsFormCapture({
                             total={total}
                             votes={votes}
                             onCapture={() => setTipStep(0)}
-                            onClose={closeForm}
                             onDisputedVotesChange={setDisputedVotes}
                             onRejectedVotesChange={setRejectedVotes}
                             onSubmit={submitForm}
