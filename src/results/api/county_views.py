@@ -5,32 +5,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from results.models import (
-    Aspirant,
-    PollingStationGovernorResults,
-    PollingStationMCAResults,
-    PollingStationMpResults,
-    PollingStationPresidentialResults,
-    PollingStationSenatorResults,
-    PollingStationWomenRepResults,
-)
+from results.models import Aspirant
+from results.races import race_from
 from stations.models import PollingStation
-
-# Per level: the model holding its results, the field on that model pointing at
-# the aspirant, and how far out the race is counted. "county" means every
-# station in the user's county, "constituency" and "ward" narrow it down.
-LEVEL_CONFIG = {
-    "president": (
-        PollingStationPresidentialResults,
-        "presidential_candidate",
-        "county",
-    ),
-    "governor": (PollingStationGovernorResults, "governor_candidate", "county"),
-    "senator": (PollingStationSenatorResults, "senator_candidate", "county"),
-    "women_rep": (PollingStationWomenRepResults, "woman_rep_candidate", "county"),
-    "mp": (PollingStationMpResults, "mp_candidate", "constituency"),
-    "mca": (PollingStationMCAResults, "mca_candidate", "ward"),
-}
 
 
 class CountyTotalResultsAPIView(APIView):
@@ -42,12 +19,15 @@ class CountyTotalResultsAPIView(APIView):
     def get(self, request, level):
         level = self.kwargs.get("level")
 
-        if level not in LEVEL_CONFIG:
+        race = race_from(level)
+        if race is None:
             return Response(
                 {"error": "Unknown level"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        results_model, candidate_field, scope = LEVEL_CONFIG[level]
+        results_model, candidate_field = race.results_model, race.candidate_field
+        # A national race is counted across the user's county here.
+        scope = "county" if race.scope == "national" else race.scope
 
         user_ward = request.user.polling_center.ward
         user_constituency = user_ward.constituency
@@ -55,7 +35,7 @@ class CountyTotalResultsAPIView(APIView):
 
         county_code = user_county.number
 
-        cache_key = f"county_{county_code}_{level}_candidate_results"
+        cache_key = f"county_{county_code}_{race.key}_candidate_results"
 
         candidate_results = cache.get(cache_key)
 

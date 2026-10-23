@@ -594,3 +594,99 @@ class TestCountyTotalResultsAPIView:
         cache.clear()
         response = signed_in.get(self.url("mayor"))
         assert response.status_code == 400
+
+
+class TestPollingStationCandidatesAPI:
+    """The candidates a person types a tally for, per station and race."""
+
+    def url(self, code, level):
+        return f"/api/results/polling-station/aspirants/{code}/{level}/"
+
+    @pytest.fixture
+    def client(self, user):
+        api_client = APIClient()
+        api_client.force_authenticate(user=user)
+        return api_client
+
+    def test_woman_rep_lists_the_county_candidates(
+        self, client, party, county, polling_station
+    ):
+        other_county = County.objects.create(name="Other County", number=2)
+        here = Aspirant.objects.create(
+            first_name="Amina",
+            last_name="Here",
+            party=party,
+            level="women_rep",
+            county=county,
+        )
+        Aspirant.objects.create(
+            first_name="Beth",
+            last_name="Elsewhere",
+            party=party,
+            level="women_rep",
+            county=other_county,
+        )
+
+        response = client.get(self.url(polling_station.code, "womanRep"))
+
+        assert response.status_code == 200
+        assert [a["id"] for a in response.data["data"]] == [here.id]
+
+    @pytest.mark.parametrize(
+        "level, area",
+        [
+            ("president", None),
+            ("governor", "county"),
+            ("senator", "county"),
+            ("mp", "constituency"),
+            ("mca", "ward"),
+        ],
+    )
+    def test_each_race_lists_only_the_station_area(
+        self, client, party, county, constituency, ward, polling_station, level, area
+    ):
+        other_county = County.objects.create(name="Other County", number=2)
+        other_constituency = Constituency.objects.create(
+            name="Other Constituency", county=other_county, number=2
+        )
+        other_ward = Ward.objects.create(
+            name="Other Ward", constituency=other_constituency, number=2
+        )
+        here = {"county": county, "constituency": constituency, "ward": ward}
+        elsewhere = {
+            "county": other_county,
+            "constituency": other_constituency,
+            "ward": other_ward,
+        }
+        standing = Aspirant.objects.create(
+            first_name="Here",
+            last_name="Candidate",
+            party=party,
+            level=level,
+            **({area: here[area]} if area else {}),
+        )
+        if area:
+            Aspirant.objects.create(
+                first_name="Away",
+                last_name="Candidate",
+                party=party,
+                level=level,
+                **{area: elsewhere[area]},
+            )
+        # A candidate for another race at the same place is never listed.
+        Aspirant.objects.create(
+            first_name="Wrong",
+            last_name="Race",
+            party=party,
+            level="governor" if level != "governor" else "senator",
+            county=county,
+        )
+
+        response = client.get(self.url(polling_station.code, level))
+
+        assert response.status_code == 200
+        assert [a["id"] for a in response.data["data"]] == [standing.id]
+
+    def test_unknown_race_is_rejected(self, client, polling_station):
+        response = client.get(self.url(polling_station.code, "mayor"))
+        assert response.status_code == 400
