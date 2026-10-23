@@ -6,9 +6,10 @@ import {perk} from "@/app/_utils/colors";
 interface VoteCountRowProps {
     label: string;
     party?: string | null;
-    value: number;
+    /** Null until a number is typed; 0 is a typed number. */
+    value: number | null;
     accessibilityLabel: string;
-    onChange: (value: number) => void;
+    onChange: (value: number | null) => void;
 }
 
 /** A labelled, sanitized vote input shared by every tally row. */
@@ -32,13 +33,11 @@ export function VoteCountRow({
                 )}
             </View>
             <TextInput
-                style={[styles.input, value > 0 && styles.inputSet]}
-                value={value === 0 ? "" : String(value)}
+                style={[styles.input, value !== null && styles.inputSet]}
+                value={value === null ? "" : String(value)}
                 onChangeText={(text) => onChange(parseVoteCount(text))}
                 accessibilityLabel={accessibilityLabel}
                 hitSlop={5}
-                placeholder="0"
-                placeholderTextColor={perk.mute2}
                 keyboardType="numeric"
             />
         </View>
