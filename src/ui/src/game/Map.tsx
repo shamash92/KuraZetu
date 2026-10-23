@@ -381,13 +381,19 @@ export default function MapComponent({
                 {/* Existing suggestions — clustered or muted outlier (req #2/#3).
                     The circle is the only mark; clicking it opens the details. */}
                 {partiallyVerifiedLocations?.map((loc) => {
-                    const outlier = loc.properties.is_outlier === true;
+                    const outsideWard =
+                        loc.properties.is_outside_ward_boundary === true;
+                    const far = loc.properties.is_outlier === true;
+                    // Either kind is ignored by consensus and drawn muted.
+                    const outlier = outsideWard || far;
                     const isAi = loc.properties.ai_suggestion === true;
-                    const kind = outlier
-                        ? "Far from others"
-                        : isAi
-                          ? "AI suggestion"
-                          : "Neighbour suggestion";
+                    const kind = outsideWard
+                        ? "Outside the ward"
+                        : far
+                          ? "Far from others"
+                          : isAi
+                            ? "AI suggestion"
+                            : "Neighbour suggestion";
                     const status = outlier
                         ? "Not counted"
                         : location.properties.is_verified

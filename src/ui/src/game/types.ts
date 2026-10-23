@@ -30,7 +30,10 @@ export interface IPollingCenterFeature {
         ai_suggestion?: boolean;
         ai_model?: string | null;
         nominatim?: boolean;
+        // Far from the other suggestions.
         is_outlier?: boolean;
+        // The pin is outside the centre's ward.
+        is_outside_ward_boundary?: boolean;
         is_upvote?: boolean;
     };
 }
