@@ -70,6 +70,13 @@ def grade_location(fix, account, station):
 
     centre = station.polling_center
     distance = _distance_to(fix, station)
+    boundary = centre.ward.boundary
+    checks_ward = not centre.is_outside_ward_boundary and boundary is not None
+    # A centre inside its ward counts only from inside the ward, even near
+    # its pin.
+    if checks_ward and not boundary.contains(fix.point):
+        return Grade(LOCATION_MISMATCH, distance)
+
     if centre.is_verified and distance is not None:
         allowed = centre.radius * 1000
         # An outside-ward centre escapes the ward check, so it gets no slack.
@@ -81,12 +88,7 @@ def grade_location(fix, account, station):
         if distance <= allowed:
             return Grade(CENTRE_MATCH, distance)
 
-    boundary = centre.ward.boundary
-    if (
-        not centre.is_outside_ward_boundary
-        and boundary is not None
-        and boundary.contains(fix.point)
-    ):
+    if checks_ward:
         return Grade(WARD_FALLBACK, distance)
     return Grade(LOCATION_MISMATCH, distance)
 

@@ -379,6 +379,40 @@ def test_an_outside_ward_centre_counts_only_within_100_metres_for_everyone(
     assert inside_ward.data["location_grade"] == "location_mismatch"
 
 
+def test_a_centre_inside_its_ward_counts_only_from_inside_the_ward(
+    client, located, mca_candidates
+):
+    # The ward's northern edge runs 50 m north of the pin.
+    edge = CENTRE[1] + 50 / M_PER_DEG_LAT
+    ward = located.polling_center.ward
+    ward.boundary = Polygon(((36, 0), (37, 0), (37, edge), (36, edge), (36, 0)))
+    ward.save()
+
+    inside = upload(client, located, mca_candidates, accuracy=10, **north_of_centre(30))
+    across = upload(client, located, mca_candidates, accuracy=10, **north_of_centre(80))
+
+    assert inside.data["location_grade"] == "centre_match"
+    assert across.data["location_grade"] == "location_mismatch"
+
+
+def test_an_outside_ward_centre_counts_near_its_pin_outside_the_ward(
+    client, located, mca_candidates
+):
+    centre = located.polling_center
+    centre.is_outside_ward_boundary = True
+    centre.save()
+    edge = CENTRE[1] - 1 / M_PER_DEG_LAT
+    ward = centre.ward
+    ward.boundary = Polygon(((36, 0), (37, 0), (37, edge), (36, edge), (36, 0)))
+    ward.save()
+
+    response = upload(
+        client, located, mca_candidates, accuracy=10, **north_of_centre(20)
+    )
+
+    assert response.data["location_grade"] == "centre_match"
+
+
 def test_a_ward_without_a_boundary_gives_no_ward_fallback(
     client, located, mca_candidates
 ):
