@@ -1,4 +1,5 @@
 import {
+    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
@@ -27,6 +28,8 @@ interface VoteEntryPaneProps {
     rejectedVotes: string;
     submitEnabled: boolean;
     submitLabel: string;
+    /** The upload is in flight: the button shows progress and ignores taps. */
+    submitting: boolean;
     total: number;
     votes: Record<string, string>;
     onCapture: () => void;
@@ -44,6 +47,7 @@ export function VoteEntryPane({
     rejectedVotes,
     submitEnabled,
     submitLabel,
+    submitting,
     total,
     votes,
     onCapture,
@@ -123,19 +127,23 @@ export function VoteEntryPane({
                 </View>
                 <TouchableOpacity
                     style={[styles.submitButton, !submitEnabled && styles.submitDisabled]}
-                    disabled={!submitEnabled}
+                    disabled={!submitEnabled || submitting}
                     accessibilityRole="button"
-                    accessibilityState={{disabled: !submitEnabled}}
+                    accessibilityState={{disabled: !submitEnabled, busy: submitting}}
                     onPress={onSubmit}
                 >
-                    <Check size={18} color={submitEnabled ? perk.limeInk : perk.mute} />
+                    {submitting ? (
+                        <ActivityIndicator size="small" color={perk.limeInk} />
+                    ) : (
+                        <Check size={18} color={submitEnabled ? perk.limeInk : perk.mute} />
+                    )}
                     <Text
                         style={[
                             styles.submitText,
                             !submitEnabled && styles.submitTextDisabled,
                         ]}
                     >
-                        {submitLabel}
+                        {submitting ? "Uploading…" : submitLabel}
                     </Text>
                 </TouchableOpacity>
             </View>

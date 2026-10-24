@@ -84,9 +84,9 @@ export default {
                         "Allow $(PRODUCT_NAME) to use your location.",
 
                     locationAlwaysPermission:
-                        "This app uses location to show your position on the map.",
+                        "Kura Zetu uses your location to show polling centres near you and to check that a results form was photographed at its polling centre.",
                     locationWhenInUsePermission:
-                        "This app uses location to show your position on the map.",
+                        "Kura Zetu uses your location to show polling centres near you and to check that a results form was photographed at its polling centre.",
                 },
             ],
             "expo-secure-store",

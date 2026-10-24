@@ -1,4 +1,5 @@
 import {
+    Alert,
     Linking,
     Modal,
     Platform,
@@ -37,6 +38,10 @@ import {PhotoReviewPane} from "./review/PhotoReviewPane";
 import {readFormQr} from "./review/formQr";
 import {type StreamCheck, checkStream} from "./review/streamCheck";
 import {CaptureTips} from "./tips/CaptureTips";
+import {type DeviceFix, isPrecise} from "./upload/deviceFix";
+import {SubmitBlocked} from "./upload/SubmitBlocked";
+import {useDeviceFix} from "./upload/useDeviceFix";
+import {useNetworkStatus} from "@/app/_utils/device/useNetworkStatus";
 import {perk} from "@/app/_utils/colors";
 import type {TLevelTabs} from "@/app/types";
 
@@ -135,6 +140,10 @@ interface ResultsFormSubmission {
     rejectedVotes: number;
     disputedVotes: number;
     total: number;
+    /** The most accurate fix seen while the screen was open, if any. */
+    fix: DeviceFix | null;
+    /** When the photo was taken, by the device clock. */
+    capturedAt: string | null;
 }
 
 interface ResultsFormCaptureProps {
@@ -155,6 +164,8 @@ interface ResultsFormCaptureProps {
      */
     onChooseStream?: () => void;
     submitLabel?: string;
+    /** The parent is uploading: Submit shows progress and ignores taps. */
+    submitting?: boolean;
     onSubmit: (submission: ResultsFormSubmission) => void;
     /**
      * Extra gate beyond the built-in rule (a photo plus all three digits
@@ -184,6 +195,7 @@ export function ResultsFormCapture({
     stationCode,
     onChooseStream,
     submitLabel = "Submit",
+    submitting = false,
     onSubmit,
     canSubmit,
 }: ResultsFormCaptureProps) {
@@ -222,7 +234,9 @@ export function ResultsFormCapture({
         // which is HEIC on iPhone: most browsers cannot show it, and neither
         // Pillow nor OpenCV can open it without an extra library.
         containerFormat: "jpeg",
-        quality: 1.0,
+        // 0.9 keeps every pixel at about half the file size of 1.0 (about
+        // 5 MB instead of 10 MB), so the upload takes half as long.
+        quality: 0.9,
         qualityPrioritization: "quality",
         previewImageTargetSize: REVIEW_PREVIEW_RESOLUTION[aspect],
     });
@@ -238,6 +252,19 @@ export function ResultsFormCapture({
     const capturedImageRef = React.useRef<string | null>(null);
     const pendingQualityCheckedRef = React.useRef(true);
     const capturedQualityCheckedRef = React.useRef(true);
+    const pendingCapturedAtRef = React.useRef<string | null>(null);
+    const capturedAtRef = React.useRef<string | null>(null);
+
+    // Uploads need internet and the phone's location; locating starts as the
+    // screen opens so an indoor phone has time to get a precise fix.
+    const network = useNetworkStatus();
+    const location = useDeviceFix(visible);
+    const blockReason =
+        network === "offline"
+            ? "offline"
+            : location.permission === "denied"
+              ? "location"
+              : null;
 
     // A Nitro Image owns native memory. Release the previous preview only
     // after React commits the replacement, so the native view never receives
@@ -317,6 +344,7 @@ export function ResultsFormCapture({
             deleteTemporaryPhoto(pendingImageRef.current);
             pendingImageRef.current = uri;
             pendingQualityCheckedRef.current = qualityChecked;
+            pendingCapturedAtRef.current = new Date().toISOString();
             setPendingImage(uri);
             setPendingPreview(preview.current);
             preview.current = null;
@@ -388,14 +416,34 @@ export function ResultsFormCapture({
     const submitForm = () => {
         if (!capturedImage) return;
 
-        onSubmit({
-            image: capturedImage,
-            qualityChecked: capturedQualityCheckedRef.current,
-            votes: counts,
-            rejectedVotes: toCount(rejectedVotes),
-            disputedVotes: toCount(disputedVotes),
-            total,
-        });
+        const send = () =>
+            onSubmit({
+                image: capturedImage,
+                qualityChecked: capturedQualityCheckedRef.current,
+                votes: counts,
+                rejectedVotes: toCount(rejectedVotes),
+                disputedVotes: toCount(disputedVotes),
+                total,
+                fix: location.fix,
+                capturedAt: capturedAtRef.current,
+            });
+
+        if (isPrecise(location.fix)) {
+            send();
+            return;
+        }
+        // The server would grade it unknown: say so, and let them wait.
+        const accuracy = location.fix
+            ? ` (±${Math.round(location.fix.accuracy)} m)`
+            : "";
+        Alert.alert(
+            "Location not precise yet",
+            `Your location is not precise enough yet${accuracy}. Step outside or wait. An upload without a precise location cannot support a result.`,
+            [
+                {text: "Wait", style: "cancel"},
+                {text: "Upload anyway", style: "destructive", onPress: send},
+            ],
+        );
     };
 
     React.useEffect(() => {
@@ -458,6 +506,7 @@ export function ResultsFormCapture({
         deleteTemporaryPhoto(capturedImageRef.current);
         capturedImageRef.current = uri;
         capturedQualityCheckedRef.current = pendingQualityCheckedRef.current;
+        capturedAtRef.current = pendingCapturedAtRef.current;
         pendingImageRef.current = null;
         setCapturedImage(uri);
         setPendingImage(null);
@@ -569,7 +618,9 @@ export function ResultsFormCapture({
                         </TouchableOpacity>
                     </View>
 
-                    {pendingImage ? (
+                    {blockReason ? (
+                        <SubmitBlocked reason={blockReason} onRetry={location.retry} />
+                    ) : pendingImage ? (
                         <PhotoReviewPane
                             formName={formName}
                             imageUri={pendingImage}
@@ -616,6 +667,7 @@ export function ResultsFormCapture({
                             rejectedVotes={rejectedVotes}
                             submitEnabled={submitEnabled}
                             submitLabel={submitLabel}
+                            submitting={submitting}
                             total={total}
                             votes={votes}
                             onCapture={() => setTipStep(0)}
