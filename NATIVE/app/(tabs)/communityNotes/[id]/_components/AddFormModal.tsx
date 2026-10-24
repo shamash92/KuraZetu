@@ -6,6 +6,7 @@ import {
     newUploadKey,
     uploadResultsForm,
 } from "@/components/resultsForm/upload/uploadResultsForm";
+import type {DeviceFix} from "@/components/resultsForm/upload/deviceFix";
 import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/auth/authStore";
@@ -76,6 +77,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
     // One key per photo: tapping Submit again after a lost connection sends
     // the same key, and the server stores the upload once.
     const uploadKey = useRef<{image: string; key: string} | null>(null);
+    const [uploading, setUploading] = useState(false);
 
     const handleSubmit = ({
         image,
@@ -83,12 +85,16 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         votes,
         rejectedVotes,
         disputedVotes,
+        fix,
+        capturedAt,
     }: {
         image: string;
         qualityChecked: boolean;
         votes: Record<string, number>;
         rejectedVotes: number;
         disputedVotes: number;
+        fix: DeviceFix | null;
+        capturedAt: string | null;
     }) => {
         // Submit is enabled only once every box has a typed number.
         const tally = Object.fromEntries(
@@ -112,6 +118,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                     onPress: async () => {
                         if (!userToken) return;
 
+                        setUploading(true);
                         const outcome = await uploadResultsForm({
                             token: userToken,
                             stationCode: String(id),
@@ -122,9 +129,14 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                             rejectedVotes,
                             disputedVotes,
                             key,
-                        });
+                            fix,
+                            capturedAt,
+                        }).finally(() => setUploading(false));
                         if (outcome.kind === "stored") {
-                            Alert.alert("Uploaded", "Your results form was uploaded.");
+                            Alert.alert(
+                                outcome.countable ? "Uploaded" : "Uploaded, but it cannot count",
+                                outcome.message ?? "Your results form was uploaded.",
+                            );
                             onClose();
                         } else if (outcome.kind === "refused") {
                             Alert.alert("Not uploaded", outcome.message);
@@ -149,6 +161,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
             level={level}
             stationCode={String(id)}
             onChooseStream={() => router.dismissTo("/communityNotes")}
+            submitting={uploading}
             onSubmit={handleSubmit}
         />
     );

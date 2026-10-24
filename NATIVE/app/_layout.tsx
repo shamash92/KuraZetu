@@ -1,7 +1,6 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 
-import * as Location from "expo-location";
 import * as QuickActions from "expo-quick-actions";
 import * as SplashScreen from "expo-splash-screen";
 
@@ -383,20 +382,6 @@ function LaunchScreen({onComplete, actions}: LaunchProps) {
     );
 }
 
-function AppLocationPermission() {
-    useEffect(() => {
-        if (Platform.OS === "web") return;
-
-        const idle = requestIdleCallback(() => {
-            void Location.requestForegroundPermissionsAsync();
-        });
-
-        return () => cancelIdleCallback(idle);
-    }, []);
-
-    return null;
-}
-
 function RootLayoutNav() {
     const {isLoggedIn, isLocked, shouldCreateAccount, termsOutdated} = useAuthStore();
     const colorScheme = useColorScheme();
@@ -406,7 +391,6 @@ function RootLayoutNav() {
 
     return (
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-            <AppLocationPermission />
             <Stack>
                 <Stack.Protected guard={!isLoggedIn}>
                     <Stack.Screen
