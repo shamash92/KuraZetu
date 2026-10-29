@@ -90,11 +90,7 @@ class PollingCenterBoundarySerializer(GeoFeatureModelSerializer):
     ward_boundary = SerializerMethodField()
 
     def get_is_unlocated(self, obj):
-        # No usable seed: null pin, or sitting at the 0,0 null-island.
-        pin = obj.pin_location
-        if pin is None:
-            return True
-        return abs(pin.x) < 1e-6 and abs(pin.y) < 1e-6
+        return obj.pin_location is None
 
     def get_ward_boundary(self, obj):
         # GeoJSON of the ward polygon so the client can draw the outline,

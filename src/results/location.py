@@ -106,7 +106,7 @@ def phone_check(station, account):
     checks_ward = not centre.is_outside_ward_boundary and boundary is not None
     return {
         # Longitude, latitude; None when the distance is not checked.
-        "centre": [pin.x, pin.y] if centre.is_verified and _is_real(pin) else None,
+        "centre": [pin.x, pin.y] if centre.is_verified and pin is not None else None,
         "radius_m": centre.radius * 1000,
         "accuracy_allowance": (
             not centre.is_outside_ward_boundary
@@ -117,14 +117,9 @@ def phone_check(station, account):
     }
 
 
-def _is_real(pin):
-    # A pin at (0, 0) is a placeholder for an unlocated centre, not a place.
-    return pin is not None and not (abs(pin.x) < 1e-6 and abs(pin.y) < 1e-6)
-
-
 def _distance_to(fix, station):
     pin = station.polling_center.pin_location
-    if fix is None or not _is_real(pin):
+    if fix is None or pin is None:
         return None
     return _great_circle_m(fix.latitude, fix.longitude, pin.y, pin.x)
 
