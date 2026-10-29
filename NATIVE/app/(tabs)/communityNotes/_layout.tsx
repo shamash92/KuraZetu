@@ -27,14 +27,6 @@ export default function CommunityNotesLayout() {
                     headerTitle: "",
                 }}
             />
-            <Stack.Screen
-                name="summaryView"
-                options={{
-                    headerShown: false,
-                    headerBackVisible: false,
-                    headerTitle: "",
-                }}
-            />
         </Stack>
     );
 }
