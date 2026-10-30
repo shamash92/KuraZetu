@@ -95,8 +95,7 @@ def grade_location(fix, account, station):
 
 def _distance_to(fix, station):
     pin = station.polling_center.pin_location
-    # A pin at (0, 0) is a placeholder for an unlocated centre, not a place.
-    if fix is None or pin is None or (abs(pin.x) < 1e-6 and abs(pin.y) < 1e-6):
+    if fix is None or pin is None:
         return None
     return _great_circle_m(fix.latitude, fix.longitude, pin.y, pin.x)
 

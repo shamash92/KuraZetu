@@ -314,7 +314,7 @@ class LevelPollingCentersAPIView(APIView):
     """Every center in the caller's ward, constituency or county, in play order.
 
     The caller's own center comes first, then unverified centers that already
-    have a pin (the easy rounds), then unlocated ones (no pin, or 0,0), then
+    have a pin (the easy rounds), then unlocated ones with no pin, then
     verified ones, each by ward and station code. The client walks this list
     so a round never repeats a center.
     """
@@ -354,7 +354,6 @@ class LevelPollingCentersAPIView(APIView):
                     When(id=own_center.id, then=0),
                     When(is_verified=True, then=3),
                     When(pin_location__isnull=True, then=2),
-                    When(pin_location__equals=Point(0, 0, srid=4326), then=2),
                     default=1,
                 ),
                 "ward__number",

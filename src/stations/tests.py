@@ -268,9 +268,6 @@ def test_level_list_orders_own_then_pinned_then_unlocated_then_verified():
         name="Verified", code="001", ward=ward, is_verified=True
     )
     unpinned = PollingCenter.objects.create(name="Unpinned", code="002", ward=ward)
-    zero = PollingCenter.objects.create(
-        name="Zero", code="003", ward=ward, pin_location=Point(0, 0)
-    )
     pinned = PollingCenter.objects.create(
         name="Pinned", code="005", ward=ward, pin_location=Point(36.5, 0.5)
     )
@@ -287,11 +284,10 @@ def test_level_list_orders_own_then_pinned_then_unlocated_then_verified():
         own.id,
         pinned.id,
         unpinned.id,
-        zero.id,
         verified.id,
     ]
     assert results[2]["suggestion_count"] == 1
-    assert response.data["total_stations_count"] == 5
+    assert response.data["total_stations_count"] == 4
 
 
 @pytest.mark.django_db
@@ -305,9 +301,7 @@ def test_level_list_needs_the_users_polling_center():
 
 @pytest.mark.django_db
 def test_round_shows_ai_suggestions_for_a_center_without_a_pin():
-    center = PollingCenter.objects.create(
-        name="Takaungu", code="012", ward=_ward(), pin_location=Point(0, 0)
-    )
+    center = PollingCenter.objects.create(name="Takaungu", code="012", ward=_ward())
     PollingCenterVerification.objects.create(
         polling_center=center,
         pin_location=Point(36.5, 0.5),

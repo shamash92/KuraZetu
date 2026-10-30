@@ -173,7 +173,7 @@ export default function PollingStep({flow}: PollingStepProps) {
         const geometry = pollingCenter.geometry;
         setErrorMessage(pollingCenter.properties.pin_location_error);
 
-        if (geometry !== null && geometry.coordinates[0] !== 0) {
+        if (geometry !== null) {
             const latLng = new LatLng(geometry.coordinates[1], geometry.coordinates[0]);
             const mapBounds = L.latLngBounds(latLng, latLng);
             setZoomBounds(mapBounds.isValid() ? mapBounds : null);

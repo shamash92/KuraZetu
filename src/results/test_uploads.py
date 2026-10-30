@@ -343,7 +343,7 @@ def test_the_agent_allowance_stops_at_200_metres(
     assert response.data["location_grade"] == "ward_fallback"
 
 
-@pytest.mark.parametrize("pin", ["unverified", "null_island"])
+@pytest.mark.parametrize("pin", ["unverified", "unlocated"])
 def test_only_a_verified_real_pin_gives_a_centre_match(
     client, located, mca_candidates, pin
 ):
@@ -351,7 +351,8 @@ def test_only_a_verified_real_pin_gives_a_centre_match(
     if pin == "unverified":
         centre.is_verified = False
     else:
-        centre.pin_location = Point(0, 0)
+        centre.pin_location = None
+        centre.boundary = None
     centre.save()
 
     response = upload(
