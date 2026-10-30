@@ -1,3 +1,4 @@
+import io
 import json
 import uuid
 
@@ -7,8 +8,10 @@ from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 import pytest
+from PIL import Image
 from rest_framework.test import APIClient
 
+from results import uploads
 from results.models import Aspirant, Party, ResultUpload
 from stations.models import Constituency, County, PollingCenter, PollingStation, Ward
 
@@ -17,8 +20,16 @@ User = get_user_model()
 pytestmark = pytest.mark.django_db
 
 URL = "/api/results/uploads/"
-# The smallest bytes that start like a JPEG; the server checks the start only.
-JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64
+
+
+def jpeg(width=1200, height=1600, image_format="JPEG"):
+    buffer = io.BytesIO()
+    Image.new("RGB", (width, height), (240, 240, 240)).save(buffer, image_format)
+    return buffer.getvalue()
+
+
+# The smallest photo the server accepts: 1000 px on the short side.
+JPEG = jpeg(1000, 1000)
 
 
 @pytest.fixture(autouse=True)
@@ -166,6 +177,10 @@ def test_a_key_used_by_another_account_is_refused(
         ("text_count", 400, "invalid_tally"),
         ("negative_rejected", 400, "invalid_request"),
         ("not_jpeg", 400, "not_jpeg"),
+        ("png", 400, "not_jpeg"),
+        ("jpeg_start_only", 400, "not_jpeg"),
+        ("cut_off_jpeg", 400, "not_jpeg"),
+        ("too_small", 400, "photo_pixels"),
         ("unknown_race", 400, "unknown_race"),
         ("unknown_station", 404, "station_not_found"),
     ],
@@ -181,6 +196,10 @@ def test_a_refused_upload_stores_nothing(
         "text_count": {"votes": {str(ann.id): "ten", str(ben.id): 11}},
         "negative_rejected": {"rejected_votes": -1},
         "not_jpeg": {"photo": b"\x89PNG\r\n\x1a\n" + b"\x00" * 64},
+        "png": {"photo": jpeg(image_format="PNG")},
+        "jpeg_start_only": {"photo": b"\xff\xd8\xff\xe0" + b"\x00" * 5000},
+        "cut_off_jpeg": {"photo": JPEG[: len(JPEG) // 2]},
+        "too_small": {"photo": jpeg(999, 1600)},
         "unknown_race": {"race": "mayor"},
         "unknown_station": {"station": "999999999"},
     }[change]
@@ -191,6 +210,18 @@ def test_a_refused_upload_stores_nothing(
     assert response.data["code"] == code
     assert not ResultUpload.objects.exists()
     assert not list(private_uploads.rglob("*"))
+
+
+def test_a_photo_with_too_many_pixels_is_refused(
+    client, station, mca_candidates, monkeypatch, private_uploads
+):
+    monkeypatch.setattr(uploads, "MAX_PIXELS", 1000 * 1000 - 1)
+
+    response = upload(client, station, mca_candidates)
+
+    assert response.status_code == 400
+    assert response.data["code"] == "photo_pixels"
+    assert not ResultUpload.objects.exists()
 
 
 def test_a_photo_above_the_limit_is_refused(
