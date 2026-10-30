@@ -489,3 +489,26 @@ def test_a_station_says_whether_its_centre_is_outside_its_ward():
 
     assert response.status_code == 200
     assert response.data["is_outside_ward_boundary"] is True
+
+
+@pytest.mark.django_db
+def test_nearby_search_reads_the_distance_in_metres():
+    ward = _ward()
+    # 0.009 degrees of latitude is about 1 km, 0.45 degrees about 50 km.
+    PollingCenter.objects.create(
+        code="NEAR", name="Near Centre", ward=ward, pin_location=Point(36.5, 0.509)
+    )
+    PollingCenter.objects.create(
+        code="FAR", name="Far Centre", ward=ward, pin_location=Point(36.5, 0.95)
+    )
+
+    response = APIClient().post(
+        reverse("polling_centers_from_user_location_pins_api", args=[5000]),
+        {"latitude": 0.5, "longitude": 36.5},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert [center["properties"]["name"] for center in response.json()["features"]] == [
+        "Near Centre"
+    ]
