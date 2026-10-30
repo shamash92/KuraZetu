@@ -256,7 +256,7 @@ class PollingStationPresidentialExtras(models.Model):
     # TODO: We need to make sure that the form_34A is uploaded
 
     def __str__(self) -> str:
-        return f"{self.polling_station} - {self.rejected_votes} - {self.rejected_objected_to_votes} - {self.disputed_votes} - {self.valid_votes_cast} - {self.is_verified}"
+        return f"Pres extras for {self.polling_station}"
 
 
 class PollingStationGovernorResults(models.Model):
