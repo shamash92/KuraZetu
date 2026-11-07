@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
+from results.location import phone_check
 from stations.api.serializers import (
     CommunityNotesPollingCenterSerializer,
     ConstituencySerializer,
@@ -717,6 +718,7 @@ class PollingStationInfoAPIView(APIView):
             )
 
         data = PollingStationInfoSerializer(polling_station).data
+        data["location_check"] = phone_check(polling_station, self.request.user)
 
         return Response(
             data,
