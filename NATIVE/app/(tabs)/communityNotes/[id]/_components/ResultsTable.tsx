@@ -17,26 +17,14 @@ export function ResultsTable({
 
     return (
         <View style={styles.wrapper}>
-            <View style={styles.tableHeader}>
-                <Text style={styles.tableTitle}>{title}</Text>
-            </View>
+            <Text style={styles.title} accessibilityRole="header">
+                {title}
+            </Text>
 
             <View style={styles.headerRow}>
-                <View style={styles.rankColumn}>
-                    <Text style={styles.headerText}>#</Text>
-                </View>
-                <View style={styles.candidateColumn}>
-                    <Text style={styles.headerText}>Candidate</Text>
-                </View>
-                <View style={styles.partyColumn}>
-                    <Text style={styles.headerText}>Party</Text>
-                </View>
-                <View style={styles.votesColumn}>
-                    <Text style={styles.headerText}>Votes</Text>
-                </View>
-                <View style={styles.percentColumn}>
-                    <Text style={styles.headerText}>%</Text>
-                </View>
+                <Text style={[styles.headerText, styles.rank]}>#</Text>
+                <Text style={[styles.headerText, styles.candidate]}>Candidate</Text>
+                <Text style={[styles.headerText, styles.votesHeader]}>Votes</Text>
             </View>
 
             {sortedCandidates.map((candidate, index) => {
@@ -45,55 +33,41 @@ export function ResultsTable({
                         ? ((candidate.votes / totalVotes) * 100).toFixed(1)
                         : "0.0";
                 const isWinner = index === 0 && candidate.votes > 0;
+                const isLast = index === sortedCandidates.length - 1;
 
                 return (
                     <View
-                        key={index}
+                        key={candidate.candidate.id}
                         style={[
                             styles.dataRow,
-                            index % 2 === 0 ? styles.evenRow : styles.oddRow,
                             isWinner && styles.winnerRow,
+                            isLast && styles.lastRow,
                         ]}
                     >
-                        <View style={styles.rankColumn}>
-                            <Text style={[styles.cellText, styles.rankText]}>
-                                {index + 1}
-                            </Text>
-                        </View>
-                        <View style={styles.candidateColumn}>
+                        <Text style={[styles.rankText, styles.rank]}>{index + 1}</Text>
+                        <View style={styles.candidate}>
                             <Text
                                 style={[
-                                    styles.cellText,
-                                    styles.candidateName,
-                                    isWinner && styles.winnerText,
+                                    styles.name,
+                                    candidate.votes === 0 && styles.nameNoVotes,
                                 ]}
+                                numberOfLines={2}
                             >
                                 {candidate.candidate.first_name}{" "}
                                 {candidate.candidate.last_name}
                             </Text>
-                        </View>
-                        <View style={styles.partyColumn}>
-                            <Text style={[styles.cellText, styles.partyText]}>
+                            <Text style={styles.party} numberOfLines={1}>
                                 {candidate.candidate.party}
                             </Text>
                         </View>
-                        <View style={styles.votesColumn}>
-                            <Text
-                                style={[
-                                    styles.cellText,
-                                    styles.voteText,
-                                    isWinner && styles.winnerText,
-                                ]}
-                            >
+                        <View style={styles.votes}>
+                            <Text style={styles.voteText}>
                                 {candidate.votes.toLocaleString()}
                             </Text>
-                        </View>
-                        <View style={styles.percentColumn}>
                             <Text
                                 style={[
-                                    styles.cellText,
                                     styles.percentText,
-                                    isWinner && styles.winnerText,
+                                    isWinner && styles.percentWinner,
                                 ]}
                             >
                                 {percentage}%
@@ -116,102 +90,91 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         overflow: "hidden",
     },
-    tableHeader: {
-        backgroundColor: perk.ink,
-        paddingVertical: 10,
+    title: {
         paddingHorizontal: 14,
-    },
-    tableTitle: {
-        fontSize: 13.5,
+        paddingTop: 12,
+        paddingBottom: 10,
+        fontSize: 17,
         fontWeight: "800",
-        letterSpacing: 0.2,
-        color: perk.lime,
+        letterSpacing: -0.2,
+        color: perk.ink,
     },
     headerRow: {
         flexDirection: "row",
+        alignItems: "center",
         backgroundColor: perk.surface,
-        paddingVertical: 12,
+        paddingVertical: 8,
         paddingHorizontal: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: perk.rule08,
-    },
-    dataRow: {
-        flexDirection: "row",
-        paddingVertical: 14,
-        paddingHorizontal: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: perk.rule08,
-        minHeight: 56,
-        alignItems: "center",
-    },
-    evenRow: {
-        backgroundColor: perk.card,
-    },
-    oddRow: {
-        backgroundColor: perk.paper,
-    },
-    winnerRow: {
-        backgroundColor: "rgba(196,255,94,0.22)",
-        borderLeftWidth: 4,
-        borderLeftColor: perk.limeDeep,
-    },
-    rankColumn: {
-        width: 40,
-        alignItems: "center",
-    },
-    candidateColumn: {
-        flex: 3,
-        paddingRight: 12,
-    },
-    partyColumn: {
-        flex: 2,
-        paddingRight: 12,
-    },
-    votesColumn: {
-        width: 70,
-        alignItems: "center",
-    },
-    percentColumn: {
-        width: 50,
-        alignItems: "center",
     },
     headerText: {
         fontFamily: "SpaceMono-Regular",
         fontSize: 9,
-        fontWeight: "700",
         letterSpacing: 0.6,
+        textTransform: "uppercase",
         color: perk.mute,
-        textAlign: "center",
     },
-    cellText: {
-        fontSize: 13,
-        color: perk.ink,
+    dataRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: perk.rule16,
+    },
+    lastRow: {
+        borderBottomWidth: 0,
+    },
+    winnerRow: {
+        backgroundColor: "rgba(196,255,94,0.22)",
+    },
+    rank: {
+        width: 28,
+    },
+    candidate: {
+        flex: 1,
+        paddingRight: 12,
+    },
+    votesHeader: {
+        textAlign: "right",
+    },
+    votes: {
+        alignItems: "flex-end",
     },
     rankText: {
-        fontWeight: "800",
-        color: perk.mute,
-    },
-    candidateName: {
-        fontWeight: "800",
-        lineHeight: 18,
-    },
-    partyText: {
-        fontFamily: "SpaceMono-Regular",
-        color: perk.mute,
-        fontSize: 10,
-        lineHeight: 15,
-    },
-    voteText: {
-        fontFamily: "SpaceMono-Regular",
-        fontWeight: "700",
         fontSize: 13,
+        fontWeight: "700",
+        color: perk.mute,
     },
-    percentText: {
+    name: {
+        fontSize: 15,
+        lineHeight: 19,
         fontWeight: "800",
         color: perk.ink,
-        fontSize: 12,
     },
-    winnerText: {
-        color: perk.copperDeep,
+    nameNoVotes: {
+        color: perk.mute,
+    },
+    party: {
+        marginTop: 2,
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 9,
+        letterSpacing: 0.4,
+        textTransform: "uppercase",
+        color: perk.mute,
+    },
+    voteText: {
+        fontSize: 20,
+        lineHeight: 24,
+        fontWeight: "900",
+        color: perk.ink,
+        fontVariant: ["tabular-nums"],
+    },
+    percentText: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 10,
+        color: perk.mute,
+    },
+    percentWinner: {
+        color: perk.greenDeep,
     },
 });
