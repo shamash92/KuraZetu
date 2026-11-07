@@ -28,10 +28,11 @@ export function ResultsTable({
             </View>
 
             {sortedCandidates.map((candidate, index) => {
-                const percentage =
-                    totalVotes > 0
-                        ? ((candidate.votes / totalVotes) * 100).toFixed(1)
-                        : "0.0";
+                const hasVotes = candidate.votes > 0;
+                // One decimal, so a small share does not run to many digits.
+                const percentage = hasVotes
+                    ? ((candidate.votes / totalVotes) * 100).toFixed(1)
+                    : null;
                 const isWinner = index === 0 && candidate.votes > 0;
                 const isLast = index === sortedCandidates.length - 1;
 
@@ -61,17 +62,19 @@ export function ResultsTable({
                             </Text>
                         </View>
                         <View style={styles.votes}>
-                            <Text style={styles.voteText}>
+                            <Text style={[styles.voteText, !hasVotes && styles.noVotes]}>
                                 {candidate.votes.toLocaleString()}
                             </Text>
-                            <Text
-                                style={[
-                                    styles.percentText,
-                                    isWinner && styles.percentWinner,
-                                ]}
-                            >
-                                {percentage}%
-                            </Text>
+                            {percentage !== null && (
+                                <Text
+                                    style={[
+                                        styles.percentText,
+                                        isWinner && styles.percentWinner,
+                                    ]}
+                                >
+                                    {percentage}%
+                                </Text>
+                            )}
                         </View>
                     </View>
                 );
@@ -152,6 +155,10 @@ const styles = StyleSheet.create({
         color: perk.ink,
     },
     nameNoVotes: {
+        color: perk.mute,
+    },
+    noVotes: {
+        fontWeight: "500",
         color: perk.mute,
     },
     party: {
