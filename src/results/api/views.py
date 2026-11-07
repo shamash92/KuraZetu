@@ -1,13 +1,10 @@
-import json
-import logging
-
 from django.core.cache import cache
 from django.db.models import Sum
 from django.shortcuts import render
 
 from rest_framework import status
 from rest_framework.decorators import permission_classes
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -34,8 +31,6 @@ from results.models import (
 )
 from results.races import candidates_for, race_from
 from stations.models import PollingCenter, PollingStation, Ward
-
-logger = logging.getLogger(__name__)
 
 
 # TODO: We can refactor this code to use a single view for all results and pass the admin level e.g. presidential, governor, senator as url parameter
@@ -597,103 +592,4 @@ class PollingStationCandidatesListAPIView(APIView):
                 "data": aspirants.data,
                 "status": status.HTTP_200_OK,
             }
-        )
-
-
-class PollingStationResultsCreateAPIView(APIView):
-    """
-    API view to create results for a polling station.
-    """
-
-    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def post(self, request, *args, **kwargs):
-        level = kwargs.get("level")
-
-        client_data = request.data
-
-        data = json.loads(client_data.get("data", "{}"))
-        image = client_data.get("image", "{}")
-
-        polling_station_code = data.get("polling_station")
-
-        # Results submission is the one write worth a record of its own: it is
-        # how a tally enters the system. The shape of the submission is logged,
-        # never the payload, and the request filter attaches who sent it.
-        logger.info(
-            "results submitted station=%s level=%s aspirants=%s form_34a=%s",
-            polling_station_code,
-            level,
-            len(data.get("votes") or []),
-            bool(image and image != "{}"),
-        )
-
-        if not polling_station_code:
-            return Response(
-                {"error": "Polling station code is required."},
-                status=status.HTTP_200_OK,
-            )
-
-        if level != data.get("level"):
-            return Response(
-                {"error": "Level mismatch."},
-                status=status.HTTP_200_OK,
-            )
-
-        try:
-            polling_station = PollingStation.objects.get(code=polling_station_code)
-        except PollingStation.DoesNotExist:
-            return Response(
-                {"error": "Polling station not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if len(data.get("votes")) <= 0:
-            return Response(
-                {"error": "No votes provided."},
-                status=status.HTTP_200_OK,
-            )
-
-        for aspirant_votes in data.get("votes"):
-            try:
-                aspirant = Aspirant.objects.get(pk=aspirant_votes["id"])
-                result = PollingStationPresidentialResults.objects.create(
-                    polling_station=polling_station,
-                    presidential_candidate=aspirant,
-                    votes=aspirant_votes["votes"],
-                )
-
-            except Exception as e:
-                return Response(
-                    {"error": str(e), "message": "Failed to create results."},
-                    status=status.HTTP_200_OK,
-                )
-        # Create extra
-        try:
-            x = PollingStationPresidentialExtras.objects.create(
-                polling_station=polling_station,
-                rejected_votes=data.get("rejected_votes", 0),
-                disputed_votes=data.get("disputed_votes", 0),
-                valid_votes_cast=sum(
-                    aspirant["votes"] for aspirant in data.get("votes", [])
-                ),
-                added_by=request.user if request.user.is_authenticated else None,
-            )
-
-            x.form_34A.save(
-                "form34A.jpg",
-                image,
-                save=True,
-            )
-
-        except Exception as e:
-            return Response(
-                {"error": str(e), "message": "Failed to create extra results."},
-                status=status.HTTP_200_OK,
-            )
-
-        return Response(
-            {"message": "Results created successfully."},
-            status=status.HTTP_201_CREATED,
         )
