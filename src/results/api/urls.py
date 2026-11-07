@@ -13,7 +13,6 @@ from results.api.views import (
     PollingStationCandidatesListAPIView,
     PollingStationLevelResultsAPIView,
     PollingStationPresidentialResultsAPIView,
-    PollingStationResultsCreateAPIView,
 )
 
 urlpatterns = [
@@ -72,11 +71,6 @@ urlpatterns = [
         "polling-station/aspirants/<str:polling_station_code>/<str:level>/",
         PollingStationCandidatesListAPIView.as_view(),
         name="polling-station-candidates-list",
-    ),
-    path(
-        "polling-station/create/<str:polling_station_code>/<str:level>/",
-        PollingStationResultsCreateAPIView.as_view(),
-        name="polling-station-results-create",
     ),
     path("uploads/", ResultUploadView.as_view(), name="result-uploads"),
 ]
