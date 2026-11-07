@@ -32,7 +32,7 @@ import type {LightSetting} from "./camera/captureGate";
 import {getCameraPermissionRecovery} from "./camera/cameraPermission";
 import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
 import {VoteEntryPane} from "./entry/VoteEntryPane";
-import {isFilled, toCount} from "./entry/voteCount";
+import {STREAM_VOTER_LIMIT, toCount} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
 import {PhotoReviewPane} from "./review/PhotoReviewPane";
 import {readFormQr} from "./review/formQr";
@@ -210,6 +210,8 @@ interface ResultsFormCaptureProps {
     onChooseStream?: () => void;
     /** Checks where the phone is after capture and at Submit, when given. */
     place?: ResultsFormPlace;
+    /** The most votes the form can add up to; Submit is blocked above it. */
+    maxVotes?: number;
     submitLabel?: string;
     /** The parent is uploading: Submit shows progress and ignores taps. */
     submitting?: boolean;
@@ -242,6 +244,7 @@ export function ResultsFormCapture({
     stationCode,
     onChooseStream,
     place,
+    maxVotes = STREAM_VOTER_LIMIT,
     submitLabel = "Submit",
     submitting = false,
     onSubmit,
@@ -441,8 +444,9 @@ export function ResultsFormCapture({
     const setVote = (key: string, digits: string) =>
         setVotes((prev) => ({...prev, [key]: digits}));
 
+    // Every candidate, so an untouched box is sent as 0.
     const counts = Object.fromEntries(
-        Object.entries(votes).map(([key, digits]) => [key, toCount(digits)]),
+        candidates.map(({key}) => [key, toCount(votes[key] ?? "")]),
     );
 
     const total =
@@ -450,10 +454,6 @@ export function ResultsFormCapture({
         toCount(rejectedVotes) +
         toCount(disputedVotes);
 
-    const allFilled =
-        candidates.every((candidate) => isFilled(votes[candidate.key] ?? "")) &&
-        isFilled(rejectedVotes) &&
-        isFilled(disputedVotes);
     const extraGate = canSubmit
         ? canSubmit({
               votes: counts,
@@ -462,7 +462,7 @@ export function ResultsFormCapture({
               hasImage: !!capturedImage,
           })
         : true;
-    const submitEnabled = !!capturedImage && allFilled && extraGate;
+    const submitEnabled = !!capturedImage && total <= maxVotes && extraGate;
 
     const submitForm = () => {
         if (!capturedImage) return;
@@ -734,6 +734,7 @@ export function ResultsFormCapture({
                             candidates={candidates}
                             captured={!!capturedImage}
                             formName={formName}
+                            maxVotes={maxVotes}
                             disputedVotes={disputedVotes}
                             rejectedVotes={rejectedVotes}
                             submitEnabled={submitEnabled}

@@ -9,6 +9,8 @@ interface VoteCountRowProps {
     party?: string | null;
     /** The digits typed so far, at most three; "" until something is typed. */
     value: string;
+    /** The count is above the most voters the station can have. */
+    tooMany?: boolean;
     accessibilityLabel: string;
     onChange: (digits: string) => void;
 }
@@ -22,6 +24,7 @@ export function VoteCountRow({
     label,
     party,
     value,
+    tooMany = false,
     accessibilityLabel,
     onChange,
 }: VoteCountRowProps) {
@@ -48,6 +51,7 @@ export function VoteCountRow({
                             styles.box,
                             typed && styles.boxTyped,
                             focused && styles.boxFocused,
+                            tooMany && styles.boxTooMany,
                         ]}
                     >
                         <Text style={[styles.digit, !typed && styles.digitUntouched]}>
@@ -118,6 +122,10 @@ const styles = StyleSheet.create({
     // The row being typed in. Lime Deep: plain lime is too faint as a line.
     boxFocused: {
         borderColor: perk.limeDeep,
+        borderWidth: 2,
+    },
+    boxTooMany: {
+        borderColor: perk.coralDeep,
         borderWidth: 2,
     },
     digit: {

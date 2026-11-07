@@ -9,6 +9,7 @@ import {
 import {Camera as CameraIcon, Check} from "lucide-react-native";
 
 import {ELECTION_YEAR, REGISTER_YEAR} from "./register";
+import {toCount} from "./voteCount";
 import {VoteCountRow} from "./VoteCountRow";
 import {perk} from "@/app/_utils/colors";
 
@@ -23,6 +24,8 @@ interface VoteEntryPaneProps {
     captured: boolean;
     /** The results form being captured, e.g. "Form 37A". */
     formName: string;
+    /** The most votes the form can add up to. */
+    maxVotes: number;
     /** Digits typed per box, at most three. */
     disputedVotes: string;
     rejectedVotes: string;
@@ -43,6 +46,7 @@ export function VoteEntryPane({
     candidates,
     captured,
     formName,
+    maxVotes,
     disputedVotes,
     rejectedVotes,
     submitEnabled,
@@ -56,6 +60,8 @@ export function VoteEntryPane({
     onSubmit,
     onVoteChange,
 }: VoteEntryPaneProps) {
+    const tooMany = (digits: string) => toCount(digits) > maxVotes;
+    const overLimit = total > maxVotes;
     return (
         <View style={styles.body}>
             <ScrollView
@@ -101,6 +107,7 @@ export function VoteEntryPane({
                         label={candidate.name}
                         party={candidate.party}
                         value={votes[candidate.key] ?? ""}
+                        tooMany={tooMany(votes[candidate.key] ?? "")}
                         accessibilityLabel={`Votes for ${candidate.name}`}
                         onChange={(value) => onVoteChange(candidate.key, value)}
                     />
@@ -109,12 +116,14 @@ export function VoteEntryPane({
                 <VoteCountRow
                     label="Rejected votes"
                     value={rejectedVotes}
+                    tooMany={tooMany(rejectedVotes)}
                     accessibilityLabel="Rejected votes"
                     onChange={onRejectedVotesChange}
                 />
                 <VoteCountRow
                     label="Disputed votes"
                     value={disputedVotes}
+                    tooMany={tooMany(disputedVotes)}
                     accessibilityLabel="Disputed votes"
                     onChange={onDisputedVotesChange}
                 />
@@ -123,8 +132,16 @@ export function VoteEntryPane({
             <View style={styles.footer}>
                 <View style={styles.totalRow}>
                     <Text style={styles.totalLabel}>Total votes</Text>
-                    <Text style={styles.totalValue}>{total.toLocaleString()}</Text>
+                    <Text style={[styles.totalValue, overLimit && styles.overLimit]}>
+                        {total.toLocaleString()}
+                    </Text>
                 </View>
+                {overLimit && (
+                    <Text style={styles.limitText} accessibilityRole="alert">
+                        The total is above {maxVotes.toLocaleString()}, the most voters
+                        this station can have. Check the counts against the form.
+                    </Text>
+                )}
                 <TouchableOpacity
                     style={[styles.submitButton, !submitEnabled && styles.submitDisabled]}
                     disabled={!submitEnabled || submitting}
@@ -226,6 +243,15 @@ const styles = StyleSheet.create({
         fontSize: 24,
         color: perk.ink,
         fontVariant: ["tabular-nums"],
+    },
+    overLimit: {
+        color: perk.coralDeep,
+    },
+    limitText: {
+        marginTop: -4,
+        fontSize: 13,
+        lineHeight: 18,
+        color: perk.coralDeep,
     },
     submitButton: {
         flexDirection: "row",

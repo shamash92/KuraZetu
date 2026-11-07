@@ -2,10 +2,10 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-    isFilled,
     toCount,
     voteBoxes,
     voteDigits,
+    voteLimit,
 } = require("../../components/resultsForm/entry/voteCount.ts");
 
 test("typed digits fill the three boxes from the right", () => {
@@ -16,9 +16,14 @@ test("typed digits fill the three boxes from the right", () => {
     assert.equal(voteDigits(" 1,2345 "), "123");
 });
 
-test("an untouched box is not a count, a typed 0 is", () => {
-    assert.equal(isFilled(""), false);
-    assert.equal(isFilled("0"), true);
+test("an empty box counts as 0", () => {
+    assert.equal(toCount(""), 0);
     assert.equal(toCount("0"), 0);
     assert.equal(toCount("40"), 40);
+});
+
+test("a station can count up to 700, or its register when higher", () => {
+    assert.equal(voteLimit(370), 700);
+    assert.equal(voteLimit(831), 831);
+    assert.equal(voteLimit(null), 700);
 });

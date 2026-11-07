@@ -1,7 +1,12 @@
 import {Alert} from "react-native";
 import {useEffect, useRef, useState} from "react";
 
-import {ResultsFormCandidate, ResultsFormCapture} from "@/components/resultsForm";
+import {
+    RESULTS_FORMS,
+    ResultsFormCandidate,
+    ResultsFormCapture,
+} from "@/components/resultsForm";
+import {voteLimit} from "@/components/resultsForm/entry/voteCount";
 import {
     newUploadKey,
     uploadResultsForm,
@@ -88,6 +93,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         votes,
         rejectedVotes,
         disputedVotes,
+        total,
         fix,
         capturedAt,
     }: {
@@ -96,6 +102,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         votes: Record<string, number>;
         rejectedVotes: number;
         disputedVotes: number;
+        total: number;
         fix: DeviceFix | null;
         capturedAt: string | null;
     }) => {
@@ -111,13 +118,14 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         }
         const key = uploadKey.current.key;
 
+        // An upload cannot be changed, so a stray tap must not send one.
         Alert.alert(
-            "Submit Results",
-            "Are you sure you want to submit these results?",
+            `Upload ${RESULTS_FORMS[level].name}?`,
+            `${total.toLocaleString()} votes in total. Once uploaded, it cannot be changed.`,
             [
                 {text: "Cancel", style: "cancel"},
                 {
-                    text: "Submit",
+                    text: "Upload",
                     onPress: async () => {
                         if (!userToken) return;
 
@@ -164,6 +172,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
             level={level}
             stationCode={String(id)}
             onChooseStream={() => router.dismissTo("/communityNotes")}
+            maxVotes={voteLimit(station?.registered_voters)}
             place={
                 station?.location_check
                     ? {
