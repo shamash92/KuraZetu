@@ -23,6 +23,7 @@ markdown
 openpyxl
 pandas
 phonenumbers
+pillow==11.2.1
 pre-commit
 psycopg2-binary
 pygments

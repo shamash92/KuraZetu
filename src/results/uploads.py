@@ -3,6 +3,8 @@
 from django.conf import settings
 from django.db import IntegrityError, transaction
 
+from PIL import Image, UnidentifiedImageError
+
 from results.location import grade_location
 from results.models import ResultUpload, UploadDeviceFix
 from results.races import candidates_for, race_from
@@ -11,7 +13,11 @@ from stations.models import PollingStation
 # Roles limited to their registered ward until upload scope is built.
 WARD_LIMITED_ROLES = {"voter", "party_agent"}
 
-JPEG_START = b"\xff\xd8\xff"
+# A results form cannot be read below this, and a phone photo is far above it.
+MIN_SHORT_SIDE_PX = 1000
+# Well above a 48-megapixel phone photo; stops an image that decodes to
+# gigabytes from a small file.
+MAX_PIXELS = 60_000_000
 
 
 class UploadRefused(Exception):
@@ -122,10 +128,29 @@ def _check_photo(photo):
     if photo.size > settings.RESULT_UPLOAD_MAX_PHOTO_BYTES:
         limit = settings.RESULT_UPLOAD_MAX_PHOTO_BYTES // (1024 * 1024)
         raise UploadRefused("photo_too_large", f"The photo is larger than {limit} MB.")
-    start = photo.read(len(JPEG_START))
-    photo.seek(0)
-    if start != JPEG_START:
-        raise UploadRefused("not_jpeg", "The photo must be a JPEG.")
+    try:
+        with Image.open(photo) as image:
+            if image.format != "JPEG":
+                raise UploadRefused("not_jpeg", "The photo must be a JPEG.")
+            width, height = image.size
+            if min(width, height) < MIN_SHORT_SIDE_PX:
+                raise UploadRefused("photo_pixels", "The photo is too small to read.")
+            if width * height > MAX_PIXELS:
+                raise UploadRefused("photo_pixels", "The photo has too many pixels.")
+            # Decoding at an eighth of the size still reads every byte, so a
+            # cut-off or corrupt file fails here, in about a tenth of a second.
+            image.draft("RGB", (width // 8, height // 8))
+            image.load()
+    except (
+        UnidentifiedImageError,
+        Image.DecompressionBombError,
+        OSError,
+        SyntaxError,
+        ValueError,
+    ):
+        raise UploadRefused("not_jpeg", "The photo must be a whole JPEG.")
+    finally:
+        photo.seek(0)
 
 
 def _check_tally(votes, candidates):
