@@ -20,6 +20,7 @@ REFUSAL_STATUS = {
     "not_allowed": status.HTTP_403_FORBIDDEN,
     "photo_too_large": status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
     "key_used": status.HTTP_409_CONFLICT,
+    "already_uploaded": status.HTTP_409_CONFLICT,
 }
 
 

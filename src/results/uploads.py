@@ -73,6 +73,7 @@ def submit_upload(
     found = race_from(race)
     if found is None:
         raise UploadRefused("unknown_race", "Unknown race.")
+    _check_not_uploaded(account, station, found.key)
     _check_photo(photo)
     _check_tally(votes, candidates_for(station, found))
     location = grade_location(fix, account, station)
@@ -98,12 +99,6 @@ def submit_upload(
         if preview is not None:
             upload.preview.save("preview.jpg", preview, save=False)
         with transaction.atomic():
-            ResultUpload.objects.select_for_update().filter(
-                added_by=account,
-                polling_station=station,
-                race=found.key,
-                is_current=True,
-            ).update(is_current=False)
             upload.save(force_insert=True)
             if fix is not None:
                 UploadDeviceFix.objects.create(upload=upload, point=fix.point)
@@ -116,8 +111,21 @@ def submit_upload(
             earlier = ResultUpload.objects.filter(key=key).first()
             if earlier is not None:
                 return _replay(earlier, account)
+            # Two different uploads for one station and race arrived at once.
+            _check_not_uploaded(account, station, found.key)
         raise
     return upload, True
+
+
+def _check_not_uploaded(account, station, race):
+    """An upload cannot be replaced, so a second one is refused."""
+    if ResultUpload.objects.filter(
+        added_by=account, polling_station=station, race=race, is_current=True
+    ).exists():
+        raise UploadRefused(
+            "already_uploaded",
+            "You have already uploaded this form for this station.",
+        )
 
 
 def _replay(earlier, account):

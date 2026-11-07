@@ -436,8 +436,8 @@ def upload_preview_path(instance, filename):
 class ResultUpload(models.Model):
     """One photo of a results form and one typed tally, from one account.
 
-    Never changed once stored. A newer upload from the same account for the
-    same station and race replaces it as the current one.
+    Never changed or replaced once stored. An account has one upload for each
+    station and race.
     """
 
     class Meta:
