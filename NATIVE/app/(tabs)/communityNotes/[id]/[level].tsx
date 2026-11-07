@@ -17,6 +17,7 @@ import {IPollingStationResult, TLevelTabs} from "@/app/types";
 import {RESULTS_FORMS} from "@/components/resultsForm";
 import {ResultsTable} from "./_components/ResultsTable";
 import {VoteSummary} from "./_components/VoteSummary";
+import {OwnUpload, YourUpload} from "./_components/YourUpload";
 import {ZoomableImage} from "./_components/ZoomableImage";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
@@ -62,6 +63,8 @@ export default function LevelResultsScreen() {
     // Null until the station answers, so a slow request is not read as "none".
     const [results, setResults] = useState<IPollingStationResult[] | null>(null);
     const [extraData, setExtraData] = useState<IPollingStationExtraData | null>(null);
+    // This person's own upload for the race; null when they have not uploaded.
+    const [ownUpload, setOwnUpload] = useState<OwnUpload | null>(null);
     // A request that did not come back is not the same as a station with no tally.
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -92,19 +95,26 @@ export default function LevelResultsScreen() {
         const fetchStationResults = async () => {
             setFailed(false);
             try {
-                const response = await fetch(
-                    `${apiBaseURL}/api/results/polling-station/${id}/results/${level}/`,
-                    {
-                        headers: {Authorization: `Bearer ${userToken}`},
-                    },
-                );
+                const headers = {Authorization: `Bearer ${userToken}`};
+                const [response, ownResponse] = await Promise.all([
+                    fetch(
+                        `${apiBaseURL}/api/results/polling-station/${id}/results/${level}/`,
+                        {headers},
+                    ),
+                    fetch(
+                        `${apiBaseURL}/api/results/uploads/?station=${encodeURIComponent(id)}&race=${level}`,
+                        {headers},
+                    ),
+                ]);
                 if (await handleUnauthorized(response)) return;
-                if (!response.ok) {
+                // A 404 for the own upload means this person has not uploaded.
+                if (!response.ok || (!ownResponse.ok && ownResponse.status !== 404)) {
                     setFailed(true);
                     return;
                 }
                 const data = await response.json();
 
+                setOwnUpload(ownResponse.ok ? await ownResponse.json() : null);
                 setResults(data["data"] ?? []);
                 setExtraData(data["extra_data"]);
             } catch (error) {
@@ -183,7 +193,21 @@ export default function LevelResultsScreen() {
                 </>
             ) : null}
 
-            {results && results.length === 0 ? (
+            {results && results.length === 0 && ownUpload && userToken ? (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{paddingBottom: insets.bottom + 16}}
+                >
+                    {stationHeader}
+                    <YourUpload
+                        upload={ownUpload}
+                        levelLabel={levelLabel}
+                        token={userToken}
+                    />
+                </ScrollView>
+            ) : null}
+
+            {results && results.length === 0 && !ownUpload ? (
                 <>
                     {stationHeader}
                     <EmptyResults
