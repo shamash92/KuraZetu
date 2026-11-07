@@ -2,7 +2,7 @@ from django.urls import path
 
 from results.api.county_views import CountyTotalResultsAPIView
 from results.api.national_views import TotalPresResultsAPIView
-from results.api.upload_views import ResultUploadView
+from results.api.upload_views import ResultUploadPhotoView, ResultUploadView
 from results.api.views import (
     PollingCenterGovernorResultsAPIView,
     PollingCenterMCAResultsAPIView,
@@ -79,4 +79,14 @@ urlpatterns = [
         name="polling-station-results-create",
     ),
     path("uploads/", ResultUploadView.as_view(), name="result-uploads"),
+    path(
+        "uploads/<uuid:upload_id>/photo/",
+        ResultUploadPhotoView.as_view(),
+        name="result-upload-photo",
+    ),
+    path(
+        "uploads/<uuid:upload_id>/photo/full/",
+        ResultUploadPhotoView.as_view(full=True),
+        name="result-upload-photo-full",
+    ),
 ]

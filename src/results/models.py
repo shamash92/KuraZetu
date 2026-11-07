@@ -417,6 +417,10 @@ def upload_photo_path(instance, filename):
     return f"result-uploads/{uuid.uuid4().hex}.jpg"
 
 
+def upload_preview_path(instance, filename):
+    return f"result-uploads/{uuid.uuid4().hex}-preview.jpg"
+
+
 class ResultUpload(models.Model):
     """One photo of a results form and one typed tally, from one account.
 
@@ -450,6 +454,10 @@ class ResultUpload(models.Model):
     rejected_votes = models.PositiveIntegerField()
     disputed_votes = models.PositiveIntegerField()
     photo = models.FileField(storage=upload_storage, upload_to=upload_photo_path)
+    # A smaller copy that loads quickly; empty when the photo is already small.
+    preview = models.FileField(
+        storage=upload_storage, upload_to=upload_preview_path, blank=True
+    )
     # False when the photo was taken with Capture anyway.
     quality_checked = models.BooleanField()
     # Assigned by the server; a grade sent by the application is ignored.
