@@ -1,27 +1,81 @@
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
+    withSpring,
     withTiming,
 } from "react-native-reanimated";
 import {Dimensions, Image, StyleSheet, Text, View} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
-import React from "react";
+import React, {useState} from "react";
 import { windowWidth } from "@/app/_utils/device/screenDimensions";
 
 const {width: screenWidth} = Dimensions.get("window");
 
-interface ZoomableImageProps {
-    uri: string | number; // Accept string (URL) or number (require)
+// A drag past the photo's edge moves at this fraction of the finger, then
+// springs back on release.
+const OVERDRAG = 0.3;
+const SPRING_BACK = {damping: 20, stiffness: 220};
+
+// How far the photo may move from centre before its edge leaves the frame.
+function limit(size: number, scale: number) {
+    "worklet";
+    return Math.max(0, (size * (scale - 1)) / 2);
 }
 
-export function ZoomableImage({uri}: ZoomableImageProps) {
+function resist(value: number, bound: number) {
+    "worklet";
+    if (value > bound) return bound + (value - bound) * OVERDRAG;
+    if (value < -bound) return -bound + (value + bound) * OVERDRAG;
+    return value;
+}
+
+function clamp(value: number, bound: number) {
+    "worklet";
+    return Math.min(bound, Math.max(-bound, value));
+}
+
+interface ZoomableImageProps {
+    uri: string | number; // Accept string (URL) or number (require)
+    // Sent with a URL, e.g. the sign-in token for a private photo.
+    headers?: Record<string, string>;
+    onLoad?: () => void;
+    onError?: () => void;
+    // A larger version of the same photo, shown over `uri` once it has loaded.
+    fullUri?: string;
+    onFullLoad?: () => void;
+    onFullError?: () => void;
+}
+
+export function ZoomableImage({
+    uri,
+    headers,
+    onLoad,
+    onError,
+    fullUri,
+    onFullLoad,
+    onFullError,
+}: ZoomableImageProps) {
+    const [fullShown, setFullShown] = useState(false);
     const scale = useSharedValue(1);
     const savedScale = useSharedValue(1);
     const translateX = useSharedValue(0);
     const translateY = useSharedValue(0);
     const savedTranslateX = useSharedValue(0);
     const savedTranslateY = useSharedValue(0);
+    const frameWidth = useSharedValue(0);
+    const frameHeight = useSharedValue(0);
+
+    // Pull the photo back inside the frame for the given zoom.
+    const settle = (zoom: number) => {
+        "worklet";
+        const x = clamp(translateX.value, limit(frameWidth.value, zoom));
+        const y = clamp(translateY.value, limit(frameHeight.value, zoom));
+        translateX.value = withSpring(x, SPRING_BACK);
+        translateY.value = withSpring(y, SPRING_BACK);
+        savedTranslateX.value = x;
+        savedTranslateY.value = y;
+    };
 
     console.log(uri, "uri in ZoomableImage");
 
@@ -40,19 +94,26 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
             } else if (scale.value > 3) {
                 scale.value = withTiming(3);
                 savedScale.value = 3;
+                settle(3);
             } else {
                 savedScale.value = scale.value;
+                settle(scale.value);
             }
         });
 
     const panGesture = Gesture.Pan()
         .onUpdate((event) => {
-            translateX.value = savedTranslateX.value + event.translationX;
-            translateY.value = savedTranslateY.value + event.translationY;
+            translateX.value = resist(
+                savedTranslateX.value + event.translationX,
+                limit(frameWidth.value, scale.value),
+            );
+            translateY.value = resist(
+                savedTranslateY.value + event.translationY,
+                limit(frameHeight.value, scale.value),
+            );
         })
         .onEnd(() => {
-            savedTranslateX.value = translateX.value;
-            savedTranslateY.value = translateY.value;
+            settle(savedScale.value);
         });
 
     const doubleTapGesture = Gesture.Tap()
@@ -85,6 +146,10 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
 
     return (
         <View
+            onLayout={(event) => {
+                frameWidth.value = event.nativeEvent.layout.width;
+                frameHeight.value = event.nativeEvent.layout.height;
+            }}
             style={{
                 height: "100%",
                 // backgroundColor: '#F8F8F8',
@@ -97,7 +162,7 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
                     <Image
                         source={
                             typeof uri === "string"
-                                ? { uri: uri }
+                                ? { uri: uri, headers }
                                 : uri
                         }
                         style={{
@@ -107,7 +172,27 @@ export function ZoomableImage({uri}: ZoomableImageProps) {
                             // backgroundColor: "#F8F8F8",
                         }}
                         resizeMode="cover"
+                        onLoad={onLoad}
+                        onError={onError}
                     />
+                    {fullUri && fullUri !== uri ? (
+                        <Image
+                            source={{uri: fullUri, headers}}
+                            style={{
+                                position: "absolute",
+                                width: windowWidth,
+                                height: "100%",
+                                borderRadius: 12,
+                                opacity: fullShown ? 1 : 0,
+                            }}
+                            resizeMode="cover"
+                            onLoad={() => {
+                                setFullShown(true);
+                                onFullLoad?.();
+                            }}
+                            onError={onFullError}
+                        />
+                    ) : null}
                 </Animated.View>
             </GestureDetector>
         </View>
