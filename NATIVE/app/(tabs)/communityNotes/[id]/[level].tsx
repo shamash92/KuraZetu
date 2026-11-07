@@ -1,4 +1,5 @@
 import {
+    ActivityIndicator,
     Dimensions,
     Pressable,
     ScrollView,
@@ -58,6 +59,10 @@ export default function LevelResultsScreen() {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [addModalVisible, setAddModalVisible] = useState(false);
+    // The form screens set up the camera, so each is built only once it is
+    // first opened, and kept so it can slide away when closed.
+    const [counterMounted, setCounterMounted] = useState(false);
+    const [addMounted, setAddMounted] = useState(false);
 
     const [upvoted, setUpvoted] = useState(false);
     // Null until the station answers, so a slow request is not read as "none".
@@ -153,20 +158,31 @@ export default function LevelResultsScreen() {
                 backgroundColor: perk.card,
             }}
         >
-            <AddFormModal
-                visible={addModalVisible}
-                onClose={() => setAddModalVisible(false)}
-                level={level}
-            />
-            <CounterEvidenceModal
-                visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-                originalResults={sampleElectionData}
-                level={level}
-            />
+            {addMounted && (
+                <AddFormModal
+                    visible={addModalVisible}
+                    onClose={() => setAddModalVisible(false)}
+                    level={level}
+                />
+            )}
+            {counterMounted && (
+                <CounterEvidenceModal
+                    visible={modalVisible}
+                    onClose={() => setModalVisible(false)}
+                    originalResults={sampleElectionData}
+                    level={level}
+                />
+            )}
 
             {/* The navigation bar names the race. */}
             <Stack.Screen options={{headerTitle: `${levelLabel} results`}} />
+
+            {!results && !failed ? (
+                <>
+                    {stationHeader}
+                    <ActivityIndicator style={styles.loading} color={perk.mute} />
+                </>
+            ) : null}
 
             {failed && !results ? (
                 <>
@@ -214,7 +230,10 @@ export default function LevelResultsScreen() {
                         levelLabel={levelLabel}
                         formName={RESULTS_FORMS[level].name}
                         bottomOffset={insets.bottom + 16}
-                        onAdd={() => setAddModalVisible(true)}
+                        onAdd={() => {
+                            setAddMounted(true);
+                            setAddModalVisible(true);
+                        }}
                     />
                 </>
             ) : null}
@@ -285,7 +304,10 @@ export default function LevelResultsScreen() {
 
                         <TouchableOpacity
                             style={[styles.fab, styles.commentFab]}
-                            onPress={() => setModalVisible(true)}
+                            onPress={() => {
+                                setCounterMounted(true);
+                                setModalVisible(true);
+                            }}
                             activeOpacity={0.8}
                         >
                             <MessageCircle size={24} color={perk.card} />
@@ -323,6 +345,9 @@ const styles = StyleSheet.create({
         fontFamily: "SpaceMono-Regular",
         fontSize: 12,
         letterSpacing: 0.2,
+    },
+    loading: {
+        marginTop: 36,
     },
     failed: {
         paddingHorizontal: 20,
