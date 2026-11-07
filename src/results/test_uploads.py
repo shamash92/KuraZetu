@@ -590,3 +590,59 @@ def test_the_position_is_kept_apart_from_the_upload(client, located, mca_candida
     assert round(stored.distance_to_centre_m) == 80
     assert stored.device_fix.point.y == pytest.approx(CENTRE[1] + 80 / M_PER_DEG_LAT)
     assert not hasattr(stored, "latitude")
+
+
+# ── Public status ───────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def viewer(account):
+    """Another signed-in person looking at the station."""
+    from django.core.cache import cache
+
+    cache.clear()
+    other = User.objects.create_user(phone_number="+254700000004", password="pw")
+    viewer_client = APIClient()
+    viewer_client.force_authenticate(user=other)
+    return viewer_client
+
+
+def public_results(viewer_client, at):
+    response = viewer_client.get(f"/api/results/polling-station/{at.code}/results/mca/")
+    assert response.status_code == 200
+    return response.data
+
+
+def test_a_countable_upload_shows_as_waiting_with_nothing_else(
+    client, viewer, located, mca_candidates
+):
+    upload(client, located, mca_candidates, accuracy=10, **north_of_centre(20))
+
+    results = public_results(viewer, located)
+
+    assert results["waiting"] is True
+    # No numbers, no photo, no count of uploads.
+    assert results["data"] == []
+    assert results["extra_data"] is None
+
+
+def test_an_upload_that_cannot_count_shows_no_result(
+    client, viewer, located, mca_candidates
+):
+    upload(client, located, mca_candidates)
+
+    assert public_results(viewer, located)["waiting"] is False
+
+
+def test_a_station_without_uploads_is_not_waiting(viewer, station):
+    assert public_results(viewer, station)["waiting"] is False
+
+
+def test_a_new_countable_upload_shows_at_once_despite_the_cache(
+    client, viewer, located, mca_candidates
+):
+    assert public_results(viewer, located)["waiting"] is False
+
+    upload(client, located, mca_candidates, accuracy=10, **north_of_centre(20))
+
+    assert public_results(viewer, located)["waiting"] is True

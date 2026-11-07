@@ -19,6 +19,7 @@ from results.api.serializers import (
     PollingStationSenatorResultsSerializer,
     PollingStationWomenRepResultsSerializer,
 )
+from results.location import COUNTABLE
 from results.models import (
     Aspirant,
     PollingStationGovernorResults,
@@ -28,8 +29,9 @@ from results.models import (
     PollingStationPresidentialResults,
     PollingStationSenatorResults,
     PollingStationWomenRepResults,
+    ResultUpload,
 )
-from results.races import candidates_for, race_from
+from results.races import candidates_for, race_from, station_results_cache_key
 from stations.models import PollingCenter, PollingStation, Ward
 
 
@@ -463,7 +465,7 @@ class PollingStationLevelResultsAPIView(APIView):
 
         # Per-level, per-station cache key. The level is in the URL path, so each
         # office caches independently and can be invalidated on its own.
-        cache_key = f"polling_station_results:{race.key}:{polling_station_code}"
+        cache_key = station_results_cache_key(race.key, polling_station_code)
         cached_payload = cache.get(cache_key)
         if cached_payload is not None:
             return Response(cached_payload)
@@ -507,6 +509,14 @@ class PollingStationLevelResultsAPIView(APIView):
         payload = {
             "data": data,
             "extra_data": extra_data,
+            # Uploaded, waiting for confirmation. Only yes or no: no numbers,
+            # no photo, no count of uploads.
+            "waiting": ResultUpload.objects.filter(
+                polling_station=polling_station,
+                race=race.key,
+                is_current=True,
+                location_grade__in=COUNTABLE,
+            ).exists(),
             "status": status.HTTP_200_OK,
         }
         cache.set(cache_key, payload, timeout=self.CACHE_TIMEOUT)

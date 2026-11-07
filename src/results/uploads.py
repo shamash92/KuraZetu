@@ -3,6 +3,7 @@
 import io
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
 
@@ -10,7 +11,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from results.location import grade_location
 from results.models import ResultUpload, UploadDeviceFix
-from results.races import candidates_for, race_from
+from results.races import candidates_for, race_from, station_results_cache_key
 from stations.models import PollingStation
 
 # Roles limited to their registered ward until upload scope is built.
@@ -118,6 +119,9 @@ def submit_upload(
             # Two different uploads for one station and race arrived at once.
             _check_not_uploaded(account, station, found.key)
         raise
+    if location.countable:
+        # The station's public results now say it is waiting for confirmation.
+        cache.delete(station_results_cache_key(found.key, station.code))
     return upload, True
 
 

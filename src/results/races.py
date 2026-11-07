@@ -55,6 +55,11 @@ def race_from(name: str) -> Race | None:
     return RACES.get(_ALIASES.get(name, name))
 
 
+def station_results_cache_key(race_key: str, station_code: str) -> str:
+    """The cache key for one station's public results in one race."""
+    return f"polling_station_results:{race_key}:{station_code}"
+
+
 def candidates_for(station, race: Race):
     """The aspirants a tally at this station must cover for this race."""
     ward = station.polling_center.ward
