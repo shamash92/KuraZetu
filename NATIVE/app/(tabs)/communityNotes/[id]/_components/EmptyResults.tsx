@@ -73,6 +73,8 @@ interface IEmptyResultsProps {
     levelLabel: string;
     /** The form posted at the station for this race, e.g. "Form 36A". */
     formName: string;
+    /** An upload here can count but is not confirmed yet. */
+    waiting?: boolean;
     /** Distance from the bottom edge to the button, clearing the tab bar. */
     bottomOffset: number;
     onAdd: () => void;
@@ -85,6 +87,7 @@ interface IEmptyResultsProps {
 export function EmptyResults({
     levelLabel,
     formName,
+    waiting = false,
     bottomOffset,
     onAdd,
 }: IEmptyResultsProps) {
@@ -173,13 +176,28 @@ export function EmptyResults({
                     setCopyBottom(y + height);
                 }}
             >
-                <Text style={styles.title} accessibilityRole="header">
-                    No {levelLabel} results yet
-                </Text>
-                <Text style={styles.body}>
-                    Nobody has entered the figures for this stream. If you can see{" "}
-                    {formName} posted at the station, add them.
-                </Text>
+                {waiting ? (
+                    <>
+                        <Text style={styles.title} accessibilityRole="header">
+                            Uploaded, waiting for confirmation
+                        </Text>
+                        <Text style={styles.body}>
+                            {formName} for this stream has been uploaded. It is shown
+                            once a second reading matches. If you can see the form
+                            posted at the station, add your own.
+                        </Text>
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.title} accessibilityRole="header">
+                            No {levelLabel} results yet
+                        </Text>
+                        <Text style={styles.body}>
+                            Nobody has entered the figures for this stream. If you can
+                            see {formName} posted at the station, add them.
+                        </Text>
+                    </>
+                )}
             </View>
 
             {/* Only draw once both ends are known, and only if there is room
