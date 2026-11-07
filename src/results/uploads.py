@@ -1,9 +1,12 @@
 """Results form uploads: one photo and one typed tally from one account."""
 
+import io
+
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from results.location import grade_location
 from results.models import ResultUpload, UploadDeviceFix
@@ -18,6 +21,9 @@ MIN_SHORT_SIDE_PX = 1000
 # Well above a 48-megapixel phone photo; stops an image that decodes to
 # gigabytes from a small file.
 MAX_PIXELS = 60_000_000
+# Long side of the preview. A full photo is 6 to 10 MB and loads slowly; the
+# preview is a few hundred KB.
+PREVIEW_LONG_SIDE_PX = 2048
 
 
 class UploadRefused(Exception):
@@ -83,9 +89,12 @@ def submit_upload(
         distance_to_centre_m=location.distance_m,
         captured_at=captured_at,
     )
-    # The file is written first; if the row is not, the file goes too.
+    preview = _preview(photo)
+    # The files are written first; if the row is not, the files go too.
     upload.photo.save(photo.name, photo, save=False)
     try:
+        if preview is not None:
+            upload.preview.save("preview.jpg", preview, save=False)
         with transaction.atomic():
             ResultUpload.objects.select_for_update().filter(
                 added_by=account,
@@ -98,6 +107,8 @@ def submit_upload(
                 UploadDeviceFix.objects.create(upload=upload, point=fix.point)
     except Exception as error:
         upload.photo.delete(save=False)
+        if upload.preview:
+            upload.preview.delete(save=False)
         if isinstance(error, IntegrityError):
             # The same request arrived twice at once and the other one won.
             earlier = ResultUpload.objects.filter(key=key).first()
@@ -151,6 +162,26 @@ def _check_photo(photo):
         raise UploadRefused("not_jpeg", "The photo must be a whole JPEG.")
     finally:
         photo.seek(0)
+
+
+def _preview(photo):
+    """A smaller copy of the photo, or None when it is already small.
+
+    A photo already small, often from a low-end phone, is never compressed a
+    second time.
+    """
+    try:
+        with Image.open(photo) as image:
+            if max(image.size) <= PREVIEW_LONG_SIDE_PX:
+                return None
+            image.thumbnail((PREVIEW_LONG_SIDE_PX, PREVIEW_LONG_SIDE_PX))
+            # The copy carries no EXIF, so turn it the way the phone held it.
+            copy = ImageOps.exif_transpose(image).convert("RGB")
+    finally:
+        photo.seek(0)
+    buffer = io.BytesIO()
+    copy.save(buffer, "JPEG", quality=85)
+    return ContentFile(buffer.getvalue())
 
 
 def _check_tally(votes, candidates):

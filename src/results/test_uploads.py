@@ -273,6 +273,79 @@ def test_signing_in_is_required(station, mca_candidates):
     assert response.status_code == 401
 
 
+# ── Reading your own upload ─────────────────────────────────────────────
+
+
+def mine(client, at, race="mca"):
+    return client.get(URL, {"station": at.code, "race": race})
+
+
+def photo(client, link):
+    response = client.get(link)
+    if response.status_code != 200:
+        return response.status_code, b""
+    if response.streaming:
+        return 200, b"".join(response.streaming_content)
+    return 200, response.content
+
+
+def size_of(body):
+    return Image.open(io.BytesIO(body)).size
+
+
+def test_the_uploader_reads_their_current_upload_and_its_photo(
+    client, station, mca_candidates
+):
+    ann, ben = mca_candidates
+    upload(client, station, mca_candidates, votes={str(ann.id): 1, str(ben.id): 2})
+    full_photo = jpeg(4032, 3024)
+    upload(
+        client,
+        station,
+        mca_candidates,
+        votes={str(ann.id): 210, str(ben.id): 145},
+        photo=full_photo,
+    )
+
+    response = mine(client, station)
+
+    assert response.status_code == 200
+    tally = {
+        row["candidate"]["first_name"]: row["votes"] for row in response.data["votes"]
+    }
+    assert tally == {"Ann": 210, "Ben": 145}
+    assert (response.data["rejected_votes"], response.data["disputed_votes"]) == (2, 0)
+    assert response.data["location_grade"] == "location_unknown"
+    assert response.data["countable"] is False
+    # A smaller copy loads first; the full photo follows for zooming.
+    status, preview = photo(client, response.data["photo_preview"])
+    assert (status, size_of(preview)) == (200, (2048, 1536))
+    assert photo(client, response.data["photo_full"]) == (200, full_photo)
+
+
+def test_a_photo_already_small_is_sent_once_as_taken(client, station, mca_candidates):
+    upload(client, station, mca_candidates)
+
+    data = mine(client, station).data
+
+    assert data["photo_full"] == data["photo_preview"]
+    assert photo(client, data["photo_preview"]) == (200, JPEG)
+
+
+def test_nobody_else_reads_an_upload_or_its_photo(client, station, mca_candidates):
+    upload(client, station, mca_candidates)
+    links = mine(client, station).data
+    other = User.objects.create_user(phone_number="+254700000003", password="pw")
+    other_client = APIClient()
+    other_client.force_authenticate(user=other)
+
+    assert mine(other_client, station).status_code == 404
+    assert mine(client, station, race="governor").status_code == 404
+    for link in (links["photo_preview"], links["photo_full"]):
+        assert photo(other_client, link)[0] == 404
+        assert photo(APIClient(), link)[0] == 401
+
+
 # ── Location check ──────────────────────────────────────────────────────
 
 M_PER_DEG_LAT = 111_320
