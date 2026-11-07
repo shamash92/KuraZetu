@@ -60,7 +60,9 @@ def submit_upload(
         return _replay(earlier, account)
 
     station = (
-        PollingStation.objects.select_related("polling_center__ward__constituency")
+        PollingStation.objects.select_related(
+            "polling_center__ward__constituency__county"
+        )
         .filter(code=station_code)
         .first()
     )

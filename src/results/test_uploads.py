@@ -125,6 +125,18 @@ def test_an_upload_is_stored_with_its_tally_and_photo(
     assert list(private_uploads.rglob("*.jpg"))
 
 
+def test_photos_are_filed_by_place_beside_their_preview(
+    client, station, mca_candidates
+):
+    upload(client, station, mca_candidates, photo=jpeg(4032, 3024))
+
+    stored = ResultUpload.objects.get()
+    # County, constituency, ward, station, race.
+    folder = "result-uploads/001/001/0001/000000101/mca"
+    assert stored.photo.name == f"{folder}/{stored.id}.jpg"
+    assert stored.preview.name == f"{folder}/{stored.id}-preview.jpg"
+
+
 def test_the_same_request_sent_twice_stores_one_upload(client, station, mca_candidates):
     key = str(uuid.uuid4())
 

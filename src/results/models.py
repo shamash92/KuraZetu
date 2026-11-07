@@ -412,13 +412,25 @@ def upload_storage():
     return storages["uploads"]
 
 
+def _upload_folder(upload):
+    # Sorted by place so the bucket can be browsed by hand. The numbers match
+    # the Code boxes on the form: county, constituency, ward, then station.
+    station = upload.polling_station
+    ward = station.polling_center.ward
+    constituency = ward.constituency
+    return (
+        f"result-uploads/{constituency.county.number:03d}/{constituency.number:03d}"
+        f"/{ward.number:04d}/{station.code}/{upload.race}"
+    )
+
+
 def upload_photo_path(instance, filename):
-    # Random, so an address cannot be guessed from the station or the person.
-    return f"result-uploads/{uuid.uuid4().hex}.jpg"
+    # Named by the upload's random id, so it sits beside its preview.
+    return f"{_upload_folder(instance)}/{instance.id}.jpg"
 
 
 def upload_preview_path(instance, filename):
-    return f"result-uploads/{uuid.uuid4().hex}-preview.jpg"
+    return f"{_upload_folder(instance)}/{instance.id}-preview.jpg"
 
 
 class ResultUpload(models.Model):
