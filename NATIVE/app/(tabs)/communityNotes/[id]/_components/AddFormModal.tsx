@@ -11,6 +11,8 @@ import {TLevelTabs} from "@/app/types";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/auth/authStore";
 import {handleUnauthorized} from "@/app/_utils/auth/handleUnauthorized";
+import {toTitleCase} from "@/app/_utils/toTitleCase";
+import {useStationInfo} from "@/hooks/useStationInfo";
 import {router, useLocalSearchParams} from "expo-router";
 
 export interface IAspirant {
@@ -40,6 +42,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
 
     const {userToken} = useAuthStore();
     const {id} = useLocalSearchParams();
+    const station = useStationInfo();
 
     useEffect(() => {
         if (!userToken) return;
@@ -161,6 +164,15 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
             level={level}
             stationCode={String(id)}
             onChooseStream={() => router.dismissTo("/communityNotes")}
+            place={
+                station?.location_check
+                    ? {
+                          check: station.location_check,
+                          centreName: toTitleCase(station.polling_center),
+                          wardName: station.ward ? toTitleCase(station.ward) : null,
+                      }
+                    : undefined
+            }
             submitting={uploading}
             onSubmit={handleSubmit}
         />

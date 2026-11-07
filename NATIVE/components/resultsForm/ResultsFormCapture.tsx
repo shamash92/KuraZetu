@@ -39,6 +39,11 @@ import {readFormQr} from "./review/formQr";
 import {type StreamCheck, checkStream} from "./review/streamCheck";
 import {CaptureTips} from "./tips/CaptureTips";
 import {type DeviceFix, isPrecise} from "./upload/deviceFix";
+import {
+    type LocationCheckData,
+    type PlaceCheck,
+    checkPlace,
+} from "./upload/locationCheck";
 import {SubmitBlocked} from "./upload/SubmitBlocked";
 import {useDeviceFix} from "./upload/useDeviceFix";
 import {useNetworkStatus} from "@/app/_utils/device/useNetworkStatus";
@@ -126,6 +131,46 @@ async function checkCapturedStream(
     }
 }
 
+/** The station's centre and ward, for checking where the phone is. */
+export interface ResultsFormPlace {
+    check: LocationCheckData;
+    centreName: string;
+    wardName: string | null;
+}
+
+function metres(distance: number): string {
+    return distance >= 1000
+        ? `${(distance / 1000).toFixed(1)} km`
+        : `${Math.round(distance)} m`;
+}
+
+/** What to tell the person about where they are, or null when all is well. */
+function placeWarning(
+    check: PlaceCheck,
+    place: ResultsFormPlace,
+): {title: string; body: string} | null {
+    const ward = place.wardName ? `${place.wardName} ward` : "this station's ward";
+    if (check.kind === "outside") {
+        // An outside-ward centre is checked only near its pin.
+        return place.check.ward_boundary
+            ? {
+                  title: `You are outside ${ward}`,
+                  body: "We will still upload your results, but they will not count. Uploads count only from inside the station's ward.",
+              }
+            : {
+                  title: `You are not at ${place.centreName}`,
+                  body: "We will still upload your results, but they will not count. This centre counts only uploads made at the centre.",
+              };
+    }
+    if (check.kind === "ward" && check.distanceM !== null) {
+        return {
+            title: `You are not at ${place.centreName}`,
+            body: `You are about ${metres(check.distanceM)} from the centre. Your upload still counts because you are in ${ward}.`,
+        };
+    }
+    return null;
+}
+
 export interface ResultsFormCandidate {
     key: string;
     name: string;
@@ -163,6 +208,8 @@ interface ResultsFormCaptureProps {
      * names another stream at the same centre.
      */
     onChooseStream?: () => void;
+    /** Checks where the phone is after capture and at Submit, when given. */
+    place?: ResultsFormPlace;
     submitLabel?: string;
     /** The parent is uploading: Submit shows progress and ignores taps. */
     submitting?: boolean;
@@ -194,6 +241,7 @@ export function ResultsFormCapture({
     level,
     stationCode,
     onChooseStream,
+    place,
     submitLabel = "Submit",
     submitting = false,
     onSubmit,
@@ -228,6 +276,8 @@ export function ResultsFormCapture({
         StreamCheck | "checking" | null
     >(null);
     const [unreadPhotos, setUnreadPhotos] = useState(0);
+    /** The last place warning shown, so the same one is not shown twice. */
+    const [placeWarned, setPlaceWarned] = useState<PlaceCheck["kind"] | null>(null);
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
         // JPEG on both platforms. The default is each platform's own format,
@@ -382,6 +432,7 @@ export function ResultsFormCapture({
         setCaptureError(null);
         setStreamCheck(null);
         setUnreadPhotos(0);
+        setPlaceWarned(null);
         setLight("off");
     } else if (!visible && wasVisible) {
         setWasVisible(false);
@@ -428,6 +479,16 @@ export function ResultsFormCapture({
                 capturedAt: capturedAtRef.current,
             });
 
+        const check = place ? checkPlace(location.fix, place.check) : null;
+        const warning = place && check ? placeWarning(check, place) : null;
+        if (check?.kind === "outside" && warning && placeWarned !== "outside") {
+            setPlaceWarned("outside");
+            Alert.alert(warning.title, warning.body, [
+                {text: "Cancel", style: "cancel"},
+                {text: "Upload anyway", style: "destructive", onPress: send},
+            ]);
+            return;
+        }
         if (isPrecise(location.fix)) {
             send();
             return;
@@ -512,6 +573,16 @@ export function ResultsFormCapture({
         setPendingImage(null);
         setPendingPreview(null);
         setStreamCheck(null);
+
+        // The phone has been locating since the form opened; say now if it
+        // is away from the centre, before the counts are typed.
+        if (!place) return;
+        const check = checkPlace(location.fix, place.check);
+        const warning = placeWarning(check, place);
+        if (warning && placeWarned !== check.kind) {
+            setPlaceWarned(check.kind);
+            Alert.alert(warning.title, warning.body);
+        }
     };
 
     const closeForm = () => {
