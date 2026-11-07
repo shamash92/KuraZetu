@@ -149,17 +149,17 @@ def test_the_same_request_sent_twice_stores_one_upload(client, station, mca_cand
     assert ResultUpload.objects.count() == 1
 
 
-def test_uploading_again_replaces_the_current_upload_and_keeps_the_old(
-    client, station, mca_candidates
+def test_a_second_upload_for_the_same_station_and_race_is_refused(
+    client, station, mca_candidates, private_uploads
 ):
     first = upload(client, station, mca_candidates)
     second = upload(client, station, mca_candidates)
 
-    assert second.status_code == 201
-    old = ResultUpload.objects.get(id=first.data["id"])
-    new = ResultUpload.objects.get(id=second.data["id"])
-    assert not old.is_current
-    assert new.is_current
+    assert second.status_code == 409
+    assert second.data["code"] == "already_uploaded"
+    assert [str(u.id) for u in ResultUpload.objects.all()] == [first.data["id"]]
+    # Only the first upload's photo is on disk.
+    assert len(list(private_uploads.rglob("*.jpg"))) == 1
 
 
 def test_a_key_used_by_another_account_is_refused(
@@ -309,7 +309,6 @@ def test_the_uploader_reads_their_current_upload_and_its_photo(
     client, station, mca_candidates
 ):
     ann, ben = mca_candidates
-    upload(client, station, mca_candidates, votes={str(ann.id): 1, str(ben.id): 2})
     full_photo = jpeg(4032, 3024)
     upload(
         client,
@@ -425,17 +424,18 @@ def test_a_grade_sent_by_the_app_is_ignored(client, located, mca_candidates):
 
 
 @pytest.mark.parametrize("role", ["party_agent", "observer"])
+@pytest.mark.parametrize("accuracy, metres", [(60, 140), (99, 195)])
 def test_agents_and_observers_get_the_fix_accuracy_on_top_of_the_radius(
-    client, account, located, mca_candidates, role
+    client, account, located, mca_candidates, role, accuracy, metres
 ):
     account.role = role
     account.save()
 
-    near = upload(client, located, mca_candidates, accuracy=60, **north_of_centre(140))
-    far = upload(client, located, mca_candidates, accuracy=99, **north_of_centre(195))
+    response = upload(
+        client, located, mca_candidates, accuracy=accuracy, **north_of_centre(metres)
+    )
 
-    assert near.data["location_grade"] == "centre_match"
-    assert far.data["location_grade"] == "centre_match"
+    assert response.data["location_grade"] == "centre_match"
 
 
 def test_a_voter_gets_no_allowance_for_accuracy(client, located, mca_candidates):
@@ -477,8 +477,11 @@ def test_only_a_verified_real_pin_gives_a_centre_match(
     assert response.data["location_grade"] == "ward_fallback"
 
 
+@pytest.mark.parametrize(
+    "metres, grade", [(90, "centre_match"), (140, "location_mismatch")]
+)
 def test_an_outside_ward_centre_counts_only_within_100_metres_for_everyone(
-    client, account, located, mca_candidates
+    client, account, located, mca_candidates, metres, grade
 ):
     centre = located.polling_center
     centre.is_outside_ward_boundary = True
@@ -486,17 +489,18 @@ def test_an_outside_ward_centre_counts_only_within_100_metres_for_everyone(
     account.role = "observer"
     account.save()
 
-    close = upload(client, located, mca_candidates, accuracy=50, **north_of_centre(90))
-    inside_ward = upload(
-        client, located, mca_candidates, accuracy=50, **north_of_centre(140)
+    response = upload(
+        client, located, mca_candidates, accuracy=50, **north_of_centre(metres)
     )
 
-    assert close.data["location_grade"] == "centre_match"
-    assert inside_ward.data["location_grade"] == "location_mismatch"
+    assert response.data["location_grade"] == grade
 
 
+@pytest.mark.parametrize(
+    "metres, grade", [(30, "centre_match"), (80, "location_mismatch")]
+)
 def test_a_centre_inside_its_ward_counts_only_from_inside_the_ward(
-    client, located, mca_candidates
+    client, located, mca_candidates, metres, grade
 ):
     # The ward's northern edge runs 50 m north of the pin.
     edge = CENTRE[1] + 50 / M_PER_DEG_LAT
@@ -504,11 +508,11 @@ def test_a_centre_inside_its_ward_counts_only_from_inside_the_ward(
     ward.boundary = Polygon(((36, 0), (37, 0), (37, edge), (36, edge), (36, 0)))
     ward.save()
 
-    inside = upload(client, located, mca_candidates, accuracy=10, **north_of_centre(30))
-    across = upload(client, located, mca_candidates, accuracy=10, **north_of_centre(80))
+    response = upload(
+        client, located, mca_candidates, accuracy=10, **north_of_centre(metres)
+    )
 
-    assert inside.data["location_grade"] == "centre_match"
-    assert across.data["location_grade"] == "location_mismatch"
+    assert response.data["location_grade"] == grade
 
 
 def test_an_outside_ward_centre_counts_near_its_pin_outside_the_ward(
