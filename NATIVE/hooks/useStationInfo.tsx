@@ -2,6 +2,7 @@ import React, {createContext, useContext, useEffect, useState} from "react";
 
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import useAuthStore from "@/app/_utils/auth/authStore";
+import type {LocationCheckData} from "@/components/resultsForm/upload/locationCheck";
 import {handleUnauthorized} from "@/app/_utils/auth/handleUnauthorized";
 
 export interface IStationInfo {
@@ -15,6 +16,8 @@ export interface IStationInfo {
     county: string | null;
     /** The centre's site is outside its mapped ward; only a strict check near its pin counts. */
     is_outside_ward_boundary: boolean;
+    /** What the phone needs to check where it is before an upload. */
+    location_check?: LocationCheckData;
 }
 
 const StationInfoContext = createContext<IStationInfo | null>(null);
