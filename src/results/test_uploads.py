@@ -34,9 +34,11 @@ JPEG = jpeg(1000, 1000)
 
 @pytest.fixture(autouse=True)
 def private_uploads(monkeypatch, tmp_path):
-    # The field resolves its storage once, when models load.
-    field = ResultUpload._meta.get_field("photo")
-    monkeypatch.setattr(field, "storage", FileSystemStorage(location=str(tmp_path)))
+    # The fields resolve their storage once, when models load.
+    storage = FileSystemStorage(location=str(tmp_path))
+    for name in ("photo", "preview"):
+        field = ResultUpload._meta.get_field(name)
+        monkeypatch.setattr(field, "storage", storage)
     return tmp_path
 
 
@@ -222,6 +224,39 @@ def test_a_refused_upload_stores_nothing(
     assert response.data["code"] == code
     assert not ResultUpload.objects.exists()
     assert not list(private_uploads.rglob("*"))
+
+
+@pytest.mark.parametrize(
+    "registered, ann_votes, status",
+    [
+        # A stream has at most 700 voters; 689 + 9 + 2 rejected is 700.
+        (500, 689, 201),
+        (500, 690, 400),
+        # A station registered above 700 may count up to its register.
+        (831, 820, 201),
+        (831, 821, 400),
+    ],
+)
+def test_a_tally_above_the_most_voters_a_station_can_have_is_refused(
+    client, station, mca_candidates, registered, ann_votes, status
+):
+    station.registered_voters = registered
+    station.save()
+    ann, ben = mca_candidates
+
+    response = upload(
+        client,
+        station,
+        mca_candidates,
+        votes={str(ann.id): ann_votes, str(ben.id): 9},
+        rejected_votes=2,
+        disputed_votes=0,
+    )
+
+    assert response.status_code == status
+    if status == 400:
+        assert response.data["code"] == "too_many_votes"
+        assert not ResultUpload.objects.exists()
 
 
 def test_a_photo_with_too_many_pixels_is_refused(

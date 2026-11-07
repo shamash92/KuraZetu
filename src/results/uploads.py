@@ -21,6 +21,9 @@ MIN_SHORT_SIDE_PX = 1000
 # Well above a 48-megapixel phone photo; stops an image that decodes to
 # gigabytes from a small file.
 MAX_PIXELS = 60_000_000
+# The most voters a polling stream can have. A station registered above it
+# may count up to its register.
+STREAM_VOTER_LIMIT = 700
 # Long side of the preview. A full photo is 6 to 10 MB and loads slowly; the
 # preview is a few hundred KB.
 PREVIEW_LONG_SIDE_PX = 2048
@@ -76,6 +79,7 @@ def submit_upload(
     _check_not_uploaded(account, station, found.key)
     _check_photo(photo)
     _check_tally(votes, candidates_for(station, found))
+    _check_total(votes, rejected_votes, disputed_votes, station)
     location = grade_location(fix, account, station)
 
     upload = ResultUpload(
@@ -192,6 +196,16 @@ def _preview(photo):
     buffer = io.BytesIO()
     copy.save(buffer, "JPEG", quality=85)
     return ContentFile(buffer.getvalue())
+
+
+def _check_total(votes, rejected_votes, disputed_votes, station):
+    limit = max(STREAM_VOTER_LIMIT, station.registered_voters or 0)
+    if sum(votes.values()) + rejected_votes + disputed_votes > limit:
+        raise UploadRefused(
+            "too_many_votes",
+            f"The counts add up to more than {limit}, the most voters this "
+            "station can have.",
+        )
 
 
 def _check_tally(votes, candidates):
