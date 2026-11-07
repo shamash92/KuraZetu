@@ -1,5 +1,6 @@
 """Where an upload was made, graded against the station it names."""
 
+import json
 import math
 from dataclasses import dataclass
 
@@ -93,10 +94,37 @@ def grade_location(fix, account, station):
     return Grade(LOCATION_MISMATCH, distance)
 
 
+def phone_check(station, account):
+    """What the phone needs to grade its own fix the way grade_location does.
+
+    The phone checks before uploading, so its location stays on the phone
+    until the person uploads.
+    """
+    centre = station.polling_center
+    pin = centre.pin_location
+    boundary = centre.ward.boundary
+    checks_ward = not centre.is_outside_ward_boundary and boundary is not None
+    return {
+        # Longitude, latitude; None when the distance is not checked.
+        "centre": [pin.x, pin.y] if centre.is_verified and _is_real(pin) else None,
+        "radius_m": centre.radius * 1000,
+        "accuracy_allowance": (
+            not centre.is_outside_ward_boundary
+            and account.role in ACCURACY_ALLOWANCE_ROLES
+        ),
+        # None when the ward is not checked.
+        "ward_boundary": json.loads(boundary.json) if checks_ward else None,
+    }
+
+
+def _is_real(pin):
+    # A pin at (0, 0) is a placeholder for an unlocated centre, not a place.
+    return pin is not None and not (abs(pin.x) < 1e-6 and abs(pin.y) < 1e-6)
+
+
 def _distance_to(fix, station):
     pin = station.polling_center.pin_location
-    # A pin at (0, 0) is a placeholder for an unlocated centre, not a place.
-    if fix is None or pin is None or (abs(pin.x) < 1e-6 and abs(pin.y) < 1e-6):
+    if fix is None or not _is_real(pin):
         return None
     return _great_circle_m(fix.latitude, fix.longitude, pin.y, pin.x)
 

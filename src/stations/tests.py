@@ -491,6 +491,91 @@ def test_a_station_says_whether_its_centre_is_outside_its_ward():
     assert response.data["is_outside_ward_boundary"] is True
 
 
+def _station_check(center, role="voter"):
+    station = PollingStation.objects.create(
+        polling_center=center, code="000000511", registered_voters=400
+    )
+    user = User.objects.create_user(phone_number="+254700000001", password="pw")
+    user.role = role
+    user.save()
+    client = APIClient()
+    client.force_authenticate(user)
+    response = client.get(reverse("polling_station_info_api", args=[station.code]))
+    assert response.status_code == 200
+    return response.data["location_check"]
+
+
+WARD_SQUARE = {
+    "type": "Polygon",
+    "coordinates": [[[36, 0], [37, 0], [37, 1], [36, 1], [36, 0]]],
+}
+
+
+@pytest.mark.django_db
+def test_station_info_gives_the_phone_its_location_check():
+    center = PollingCenter.objects.create(
+        name="School",
+        code="051",
+        ward=_ward(),
+        pin_location=Point(36.5, 0.5),
+        is_verified=True,
+    )
+
+    check = _station_check(center)
+
+    assert check == {
+        "centre": [36.5, 0.5],
+        "radius_m": 100,
+        "accuracy_allowance": False,
+        "ward_boundary": WARD_SQUARE,
+    }
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "pin, verified", [(Point(36.5, 0.5), False), (Point(0, 0), True), (None, True)]
+)
+def test_the_phone_gets_no_centre_without_a_verified_real_pin(pin, verified):
+    center = PollingCenter.objects.create(
+        name="School", code="051", ward=_ward(), pin_location=pin, is_verified=verified
+    )
+
+    check = _station_check(center)
+
+    assert check["centre"] is None
+    assert check["ward_boundary"] == WARD_SQUARE
+
+
+@pytest.mark.django_db
+def test_agents_get_the_accuracy_allowance_on_the_phone_too():
+    center = PollingCenter.objects.create(
+        name="School",
+        code="051",
+        ward=_ward(),
+        pin_location=Point(36.5, 0.5),
+        is_verified=True,
+    )
+
+    assert _station_check(center, role="party_agent")["accuracy_allowance"] is True
+
+
+@pytest.mark.django_db
+def test_an_outside_ward_centre_sends_no_ward_and_no_allowance():
+    center = PollingCenter.objects.create(
+        name="School",
+        code="051",
+        ward=_ward(),
+        pin_location=Point(36.5, 0.5),
+        is_verified=True,
+        is_outside_ward_boundary=True,
+    )
+
+    check = _station_check(center, role="observer")
+
+    assert check["ward_boundary"] is None
+    assert check["accuracy_allowance"] is False
+
+
 @pytest.mark.django_db
 def test_nearby_search_reads_the_distance_in_metres():
     ward = _ward()
