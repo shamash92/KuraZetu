@@ -12,9 +12,10 @@ from rest_framework.views import APIView
 from accounts.authentication import NATIVE_AUTHENTICATION
 from results import comparing
 from results.api.upload_views import REFUSAL_STATUS
-from results.machine_checks import for_phone, start_check
+from results.machine_checks import compare_with, for_phone, start_check
 from results.models import MachineCheck, ResultUpload
 from results.races import race_from
+from results.reading import RETAKE
 from results.uploads import (
     UploadRefused,
     _check_account,
@@ -38,6 +39,11 @@ class ReadRequestSerializer(serializers.Serializer):
     photo = serializers.FileField()
     # The earlier upload the person agrees with.
     reference = serializers.UUIDField(required=False)
+
+
+class AgreeRequestSerializer(serializers.Serializer):
+    # The earlier upload whose results the photo shows.
+    reference = serializers.UUIDField()
 
 
 AGREEMENT_REFUSAL_STATUS = {
@@ -112,6 +118,59 @@ class ReadResultView(APIView):
     def get(self, request, check_id):
         check = get_object_or_404(MachineCheck, pk=check_id, account=request.user)
         return Response(for_phone(check))
+
+
+class AgreeAfterReadingView(APIView):
+    """Agree with an earlier upload using a photo already read, when the
+    reading shows the same results. The photo is compared with the earlier
+    one, as for any agreement; nothing is sent again."""
+
+    authentication_classes = NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, check_id):
+        check = get_object_or_404(
+            MachineCheck, pk=check_id, account=request.user, kind=MachineCheck.READ
+        )
+        given = AgreeRequestSerializer(data=request.data)
+        if not given.is_valid():
+            return Response(
+                {
+                    "code": "invalid_request",
+                    "error": "The request is missing a field or has a wrong value.",
+                    "errors": given.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if (
+            check.status != MachineCheck.DONE
+            or check.outcome in RETAKE
+            or check.comparisons.exists()
+        ):
+            return Response(
+                {
+                    "code": "not_comparable",
+                    "error": "This photo cannot be compared with the upload.",
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        try:
+            with check.photo.open("rb") as photo:
+                reference = _reference(
+                    request.user,
+                    check.polling_station,
+                    race_from(check.race),
+                    given.validated_data["reference"],
+                    photo,
+                )
+        except UploadRefused as refused:
+            return Response(
+                {"code": refused.code, "error": refused.message},
+                status=AGREEMENT_REFUSAL_STATUS.get(refused.code)
+                or REFUSAL_STATUS.get(refused.code, status.HTTP_400_BAD_REQUEST),
+            )
+        compare_with(check, reference)
+        return Response(for_phone(check), status=status.HTTP_202_ACCEPTED)
 
 
 class MarkedPhotoView(APIView):
