@@ -58,6 +58,7 @@ THIRD_PARTY_APPS = [
     "django_otp",
     "django_otp.plugins.otp_totp",
     "django_tailwind_cli",
+    "django_celery_results",
 ]
 
 if DEBUG:
@@ -566,3 +567,13 @@ RESULT_UPLOAD_MAX_PHOTO_BYTES = 15 * 1024 * 1024
 ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
 # The path of the photo reading step, read like the admin's.
 READING_URL_SUFFIX = config("READING_URL_SUFFIX", default="read")
+
+# Background work, such as reading results form photos. Redis must keep its
+# data on disk and never evict, or queued work is lost.
+CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+# Each job's state, timings and any crash show under Task results in the admin.
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_RESULT_EXTENDED = True
+CELERY_TASK_TRACK_STARTED = True

@@ -1,0 +1,29 @@
+# Tracked template for the production Celery worker, which reads results form
+# photos uploaded from the mobile app in the background.
+#
+# Install on a server (see docs/how-to-guides/run-celery-in-production.md):
+#   sudo cp src/.deploy/systemd/celery-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now celery-worker
+#
+# Replace <user> and the paths with the user Gunicorn runs as and the
+# server's checkout. The worker reads src/.env itself, like Gunicorn.
+
+[Unit]
+Description=KuraZetu Celery worker
+After=network.target redis-server.service postgresql.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=<user>
+Group=www-data
+WorkingDirectory=/home/<user>/KuraZetu/src
+ExecStart=/home/<user>/KuraZetu/src/venv/bin/celery -A CommunityTally worker --loglevel=info --concurrency=2
+# A reading takes up to 60 seconds. Give a running one time to finish on stop.
+TimeoutStopSec=90
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

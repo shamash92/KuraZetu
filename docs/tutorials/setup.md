@@ -236,6 +236,18 @@ sudo apt-get install libgdal-dev
 sudo apt-get install binutils libproj-dev gdal-bin
 ```
 
+### Redis
+
+Redis holds the queue of background work, such as reading results form
+photos uploaded from the mobile app.
+
+```bash
+sudo apt install -y redis-server
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+redis-cli ping   # prints PONG
+```
+
 ### 3. Configure Environment Variables
 
 Copy the example `.env.local` file to `.env`:
@@ -266,6 +278,11 @@ ANTHROPIC_API_KEY=
 # Path the mobile app calls to read a results form photo; the server
 # starts without it
 READING_URL_SUFFIX=read
+
+# Redis queue for background work. Use a database number (the last part)
+# that no other app on this Redis uses, or their workers take each other's
+# jobs and discard them
+REDIS_URL=redis://localhost:6379/1
 ```
 
 ### 4. Set Up PostgreSQL and PostGIS
@@ -440,3 +457,17 @@ Alternatively, to run the development server and Tailwind watcher together:
 ```bash
 python manage.py tailwind runserver
 ```
+
+## 4. Run the Celery Worker
+
+The Celery worker reads results form photos uploaded from the mobile app, in
+the background. Without it, a reading stays running until it times out and
+the person types the figures. In a new terminal, from `src/` with the virtual
+environment active:
+
+```bash
+celery -A CommunityTally worker -l info
+```
+
+Restart the worker after changing Python code; unlike `runserver`, it does
+not reload on its own.

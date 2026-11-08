@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+
 from rest_framework import serializers, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -6,7 +8,8 @@ from rest_framework.views import APIView
 
 from accounts.authentication import NATIVE_AUTHENTICATION
 from results.api.upload_views import REFUSAL_STATUS
-from results.machine_checks import for_phone, run_check
+from results.machine_checks import for_phone, start_check
+from results.models import MachineCheck
 from results.races import race_from
 from results.uploads import UploadRefused, _check_account, _check_photo
 from stations.models import PollingStation
@@ -19,10 +22,11 @@ class ReadRequestSerializer(serializers.Serializer):
 
 
 class ReadPhotoView(APIView):
-    """Read a results form photo before entry, to prefill the form.
+    """Start reading a results form photo before entry, to prefill the form.
 
-    A reading that fails still answers 200 with status "failed": the
-    person types the counts and uploads as usual.
+    Answers at once with the check and its status, usually "running"; the
+    phone then asks ReadResultView until it is "done" or "failed". A
+    reading that fails leaves the person to type the counts as usual.
     """
 
     authentication_classes = NATIVE_AUTHENTICATION
@@ -49,7 +53,18 @@ class ReadPhotoView(APIView):
                 {"code": refused.code, "error": refused.message},
                 status=REFUSAL_STATUS.get(refused.code, status.HTTP_400_BAD_REQUEST),
             )
-        check = run_check(request.user, station, race, data["photo"])
+        check = start_check(request.user, station, race, data["photo"])
+        return Response(for_phone(check), status=status.HTTP_202_ACCEPTED)
+
+
+class ReadResultView(APIView):
+    """The state of one of the person's own readings. Nobody else's."""
+
+    authentication_classes = NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, check_id):
+        check = get_object_or_404(MachineCheck, pk=check_id, account=request.user)
         return Response(for_phone(check))
 
 

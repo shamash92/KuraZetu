@@ -3,7 +3,7 @@ from django.urls import path
 
 from results.api.county_views import CountyTotalResultsAPIView
 from results.api.national_views import TotalPresResultsAPIView
-from results.api.reading_views import ReadPhotoView
+from results.api.reading_views import ReadPhotoView, ReadResultView
 from results.api.upload_views import ResultUploadPhotoView, ResultUploadView
 from results.api.views import (
     PollingCenterGovernorResultsAPIView,
@@ -80,6 +80,11 @@ urlpatterns = [
         f"{settings.READING_URL_SUFFIX}/",
         ReadPhotoView.as_view(),
         name="result-photo-reading",
+    ),
+    path(
+        f"{settings.READING_URL_SUFFIX}/<uuid:check_id>/",
+        ReadResultView.as_view(),
+        name="result-photo-reading-result",
     ),
     path(
         "uploads/<uuid:upload_id>/photo/",
