@@ -39,22 +39,8 @@ for polling_center in tqdm(
     # TODO: This is a temporary fix since re-running the save_polling_center_pin_locations.py script makes is_verified=True by default.
     #  Delete this once the mobile app is up and running
 
-    # Check if pin_location is at (0, 0) and clean it up to null
-
     polling_center.is_verified = False  # this is to fix the issue of is_verified being set to True when the pin_locations are processed in the previous script
     polling_center.save()
-
-    # Check if pin_location is at (0, 0) and clean it up to null
-    if (
-        polling_center.pin_location
-        and polling_center.pin_location.x == 0
-        and polling_center.pin_location.y == 0
-    ):
-        polling_center.pin_location = None
-        polling_center.pin_location_error = not_found_error_message
-        polling_center.is_verified = False
-        polling_center.save()
-        continue
 
     # clean errors for polling centers with pins but have errors #TODO: this should be removed if we have a check in model save()
     # if (
