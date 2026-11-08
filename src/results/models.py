@@ -534,12 +534,17 @@ def check_model_copy_path(instance, filename):
 
 
 class MachineCheck(models.Model):
-    """One machine reading of one photo, before entry.
+    """One machine check of a photo, before entry: a reading, or a comparison
+    with an earlier upload's photo when the person agrees with it.
 
     Never changed once done or failed. Not public, and the reply never
     reaches the phone; the phone gets the outcome and the figures read one
     way.
     """
+
+    READ = "read"
+    COMPARE = "compare"
+    KINDS = [(READ, "Reading"), (COMPARE, "Comparison")]
 
     RUNNING = "running"
     DONE = "done"
@@ -547,16 +552,36 @@ class MachineCheck(models.Model):
     STATUSES = [(RUNNING, "Running"), (DONE, "Done"), (FAILED, "Failed")]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    kind = models.CharField(max_length=10, choices=KINDS, default=READ)
     # Kept for the limits on machine readings.
     account = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="machine_checks"
+    )
+    # The earlier upload the person agrees with. Set on both checks of an
+    # agreement: the reading of the new photo and the comparison.
+    reference = models.ForeignKey(
+        ResultUpload,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="agreement_checks",
+    )
+    # For a comparison: the reading of the same new photo.
+    read_check = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="comparisons",
     )
     polling_station = models.ForeignKey(
         PollingStation, on_delete=models.PROTECT, related_name="machine_checks"
     )
     race = models.CharField(max_length=40, choices=Aspirant.LEVEL_CHOICES)
-    # The photo as taken, and the copy the model read.
-    # Both are deleted at once when the photo is not a results form.
+    # The photo as taken, and the copy the model read. A comparison keeps
+    # only the copy of the earlier upload's photo; the new photo's copy is
+    # its reading's. Both are deleted at once when the photo is not a
+    # results form.
     photo = models.FileField(
         storage=upload_storage, upload_to=check_photo_path, blank=True
     )

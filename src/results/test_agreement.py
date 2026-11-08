@@ -1,0 +1,423 @@
+"""Agreeing with an earlier upload: the new photo is read and compared with
+the earlier one at the same time (block D2)."""
+
+import uuid
+
+from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+import pytest
+
+from results import comparing, machine_checks, reading
+from results.location import CENTRE_MATCH, LOCATION_MISMATCH
+from results.models import MachineCheck, ResultUpload
+from results.qr import UNREAD
+from results.test_reading import (  # noqa: F401 (pytest fixtures)
+    URL,
+    agent,
+    failing,
+    figure,
+    message,
+    provider,
+    read_at_once,
+    reply,
+    result_url,
+)
+from results.test_uploads import (  # noqa: F401 (pytest fixtures)
+    account,
+    client,
+    jpeg,
+    mca_candidates,
+    private_uploads,
+    station,
+    ward,
+)
+
+pytestmark = pytest.mark.django_db
+
+User = get_user_model()
+
+# The earlier photo differs from the one each test sends.
+EARLIER_PHOTO = jpeg(3024, 4032)
+
+
+def comparison(sheet="same_sheet", differences=(), both_usable=True, not_compared=()):
+    return {
+        "both_usable": both_usable,
+        "unusable_reason": "",
+        "sheet": sheet,
+        "sheet_evidence": [
+            {"mark": "stamp_position", "agrees": True, "description": "Same place."}
+        ],
+        "differences": list(differences),
+        "not_compared": list(not_compared),
+    }
+
+
+def difference(part="candidate_votes", affects_figure=True, kind="digit_added"):
+    return {
+        "part": part,
+        "candidate_name_as_printed": "ANN X" if part == "candidate_votes" else None,
+        "kind": kind,
+        "in_a": "70",
+        "in_b": "170",
+        "affects_figure": affects_figure,
+    }
+
+
+@pytest.fixture(autouse=True)
+def compare_at_once(monkeypatch):
+    """Compare in the request instead of the worker, after the reading."""
+    monkeypatch.setattr(
+        machine_checks, "_queue_comparison", machine_checks.compare_stored
+    )
+
+
+@pytest.fixture
+def earlier(station, mca_candidates):
+    """Another person's countable upload: Ann 10, Ben 11, 2 rejected."""
+    ann, ben = mca_candidates
+    other = User.objects.create_user(phone_number="+254700000009", password="pw")
+    upload = ResultUpload(
+        key=uuid.uuid4(),
+        added_by=other,
+        polling_station=station,
+        race="mca",
+        votes={str(ann.id): 10, str(ben.id): 11},
+        rejected_votes=2,
+        disputed_votes=0,
+        quality_checked=True,
+        location_grade=CENTRE_MATCH,
+        server_qr_result=UNREAD,
+    )
+    upload.photo.save("photo.jpg", ContentFile(EARLIER_PHOTO), save=False)
+    upload.save()
+    return upload
+
+
+def agree(api_client, at, reference, photo=None):
+    return api_client.post(
+        URL,
+        {
+            "station": at.code,
+            "race": "mca",
+            "reference": str(reference),
+            "photo": SimpleUploadedFile(
+                "form.jpg", photo or jpeg(4032, 3024), "image/jpeg"
+            ),
+        },
+        format="multipart",
+    )
+
+
+def agree_and_ask(api_client, at, reference, photo=None):
+    started = agree(api_client, at, reference, photo)
+    assert started.status_code == 202, started.json()
+    return api_client.get(result_url(started.json()["check_id"])).json()
+
+
+# ── Outcomes ────────────────────────────────────────────────────────────
+
+
+def test_the_same_form_with_the_same_figures_agrees(client, station, earlier, provider):
+    fake = provider(message(reply()), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["status"] == "done"
+    assert data["agreement"] is True
+    assert data["outcome"] == machine_checks.AGREES
+    assert data["message"] == "Your photo matches the uploaded form."
+    assert data["retake"] is False
+    # Sonnet read the photo, then Sonnet compared the two.
+    assert fake.models == [reading.MODEL, reading.MODEL]
+    read, compared = MachineCheck.objects.order_by("created_at")
+    assert (read.kind, compared.kind) == (MachineCheck.READ, MachineCheck.COMPARE)
+    assert read.reference == compared.reference == earlier
+    assert compared.read_check == read
+    assert compared.outcome == comparing.SAME_FORM
+    assert compared.input["version"] == comparing.VERSION
+
+
+def test_an_added_signature_still_agrees(client, station, earlier, provider):
+    added = difference(part="agents_table", affects_figure=False, kind="mark_only_in_b")
+    provider(message(reply()), message(comparison(differences=[added])))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.AGREES
+    compared = MachineCheck.objects.get(kind=MachineCheck.COMPARE)
+    assert compared.outcome == comparing.SAME_FORM_WITH_ADDITIONS
+
+
+def test_an_agents_copy_with_the_same_figures_agrees(
+    client, station, earlier, provider
+):
+    provider(message(reply()), message(comparison(sheet="different_sheet")))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.AGREES
+    compared = MachineCheck.objects.get(kind=MachineCheck.COMPARE)
+    assert compared.outcome == comparing.DIFFERENT_COPY
+
+
+def test_a_figure_changed_between_the_photos_differs(
+    client, station, earlier, provider
+):
+    provider(message(reply()), message(comparison(differences=[difference()])))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+    assert data["message"] == (
+        "Some figures on your photo differ from the uploaded form."
+    )
+    # The figures read stay for the person who then disagrees.
+    assert data["prefill"]["rejected_votes"] == 2
+
+
+def test_a_figure_read_differently_differs(client, station, earlier, provider):
+    provider(message(reply(votes=(10, 41))), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+
+
+def test_an_agents_copy_with_other_figures_differs(client, station, earlier, provider):
+    provider(
+        message(reply(votes=(10, 41))), message(comparison(sheet="different_sheet"))
+    )
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+
+
+def test_a_reported_alteration_differs(client, station, earlier, provider):
+    altered = {
+        "field": "candidate_votes",
+        "ballot_number": 1,
+        "kind": "digit_inserted",
+        "countersigned": "absent",
+        "description": "",
+        "possible_values": [10, 110],
+    }
+    provider(message(reply(alterations=[altered])), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+
+
+def test_a_figure_that_cannot_be_read_is_not_checked(
+    client, station, earlier, provider
+):
+    provider(message(reply(votes=(10, figure(11, "ambiguous")))), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.NOT_CHECKED
+    assert data["message"] == "Your photo could not be checked."
+
+
+@pytest.mark.parametrize(
+    "compared",
+    [
+        comparison(both_usable=False),
+        comparison(sheet="cannot_tell"),
+        comparison(not_compared=["candidate_votes"]),
+    ],
+)
+def test_a_comparison_that_cannot_tell_is_not_checked(
+    client, station, earlier, provider, compared
+):
+    provider(message(reply()), message(compared))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.NOT_CHECKED
+    check = MachineCheck.objects.get(kind=MachineCheck.COMPARE)
+    assert check.outcome == comparing.COMPARE_INCONCLUSIVE
+
+
+def test_a_part_left_out_that_holds_no_figure_does_not_stop_agreement(
+    client, station, earlier, provider
+):
+    provider(message(reply()), message(comparison(not_compared=["agents_table"])))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.AGREES
+
+
+def test_failed_checks_are_never_an_agreement(
+    client, station, earlier, provider, failing
+):
+    provider()
+    failing(*[reading.PROVIDER_UNAVAILABLE] * 4)
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["status"] == "done"
+    assert data["outcome"] == machine_checks.NOT_CHECKED
+    assert set(MachineCheck.objects.values_list("status", flat=True)) == {
+        MachineCheck.FAILED
+    }
+
+
+def test_a_photo_that_is_not_a_form_is_retaken_and_not_compared(
+    client, station, earlier, provider
+):
+    not_a_form = reply(
+        screening={
+            "is_results_form": False,
+            "reason": "unrelated",
+            "flagged": False,
+            "flag_reason": "none",
+        }
+    )
+    fake = provider(message(not_a_form))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["retake"] is True
+    assert data["outcome"] == reading.NOT_A_RESULTS_FORM
+    compared = MachineCheck.objects.get(kind=MachineCheck.COMPARE)
+    assert compared.error == reading.PHOTO_DELETED
+    # Only the reading called the model.
+    assert fake.models == [reading.MODEL]
+
+
+def test_the_phone_waits_for_both_checks(
+    client, station, earlier, provider, monkeypatch
+):
+    monkeypatch.setattr(machine_checks, "_queue_comparison", lambda check_id: None)
+    provider(message(reply()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["status"] == "running"
+    assert data["outcome"] is None
+
+
+def test_a_first_reading_is_not_an_agreement(client, station, earlier, provider):
+    from results.test_reading import send
+
+    provider(message(reply()))
+
+    data = send(client, station).json()
+
+    assert data["agreement"] is False
+    assert data["outcome"] == reading.READ_COMPLETE
+    assert not MachineCheck.objects.filter(kind=MachineCheck.COMPARE).exists()
+
+
+# ── Who may agree, and with what ────────────────────────────────────────
+
+
+def test_a_voter_is_refused_before_anything_is_stored(
+    client, account, station, earlier, provider
+):
+    fake = provider()
+    account.role = "voter"
+    account.save()
+
+    response = agree(client, station, earlier.id)
+
+    assert response.status_code == 403
+    assert not MachineCheck.objects.exists()
+    assert fake.models == []
+
+
+def test_nobody_agrees_with_their_own_upload(
+    client, account, station, earlier, provider
+):
+    earlier.added_by = account
+    earlier.save()
+    provider()
+
+    response = agree(client, station, earlier.id)
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "already_uploaded"
+
+
+def test_a_person_who_uploaded_cannot_agree(
+    client, account, station, earlier, mca_candidates, provider
+):
+    ResultUpload.objects.create(
+        key=uuid.uuid4(),
+        added_by=account,
+        polling_station=station,
+        race="mca",
+        votes={},
+        rejected_votes=0,
+        disputed_votes=0,
+        quality_checked=True,
+        photo=ContentFile(jpeg(), name="mine.jpg"),
+    )
+    provider()
+
+    response = agree(client, station, earlier.id)
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "already_uploaded"
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"is_current": False},
+        {"race": "governor"},
+        {"location_grade": LOCATION_MISMATCH},
+    ],
+)
+def test_an_upload_that_cannot_be_agreed_with_is_refused(
+    client, station, earlier, provider, change
+):
+    ResultUpload.objects.filter(pk=earlier.pk).update(**change)
+    provider()
+
+    response = agree(client, station, earlier.id)
+
+    assert response.status_code == 404
+    assert response.json()["code"] == "reference_not_usable"
+    assert not MachineCheck.objects.exists()
+
+
+def test_an_unknown_upload_is_refused(client, station, earlier, provider):
+    provider()
+
+    response = agree(client, station, uuid.uuid4())
+
+    assert response.status_code == 404
+    assert response.json()["code"] == "reference_not_usable"
+
+
+def test_the_earlier_photo_sent_again_is_refused(client, station, earlier, provider):
+    fake = provider()
+
+    response = agree(client, station, earlier.id, photo=EARLIER_PHOTO)
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "same_photo"
+    assert not MachineCheck.objects.exists()
+    assert fake.models == []
+
+
+# ── The comparison request ──────────────────────────────────────────────
+
+
+def test_the_model_gets_both_photos_and_no_figures():
+    body = comparing.request(reading.MODEL, b"earlier", b"later")
+
+    content = body["messages"][0]["content"]
+    assert [part["type"] for part in content] == ["image", "text", "image", "text"]
+    assert content[1]["text"] == "Photograph A, taken earlier."
+    assert body["system"][0]["text"] == comparing.SYSTEM
+    assert body["output_config"]["format"]["schema"] == comparing.REPLY_FORMAT
+    words = " ".join(part.get("text", "") for part in content)
+    assert not any(character.isdigit() for character in words)

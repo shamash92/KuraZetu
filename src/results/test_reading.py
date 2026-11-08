@@ -550,6 +550,7 @@ def test_a_failed_reading_still_answers(
         "message": None,
         "retake": False,
         "prefill": None,
+        "agreement": False,
     }
 
 
