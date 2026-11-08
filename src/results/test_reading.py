@@ -1,8 +1,11 @@
 import io
 import json
+from datetime import timedelta
 from types import SimpleNamespace
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 
 import pytest
 from PIL import Image
@@ -21,7 +24,8 @@ from results.test_uploads import (  # noqa: F401 (pytest fixtures)
 
 pytestmark = pytest.mark.django_db
 
-# The path comes from the environment, so look it up by name.
+User = get_user_model()
+
 URL = reverse("result-photo-reading")
 
 
@@ -353,7 +357,7 @@ def test_only_figures_read_one_way_fill_the_form():
 # ── The reading step ────────────────────────────────────────────────────
 
 
-def send(api_client, at, photo=None):
+def start(api_client, at, photo=None):
     from django.core.files.uploadedfile import SimpleUploadedFile
 
     return api_client.post(
@@ -366,6 +370,35 @@ def send(api_client, at, photo=None):
             ),
         },
         format="multipart",
+    )
+
+
+def send(api_client, at, photo=None):
+    """Start a reading, then ask for its result as the phone does."""
+    started = start(api_client, at, photo)
+    if started.status_code != 202:
+        return started
+    return api_client.get(result_url(started.json()["check_id"]))
+
+
+def result_url(check_id):
+    return reverse("result-photo-reading-result", args=[check_id])
+
+
+@pytest.fixture(autouse=True)
+def agent(account):
+    """Readings are open to party agents and staff; the tests read as an agent."""
+    account.role = "party_agent"
+    account.save()
+    return account
+
+
+@pytest.fixture(autouse=True)
+def read_at_once(monkeypatch):
+    """Read in the request instead of the worker, so tests see the result."""
+    monkeypatch.setattr(machine_checks, "_queue", machine_checks.read_stored)
+    monkeypatch.setattr(
+        machine_checks.transaction, "on_commit", lambda callback: callback()
     )
 
 
@@ -385,6 +418,32 @@ def test_reading_needs_a_signed_in_person(station):
     from rest_framework.test import APIClient
 
     assert send(APIClient(), station).status_code == 401
+
+
+def test_a_voter_is_refused_before_anything_is_read(
+    client, account, station, mca_candidates, provider
+):
+    fake = provider(message())
+    account.role = "voter"
+    account.save()
+
+    response = start(client, station)
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "reading_not_allowed"
+    assert not MachineCheck.objects.exists()
+    assert fake.models == []
+
+
+def test_staff_may_have_a_photo_read(
+    client, account, station, mca_candidates, provider
+):
+    provider(message())
+    account.role = "voter"
+    account.staff = True
+    account.save()
+
+    assert start(client, station).status_code == 202
 
 
 def test_the_phone_gets_the_figures_read_one_way_and_never_the_reply(
@@ -596,3 +655,45 @@ def test_a_reading_is_cut_off_when_the_time_is_up():
         reading._call(client, {}, 60, clock=lambda: next(times))
 
     assert failed.value.code == reading.TIMEOUT
+
+
+# ── Reading in the background ───────────────────────────────────────────
+
+
+def test_the_photo_post_answers_before_the_reading_ends(
+    client, station, mca_candidates, provider
+):
+    provider(message())
+
+    response = start(client, station)
+
+    assert response.status_code == 202
+    assert response.json()["status"] == "running"
+    assert response.json()["prefill"] is None
+
+
+def test_only_the_owner_can_ask_for_a_result(client, station, mca_candidates, provider):
+    from rest_framework.test import APIClient
+
+    provider(message())
+    check_id = start(client, station).json()["check_id"]
+    other = User.objects.create_user(phone_number="+254700000009", password="pw")
+    stranger = APIClient()
+    stranger.force_authenticate(user=other)
+
+    assert stranger.get(result_url(check_id)).status_code == 404
+
+
+def test_a_reading_lost_with_its_server_ends_as_timed_out(
+    client, station, mca_candidates, provider, monkeypatch
+):
+    monkeypatch.setattr(machine_checks, "_queue", lambda check_id: None)
+    check_id = start(client, station).json()["check_id"]
+    MachineCheck.objects.filter(pk=check_id).update(
+        created_at=timezone.now() - machine_checks.LOST_AFTER - timedelta(seconds=1)
+    )
+
+    data = client.get(result_url(check_id)).json()
+
+    assert (data["status"], data["retake"]) == ("failed", False)
+    assert MachineCheck.objects.get(pk=check_id).error == reading.TIMEOUT

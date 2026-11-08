@@ -1,9 +1,11 @@
 africastalking==2.0.3
 anthropic==2.6.0
+celery==5.7.0
 black==26.3.1
 crispy-tailwind
 django == 5.2.18
 django-axes==8.3.1
+django-celery-results==2.6.0
 django_browser_reload
 django-admin-honeypot-updated-2021
 django-cors-headers
@@ -36,6 +38,7 @@ pytest-sugar
 python-decouple
 python-frontmatter
 qrcode
+redis==8.1.0
 requests
 tqdm
 zxing-cpp==3.1.1

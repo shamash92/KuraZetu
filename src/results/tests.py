@@ -632,6 +632,22 @@ class TestPollingStationCandidatesAPI:
         assert response.status_code == 200
         assert [a["id"] for a in response.data["data"]] == [here.id]
 
+    def test_each_candidate_has_all_three_names(
+        self, client, party, county, polling_station
+    ):
+        Aspirant.objects.create(
+            first_name="SAMUEL",
+            last_name="KOMBE",
+            surname="NZAI",
+            party=party,
+            level="women_rep",
+            county=county,
+        )
+
+        response = client.get(self.url(polling_station.code, "womanRep"))
+
+        assert response.data["data"][0]["full_name"] == "SAMUEL KOMBE NZAI"
+
     @pytest.mark.parametrize(
         "level, area",
         [

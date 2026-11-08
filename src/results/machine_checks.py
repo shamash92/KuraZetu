@@ -3,9 +3,11 @@
 import hashlib
 import logging
 import time
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.utils import timezone
 
 import anthropic
@@ -27,12 +29,37 @@ QR_OUTCOMES = {
 }
 
 
-def run_check(account, station, race, photo, client=None, clock=time.monotonic):
-    """Read the photo for this station and race, and store the check record.
+# A check still running this long after it started was lost, for example
+# when the server restarted during the reading.
+LOST_AFTER = timedelta(seconds=reading.DEADLINE_S + 30)
 
-    A reading that cannot be made is recorded as failed and never raises:
-    the person then types the counts without a prefill.
+
+def start_check(account, station, race, photo):
+    """Store the check and read the photo in the background.
+
+    Returns at once; the phone asks for the result with ``for_phone``.
     """
+    check = _store(account, station, race, photo)
+    if check.status == MachineCheck.RUNNING:
+        check_id = check.id
+        transaction.on_commit(lambda: _queue(check_id))
+    return check
+
+
+def _queue(check_id):
+    from results.tasks import read_check
+
+    read_check.delay(str(check_id))
+
+
+def read_stored(check_id):
+    check = MachineCheck.objects.select_related("polling_station").get(pk=check_id)
+    _read(check)
+
+
+def _store(account, station, race, photo, clock=time.monotonic):
+    """Save the photo, its model copy and the input. Ends the check at once
+    when the QR code names another station or race, or reading is off."""
     series = FORM_SERIES[race.key]
     candidates = _ballot(station, race)
     copy, width, height = reading.model_copy(photo)
@@ -66,13 +93,24 @@ def run_check(account, station, race, photo, client=None, clock=time.monotonic):
         # The QR code names another station or race: retake, no model call.
         check.outcome = wrong
         _finish(check, started, clock)
-        return check
-    if not settings.ANTHROPIC_API_KEY:
+    elif not settings.ANTHROPIC_API_KEY:
         _finish(check, started, clock, error=reading.SWITCHED_OFF)
-        return check
+    return check
+
+
+def _read(check, client=None, clock=time.monotonic):
+    """Ask the model, then record the outcome.
+
+    A reading that cannot be made is recorded as failed and never raises:
+    the person then types the counts without a prefill.
+    """
+    started = clock()
+    candidates = check.input["candidates"]
     text = reading.user_text(
-        check.input["form_number"], RACE_LABELS[race.key], candidates
+        check.input["form_number"], RACE_LABELS[check.race], candidates
     )
+    with check.model_copy.open("rb") as stored:
+        copy = stored.read()
     try:
         result = reading.read(client or _client(), copy, text, clock=clock)
     except reading.ReadFailed as failed:
@@ -84,8 +122,8 @@ def run_check(account, station, race, photo, client=None, clock=time.monotonic):
     check.usage = result.usage
     check.outcome = reading.outcome(
         result.reply,
-        station.code,
-        series,
+        check.polling_station.code,
+        check.input["form_number"][:2],
         [c["ballot_number"] for c in candidates],
         qr_matched=check.server_qr_result == qr.MATCH,
     )
@@ -101,6 +139,7 @@ def run_check(account, station, race, photo, client=None, clock=time.monotonic):
 
 def for_phone(check):
     """What the phone receives: never the reply, only figures read one way."""
+    _end_if_lost(check)
     done = check.status == MachineCheck.DONE
     retake = done and check.outcome in reading.RETAKE
     prefill = None
@@ -141,15 +180,24 @@ def _ballot(station, race):
         {
             "ballot_number": number,
             "aspirant_id": aspirant.id,
-            "name": " ".join(
-                part
-                for part in (aspirant.first_name, aspirant.last_name, aspirant.surname)
-                if part
-            ),
+            "name": aspirant.full_name,
             "party": aspirant.party.name if aspirant.party else "Independent",
         }
         for number, aspirant in enumerate(aspirants, start=1)
     ]
+
+
+def _end_if_lost(check):
+    """A reading lost with its server ends as timed out, so the phone stops
+    waiting and the person types the counts."""
+    if (
+        check.status == MachineCheck.RUNNING
+        and timezone.now() - check.created_at > LOST_AFTER
+    ):
+        check.status = MachineCheck.FAILED
+        check.error = reading.TIMEOUT
+        check.finished_at = timezone.now()
+        check.save(update_fields=["status", "error", "finished_at"])
 
 
 def _check_qr(photo, station, race):

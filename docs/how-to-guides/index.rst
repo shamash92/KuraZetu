@@ -11,3 +11,4 @@ How-to guides
    Customize your Multipass VM <customize-multipass>
    Connect VSCode to Multipass <vscode-multipass>
    Configure log rotation <configure-log-rotation>
+   Run the Celery worker in production <run-celery-in-production>

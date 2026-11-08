@@ -86,11 +86,14 @@ services:
     environment:
       DATABASE_HOST: db
       LOG_FILE: /tmp/kurazetu/app.log
+      REDIS_URL: redis://redis:6379/1
     depends_on:
       db:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
       webpack:
         condition: service_healthy
     healthcheck:
@@ -107,6 +110,47 @@ services:
     init: true
     cpus: 2.0
     mem_limit: 2g
+
+  # Queue for background work. Keeps its data on disk and never evicts, so
+  # queued work survives a restart and is never dropped.
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 256m
+
+  # Reads results form photos in the background. Restart it after changing
+  # Python code: it does not reload on its own.
+  celery:
+    <<: *web-image
+    command: celery -A CommunityTally worker -l info --concurrency=2
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: db
+      LOG_FILE: /tmp/kurazetu/app.log
+      REDIS_URL: redis://redis:6379/1
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+    cpus: 1.0
+    mem_limit: 1g
 
   docs:
     profiles:
@@ -137,5 +181,6 @@ volumes:
   pnpm_store:
   postgres_data:
   react_static_volume:
+  redis_data:
   tailwind_static_volume:
   webpack_node_modules:

@@ -84,19 +84,23 @@ OTHER_FORM = "other_form"
 
 # What the phone tells the person for each outcome.
 MESSAGES = {
-    READ_COMPLETE: "Check the results and edit where necessary.",
+    READ_COMPLETE: (
+        "The values below were extracted by our system and may be inaccurate. "
+        "Check and edit where necessary."
+    ),
     READ_INCOMPLETE: (
-        "Some figures could not be read. Fill in the empty boxes from the form."
+        "The values below were extracted by our system and may be inaccurate. "
+        "Fill in the empty boxes, then check and edit the rest where necessary."
     ),
     PHOTO_POOR: "The photo is not sharp enough to read every figure. Retake it.",
     PHOTO_UNREADABLE: "The figures cannot be read in this photo. Retake it.",
     ALTERATION_REPORTED: (
-        "Check the results and edit where necessary. A person will also check "
-        "the photo."
+        "The values below were extracted by our system and may be inaccurate. "
+        "Check and edit where necessary. A person will also check the photo."
     ),
     PHOTO_OF_SCREEN: (
-        "Check the results and edit where necessary. A person will also check "
-        "the photo."
+        "The values below were extracted by our system and may be inaccurate. "
+        "Check and edit where necessary. A person will also check the photo."
     ),
     NOT_A_RESULTS_FORM: "This photo is not a results form. Retake it.",
     PHOTO_BLOCKED: (
@@ -104,8 +108,9 @@ MESSAGES = {
         "political material. Only photos of results forms are accepted."
     ),
     CONTENT_FLAGGED: (
-        "Check the results and fill in any empty boxes. A person will also "
-        "check the photo."
+        "The values below were extracted by our system and may be inaccurate. "
+        "Fill in any empty boxes, and check and edit where necessary. A person "
+        "will also check the photo."
     ),
     OTHER_STATION: "This form is for another polling station.",
     OTHER_FORM: "This form is for another race.",

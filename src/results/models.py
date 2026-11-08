@@ -167,6 +167,13 @@ class Aspirant(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+    @property
+    def full_name(self):
+        """All three names, in the order they are stored."""
+        return " ".join(
+            part for part in (self.first_name, self.last_name, self.surname) if part
+        )
+
     def __str__(self):
         return f"{self.level} - {self.first_name} {self.last_name} - {self.party.name}"
 
