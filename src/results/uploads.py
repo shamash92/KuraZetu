@@ -11,7 +11,7 @@ from django.db import IntegrityError, transaction
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from results.location import grade_location
-from results.models import ResultUpload, UploadDeviceFix
+from results.models import MachineCheck, ResultUpload, UploadDeviceFix
 from results.qr import NOT_CHECKED, classify, read_qr
 from results.races import candidates_for, race_from, station_results_cache_key
 from stations.models import PollingStation
@@ -51,14 +51,17 @@ def submit_upload(
     votes,
     rejected_votes,
     disputed_votes,
-    photo,
     quality_checked,
     key,
+    photo=None,
+    check_id=None,
     fix=None,
     captured_at=None,
 ):
     """Store an upload, or raise UploadRefused and store nothing.
 
+    The photo is either sent again, or taken from the person's own machine
+    reading named by ``check_id``, so the phone does not send it twice.
     ``fix`` is the device's position (a ``results.location.Fix``) or None.
     Returns ``(upload, created)``. A request repeating an earlier ``key``
     returns that upload with ``created`` False.
@@ -82,11 +85,19 @@ def submit_upload(
     if found is None:
         raise UploadRefused("unknown_race", "Unknown race.")
     _check_not_uploaded(account, station, found.key)
+    check = None
+    if check_id is not None:
+        check = _usable_check(check_id, account, station, found.key)
+        photo = check.photo.open("rb")
     _check_photo(photo)
     _check_tally(votes, candidates_for(station, found))
     _check_total(votes, rejected_votes, disputed_votes, station)
     location = grade_location(fix, account, station)
-    qr_value, qr_result = _check_qr(photo, station, found.key)
+    if check is not None:
+        # Read when the photo was checked; the same photo gives the same code.
+        qr_value, qr_result = check.server_qr_value, check.server_qr_result
+    else:
+        qr_value, qr_result = _check_qr(photo, station, found.key)
 
     upload = ResultUpload(
         key=key,
@@ -106,7 +117,7 @@ def submit_upload(
     )
     preview = _preview(photo)
     # The files are written first; if the row is not, the files go too.
-    upload.photo.save(photo.name, photo, save=False)
+    upload.photo.save("photo.jpg", photo, save=False)
     try:
         if preview is not None:
             upload.preview.save("preview.jpg", preview, save=False)
@@ -114,6 +125,10 @@ def submit_upload(
             upload.save(force_insert=True)
             if fix is not None:
                 UploadDeviceFix.objects.create(upload=upload, point=fix.point)
+            if check is not None and not _link(check, upload):
+                raise UploadRefused(
+                    "check_not_usable", "This photo has already been uploaded."
+                )
     except Exception as error:
         upload.photo.delete(save=False)
         if upload.preview:
@@ -130,6 +145,34 @@ def submit_upload(
         # The station's public results now say it is waiting for confirmation.
         cache.delete(station_results_cache_key(found.key, station.code))
     return upload, True
+
+
+def _usable_check(check_id, account, station, race):
+    """The person's own reading of a photo for this station and race.
+
+    Its photo is gone when it was blocked or was not a results form.
+    """
+    check = MachineCheck.objects.filter(
+        pk=check_id,
+        account=account,
+        polling_station=station,
+        race=race,
+        upload__isnull=True,
+    ).first()
+    if check is None or not check.photo:
+        raise UploadRefused(
+            "check_not_usable", "This photo cannot be used. Take the photo again."
+        )
+    return check
+
+
+def _link(check, upload):
+    """Link the reading to its upload, unless another upload took it first."""
+    return bool(
+        MachineCheck.objects.filter(pk=check.pk, upload__isnull=True).update(
+            upload=upload
+        )
+    )
 
 
 def _check_not_uploaded(account, station, race):
