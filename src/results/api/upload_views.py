@@ -34,7 +34,9 @@ class UploadRequestSerializer(serializers.Serializer):
     disputed_votes = serializers.IntegerField(min_value=0)
     quality_checked = serializers.BooleanField()
     key = serializers.UUIDField()
-    photo = serializers.FileField()
+    # The photo, or the person's machine reading that already holds it.
+    photo = serializers.FileField(required=False)
+    check_id = serializers.UUIDField(required=False)
     # The device fix and capture time, when the device gives them.
     latitude = serializers.FloatField(required=False, min_value=-90, max_value=90)
     longitude = serializers.FloatField(required=False, min_value=-180, max_value=180)
@@ -45,6 +47,11 @@ class UploadRequestSerializer(serializers.Serializer):
         if not isinstance(value, dict):
             raise serializers.ValidationError("Send the tally as an object.")
         return value
+
+    def validate(self, data):
+        if ("photo" in data) == ("check_id" in data):
+            raise serializers.ValidationError("Send the photo or its check_id.")
+        return data
 
 
 class ResultUploadView(APIView):
@@ -74,7 +81,8 @@ class ResultUploadView(APIView):
                 votes=data["votes"],
                 rejected_votes=data["rejected_votes"],
                 disputed_votes=data["disputed_votes"],
-                photo=data["photo"],
+                photo=data.get("photo"),
+                check_id=data.get("check_id"),
                 quality_checked=data["quality_checked"],
                 key=data["key"],
                 fix=_fix(data),
