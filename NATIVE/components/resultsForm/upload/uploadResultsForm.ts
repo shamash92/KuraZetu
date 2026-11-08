@@ -20,6 +20,8 @@ export interface ResultsFormUpload {
     key: string;
     fix: DeviceFix | null;
     capturedAt: string | null;
+    /** The photo's reading; the server uses its photo, so none is sent. */
+    checkId: string | null;
 }
 
 export type UploadOutcome =
@@ -31,7 +33,7 @@ export type UploadOutcome =
 
 /** Send one results form photo and its tally to the server. */
 export async function uploadResultsForm(upload: ResultsFormUpload): Promise<UploadOutcome> {
-    const photo = await fitPhoto(upload.image);
+    const photo = upload.checkId ? null : await fitPhoto(upload.image);
 
     const body = new FormData();
     body.append("station", upload.stationCode);
@@ -47,8 +49,9 @@ export async function uploadResultsForm(upload: ResultsFormUpload): Promise<Uplo
         body.append("accuracy", String(upload.fix.accuracy));
     }
     if (upload.capturedAt) body.append("captured_at", upload.capturedAt);
+    if (upload.checkId) body.append("check_id", upload.checkId);
     // Expo's FormData takes Blob-compatible values, not {uri, type, name}.
-    body.append("photo", new File(photo));
+    else if (photo) body.append("photo", new File(photo));
 
     try {
         const response = await fetch(`${apiBaseURL}/api/results/uploads/`, {
@@ -69,7 +72,7 @@ export async function uploadResultsForm(upload: ResultsFormUpload): Promise<Uplo
     } catch {
         return {kind: "failed"};
     } finally {
-        if (photo !== upload.image) new File(photo).delete();
+        if (photo && photo !== upload.image) new File(photo).delete();
     }
 }
 

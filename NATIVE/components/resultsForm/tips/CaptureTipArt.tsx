@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {type LayoutChangeEvent, StyleSheet, View} from "react-native";
+import {type LayoutChangeEvent, type StyleProp, StyleSheet, View, type ViewStyle} from "react-native";
 import Animated, {
     Easing,
     cancelAnimation,
@@ -624,7 +624,14 @@ const VIEWFINDER: ReadonlySet<CaptureTipArtKind> = new Set(["fill", "qr", "tap"]
  * The looping drawing above a capture tip. Decorative: the tip's heading and
  * text carry everything a screen reader needs.
  */
-export function CaptureTipArt({art}: {art: CaptureTipArtKind}) {
+export function CaptureTipArt({
+    art,
+    style,
+}: {
+    art: CaptureTipArtKind;
+    /** Overrides the panel's size, for a drawing that fills a screen. */
+    style?: StyleProp<ViewStyle>;
+}) {
     const [fit, setFit] = useState<Fit | null>(null);
     const Art = ART[art];
 
@@ -640,7 +647,7 @@ export function CaptureTipArt({art}: {art: CaptureTipArtKind}) {
 
     return (
         <View
-            style={[styles.panel, VIEWFINDER.has(art) && styles.viewfinder]}
+            style={[styles.panel, VIEWFINDER.has(art) && styles.viewfinder, style]}
             onLayout={onLayout}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
