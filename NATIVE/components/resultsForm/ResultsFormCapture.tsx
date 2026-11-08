@@ -35,6 +35,7 @@ import {VoteEntryPane} from "./entry/VoteEntryPane";
 import {STREAM_VOTER_LIMIT, toCount} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
 import {type Reading, fillBoxes} from "./reading/prefill";
+import {AgreementPane} from "./reading/AgreementPane";
 import {PhotoStepPane} from "./reading/PhotoStepPane";
 import {ReadingPane} from "./reading/ReadingPane";
 import {startReading, useReading} from "./reading/readPhoto";
@@ -190,10 +191,21 @@ type ReadingStep =
           /** The boxes hold the reading's figures. */
           prefilled: boolean;
           unread: string[];
+      }
+    /** Made to agree with an earlier upload. */
+    | {
+          kind: "agreement";
+          checkId: string | null;
+          agrees: boolean;
+          message: string;
+          /** The full reading, for the boxes if the person disagrees. */
+          reading: Reading | null;
       };
 
 /** Shown when there is no reading: the server could not be reached or failed. */
 const NOT_READ = "The form could not be read. Type the results from the form.";
+/** Shown when an agreeing photo has no outcome from the server. */
+const NOT_CHECKED = "Your photo could not be checked.";
 
 export interface ResultsFormCandidate {
     key: string;
@@ -215,6 +227,15 @@ interface ResultsFormSubmission {
     capturedAt: string | null;
     /** The photo's reading on the server; the upload uses its photo. */
     checkId: string | null;
+}
+
+/** An agreement, once the server found the photo matches. */
+export interface ResultsFormAgreement {
+    image: string;
+    qualityChecked: boolean;
+    fix: DeviceFix | null;
+    capturedAt: string | null;
+    checkId: string;
 }
 
 interface ResultsFormCaptureProps {
@@ -243,6 +264,14 @@ interface ResultsFormCaptureProps {
      * stationCode.
      */
     readsPhoto?: boolean;
+    /**
+     * The earlier upload the person agrees with. The photo is compared with
+     * it and read in full; nothing is typed unless the person disagrees.
+     * Needs readsPhoto.
+     */
+    agreeWith?: string | null;
+    /** Save the agreement. Needed with agreeWith. */
+    onAgree?: (agreement: ResultsFormAgreement) => void;
     submitLabel?: string;
     /** The parent is uploading: Submit shows progress and ignores taps. */
     submitting?: boolean;
@@ -277,6 +306,8 @@ export function ResultsFormCapture({
     place,
     maxVotes = STREAM_VOTER_LIMIT,
     readsPhoto = false,
+    agreeWith = null,
+    onAgree,
     submitLabel = "Submit",
     submitting = false,
     onSubmit,
@@ -314,6 +345,9 @@ export function ResultsFormCapture({
     /** The last place warning shown, so the same one is not shown twice. */
     const [placeWarned, setPlaceWarned] = useState<PlaceCheck["kind"] | null>(null);
     const [readingStep, setReadingStep] = useState<ReadingStep | null>(null);
+    /** Tapped Disagree: later photos are read for typing, not compared. */
+    const [disagreed, setDisagreed] = useState(false);
+    const agreeing = !!agreeWith && !disagreed;
     const {userToken} = useAuthStore();
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
@@ -504,7 +538,7 @@ export function ResultsFormCapture({
     const submitForm = () => {
         if (!capturedImage) return;
 
-        const send = () =>
+        sendWhereAllowed(() =>
             onSubmit({
                 image: capturedImage,
                 qualityChecked: capturedQualityCheckedRef.current,
@@ -515,8 +549,35 @@ export function ResultsFormCapture({
                 fix: location.fix,
                 capturedAt: capturedAtRef.current,
                 checkId: readingStep?.kind === "read" ? readingStep.checkId : null,
-            });
+            }),
+        );
+    };
 
+    const submitAgreement = () => {
+        if (!capturedImage || readingStep?.kind !== "agreement") return;
+        const {checkId} = readingStep;
+        if (!checkId || !onAgree) return;
+
+        sendWhereAllowed(() =>
+            onAgree({
+                image: capturedImage,
+                qualityChecked: capturedQualityCheckedRef.current,
+                fix: location.fix,
+                capturedAt: capturedAtRef.current,
+                checkId,
+            }),
+        );
+    };
+
+    /** Keep the photo and type the results from it. */
+    const disagree = () => {
+        if (readingStep?.kind !== "agreement") return;
+        setDisagreed(true);
+        fillFromReading(readingStep.reading, readingStep.checkId);
+    };
+
+    /** Send, after warning about a phone away from the centre or imprecise. */
+    const sendWhereAllowed = (send: () => void) => {
         const check = place ? checkPlace(location.fix, place.check) : null;
         const warning = place && check ? placeWarning(check, place) : null;
         if (check?.kind === "outside" && warning && placeWarned !== "outside") {
@@ -598,12 +659,29 @@ export function ResultsFormCapture({
                 (streamCheck.kind === "unread" &&
                     unreadPhotos >= UNREAD_PHOTOS_BEFORE_OVERRIDE)));
 
-    /** Show the reading's outcome: retake, or the boxes prefilled or empty. */
+    /** Show the reading's outcome: retake, the agreement, or the boxes. */
     const finishReading = (reading: Reading | null, checkId: string | null) => {
         if (reading?.retake) {
             setReadingStep({kind: "retake", message: reading.message ?? "Retake the photo."});
             return;
         }
+        if (agreeing) {
+            // An agreement is never saved unchecked.
+            const checked = reading?.agreement === true && reading.status === "done";
+            setReadingStep({
+                kind: "agreement",
+                checkId,
+                agrees: checked && reading.outcome === "agrees",
+                message: (checked && reading.message) || NOT_CHECKED,
+                reading: reading?.status === "done" ? reading : null,
+            });
+            return;
+        }
+        fillFromReading(reading, checkId);
+    };
+
+    /** The boxes, prefilled from the reading or empty. */
+    const fillFromReading = (reading: Reading | null, checkId: string | null) => {
         const read = reading?.status === "done";
         const boxes = fillBoxes(read ? reading.prefill : null, candidates.map(({key}) => key));
         setVotes(boxes.votes);
@@ -634,6 +712,7 @@ export function ResultsFormCapture({
             stationCode,
             race: level,
             image: uri,
+            reference: agreeing ? agreeWith : null,
         });
         // Retaken or closed while the photo was being sent.
         if (capturedImageRef.current !== uri) return;
@@ -649,6 +728,17 @@ export function ResultsFormCapture({
             return;
         }
         if (outcome.kind === "failed") {
+            if (agreeing && outcome.message) {
+                // Refused before any check, e.g. the same photo again.
+                setReadingStep({
+                    kind: "agreement",
+                    checkId: null,
+                    agrees: false,
+                    message: outcome.message,
+                    reading: null,
+                });
+                return;
+            }
             finishReading(null, null);
             return;
         }
@@ -697,6 +787,7 @@ export function ResultsFormCapture({
     const closeForm = () => {
         captureGenerationRef.current += 1;
         setReadingStep(null);
+        setDisagreed(false);
         setPendingPreview(null);
         releaseOwnedPhotos();
         onClose();
@@ -854,6 +945,16 @@ export function ResultsFormCapture({
                                 readingStep.kind === "retake" ? readingStep.message : null
                             }
                             onRetake={openCamera}
+                        />
+                    ) : readsPhoto && capturedImage && readingStep?.kind === "agreement" ? (
+                        <AgreementPane
+                            imageUri={capturedImage}
+                            message={readingStep.message}
+                            agrees={readingStep.agrees}
+                            submitting={submitting}
+                            onSubmit={submitAgreement}
+                            onRetake={openCamera}
+                            onDisagree={disagree}
                         />
                     ) : (
                         <VoteEntryPane

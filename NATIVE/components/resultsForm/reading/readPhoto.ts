@@ -23,8 +23,11 @@ export type StartOutcome =
     | {kind: "signed_out"}
     /** Reading is not open to this account: the person types the results. */
     | {kind: "not_allowed"}
-    /** Refused or not sent: the person types the results instead. */
-    | {kind: "failed"};
+    /**
+     * Refused or not sent: the person types the results instead. `message`
+     * is the server's reason, when it refused.
+     */
+    | {kind: "failed"; message: string | null};
 
 /** Send the photo to be read. The server answers at once. */
 export async function startReading(upload: {
@@ -32,6 +35,8 @@ export async function startReading(upload: {
     stationCode: string;
     race: string;
     image: string;
+    /** The earlier upload the person agrees with. */
+    reference?: string | null;
 }): Promise<StartOutcome> {
     const photo = await fitPhoto(upload.image);
     const body = new FormData();
@@ -39,6 +44,7 @@ export async function startReading(upload: {
     body.append("race", upload.race);
     // Expo's FormData takes Blob-compatible values, not {uri, type, name}.
     body.append("photo", new File(photo));
+    if (upload.reference) body.append("reference", upload.reference);
     try {
         const response = await fetch(READING_URL, {
             method: "POST",
@@ -50,12 +56,12 @@ export async function startReading(upload: {
             const data = await response.json().catch(() => null);
             if (data?.code === "reading_not_allowed") return {kind: "not_allowed"};
             console.warn(`[form34a] reading refused ${response.status} ${data?.code ?? ""}`);
-            return {kind: "failed"};
+            return {kind: "failed", message: data?.error ?? null};
         }
         return {kind: "started", reading: await response.json()};
     } catch (error) {
         console.warn("[form34a] reading not sent", error);
-        return {kind: "failed"};
+        return {kind: "failed", message: null};
     } finally {
         if (photo !== upload.image) new File(photo).delete();
     }

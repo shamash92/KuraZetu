@@ -8,7 +8,6 @@ import {Dimensions, Image, StyleSheet, Text, View} from "react-native";
 import {Gesture, GestureDetector} from "react-native-gesture-handler";
 
 import React, {useState} from "react";
-import { windowWidth } from "@/app/_utils/device/screenDimensions";
 
 const {width: screenWidth} = Dimensions.get("window");
 
@@ -45,6 +44,9 @@ interface ZoomableImageProps {
     fullUri?: string;
     onFullLoad?: () => void;
     onFullError?: () => void;
+    // Inside a sideways pager: a one-finger drag moves the photo only once
+    // it is zoomed in, so the pager can swipe.
+    swipeable?: boolean;
 }
 
 export function ZoomableImage({
@@ -55,6 +57,7 @@ export function ZoomableImage({
     fullUri,
     onFullLoad,
     onFullError,
+    swipeable = false,
 }: ZoomableImageProps) {
     const [fullShown, setFullShown] = useState(false);
     const scale = useSharedValue(1);
@@ -102,6 +105,12 @@ export function ZoomableImage({
         });
 
     const panGesture = Gesture.Pan()
+        .manualActivation(swipeable)
+        .onTouchesMove((_event, manager) => {
+            if (!swipeable) return;
+            if (savedScale.value > 1) manager.activate();
+            else manager.fail();
+        })
         .onUpdate((event) => {
             translateX.value = resist(
                 savedTranslateX.value + event.translationX,
@@ -166,12 +175,13 @@ export function ZoomableImage({
                                 : uri
                         }
                         style={{
-                            width: windowWidth,
+                            width: "100%",
                             height: "100%",
                             borderRadius: 12,
                             // backgroundColor: "#F8F8F8",
                         }}
-                        resizeMode="cover"
+                        // The whole form shows; zoom in for detail.
+                        resizeMode="contain"
                         onLoad={onLoad}
                         onError={onError}
                     />
@@ -180,12 +190,12 @@ export function ZoomableImage({
                             source={{uri: fullUri, headers}}
                             style={{
                                 position: "absolute",
-                                width: windowWidth,
+                                width: "100%",
                                 height: "100%",
                                 borderRadius: 12,
                                 opacity: fullShown ? 1 : 0,
                             }}
-                            resizeMode="cover"
+                            resizeMode="contain"
                             onLoad={() => {
                                 setFullShown(true);
                                 onFullLoad?.();
