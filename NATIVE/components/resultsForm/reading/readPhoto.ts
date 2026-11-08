@@ -77,14 +77,15 @@ async function fetchReading(token: string, checkId: string): Promise<Reading> {
 }
 
 /**
- * Ask for the reading every 2 s until it is done or failed. Returns the
+ * Ask for the reading every 2 s until it is done or failed. `ended` is the
  * reading once it has ended, or "gave_up" when the server could not be
- * reached in time; null while it runs.
+ * reached in time; null while it runs. `latest` is the last answer, which
+ * shows how far the checks have got.
  */
 export function useReading(
     token: string | null,
     checkId: string | null,
-): Reading | "gave_up" | null {
+): {ended: Reading | "gave_up" | null; latest: Reading | null} {
     /** The reading the phone stopped asking for. */
     const [gaveUpOn, setGaveUpOn] = useState<string | null>(null);
     useEffect(() => {
@@ -105,6 +106,7 @@ export function useReading(
         gcTime: 0,
     });
 
-    if (data && data.status !== "running") return data;
-    return gaveUp ? "gave_up" : null;
+    const latest = data ?? null;
+    if (data && data.status !== "running") return {ended: data, latest};
+    return {ended: gaveUp ? "gave_up" : null, latest};
 }

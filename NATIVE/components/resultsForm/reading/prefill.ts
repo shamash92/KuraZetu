@@ -7,6 +7,15 @@ export interface Prefill {
     disputed_votes: number | null;
 }
 
+/** One line of what the server checks on a photo taken to agree. */
+export interface AgreementCheck {
+    code: string;
+    label: string;
+    state: "running" | "passed" | "failed" | "not_read";
+    /** Each figure that differs or could not be read, from this photo. */
+    details: string[];
+}
+
 /** A reading as the server sends it to the phone. */
 export interface Reading {
     check_id: string;
@@ -21,6 +30,8 @@ export interface Reading {
      * "figures_differ" or "not_checked".
      */
     agreement?: boolean;
+    /** With an agreement, each check and how far it has got. */
+    checks?: AgreementCheck[];
 }
 
 /** The boxes filled from a reading, and the boxes the person must fill. */
