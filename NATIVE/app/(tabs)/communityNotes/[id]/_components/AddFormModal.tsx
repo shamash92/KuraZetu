@@ -2,7 +2,6 @@ import {Alert} from "react-native";
 import {useEffect, useRef, useState} from "react";
 
 import {
-    RESULTS_FORMS,
     ResultsFormCandidate,
     ResultsFormCapture,
 } from "@/components/resultsForm";
@@ -24,6 +23,8 @@ export interface IAspirant {
     constituency: null | string;
     county: null | string;
     first_name: string;
+    /** All three names, as stored on the server. */
+    full_name?: string;
     id: number;
     is_verified: boolean;
     last_name: string;
@@ -78,7 +79,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
 
     const formCandidates: ResultsFormCandidate[] = candidates.map((candidate) => ({
         key: String(candidate.id),
-        name: `${candidate.first_name} ${candidate.last_name}`,
+        name: candidate.full_name ?? `${candidate.first_name} ${candidate.last_name}`,
         party: candidate.party,
     }));
 
@@ -93,9 +94,9 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         votes,
         rejectedVotes,
         disputedVotes,
-        total,
         fix,
         capturedAt,
+        checkId,
     }: {
         image: string;
         qualityChecked: boolean;
@@ -105,6 +106,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         total: number;
         fix: DeviceFix | null;
         capturedAt: string | null;
+        checkId: string | null;
     }) => {
         // Submit is enabled only once every box has a typed number.
         const tally = Object.fromEntries(
@@ -118,49 +120,38 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         }
         const key = uploadKey.current.key;
 
-        // An upload cannot be changed, so a stray tap must not send one.
-        Alert.alert(
-            `Upload ${RESULTS_FORMS[level].name}?`,
-            `${total.toLocaleString()} votes in total. Once uploaded, it cannot be changed.`,
-            [
-                {text: "Cancel", style: "cancel"},
-                {
-                    text: "Upload",
-                    onPress: async () => {
-                        if (!userToken) return;
+        // Submit takes three taps, so a stray tap does not send an upload.
+        const send = async () => {
+            if (!userToken) return;
 
-                        setUploading(true);
-                        const outcome = await uploadResultsForm({
-                            token: userToken,
-                            stationCode: String(id),
-                            race: level,
-                            image,
-                            qualityChecked,
-                            votes: tally,
-                            rejectedVotes,
-                            disputedVotes,
-                            key,
-                            fix,
-                            capturedAt,
-                        }).finally(() => setUploading(false));
-                        if (outcome.kind === "stored") {
-                            Alert.alert(
-                                outcome.countable ? "Uploaded" : "Uploaded, but it cannot count",
-                                outcome.message ?? "Your results form was uploaded.",
-                            );
-                            onClose();
-                        } else if (outcome.kind === "refused") {
-                            Alert.alert("Not uploaded", outcome.message);
-                        } else if (outcome.kind === "failed") {
-                            Alert.alert(
-                                "Not uploaded",
-                                "Check your connection and tap Submit again.",
-                            );
-                        }
-                    },
-                },
-            ],
-        );
+            setUploading(true);
+            const outcome = await uploadResultsForm({
+                token: userToken,
+                stationCode: String(id),
+                race: level,
+                image,
+                qualityChecked,
+                votes: tally,
+                rejectedVotes,
+                disputedVotes,
+                key,
+                fix,
+                capturedAt,
+                checkId,
+            }).finally(() => setUploading(false));
+            if (outcome.kind === "stored") {
+                Alert.alert(
+                    outcome.countable ? "Uploaded" : "Uploaded, but it cannot count",
+                    outcome.message ?? "Your results form was uploaded.",
+                );
+                onClose();
+            } else if (outcome.kind === "refused") {
+                Alert.alert("Not uploaded", outcome.message);
+            } else if (outcome.kind === "failed") {
+                Alert.alert("Not uploaded", "Check your connection and tap Submit again.");
+            }
+        };
+        void send();
     };
 
     return (
@@ -173,6 +164,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
             stationCode={String(id)}
             onChooseStream={() => router.dismissTo("/communityNotes")}
             maxVotes={voteLimit(station?.registered_voters)}
+            readsPhoto
             place={
                 station?.location_check
                     ? {

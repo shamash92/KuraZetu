@@ -1,5 +1,6 @@
 import {useState} from "react";
-import {StyleSheet, Text, TextInput, View} from "react-native";
+import {StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {Pencil} from "lucide-react-native";
 
 import {VOTE_DIGITS, voteBoxes, voteDigits} from "./voteCount";
 import {perk} from "@/app/_utils/colors";
@@ -11,6 +12,13 @@ interface VoteCountRowProps {
     value: string;
     /** The count is above the most voters the station can have. */
     tooMany?: boolean;
+    /** The photo's reading left this box for the person to fill. */
+    unread?: boolean;
+    /** Boxes to type in; otherwise the count with an edit button. */
+    editing?: boolean;
+    /** Type straight away: the boxes opened from the edit button. */
+    autoFocus?: boolean;
+    onEdit?: () => void;
     accessibilityLabel: string;
     onChange: (digits: string) => void;
 }
@@ -25,6 +33,10 @@ export function VoteCountRow({
     party,
     value,
     tooMany = false,
+    unread = false,
+    editing = true,
+    autoFocus = false,
+    onEdit,
     accessibilityLabel,
     onChange,
 }: VoteCountRowProps) {
@@ -34,7 +46,7 @@ export function VoteCountRow({
     return (
         <View style={styles.row}>
             <View style={styles.who}>
-                <Text style={styles.name} numberOfLines={1}>
+                <Text style={styles.name} numberOfLines={2}>
                     {label}
                 </Text>
                 {!!party && (
@@ -43,6 +55,25 @@ export function VoteCountRow({
                     </Text>
                 )}
             </View>
+            {!editing ? (
+                <TouchableOpacity
+                    style={styles.count}
+                    onPress={onEdit}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${accessibilityLabel}: ${value || "0"}. Edit`}
+                    hitSlop={8}
+                >
+                    <Text
+                        style={[
+                            styles.countValue,
+                            value === "0" ? styles.countZero : styles.countVotes,
+                        ]}
+                    >
+                        {value || "0"}
+                    </Text>
+                    <Pencil size={16} color={perk.mute} />
+                </TouchableOpacity>
+            ) : (
             <View style={styles.boxes}>
                 {Array.from({length: VOTE_DIGITS}, (_, index) => (
                     <View
@@ -50,6 +81,7 @@ export function VoteCountRow({
                         style={[
                             styles.box,
                             typed && styles.boxTyped,
+                            unread && !typed && styles.boxUnread,
                             focused && styles.boxFocused,
                             tooMany && styles.boxTooMany,
                         ]}
@@ -69,9 +101,11 @@ export function VoteCountRow({
                     keyboardType="number-pad"
                     maxLength={VOTE_DIGITS}
                     caretHidden
+                    autoFocus={autoFocus}
                     hitSlop={6}
                 />
             </View>
+            )}
         </View>
     );
 }
@@ -106,6 +140,20 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         gap: 4,
     },
+    count: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        minHeight: 38,
+    },
+    countValue: {
+        fontFamily: "SpaceMono-Regular",
+        fontSize: 24,
+        fontVariant: ["tabular-nums"],
+    },
+    // Zero fades back; a counted figure stands out to be checked.
+    countZero: {color: perk.mute2},
+    countVotes: {color: perk.coralDeep},
     box: {
         width: 30,
         height: 38,
@@ -122,6 +170,11 @@ const styles = StyleSheet.create({
     // The row being typed in. Lime Deep: plain lime is too faint as a line.
     boxFocused: {
         borderColor: perk.limeDeep,
+        borderWidth: 2,
+    },
+    // Left empty by the reading: the person reads it from the form.
+    boxUnread: {
+        borderColor: perk.coral,
         borderWidth: 2,
     },
     boxTooMany: {

@@ -37,6 +37,7 @@ import {
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 import {GestureHandlerRootView} from "react-native-gesture-handler";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import LottieView from "lottie-react-native";
 import {DarkTheme, DefaultTheme, Stack, ThemeProvider, router} from "expo-router";
 import {getFromSecureStore, saveToSecureStore} from "./_utils/device/secureStore";
@@ -417,6 +418,9 @@ function RootLayoutNav() {
     );
 }
 
+/** Server requests that are asked again, such as a photo's reading. */
+const queryClient = new QueryClient();
+
 // Export the complete component with provider
 export default function AuthenticatedLayout() {
     // playing: the launch animation runs alone.
@@ -490,7 +494,11 @@ export default function AuthenticatedLayout() {
         <GestureHandlerRootView style={{flex: 1}}>
             {/* The slots keep their places so the launch screen is not
                 remounted when the app appears underneath it. */}
-            {phase === "playing" ? null : <RootLayoutNav />}
+            {phase === "playing" ? null : (
+                <QueryClientProvider client={queryClient}>
+                    <RootLayoutNav />
+                </QueryClientProvider>
+            )}
             {phase === "done" ? null : (
                 <View style={StyleSheet.absoluteFill}>
                     {launchAnimation === "boiling" ? (

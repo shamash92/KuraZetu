@@ -1,3 +1,4 @@
+import React, {useEffect, useRef, useState} from "react";
 import {
     ActivityIndicator,
     ScrollView,
@@ -6,12 +7,17 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import {Camera as CameraIcon, Check} from "lucide-react-native";
+import {Camera as CameraIcon, Check, TriangleAlert} from "lucide-react-native";
 
+import {DISPUTED, REJECTED} from "../reading/prefill";
+import {StepBar} from "../reading/StepBar";
 import {ELECTION_YEAR, REGISTER_YEAR} from "./register";
 import {toCount} from "./voteCount";
 import {VoteCountRow} from "./VoteCountRow";
 import {perk} from "@/app/_utils/colors";
+
+/** Taps between which Submit resets to the first tap. */
+const TAP_RESET_MS = 4000;
 
 interface VoteCandidate {
     key: string;
@@ -24,6 +30,19 @@ interface VoteEntryPaneProps {
     captured: boolean;
     /** The results form being captured, e.g. "Form 37A". */
     formName: string;
+    /** What the photo's reading asks of the person, above the counts. */
+    instruction?: string | null;
+    /** Show the three steps: the photo was read before entry. */
+    steps?: boolean;
+    /**
+     * The counts came from the reading: each shows as a figure with an edit
+     * button, and only the boxes in `unread` open for typing.
+     */
+    prefilled?: boolean;
+    /** Boxes the reading left empty: candidate keys, "rejected", "disputed". */
+    unread?: string[];
+    /** Taps that send the upload; more than one stops a stray tap. */
+    tapsToSubmit?: number;
     /** The most votes the form can add up to. */
     maxVotes: number;
     /** Digits typed per box, at most three. */
@@ -33,6 +52,7 @@ interface VoteEntryPaneProps {
     submitLabel: string;
     /** The upload is in flight: the button shows progress and ignores taps. */
     submitting: boolean;
+    /** Every box added up, for the station's limit. */
     total: number;
     votes: Record<string, string>;
     onCapture: () => void;
@@ -42,10 +62,22 @@ interface VoteEntryPaneProps {
     onVoteChange: (key: string, digits: string) => void;
 }
 
+function tapLabel(left: number, taps: number, submitLabel: string): string {
+    if (taps === 1) return submitLabel;
+    if (left === taps) return `Tap ${taps} times to submit`;
+    if (left === 1) return "Tap once more to submit";
+    return `Tap ${left} more times`;
+}
+
 export function VoteEntryPane({
     candidates,
     captured,
     formName,
+    instruction = null,
+    steps = false,
+    prefilled = false,
+    unread = [],
+    tapsToSubmit = 1,
     maxVotes,
     disputedVotes,
     rejectedVotes,
@@ -62,6 +94,54 @@ export function VoteEntryPane({
 }: VoteEntryPaneProps) {
     const tooMany = (digits: string) => toCount(digits) > maxVotes;
     const overLimit = total > maxVotes;
+    // As on the form: the candidates' votes only.
+    const validVotes = candidates.reduce(
+        (sum, {key}) => sum + toCount(votes[key] ?? ""),
+        0,
+    );
+
+    // Prefilled counts open one at a time; without a reading, every box is open.
+    const [opened, setOpened] = useState<Set<string>>(() => new Set(unread));
+    const isEditing = (key: string) => !prefilled || opened.has(key);
+    const edit = (key: string) => setOpened((keys) => new Set(keys).add(key));
+    const editedByTap = (key: string) => prefilled && !unread.includes(key);
+
+    const [tapsLeft, setTapsLeft] = useState(tapsToSubmit);
+    const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => () => clearTimeout(resetTimer.current ?? undefined), []);
+    const tapSubmit = () => {
+        clearTimeout(resetTimer.current ?? undefined);
+        if (tapsLeft > 1) {
+            setTapsLeft(tapsLeft - 1);
+            resetTimer.current = setTimeout(() => setTapsLeft(tapsToSubmit), TAP_RESET_MS);
+            return;
+        }
+        setTapsLeft(tapsToSubmit);
+        onSubmit();
+    };
+
+    const countRow = (
+        key: string,
+        label: string,
+        value: string,
+        onChange: (digits: string) => void,
+        party?: string | null,
+    ) => (
+        <VoteCountRow
+            key={key}
+            label={label}
+            party={party}
+            value={value}
+            tooMany={tooMany(value)}
+            unread={unread.includes(key)}
+            editing={isEditing(key)}
+            autoFocus={editedByTap(key)}
+            onEdit={() => edit(key)}
+            accessibilityLabel={party === undefined ? label : `Votes for ${label}`}
+            onChange={onChange}
+        />
+    );
+
     return (
         <View style={styles.body}>
             <ScrollView
@@ -73,6 +153,11 @@ export function VoteEntryPane({
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="interactive"
             >
+                {steps && (
+                    <View style={styles.steps}>
+                        <StepBar step={3} />
+                    </View>
+                )}
                 {captured ? (
                     <View style={styles.capturedRow}>
                         <Text style={styles.capturedText}>✓ {formName} captured</Text>
@@ -96,58 +181,58 @@ export function VoteEntryPane({
                     </TouchableOpacity>
                 )}
 
+                {!!instruction && (
+                    <View style={styles.warning} accessibilityRole="alert">
+                        <TriangleAlert size={22} color={perk.coralDeep} />
+                        <Text style={styles.warningText}>{instruction}</Text>
+                    </View>
+                )}
                 {REGISTER_YEAR !== ELECTION_YEAR && (
                     <Text style={styles.registerNotice}>
                         {ELECTION_YEAR} voter numbers not loaded yet
                     </Text>
                 )}
-                {candidates.map((candidate) => (
-                    <VoteCountRow
-                        key={candidate.key}
-                        label={candidate.name}
-                        party={candidate.party}
-                        value={votes[candidate.key] ?? ""}
-                        tooMany={tooMany(votes[candidate.key] ?? "")}
-                        accessibilityLabel={`Votes for ${candidate.name}`}
-                        onChange={(value) => onVoteChange(candidate.key, value)}
-                    />
-                ))}
 
-                <VoteCountRow
-                    label="Rejected votes"
-                    value={rejectedVotes}
-                    tooMany={tooMany(rejectedVotes)}
-                    accessibilityLabel="Rejected votes"
-                    onChange={onRejectedVotesChange}
-                />
-                <VoteCountRow
-                    label="Disputed votes"
-                    value={disputedVotes}
-                    tooMany={tooMany(disputedVotes)}
-                    accessibilityLabel="Disputed votes"
-                    onChange={onDisputedVotesChange}
-                />
+                {candidates.map((candidate) =>
+                    countRow(
+                        candidate.key,
+                        candidate.name,
+                        votes[candidate.key] ?? "",
+                        (value) => onVoteChange(candidate.key, value),
+                        candidate.party ?? null,
+                    ),
+                )}
+
+                <View style={styles.otherCounts}>
+                    {countRow(REJECTED, "Rejected votes", rejectedVotes, onRejectedVotesChange)}
+                    {countRow(DISPUTED, "Disputed votes", disputedVotes, onDisputedVotesChange)}
+                </View>
             </ScrollView>
 
             <View style={styles.footer}>
                 <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Total votes</Text>
+                    <Text style={styles.totalLabel}>Total valid votes cast</Text>
                     <Text style={[styles.totalValue, overLimit && styles.overLimit]}>
-                        {total.toLocaleString()}
+                        {validVotes.toLocaleString()}
                     </Text>
                 </View>
                 {overLimit && (
                     <Text style={styles.limitText} accessibilityRole="alert">
-                        The total is above {maxVotes.toLocaleString()}, the most voters
-                        this station can have. Check the counts against the form.
+                        The counts add up to {total.toLocaleString()}, above{" "}
+                        {maxVotes.toLocaleString()}, the most voters this station can
+                        have. Check the counts against the form.
                     </Text>
                 )}
                 <TouchableOpacity
-                    style={[styles.submitButton, !submitEnabled && styles.submitDisabled]}
+                    style={[
+                        styles.submitButton,
+                        !submitEnabled && styles.submitDisabled,
+                        submitEnabled && tapsLeft < tapsToSubmit && styles.submitArmed,
+                    ]}
                     disabled={!submitEnabled || submitting}
                     accessibilityRole="button"
                     accessibilityState={{disabled: !submitEnabled, busy: submitting}}
-                    onPress={onSubmit}
+                    onPress={tapSubmit}
                 >
                     {submitting ? (
                         <ActivityIndicator size="small" color={perk.limeInk} />
@@ -160,7 +245,9 @@ export function VoteEntryPane({
                             !submitEnabled && styles.submitTextDisabled,
                         ]}
                     >
-                        {submitting ? "Uploading…" : submitLabel}
+                        {submitting
+                            ? "Uploading…"
+                            : tapLabel(tapsLeft, tapsToSubmit, submitLabel)}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -173,8 +260,29 @@ const styles = StyleSheet.create({
     content: {flex: 1},
     contentInner: {
         paddingHorizontal: 16,
-        paddingTop: 12,
+        paddingTop: 4,
         paddingBottom: 16,
+    },
+    steps: {
+        marginBottom: 16,
+    },
+    warning: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+        backgroundColor: perk.coral,
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        marginTop: 12,
+        marginBottom: 4,
+    },
+    warningText: {
+        flex: 1,
+        fontSize: 16,
+        lineHeight: 22,
+        fontWeight: "800",
+        color: perk.ink,
     },
     registerNotice: {
         fontSize: 13,
@@ -184,6 +292,13 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         marginTop: 8,
         marginBottom: 12,
+    },
+    // Rejected and disputed are counts about the ballots, not a candidate's.
+    otherCounts: {
+        marginTop: 20,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        backgroundColor: perk.paper,
     },
     cameraButton: {
         flexDirection: "row",
@@ -261,6 +376,10 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         gap: 8,
+    },
+    // Counting down: the next tap is closer to sending.
+    submitArmed: {
+        backgroundColor: perk.limeDeep,
     },
     submitDisabled: {
         backgroundColor: perk.surface,

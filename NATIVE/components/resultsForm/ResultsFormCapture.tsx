@@ -34,6 +34,10 @@ import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
 import {VoteEntryPane} from "./entry/VoteEntryPane";
 import {STREAM_VOTER_LIMIT, toCount} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
+import {type Reading, fillBoxes} from "./reading/prefill";
+import {PhotoStepPane} from "./reading/PhotoStepPane";
+import {ReadingPane} from "./reading/ReadingPane";
+import {startReading, useReading} from "./reading/readPhoto";
 import {PhotoReviewPane} from "./review/PhotoReviewPane";
 import {readFormQr} from "./review/formQr";
 import {type StreamCheck, checkStream} from "./review/streamCheck";
@@ -46,6 +50,7 @@ import {
 } from "./upload/locationCheck";
 import {SubmitBlocked} from "./upload/SubmitBlocked";
 import {useDeviceFix} from "./upload/useDeviceFix";
+import {useAuthStore} from "@/app/_utils/auth/authStore";
 import {useNetworkStatus} from "@/app/_utils/device/useNetworkStatus";
 import {perk} from "@/app/_utils/colors";
 import type {TLevelTabs} from "@/app/types";
@@ -173,6 +178,23 @@ function placeWarning(
     return null;
 }
 
+/** Where the photo's reading is, when the photo is read before entry. */
+type ReadingStep =
+    /** checkId is null while the photo is being sent. */
+    | {kind: "reading"; checkId: string | null}
+    | {kind: "retake"; message: string}
+    | {
+          kind: "read";
+          checkId: string | null;
+          instruction: string | null;
+          /** The boxes hold the reading's figures. */
+          prefilled: boolean;
+          unread: string[];
+      };
+
+/** Shown when there is no reading: the server could not be reached or failed. */
+const NOT_READ = "The form could not be read. Type the results from the form.";
+
 export interface ResultsFormCandidate {
     key: string;
     name: string;
@@ -191,6 +213,8 @@ interface ResultsFormSubmission {
     fix: DeviceFix | null;
     /** When the photo was taken, by the device clock. */
     capturedAt: string | null;
+    /** The photo's reading on the server; the upload uses its photo. */
+    checkId: string | null;
 }
 
 interface ResultsFormCaptureProps {
@@ -214,6 +238,11 @@ interface ResultsFormCaptureProps {
     place?: ResultsFormPlace;
     /** The most votes the form can add up to; Submit is blocked above it. */
     maxVotes?: number;
+    /**
+     * Read the photo on the server before entry and prefill the boxes. Needs
+     * stationCode.
+     */
+    readsPhoto?: boolean;
     submitLabel?: string;
     /** The parent is uploading: Submit shows progress and ignores taps. */
     submitting?: boolean;
@@ -247,6 +276,7 @@ export function ResultsFormCapture({
     onChooseStream,
     place,
     maxVotes = STREAM_VOTER_LIMIT,
+    readsPhoto = false,
     submitLabel = "Submit",
     submitting = false,
     onSubmit,
@@ -283,6 +313,8 @@ export function ResultsFormCapture({
     const [unreadPhotos, setUnreadPhotos] = useState(0);
     /** The last place warning shown, so the same one is not shown twice. */
     const [placeWarned, setPlaceWarned] = useState<PlaceCheck["kind"] | null>(null);
+    const [readingStep, setReadingStep] = useState<ReadingStep | null>(null);
+    const {userToken} = useAuthStore();
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
         // JPEG on both platforms. The default is each platform's own format,
@@ -438,9 +470,11 @@ export function ResultsFormCapture({
         setStreamCheck(null);
         setUnreadPhotos(0);
         setPlaceWarned(null);
+        setReadingStep(null);
         setLight("off");
     } else if (!visible && wasVisible) {
         setWasVisible(false);
+        setReadingStep(null);
     }
 
     const setVote = (key: string, digits: string) =>
@@ -464,7 +498,8 @@ export function ResultsFormCapture({
               hasImage: !!capturedImage,
           })
         : true;
-    const submitEnabled = !!capturedImage && total <= maxVotes && extraGate;
+    // A form where every box is 0 has not been entered.
+    const submitEnabled = !!capturedImage && total > 0 && total <= maxVotes && extraGate;
 
     const submitForm = () => {
         if (!capturedImage) return;
@@ -479,6 +514,7 @@ export function ResultsFormCapture({
                 total,
                 fix: location.fix,
                 capturedAt: capturedAtRef.current,
+                checkId: readingStep?.kind === "read" ? readingStep.checkId : null,
             });
 
         const check = place ? checkPlace(location.fix, place.check) : null;
@@ -562,6 +598,76 @@ export function ResultsFormCapture({
                 (streamCheck.kind === "unread" &&
                     unreadPhotos >= UNREAD_PHOTOS_BEFORE_OVERRIDE)));
 
+    /** Show the reading's outcome: retake, or the boxes prefilled or empty. */
+    const finishReading = (reading: Reading | null, checkId: string | null) => {
+        if (reading?.retake) {
+            setReadingStep({kind: "retake", message: reading.message ?? "Retake the photo."});
+            return;
+        }
+        const read = reading?.status === "done";
+        const boxes = fillBoxes(read ? reading.prefill : null, candidates.map(({key}) => key));
+        setVotes(boxes.votes);
+        setRejectedVotes(boxes.rejectedVotes);
+        setDisputedVotes(boxes.disputedVotes);
+        setReadingStep({
+            kind: "read",
+            checkId,
+            instruction: (read && reading.message) || NOT_READ,
+            prefilled: read,
+            // Without a reading every box is empty: no border marks them.
+            unread: read ? boxes.unread : [],
+        });
+    };
+
+    /** Send the accepted photo to be read; the boxes wait for the reading. */
+    const readPhoto = async (uri: string) => {
+        setVotes({});
+        setRejectedVotes("");
+        setDisputedVotes("");
+        setReadingStep({kind: "reading", checkId: null});
+        if (!userToken || !stationCode) {
+            finishReading(null, null);
+            return;
+        }
+        const outcome = await startReading({
+            token: userToken,
+            stationCode,
+            race: level,
+            image: uri,
+        });
+        // Retaken or closed while the photo was being sent.
+        if (capturedImageRef.current !== uri) return;
+        if (outcome.kind === "signed_out") return;
+        if (outcome.kind === "not_allowed") {
+            setReadingStep({
+                kind: "read",
+                checkId: null,
+                instruction: null,
+                prefilled: false,
+                unread: [],
+            });
+            return;
+        }
+        if (outcome.kind === "failed") {
+            finishReading(null, null);
+            return;
+        }
+        const {reading} = outcome;
+        if (reading.status === "running") {
+            setReadingStep({kind: "reading", checkId: reading.check_id});
+        } else {
+            finishReading(reading, reading.check_id);
+        }
+    };
+
+    // Ask for the reading every 2 s. Once it has ended, show it (render-phase
+    // state adjustment: the step leaves "reading", so this runs once).
+    const pollingId = readingStep?.kind === "reading" ? readingStep.checkId : null;
+    const ended = useReading(userToken, pollingId);
+    if (ended && pollingId) {
+        finishReading(ended === "gave_up" ? null : ended, pollingId);
+    }
+
     const acceptPendingPhoto = () => {
         const uri = pendingImageRef.current;
         if (!uri || !canUsePhoto) return;
@@ -575,6 +681,7 @@ export function ResultsFormCapture({
         setPendingImage(null);
         setPendingPreview(null);
         setStreamCheck(null);
+        if (readsPhoto) void readPhoto(uri);
 
         // The phone has been locating since the form opened; say now if it
         // is away from the centre, before the counts are typed.
@@ -589,6 +696,7 @@ export function ResultsFormCapture({
 
     const closeForm = () => {
         captureGenerationRef.current += 1;
+        setReadingStep(null);
         setPendingPreview(null);
         releaseOwnedPhotos();
         onClose();
@@ -731,11 +839,34 @@ export function ResultsFormCapture({
                             onStepChange={setTipStep}
                             onFinish={finishTips}
                         />
+                    ) : readsPhoto && !capturedImage ? (
+                        <PhotoStepPane formName={formName} onCapture={() => setTipStep(0)} />
+                    ) : readsPhoto &&
+                      capturedImage &&
+                      (readingStep?.kind === "reading" || readingStep?.kind === "retake") ? (
+                        <ReadingPane
+                            formName={formName}
+                            imageUri={capturedImage}
+                            sending={
+                                readingStep.kind === "reading" && readingStep.checkId === null
+                            }
+                            retakeMessage={
+                                readingStep.kind === "retake" ? readingStep.message : null
+                            }
+                            onRetake={openCamera}
+                        />
                     ) : (
                         <VoteEntryPane
+                            // A new reading starts the counts afresh.
+                            key={readingStep?.kind === "read" ? readingStep.checkId : null}
                             candidates={candidates}
                             captured={!!capturedImage}
                             formName={formName}
+                            instruction={readingStep?.kind === "read" ? readingStep.instruction : null}
+                            unread={readingStep?.kind === "read" ? readingStep.unread : []}
+                            steps={readsPhoto}
+                            prefilled={readingStep?.kind === "read" && readingStep.prefilled}
+                            tapsToSubmit={readsPhoto ? 3 : 1}
                             maxVotes={maxVotes}
                             disputedVotes={disputedVotes}
                             rejectedVotes={rejectedVotes}
