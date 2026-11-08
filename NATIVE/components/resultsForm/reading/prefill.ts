@@ -37,6 +37,11 @@ export interface Reading {
      * Opens with their sign-in token.
      */
     marked_photo?: string;
+    /**
+     * Not made to agree: the earlier upload by someone else whose results
+     * the photo shows exactly, if any.
+     */
+    same_as?: string | null;
 }
 
 /** The boxes filled from a reading, and the boxes the person must fill. */

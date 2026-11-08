@@ -39,7 +39,8 @@ import {AgreementChecklist} from "./reading/AgreementChecklist";
 import {AgreementPane} from "./reading/AgreementPane";
 import {PhotoStepPane} from "./reading/PhotoStepPane";
 import {ReadingPane} from "./reading/ReadingPane";
-import {startReading, useReading} from "./reading/readPhoto";
+import {agreeAfterReading, startReading, useReading} from "./reading/readPhoto";
+import {SameResultsPane} from "./reading/SameResultsPane";
 import {PhotoReviewPane} from "./review/PhotoReviewPane";
 import {readFormQr} from "./review/formQr";
 import {type StreamCheck, checkStream} from "./review/streamCheck";
@@ -198,6 +199,8 @@ type ReadingStep =
           /** The boxes hold the reading's figures. */
           prefilled: boolean;
           unread: string[];
+          /** The earlier upload whose results the photo shows, if any. */
+          sameAs: string | null;
       }
     /** Made to agree with an earlier upload. */
     | {
@@ -357,7 +360,11 @@ export function ResultsFormCapture({
     const [readingStep, setReadingStep] = useState<ReadingStep | null>(null);
     /** Tapped Disagree: later photos are read for typing, not compared. */
     const [disagreed, setDisagreed] = useState(false);
-    const agreeing = !!agreeWith && !disagreed;
+    /** Chose to agree once the reading showed an earlier upload's results. */
+    const [agreedAfter, setAgreedAfter] = useState<string | null>(null);
+    const [startingAgreement, setStartingAgreement] = useState(false);
+    const agreeTarget = agreeWith ?? agreedAfter;
+    const agreeing = !!agreeTarget && !disagreed;
     const {userToken} = useAuthStore();
     const photoOutput = usePhotoOutput({
         targetResolution: PHOTO_RESOLUTION[aspect],
@@ -586,6 +593,37 @@ export function ResultsFormCapture({
         fillFromReading(readingStep.reading, readingStep.checkId);
     };
 
+    /** Agree with the earlier upload the reading matched, using this photo. */
+    const agreeInstead = async () => {
+        if (readingStep?.kind !== "read" || !readingStep.sameAs || !readingStep.checkId) return;
+        if (!userToken) return;
+        const {checkId, sameAs} = readingStep;
+        setStartingAgreement(true);
+        const outcome = await agreeAfterReading({token: userToken, checkId, reference: sameAs});
+        setStartingAgreement(false);
+        if (outcome.kind === "signed_out") return;
+        setAgreedAfter(sameAs);
+        if (outcome.kind !== "started") {
+            setReadingStep({
+                kind: "agreement",
+                checkId: null,
+                agrees: false,
+                message: (outcome.kind === "failed" && outcome.message) || NOT_CHECKED,
+                reading: null,
+                checks: null,
+                markedPhoto: null,
+            });
+            return;
+        }
+        setReadingStep({kind: "reading", checkId, checks: outcome.reading.checks ?? null});
+    };
+
+    /** Type the results even though they match an earlier upload. */
+    const typeAnyway = () => {
+        if (readingStep?.kind !== "read") return;
+        setReadingStep({...readingStep, sameAs: null});
+    };
+
     /** Send, after warning about a phone away from the centre or imprecise. */
     const sendWhereAllowed = (send: () => void) => {
         const check = place ? checkPlace(location.fix, place.check) : null;
@@ -712,6 +750,7 @@ export function ResultsFormCapture({
             prefilled: read,
             // Without a reading every box is empty: no border marks them.
             unread: read ? boxes.unread : [],
+            sameAs: read ? (reading.same_as ?? null) : null,
         });
     };
 
@@ -730,7 +769,7 @@ export function ResultsFormCapture({
             stationCode,
             race: level,
             image: uri,
-            reference: agreeing ? agreeWith : null,
+            reference: agreeing ? agreeTarget : null,
         });
         // Retaken or closed while the photo was being sent.
         if (capturedImageRef.current !== uri) return;
@@ -742,6 +781,7 @@ export function ResultsFormCapture({
                 instruction: null,
                 prefilled: false,
                 unread: [],
+                sameAs: null,
             });
             return;
         }
@@ -818,6 +858,7 @@ export function ResultsFormCapture({
         captureGenerationRef.current += 1;
         setReadingStep(null);
         setDisagreed(false);
+        setAgreedAfter(null);
         setPendingPreview(null);
         releaseOwnedPhotos();
         onClose();
@@ -1002,6 +1043,15 @@ export function ResultsFormCapture({
                             onSubmit={submitAgreement}
                             onRetake={openCamera}
                             onDisagree={disagree}
+                        />
+                    ) : readsPhoto &&
+                      capturedImage &&
+                      readingStep?.kind === "read" &&
+                      readingStep.sameAs ? (
+                        <SameResultsPane
+                            sending={startingAgreement}
+                            onAgree={agreeInstead}
+                            onType={typeAnyway}
                         />
                     ) : (
                         <VoteEntryPane
