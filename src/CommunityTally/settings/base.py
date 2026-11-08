@@ -561,3 +561,8 @@ STORAGES = {
 
 # Largest results form photo the server accepts.
 RESULT_UPLOAD_MAX_PHOTO_BYTES = 15 * 1024 * 1024
+
+# The machine reading of results form photos. Empty switches it off.
+ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
+# The path of the photo reading step, read like the admin's.
+READING_URL_SUFFIX = config("READING_URL_SUFFIX", default="read")

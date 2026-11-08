@@ -6,8 +6,10 @@ from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
 
 from accounts.admin import KeptContributionAdmin
+from results import reading
 from results.models import (
     Aspirant,
+    MachineCheck,
     Party,
     PollingStationGovernorResults,
     PollingStationMCAResults,
@@ -313,6 +315,103 @@ class ResultUploadAdmin(admin.ModelAdmin):
         stored = (
             upload.preview if which == "preview" and upload.preview else upload.photo
         )
+        response = FileResponse(stored.open("rb"), content_type="image/jpeg")
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+@admin.register(MachineCheck)
+class MachineCheckAdmin(admin.ModelAdmin):
+    """Machine readings, read-only, to study what the model gets wrong.
+
+    The account is not shown.
+    """
+
+    list_display = (
+        "created_at",
+        "polling_station",
+        "race",
+        "status",
+        "outcome",
+        "error",
+        "reason",
+        "model",
+        "duration_ms",
+    )
+    list_filter = ("status", "outcome", "error", "server_qr_result", "race", "model")
+    search_fields = ("polling_station__code",)
+    list_select_related = ("polling_station__polling_center",)
+    ordering = ("-created_at",)
+    fields = (
+        "id",
+        "polling_station",
+        "race",
+        "status",
+        "outcome",
+        "error",
+        "reason",
+        "server_qr_result",
+        "server_qr_value",
+        "attempts",
+        "model",
+        "duration_ms",
+        "usage",
+        "provider_request_id",
+        "created_at",
+        "finished_at",
+        "upload",
+        "photo_links",
+        "input",
+        "reply",
+    )
+    readonly_fields = fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Reason")
+    def reason(self, check):
+        """Why a reading failed, with the provider's own words when given."""
+        if not check.error:
+            return ""
+        last = (check.attempts or [{}])[-1]
+        detail = last.get("detail")
+        reason = reading.ERROR_REASONS.get(check.error, check.error)
+        return f"{reason} {detail}" if detail else reason
+
+    @admin.display(description="Photo")
+    def photo_links(self, check):
+        def link(which, label):
+            url = reverse("admin:results_machinecheck_photo", args=[check.id, which])
+            return format_html('<a href="{}" target="_blank">{}</a>', url, label)
+
+        return format_html(
+            "{} · {}", link("model", "What the model read"), link("full", "Full photo")
+        )
+
+    def get_urls(self):
+        return [
+            path(
+                "<uuid:check_id>/photo/<str:which>/",
+                self.admin_site.admin_view(self.photo_view),
+                name="results_machinecheck_photo",
+            ),
+        ] + super().get_urls()
+
+    def photo_view(self, request, check_id, which):
+        """The photo is private storage, so staff get it through the server."""
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        if which not in ("full", "model"):
+            raise Http404
+        check = get_object_or_404(MachineCheck, pk=check_id)
+        stored = check.model_copy if which == "model" else check.photo
         response = FileResponse(stored.open("rb"), content_type="image/jpeg")
         response["Cache-Control"] = "private, no-store"
         return response
