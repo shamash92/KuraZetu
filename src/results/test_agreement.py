@@ -421,3 +421,113 @@ def test_the_model_gets_both_photos_and_no_figures():
     assert body["output_config"]["format"]["schema"] == comparing.REPLY_FORMAT
     words = " ".join(part.get("text", "") for part in content)
     assert not any(character.isdigit() for character in words)
+
+
+# ── The checklist the phone shows ───────────────────────────────────────
+
+
+def lines(data):
+    return {c["code"]: (c["state"], c["details"]) for c in data["checks"]}
+
+
+def test_a_matching_photo_passes_every_line(client, station, earlier, provider):
+    provider(message(reply()), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert [c["label"] for c in data["checks"]] == [
+        "QR code matches this stream",
+        "Photo is of the paper form and clear",
+        "Same form as the first upload",
+        "Every candidate's votes match",
+        "Rejected and disputed votes match",
+        "Total valid votes match, no figure written over",
+    ]
+    assert lines(data) == {
+        # The test photo has no QR code; that does not stop an agreement.
+        "qr": ("not_read", []),
+        "photo": ("passed", []),
+        "same_form": ("passed", []),
+        "votes": ("passed", []),
+        "counts": ("passed", []),
+        "total": ("passed", []),
+    }
+    assert data["outcome"] == machine_checks.AGREES
+
+
+def test_a_differing_vote_is_named_with_the_photos_number_only(
+    client, station, earlier, provider
+):
+    provider(message(reply(votes=(10, 12))), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert lines(data)["votes"] == ("failed", ["Ben X: your photo shows 12"])
+    # The earlier upload's typed 11 is never shown.
+    assert "11" not in str(data["checks"])
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+
+
+def test_an_unclear_figure_is_named(client, station, earlier, provider):
+    provider(message(reply(votes=(10, figure(11, "ambiguous")))), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert lines(data)["votes"] == ("failed", ["Ben X: could not be read"])
+    assert data["outcome"] == machine_checks.NOT_CHECKED
+
+
+def test_a_differing_total_stops_the_agreement(client, station, earlier, provider):
+    provider(
+        message(reply(totals__valid_votes_in_counts=figure(20))),
+        message(comparison()),
+    )
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert lines(data)["total"] == ("failed", ["Total: your photo shows 20"])
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+
+
+def test_an_unclear_total_is_not_checked(client, station, earlier, provider):
+    provider(
+        message(reply(totals__valid_votes_in_counts=figure(21, "ambiguous"))),
+        message(comparison()),
+    )
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert lines(data)["total"] == ("failed", ["Total: could not be read"])
+    assert data["outcome"] == machine_checks.NOT_CHECKED
+
+
+def test_a_screen_photo_fails_the_photo_line(client, station, earlier, provider):
+    provider(message(reply(capture__photo_of_screen="present")), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert lines(data)["photo"] == ("failed", [])
+    assert lines(data)["votes"] == ("passed", [])
+    assert data["outcome"] == machine_checks.NOT_CHECKED
+
+
+def test_a_changed_form_fails_the_same_form_line(client, station, earlier, provider):
+    provider(message(reply()), message(comparison(differences=[difference()])))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert lines(data)["same_form"] == ("failed", [])
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+
+
+def test_lines_still_running_show_as_running(
+    client, station, earlier, provider, monkeypatch
+):
+    monkeypatch.setattr(machine_checks, "_queue_comparison", lambda check_id: None)
+    provider(message(reply()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["status"] == "running"
+    assert lines(data)["same_form"] == ("running", [])
+    assert lines(data)["votes"] == ("passed", [])

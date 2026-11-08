@@ -49,6 +49,33 @@ AGREEMENT_MESSAGES = {
     NOT_CHECKED: "Your photo could not be checked.",
 }
 
+# The lines the phone shows while an agreeing photo is checked, in order.
+# Each is running, passed or failed; the QR code can also be not read,
+# which does not stop an agreement.
+CHECK_RUNNING = "running"
+CHECK_PASSED = "passed"
+CHECK_FAILED = "failed"
+CHECK_NOT_READ = "not_read"
+CHECK_LABELS = [
+    ("qr", "QR code matches this stream"),
+    ("photo", "Photo is of the paper form and clear"),
+    ("same_form", "Same form as the first upload"),
+    ("votes", "Every candidate's votes match"),
+    ("counts", "Rejected and disputed votes match"),
+    ("total", "Total valid votes match, no figure written over"),
+]
+UNCLEAR_PHOTO = {
+    reading.PHOTO_OF_SCREEN,
+    reading.PHOTO_POOR,
+    reading.PHOTO_UNREADABLE,
+    reading.CONTENT_FLAGGED,
+}
+SAME_FORM = {
+    comparing.SAME_FORM,
+    comparing.SAME_FORM_WITH_ADDITIONS,
+    comparing.DIFFERENT_COPY,
+}
+
 
 def start_check(account, station, race, photo, reference=None):
     """Store the check and read the photo in the background. With a
@@ -273,6 +300,7 @@ def for_phone(check):
         return answer
     _end_if_lost(comparison)
     answer["agreement"] = True
+    answer["checks"] = agreement_checks(check, comparison)
     if retake:
         return answer
     if MachineCheck.RUNNING in (check.status, comparison.status):
@@ -299,6 +327,7 @@ def agreement(read_check, comparison):
     if (
         read_check.outcome != reading.READ_COMPLETE
         or comparison.outcome == comparing.COMPARE_INCONCLUSIVE
+        or _read_figures(read_check)["total"] is None
     ):
         return NOT_CHECKED
     return AGREES
@@ -306,6 +335,16 @@ def agreement(read_check, comparison):
 
 def _differs_from(read_check, reference):
     """Whether a figure read one way differs from the earlier upload's."""
+    typed = _typed_figures(reference)
+    return any(
+        value is not None and value != typed.get(key)
+        for key, value in _read_figures(read_check).items()
+    )
+
+
+def _read_figures(read_check):
+    """Each figure read one way from the photo, None where it was not:
+    votes by aspirant id, then rejected, disputed and the valid total."""
     by_ballot = {
         c["ballot_number"]: c["aspirant_id"] for c in read_check.input["candidates"]
     }
@@ -313,14 +352,85 @@ def _differs_from(read_check, reference):
     read = {str(by_ballot[n]): value for n, value in figures["votes"].items()}
     read["rejected"] = figures["rejected"]
     read["disputed"] = figures["disputed"]
-    typed = {
-        **reference.votes,
+    total = read_check.reply["totals"]["valid_votes_in_counts"]
+    read["total"] = total["value"] if reading.readable(total) else None
+    return read
+
+
+def _typed_figures(reference):
+    return {
+        **{str(k): v for k, v in reference.votes.items()},
         "rejected": reference.rejected_votes,
         "disputed": reference.disputed_votes,
+        "total": sum(reference.votes.values()),
     }
-    return any(
-        value is not None and value != typed.get(key) for key, value in read.items()
-    )
+
+
+def agreement_checks(read_check, comparison):
+    """The six lines shown while the photo is checked against the earlier
+    upload. A line that failed on a figure names it, with the number read
+    from the person's own photo; the earlier upload's typed figures are
+    never shown."""
+    states = {}
+    details = {code: [] for code, _ in CHECK_LABELS}
+
+    if read_check.server_qr_result == qr.MATCH:
+        states["qr"] = CHECK_PASSED
+    elif read_check.server_qr_result in (qr.UNREAD, qr.NOT_CHECKED):
+        states["qr"] = CHECK_NOT_READ
+    else:
+        states["qr"] = CHECK_FAILED
+
+    if comparison.status == MachineCheck.RUNNING:
+        states["same_form"] = CHECK_RUNNING
+    elif comparison.status == MachineCheck.DONE and comparison.outcome in SAME_FORM:
+        states["same_form"] = CHECK_PASSED
+    else:
+        states["same_form"] = CHECK_FAILED
+
+    from_reading = ("photo", "votes", "counts", "total")
+    reference = comparison.reference
+    if read_check.status == MachineCheck.RUNNING:
+        states.update({code: CHECK_RUNNING for code in from_reading})
+    elif (
+        read_check.status != MachineCheck.DONE
+        or not read_check.reply
+        or reference is None
+        # Not a usable form photo: there are no figures to compare.
+        or read_check.outcome in reading.RETAKE
+    ):
+        states.update({code: CHECK_FAILED for code in from_reading})
+    else:
+        unclear = read_check.outcome in UNCLEAR_PHOTO
+        states["photo"] = CHECK_FAILED if unclear else CHECK_PASSED
+        read = _read_figures(read_check)
+        typed = _typed_figures(reference)
+        names = {
+            str(c["aspirant_id"]): c["name"].title()
+            for c in read_check.input["candidates"]
+        }
+        lines = [("votes", key, name) for key, name in names.items()] + [
+            ("counts", "rejected", "Rejected"),
+            ("counts", "disputed", "Disputed"),
+            ("total", "total", "Total"),
+        ]
+        for code, key, name in lines:
+            if read[key] is None:
+                details[code].append(f"{name}: could not be read")
+            elif read[key] != typed.get(key):
+                details[code].append(f"{name}: your photo shows {read[key]}")
+        if any(
+            a["field"] in reading.TALLY_FIELDS
+            for a in read_check.reply.get("alterations", [])
+        ):
+            details["total"].append("A figure is written over")
+        for code in ("votes", "counts", "total"):
+            states[code] = CHECK_FAILED if details[code] else CHECK_PASSED
+
+    return [
+        {"code": code, "label": label, "state": states[code], "details": details[code]}
+        for code, label in CHECK_LABELS
+    ]
 
 
 def _ballot(station, race):
