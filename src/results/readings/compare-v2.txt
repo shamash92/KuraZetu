@@ -42,10 +42,14 @@ Step 2: what differs?
    a stain or smudge over a figure in one photograph and not the other.
 10. For each difference, say what A shows and what B shows. Copy figures
     as written. If one side cannot be read, say so. Do not guess.
-    Give box_in_b: the smallest rectangle on photograph B that holds the
-    difference, as left, top, right and bottom, each from 0 to 1000 across
-    the photograph's width or down its height, with 0, 0 at the top left.
-    Give null when the difference cannot be seen in B.
+    Report each figure, signature, stamp, or line of writing that differs
+    as its own difference. Never report one difference for a whole table
+    or section.
+    Give point_in_b: the centre of the difference on photograph B, in
+    pixels of photograph B: x from its left edge, y from its top edge. Its
+    size in pixels is given after it. For a figure, the centre is the
+    middle of the digits as written. Give null when the difference cannot
+    be seen in B.
 11. Set affects_figure to true when the difference is in a candidate's
     votes, the rejected count, the disputed count, or a total of valid
     votes.

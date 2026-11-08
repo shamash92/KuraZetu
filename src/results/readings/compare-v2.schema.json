@@ -85,7 +85,7 @@
           "in_a",
           "in_b",
           "affects_figure",
-          "box_in_b"
+          "point_in_b"
         ],
         "properties": {
           "part": {
@@ -120,7 +120,7 @@
           "affects_figure": {
             "type": "boolean"
           },
-          "box_in_b": {
+          "point_in_b": {
             "anyOf": [
               {
                 "type": "null"
@@ -129,22 +129,14 @@
                 "type": "object",
                 "additionalProperties": false,
                 "required": [
-                  "left",
-                  "top",
-                  "right",
-                  "bottom"
+                  "x",
+                  "y"
                 ],
                 "properties": {
-                  "left": {
+                  "x": {
                     "type": "integer"
                   },
-                  "top": {
-                    "type": "integer"
-                  },
-                  "right": {
-                    "type": "integer"
-                  },
-                  "bottom": {
+                  "y": {
                     "type": "integer"
                   }
                 }

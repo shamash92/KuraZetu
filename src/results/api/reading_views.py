@@ -115,8 +115,8 @@ class ReadResultView(APIView):
 
 
 class MarkedPhotoView(APIView):
-    """The person's own photo with each difference from the earlier upload
-    boxed and labelled. Only when the comparison found differences."""
+    """The person's own photo with a red arrow at each difference from the
+    earlier upload. Only when the comparison found differences."""
 
     authentication_classes = NATIVE_AUTHENTICATION
     permission_classes = [IsAuthenticated]
@@ -128,7 +128,7 @@ class MarkedPhotoView(APIView):
         comparison = check.comparisons.filter(status=MachineCheck.DONE).first()
         if comparison is None or not check.model_copy:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        # The boxes are placed on the copy the model was given.
+        # The points are on the copy the model was given.
         with check.model_copy.open("rb") as photo:
             marked = comparing.marked(photo, comparison.reply)
         if marked is None:

@@ -311,8 +311,9 @@ def for_phone(check):
     answer.update(
         status=MachineCheck.DONE, outcome=code, message=AGREEMENT_MESSAGES[code]
     )
-    if comparison.status == MachineCheck.DONE and comparing.boxes(comparison.reply):
-        # The person's photo with each difference boxed; opens with their token.
+    if comparison.status == MachineCheck.DONE and comparing.points(comparison.reply):
+        # The person's photo with an arrow at each difference; opens with
+        # their token.
         answer["marked_photo"] = reverse("result-photo-marked", args=[check.id])
     return answer
 

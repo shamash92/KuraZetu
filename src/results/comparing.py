@@ -9,7 +9,7 @@ import json
 import time
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from results import reading
 
@@ -47,11 +47,17 @@ def request(model, earlier, later):
             reading.image(later),
             {
                 "type": "text",
-                "text": "Photograph B, taken later.\n\n"
+                "text": f"Photograph B, taken later, {_size(later)} pixels.\n\n"
                 "Compare the two photographs and fill in the reply.",
             },
         ],
     )
+
+
+def _size(photo):
+    """Width by height in pixels, as the model is told."""
+    with Image.open(io.BytesIO(photo)) as image:
+        return f"{image.width} wide by {image.height} high"
 
 
 def compare(client, earlier, later, clock=time.monotonic):
@@ -64,81 +70,55 @@ def compare(client, earlier, later, clock=time.monotonic):
     )
 
 
-# What each kind of difference is called on the marked photo.
-KIND_LABELS = {
-    "figure_reads_differently": "Figure differs",
-    "digit_added": "Digit added",
-    "digit_written_over": "Written over",
-    "crossed_out": "Crossed out",
-    "correction_fluid": "Correction fluid",
-    "erasure": "Erased",
-    "mark_only_in_a": "Missing here",
-    "mark_only_in_b": "Added here",
-    "smudge_over_figure": "Smudge over figure",
-    "other": "Differs",
-}
 MARK_COLOUR = (214, 48, 49)
 
 
-def boxes(reply):
-    """Each difference the model placed on the new photo: (box, label).
-
-    The box is left, top, right, bottom, each 0 to 1000 of the photo's width
-    or height. A reply without boxes, or one made before they were asked
-    for, gives none.
-    """
-    found = []
-    for difference in (reply or {}).get("differences", []):
-        box = difference.get("box_in_b")
-        if not box:
-            continue
-        sides = [min(1000, max(0, box[k])) for k in ("left", "top", "right", "bottom")]
-        if sides[0] >= sides[2] or sides[1] >= sides[3]:
-            continue
-        label = KIND_LABELS.get(difference["kind"], "Differs")
-        name = difference.get("candidate_name_as_printed")
-        if name:
-            label = f"{label}: {name.title()}"
-        found.append((sides, label))
-    return found
+def points(reply):
+    """Where on the new photo each difference sits: (x, y) in pixels of the
+    copy the model read. A reply without points, or one made before they
+    were asked for, gives none."""
+    return [
+        (difference["point_in_b"]["x"], difference["point_in_b"]["y"])
+        for difference in (reply or {}).get("differences", [])
+        if difference.get("point_in_b")
+    ]
 
 
 def marked(photo, reply):
-    """JPEG bytes of the new photo with a box and a label on each
-    difference, or None when there is nothing to mark."""
-    found = boxes(reply)
+    """JPEG bytes of the new photo with a red arrow pointing at each
+    difference, or None when there is nothing to point at.
+
+    Each arrow comes in sideways from the nearer edge of the page, so the
+    arrows on a column of figures run side by side, and stops short of the
+    ink so the figure stays readable.
+    """
+    found = points(reply)
     if not found:
         return None
     with Image.open(photo) as image:
         canvas = image.convert("RGB")
     width, height = canvas.size
-    line = max(3, round(min(width, height) / 250))
-    font = ImageFont.load_default(size=max(14, round(min(width, height) / 45)))
+    unit = min(width, height)
+    line = max(2, round(unit / 450))
+    length = unit * 0.05
+    # Half a three-digit figure, plus a little air.
+    gap = unit * 0.035
+    head = line * 3
     draw = ImageDraw.Draw(canvas)
-    for (left, top, right, bottom), label in found:
-        rect = (
-            left * width / 1000,
-            top * height / 1000,
-            right * width / 1000,
-            bottom * height / 1000,
-        )
-        # A little room around the ink, so the box does not cover it.
-        pad = line * 2
-        rect = (rect[0] - pad, rect[1] - pad, rect[2] + pad, rect[3] + pad)
-        draw.rectangle(rect, outline=MARK_COLOUR, width=line)
-        text_box = draw.textbbox((0, 0), label, font=font)
-        text_w, text_h = text_box[2] - text_box[0], text_box[3] - text_box[1]
-        # Above the box, or inside its top when there is no room above.
-        y = rect[1] - text_h - 2 * line if rect[1] > text_h + 2 * line else rect[1]
-        draw.rectangle(
-            (rect[0], y, rect[0] + text_w + 2 * line, y + text_h + 2 * line),
+    for x, y in found:
+        tip_x, tip_y = min(width, max(0, x)), min(height, max(0, y))
+        # From the right on the right half of the photo, else from the left.
+        side = 1 if tip_x >= width / 2 else -1
+        tip = (tip_x + side * gap, tip_y)
+        tail = (tip[0] + side * length, tip_y)
+        draw.line((tail, (tip[0] + side * head, tip_y)), fill=MARK_COLOUR, width=line)
+        draw.polygon(
+            [
+                tip,
+                (tip[0] + side * head * 1.6, tip_y - head),
+                (tip[0] + side * head * 1.6, tip_y + head),
+            ],
             fill=MARK_COLOUR,
-        )
-        draw.text(
-            (rect[0] + line, y + line - text_box[1]),
-            label,
-            font=font,
-            fill=(255, 255, 255),
         )
     buffer = io.BytesIO()
     canvas.save(buffer, "JPEG", quality=88)
