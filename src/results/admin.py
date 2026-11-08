@@ -225,6 +225,7 @@ class ResultUploadAdmin(admin.ModelAdmin):
         "polling_station",
         "race",
         "location_grade",
+        "server_qr_result",
         "distance_to_centre_m",
         "fix_accuracy_m",
         "quality_checked",
@@ -233,6 +234,7 @@ class ResultUploadAdmin(admin.ModelAdmin):
     list_filter = (
         "race",
         "location_grade",
+        "server_qr_result",
         "quality_checked",
         "polling_station__polling_center__ward__constituency__county",
     )
@@ -249,6 +251,8 @@ class ResultUploadAdmin(admin.ModelAdmin):
         "location_grade",
         "distance_to_centre_m",
         "fix_accuracy_m",
+        "server_qr_result",
+        "server_qr_value",
         "quality_checked",
         "captured_at",
         "created_at",

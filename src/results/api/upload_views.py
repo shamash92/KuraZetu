@@ -10,8 +10,9 @@ from rest_framework.views import APIView
 
 from accounts.authentication import NATIVE_AUTHENTICATION
 from results.api.serializers import AspirantSerializer
-from results.location import COUNTABLE, MESSAGES, Fix
+from results.location import MESSAGES, Fix
 from results.models import Aspirant, ResultUpload
+from results.qr import MESSAGES as QR_MESSAGES
 from results.races import race_from
 from results.uploads import UploadRefused, submit_upload
 
@@ -89,9 +90,10 @@ class ResultUploadView(APIView):
                 "id": str(upload.id),
                 "is_current": upload.is_current,
                 "location_grade": upload.location_grade,
-                "countable": upload.location_grade in COUNTABLE,
+                "countable": upload.countable,
                 # Why the upload cannot support a result, when it cannot.
                 "location_message": MESSAGES.get(upload.location_grade),
+                "qr_message": QR_MESSAGES.get(upload.server_qr_result),
             },
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
@@ -130,7 +132,7 @@ class ResultUploadView(APIView):
                 "rejected_votes": current.rejected_votes,
                 "disputed_votes": current.disputed_votes,
                 "location_grade": current.location_grade,
-                "countable": current.location_grade in COUNTABLE,
+                "countable": current.countable,
                 "created_at": current.created_at,
                 **_photo_links(request, current),
             }

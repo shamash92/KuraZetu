@@ -7,7 +7,10 @@ from django.core.files.storage import storages
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from results.location import GRADES, LOCATION_UNKNOWN
+from results.location import COUNTABLE, GRADES, LOCATION_UNKNOWN
+from results.qr import COUNTS as QR_COUNTS
+from results.qr import NOT_CHECKED
+from results.qr import RESULTS as QR_RESULTS
 from stations.models import Constituency, County, PollingStation, Ward
 
 User = get_user_model()
@@ -480,6 +483,13 @@ class ResultUpload(models.Model):
     # Kept after the position itself is deleted; alone they place nobody.
     fix_accuracy_m = models.FloatField(null=True, blank=True)
     distance_to_centre_m = models.FloatField(null=True, blank=True)
+    # The form's QR code as the server read it from the photo. A failed read
+    # never blocks an upload; uploads stored before the check are not_checked.
+    server_qr_result = models.CharField(
+        max_length=20, choices=QR_RESULTS, default=NOT_CHECKED
+    )
+    # The 17 digits read, or empty when no form code was read.
+    server_qr_value = models.CharField(max_length=17, blank=True)
     # When the device says the photo was taken.
     captured_at = models.DateTimeField(null=True, blank=True)
     is_current = models.BooleanField(default=True)
@@ -490,6 +500,11 @@ class ResultUpload(models.Model):
 
     def __str__(self) -> str:
         return f"{self.polling_station} - {self.race} - {self.created_at}"
+
+    @property
+    def countable(self):
+        """Whether this upload can support a result for the station it names."""
+        return self.location_grade in COUNTABLE and self.server_qr_result in QR_COUNTS
 
 
 class UploadDeviceFix(gis_models.Model):
