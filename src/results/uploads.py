@@ -1,6 +1,7 @@
 """Results form uploads: one photo and one typed tally from one account."""
 
 import io
+import logging
 
 from django.conf import settings
 from django.core.cache import cache
@@ -11,8 +12,11 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from results.location import grade_location
 from results.models import ResultUpload, UploadDeviceFix
+from results.qr import NOT_CHECKED, classify, read_qr
 from results.races import candidates_for, race_from, station_results_cache_key
 from stations.models import PollingStation
+
+logger = logging.getLogger(__name__)
 
 # Roles limited to their registered ward until upload scope is built.
 WARD_LIMITED_ROLES = {"voter", "party_agent"}
@@ -82,6 +86,7 @@ def submit_upload(
     _check_tally(votes, candidates_for(station, found))
     _check_total(votes, rejected_votes, disputed_votes, station)
     location = grade_location(fix, account, station)
+    qr_value, qr_result = _check_qr(photo, station, found.key)
 
     upload = ResultUpload(
         key=key,
@@ -95,6 +100,8 @@ def submit_upload(
         location_grade=location.grade,
         fix_accuracy_m=fix.accuracy_m if fix else None,
         distance_to_centre_m=location.distance_m,
+        server_qr_result=qr_result,
+        server_qr_value=qr_value,
         captured_at=captured_at,
     )
     preview = _preview(photo)
@@ -119,7 +126,7 @@ def submit_upload(
             # Two different uploads for one station and race arrived at once.
             _check_not_uploaded(account, station, found.key)
         raise
-    if location.countable:
+    if upload.countable:
         # The station's public results now say it is waiting for confirmation.
         cache.delete(station_results_cache_key(found.key, station.code))
     return upload, True
@@ -180,6 +187,19 @@ def _check_photo(photo):
         raise UploadRefused("not_jpeg", "The photo must be a whole JPEG.")
     finally:
         photo.seek(0)
+
+
+def _check_qr(photo, station, race_key):
+    """The form code read from the photo and how it compares, never raising.
+
+    A reader that fails leaves the upload not checked, and it still counts.
+    """
+    try:
+        value = read_qr(photo)
+        return value or "", classify(value, station, race_key)
+    except Exception:
+        logger.exception("QR check failed for station %s", station.code)
+        return "", NOT_CHECKED
 
 
 def _preview(photo):

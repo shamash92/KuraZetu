@@ -37,3 +37,4 @@ python-frontmatter
 qrcode
 requests
 tqdm
+zxing-cpp==3.1.1

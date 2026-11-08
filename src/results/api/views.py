@@ -31,6 +31,7 @@ from results.models import (
     PollingStationWomenRepResults,
     ResultUpload,
 )
+from results.qr import COUNTS as QR_COUNTS
 from results.races import candidates_for, race_from, station_results_cache_key
 from stations.models import PollingCenter, PollingStation, Ward
 
@@ -516,6 +517,7 @@ class PollingStationLevelResultsAPIView(APIView):
                 race=race.key,
                 is_current=True,
                 location_grade__in=COUNTABLE,
+                server_qr_result__in=QR_COUNTS,
             ).exists(),
             "status": status.HTTP_200_OK,
         }
