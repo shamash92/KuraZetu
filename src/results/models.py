@@ -516,3 +516,75 @@ class UploadDeviceFix(gis_models.Model):
         ResultUpload, on_delete=models.CASCADE, related_name="device_fix"
     )
     point = gis_models.PointField(srid=4326)
+
+
+def check_photo_path(instance, filename):
+    return f"{_upload_folder(instance)}/checks/{instance.id}.jpg"
+
+
+def check_model_copy_path(instance, filename):
+    return f"{_upload_folder(instance)}/checks/{instance.id}-model.jpg"
+
+
+class MachineCheck(models.Model):
+    """One machine reading of one photo, before entry.
+
+    Never changed once done or failed. Not public, and the reply never
+    reaches the phone; the phone gets the outcome and the figures read one
+    way.
+    """
+
+    RUNNING = "running"
+    DONE = "done"
+    FAILED = "failed"
+    STATUSES = [(RUNNING, "Running"), (DONE, "Done"), (FAILED, "Failed")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Kept for the limits on machine readings.
+    account = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="machine_checks"
+    )
+    polling_station = models.ForeignKey(
+        PollingStation, on_delete=models.PROTECT, related_name="machine_checks"
+    )
+    race = models.CharField(max_length=40, choices=Aspirant.LEVEL_CHOICES)
+    # The photo as taken, and the copy the model read.
+    # Both are deleted at once when the photo is not a results form.
+    photo = models.FileField(
+        storage=upload_storage, upload_to=check_photo_path, blank=True
+    )
+    model_copy = models.FileField(
+        storage=upload_storage, upload_to=check_model_copy_path, blank=True
+    )
+    # Everything the model was given.
+    input = models.JSONField()
+    # The form's QR code, read by the server before the model is called.
+    server_qr_result = models.CharField(
+        max_length=20, choices=QR_RESULTS, default=NOT_CHECKED
+    )
+    server_qr_value = models.CharField(max_length=17, blank=True)
+    status = models.CharField(max_length=10, choices=STATUSES, default=RUNNING)
+    # An outcome code when done; an error code when failed.
+    outcome = models.CharField(max_length=40, blank=True)
+    error = models.CharField(max_length=40, blank=True)
+    # Each model tried, in order, with its error code or None.
+    attempts = models.JSONField(default=list)
+    reply = models.JSONField(null=True, blank=True)
+    # The model that wrote the reply.
+    model = models.CharField(max_length=60, blank=True)
+    provider_request_id = models.CharField(max_length=100, blank=True)
+    usage = models.JSONField(null=True, blank=True)
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    # Set when the person submits the prefilled form.
+    upload = models.ForeignKey(
+        ResultUpload,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="machine_checks",
+    )
+
+    def __str__(self) -> str:
+        return f"{self.polling_station} - {self.race} - {self.status}"

@@ -258,6 +258,14 @@ CORS_ALLOWED_ORIGINS=http://localhost:8000, http://<your-multipass-ipv4-address>
 
 # Path prefix for the real Django admin
 ADMIN_URL_SUFFIX=backend
+
+# Needed only when uploading a results form photo from the mobile app;
+# the server starts without it
+ANTHROPIC_API_KEY=
+
+# Path the mobile app calls to read a results form photo; the server
+# starts without it
+READING_URL_SUFFIX=read
 ```
 
 ### 4. Set Up PostgreSQL and PostGIS

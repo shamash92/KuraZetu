@@ -1,0 +1,393 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "screening",
+    "capture",
+    "identity",
+    "candidates",
+    "extra_rows",
+    "totals",
+    "marks",
+    "alterations"
+  ],
+  "$defs": {
+    "legibility": {
+      "enum": [
+        "clear",
+        "ambiguous",
+        "unknown"
+      ]
+    },
+    "seen": {
+      "enum": [
+        "present",
+        "absent",
+        "cannot_tell"
+      ]
+    },
+    "text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "as_printed",
+        "legibility"
+      ],
+      "properties": {
+        "as_printed": {
+          "type": "string"
+        },
+        "legibility": {
+          "$ref": "#/$defs/legibility"
+        }
+      }
+    },
+    "figure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "as_written",
+        "value",
+        "blank",
+        "legibility"
+      ],
+      "properties": {
+        "as_written": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "blank": {
+          "type": "boolean"
+        },
+        "legibility": {
+          "$ref": "#/$defs/legibility"
+        }
+      }
+    }
+  },
+  "properties": {
+    "screening": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_results_form",
+        "reason",
+        "flagged",
+        "flag_reason"
+      ],
+      "properties": {
+        "is_results_form": {
+          "type": "boolean"
+        },
+        "reason": {
+          "enum": [
+            "results_form",
+            "other_form_or_document",
+            "sexual",
+            "violent_or_gory",
+            "hateful_or_vulgar",
+            "threat_or_incitement",
+            "political_material",
+            "other_picture",
+            "blank_or_unclear"
+          ]
+        },
+        "flagged": {
+          "type": "boolean"
+        },
+        "flag_reason": {
+          "enum": [
+            "none",
+            "vulgar_or_sexual",
+            "threat_or_incitement",
+            "political_message"
+          ]
+        }
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "whole_page_visible",
+        "photo_of_screen",
+        "sheet_kind",
+        "readability",
+        "quality_problems",
+        "notes"
+      ],
+      "properties": {
+        "sheet_kind": {
+          "enum": [
+            "printed_form_in_pen",
+            "carbon_copy",
+            "photocopy_or_printout",
+            "not_printed_form",
+            "cannot_tell"
+          ]
+        },
+        "readability": {
+          "enum": [
+            "good",
+            "poor",
+            "unreadable"
+          ]
+        },
+        "quality_problems": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "blurred",
+              "out_of_focus",
+              "too_dark",
+              "washed_out",
+              "glare",
+              "shadow",
+              "too_far",
+              "cropped",
+              "covered",
+              "folded"
+            ]
+          }
+        },
+        "whole_page_visible": {
+          "type": "boolean"
+        },
+        "photo_of_screen": {
+          "$ref": "#/$defs/seen"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "form_number",
+        "county",
+        "constituency",
+        "ward",
+        "polling_centre",
+        "station_code",
+        "stream",
+        "serial_number"
+      ],
+      "properties": {
+        "form_number": {
+          "$ref": "#/$defs/text"
+        },
+        "county": {
+          "$ref": "#/$defs/text"
+        },
+        "constituency": {
+          "$ref": "#/$defs/text"
+        },
+        "ward": {
+          "$ref": "#/$defs/text"
+        },
+        "polling_centre": {
+          "$ref": "#/$defs/text"
+        },
+        "station_code": {
+          "$ref": "#/$defs/text"
+        },
+        "stream": {
+          "$ref": "#/$defs/text"
+        },
+        "serial_number": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ballot_number",
+          "name_as_printed",
+          "votes"
+        ],
+        "properties": {
+          "ballot_number": {
+            "type": "integer"
+          },
+          "name_as_printed": {
+            "type": "string"
+          },
+          "votes": {
+            "$ref": "#/$defs/figure"
+          }
+        }
+      }
+    },
+    "extra_rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name_as_printed",
+          "votes"
+        ],
+        "properties": {
+          "name_as_printed": {
+            "type": "string"
+          },
+          "votes": {
+            "$ref": "#/$defs/figure"
+          }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "valid_votes_under_table",
+        "valid_votes_in_counts",
+        "registered_voters",
+        "rejected",
+        "rejection_objected",
+        "disputed"
+      ],
+      "properties": {
+        "valid_votes_under_table": {
+          "$ref": "#/$defs/figure"
+        },
+        "valid_votes_in_counts": {
+          "$ref": "#/$defs/figure"
+        },
+        "registered_voters": {
+          "$ref": "#/$defs/figure"
+        },
+        "rejected": {
+          "$ref": "#/$defs/figure"
+        },
+        "rejection_objected": {
+          "$ref": "#/$defs/figure"
+        },
+        "disputed": {
+          "$ref": "#/$defs/figure"
+        }
+      }
+    },
+    "marks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "presiding_officer_signature",
+        "deputy_presiding_officer_signature",
+        "stamp",
+        "stamp_count",
+        "agent_rows_filled",
+        "agent_rows_signed",
+        "refusal_reasons_written",
+        "comments_written"
+      ],
+      "properties": {
+        "presiding_officer_signature": {
+          "$ref": "#/$defs/seen"
+        },
+        "deputy_presiding_officer_signature": {
+          "$ref": "#/$defs/seen"
+        },
+        "stamp": {
+          "$ref": "#/$defs/seen"
+        },
+        "stamp_count": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "agent_rows_filled": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "agent_rows_signed": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "refusal_reasons_written": {
+          "$ref": "#/$defs/seen"
+        },
+        "comments_written": {
+          "$ref": "#/$defs/seen"
+        }
+      }
+    },
+    "alterations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "ballot_number",
+          "kind",
+          "countersigned",
+          "description",
+          "possible_values"
+        ],
+        "properties": {
+          "countersigned": {
+            "$ref": "#/$defs/seen"
+          },
+          "field": {
+            "enum": [
+              "candidate_votes",
+              "valid_votes_under_table",
+              "valid_votes_in_counts",
+              "registered_voters",
+              "rejected",
+              "rejection_objected",
+              "disputed",
+              "identity",
+              "other"
+            ]
+          },
+          "ballot_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "digit_written_over",
+              "digit_inserted",
+              "different_ink_or_hand",
+              "outside_box",
+              "crossed_out",
+              "correction_fluid",
+              "erasure",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "possible_values": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+}

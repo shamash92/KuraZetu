@@ -1,4 +1,5 @@
 africastalking==2.0.3
+anthropic==2.6.0
 black==26.3.1
 crispy-tailwind
 django == 5.2.18
