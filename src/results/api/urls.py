@@ -1,5 +1,10 @@
 from django.urls import path
 
+from results.api.agreement_views import (
+    AgreementView,
+    SharedPhotoView,
+    StationUploadsView,
+)
 from results.api.county_views import CountyTotalResultsAPIView
 from results.api.national_views import TotalPresResultsAPIView
 from results.api.reading_views import ReadPhotoView, ReadResultView
@@ -94,4 +99,15 @@ urlpatterns = [
         ResultUploadPhotoView.as_view(full=True),
         name="result-upload-photo-full",
     ),
+    path(
+        "polling-station/<str:polling_station_code>/uploads/<str:level>/",
+        StationUploadsView.as_view(),
+        name="polling-station-uploads",
+    ),
+    path(
+        "uploads/<uuid:upload_id>/shared-photo/",
+        SharedPhotoView.as_view(),
+        name="result-upload-shared-photo",
+    ),
+    path("agreements/", AgreementView.as_view(), name="result-agreements"),
 ]
