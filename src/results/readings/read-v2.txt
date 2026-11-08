@@ -52,9 +52,13 @@ What to read
    centre name, polling station code, stream ("1 of 3"), the form number
    (34A to 39A), and the serial number.
 8. Every row of the candidate table. Match each row to the candidate list
-   in the user message by the printed name. Report a printed row that is
-   not in the list under extra_rows. Report a listed candidate you cannot
-   find with legibility "unknown".
+   in the user message by the printed name, wherever the row sits in the
+   table. A name with small spelling differences, or with its names in
+   another order, is the same name. For a listed candidate whose name no
+   row prints, give name_as_printed as an empty string and votes with
+   legibility "unknown". Give an empty name only when no row prints it,
+   never for a row that cannot be read. Report a printed row whose name
+   is not in the list under extra_rows.
 9. The total of valid votes under the candidate table.
 10. The polling station counts: registered voters, rejected ballot papers,
     rejection-objected-to ballot papers, disputed votes, and the total of

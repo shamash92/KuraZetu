@@ -319,6 +319,27 @@ def test_a_complete_reading():
             reading.OTHER_STATION,
         ),
         (reply(identity__form_number=text("FORM 34A")), reading.OTHER_FORM),
+        (
+            reply(
+                candidates=[
+                    {
+                        "ballot_number": 1,
+                        "name_as_printed": "NAME",
+                        "votes": figure(10),
+                    },
+                    {
+                        "ballot_number": 2,
+                        "name_as_printed": "",
+                        "votes": figure(None, "unknown"),
+                    },
+                ]
+            ),
+            reading.OTHER_CANDIDATES,
+        ),
+        (
+            reply(extra_rows=[{"name_as_printed": "OTHER", "votes": figure(5)}]),
+            reading.OTHER_CANDIDATES,
+        ),
         (reply(capture__photo_of_screen="present"), reading.PHOTO_OF_SCREEN),
         (reply(capture__readability="poor"), reading.PHOTO_POOR),
         (reply(capture__readability="unreadable"), reading.PHOTO_UNREADABLE),
