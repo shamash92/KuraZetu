@@ -7,7 +7,7 @@ from results.api.agreement_views import (
 )
 from results.api.county_views import CountyTotalResultsAPIView
 from results.api.national_views import TotalPresResultsAPIView
-from results.api.reading_views import ReadPhotoView, ReadResultView
+from results.api.reading_views import MarkedPhotoView, ReadPhotoView, ReadResultView
 from results.api.upload_views import ResultUploadPhotoView, ResultUploadView
 from results.api.views import (
     PollingCenterGovernorResultsAPIView,
@@ -88,6 +88,11 @@ urlpatterns = [
         "read/<uuid:check_id>/",
         ReadResultView.as_view(),
         name="result-photo-reading-result",
+    ),
+    path(
+        "read/<uuid:check_id>/marked-photo/",
+        MarkedPhotoView.as_view(),
+        name="result-photo-marked",
     ),
     path(
         "uploads/<uuid:upload_id>/photo/",

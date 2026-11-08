@@ -1,6 +1,7 @@
 """Agreeing with an earlier upload: the new photo is read and compared with
 the earlier one at the same time."""
 
+import io
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -8,6 +9,7 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 import pytest
+from PIL import Image
 
 from results import comparing, machine_checks, reading
 from results.location import CENTRE_MATCH, LOCATION_MISMATCH
@@ -55,7 +57,12 @@ def comparison(sheet="same_sheet", differences=(), both_usable=True, not_compare
     }
 
 
-def difference(part="candidate_votes", affects_figure=True, kind="digit_added"):
+def difference(
+    part="candidate_votes",
+    affects_figure=True,
+    kind="digit_added",
+    box={"left": 100, "top": 400, "right": 300, "bottom": 440},
+):
     return {
         "part": part,
         "candidate_name_as_printed": "ANN X" if part == "candidate_votes" else None,
@@ -63,6 +70,7 @@ def difference(part="candidate_votes", affects_figure=True, kind="digit_added"):
         "in_a": "70",
         "in_b": "170",
         "affects_figure": affects_figure,
+        "box_in_b": box,
     }
 
 
@@ -531,3 +539,54 @@ def test_lines_still_running_show_as_running(
     assert data["status"] == "running"
     assert lines(data)["same_form"] == ("running", [])
     assert lines(data)["votes"] == ("passed", [])
+
+
+# ── The photo with each difference boxed ────────────────────────────────
+
+
+def test_differences_are_boxed_on_the_persons_photo(client, station, earlier, provider):
+    provider(message(reply()), message(comparison(differences=[difference()])))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    response = client.get(data["marked_photo"])
+    assert response.status_code == 200
+    assert response["Content-Type"] == "image/jpeg"
+    marked = Image.open(io.BytesIO(response.content)).convert("RGB")
+    check = MachineCheck.objects.get(pk=data["check_id"])
+    assert marked.size == Image.open(check.model_copy.open("rb")).size
+    # The box's left edge, just left of a tenth of the way across, is red.
+    y = marked.height * 42 // 100
+    edge = [
+        marked.getpixel((x, y))
+        for x in range(marked.width // 10 - 30, marked.width // 10)
+    ]
+    assert any(r > 150 and g < 100 and b < 100 for r, g, b in edge)
+
+
+def test_a_matching_photo_has_nothing_to_mark(client, station, earlier, provider):
+    provider(message(reply()), message(comparison()))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert "marked_photo" not in data
+    response = client.get(f"{result_url(data['check_id'])}marked-photo/")
+    assert response.status_code == 404
+
+
+def test_a_difference_with_no_box_is_not_marked(client, station, earlier, provider):
+    provider(message(reply()), message(comparison(differences=[difference(box=None)])))
+
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert data["outcome"] == machine_checks.FIGURES_DIFFER
+    assert "marked_photo" not in data
+
+
+def test_nobody_else_can_open_the_marked_photo(client, station, earlier, provider):
+    from results.test_agreement_save import other_client
+
+    provider(message(reply()), message(comparison(differences=[difference()])))
+    data = agree_and_ask(client, station, earlier.id)
+
+    assert other_client().get(data["marked_photo"]).status_code == 404
