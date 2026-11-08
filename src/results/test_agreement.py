@@ -1,5 +1,5 @@
 """Agreeing with an earlier upload: the new photo is read and compared with
-the earlier one at the same time (block D2)."""
+the earlier one at the same time."""
 
 import uuid
 

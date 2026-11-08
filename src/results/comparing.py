@@ -1,4 +1,4 @@
-"""Compare a new photo of a results form with an earlier one (block D2).
+"""Compare a new photo of a results form with an earlier one.
 
 The model reports whether the two photos show the same sheet and every
 difference in ink and marks. Fixed rules here turn its reply into a code.
@@ -62,7 +62,7 @@ def compare(client, earlier, later, clock=time.monotonic):
 
 
 def outcome(reply):
-    """The comparison's code: the first rule that fits (block D2, rule 24)."""
+    """The comparison's code: the first check below that fits."""
     if not reply["both_usable"] or reply["sheet"] == "cannot_tell":
         return COMPARE_INCONCLUSIVE
     if TALLY_PARTS & set(reply["not_compared"]):

@@ -1,8 +1,8 @@
 """Run machine checks of a photo before entry and keep their records.
 
 A first photo gets a reading. A photo taken to agree with an earlier upload
-gets a reading and, at the same time, a comparison with that upload's photo
-(block D2).
+gets a reading and, at the same time, a comparison with that upload's
+photo.
 """
 
 import hashlib
@@ -39,7 +39,7 @@ QR_OUTCOMES = {
 LOST_AFTER = timedelta(seconds=reading.DEADLINE_S + 30)
 
 
-# What the phone shows for each outcome of agreeing (block D2, rule 25).
+# What the phone shows for each outcome of agreeing.
 AGREES = "agrees"
 FIGURES_DIFFER = "figures_differ"
 NOT_CHECKED = "not_checked"
@@ -240,8 +240,8 @@ def _compare(check, client=None, clock=time.monotonic):
 def for_phone(check):
     """What the phone receives: never the reply, only figures read one way.
 
-    For an agreement, the status stays running until both checks end, and
-    the outcome is the agreement's (block D2, rule 25).
+    For an agreement, the status stays running until both the reading and
+    the comparison end; the outcome is then whether the photo agrees.
     """
     _end_if_lost(check)
     done = check.status == MachineCheck.DONE
@@ -286,8 +286,8 @@ def for_phone(check):
 
 
 def agreement(read_check, comparison):
-    """Whether the new photo agrees with the earlier upload: the first rule
-    that fits (block D2, rule 25). A retake is decided before this."""
+    """Whether the new photo agrees with the earlier upload: the first check
+    below that fits. A retake is decided before this."""
     if MachineCheck.FAILED in (read_check.status, comparison.status):
         return NOT_CHECKED
     if comparison.outcome == comparing.FORM_CHANGED:
