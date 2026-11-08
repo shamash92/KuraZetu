@@ -150,16 +150,18 @@ function placeWarning(
     place: ResultsFormPlace,
 ): {title: string; body: string} | null {
     const ward = place.wardName ? `${place.wardName} ward` : "this station's ward";
+    const fix =
+        "restart the app, turn on the internet and wait for a GPS lock before you submit.";
     if (check.kind === "outside") {
         // An outside-ward centre is checked only near its pin.
         return place.check.ward_boundary
             ? {
                   title: `You are outside ${ward}`,
-                  body: "We will still upload your results, but they will not count. Uploads count only from inside the station's ward.",
+                  body: `This upload will not count. If you are in ${ward}, ${fix}`,
               }
             : {
                   title: `You are not at ${place.centreName}`,
-                  body: "We will still upload your results, but they will not count. This centre counts only uploads made at the centre.",
+                  body: `This upload will not count. This centre counts only uploads made at the centre. If you are at the centre, ${fix}`,
               };
     }
     if (check.kind === "ward" && check.distanceM !== null) {
