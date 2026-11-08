@@ -49,6 +49,9 @@ def save_polling_center_pin_locations(geojson_file_path):
             const_name = properties["constituency"].strip()
             polling_center_name = properties["name"].strip()
             point_coordinates = polling_center["geometry"]["coordinates"]
+            # The source marks a centre with no known location as (0, 0). Leave its pin empty.
+            if not any(point_coordinates):
+                continue
             point = Point(point_coordinates)
 
             polling_centers = PollingCenter.objects.filter(
@@ -89,16 +92,9 @@ def save_polling_center_pin_locations(geojson_file_path):
 
             verified_count += 1
             # update the polling center with the pin location
-            point_coordinates = polling_center["geometry"]["coordinates"]
-            # The source marks a centre with no known location as (0, 0).
-            # Store that as no pin, and no radius circle around it.
-            point = Point(point_coordinates) if any(point_coordinates) else None
-
             if not polling_center_obj.is_verified:
                 try:
                     polling_center_obj.pin_location = point
-                    if point is None:
-                        polling_center_obj.boundary = None
                     polling_center_obj.is_verified = True  # this is a temporary fix just to filter the saved centers, it wil be removed later once a better solution is found.
                     # Also, the function of the is_verified is to actually have the community verify the location and name etc of teh station and verify the streams. So this will def be removed later
                     polling_center_obj.save()
@@ -133,6 +129,10 @@ def save_polling_stations_pin_locations(geojson_file_path):
         # iterate through all features
         for feature in tqdm(data["features"], desc="processing schools"):
             total += 1
+            point_coordinates = feature["geometry"]["coordinates"]
+            # Leave unknown school locations empty, just like unknown centre locations.
+            if not any(point_coordinates):
+                continue
 
             try:
                 ward_name = feature["properties"]["Ward"].strip()
@@ -225,7 +225,6 @@ def save_polling_stations_pin_locations(geojson_file_path):
 
             # update the polling station with the pin location
             if not polling_center_obj.is_verified:
-                point_coordinates = feature["geometry"]["coordinates"]
                 point = Point(point_coordinates)
                 try:
                     polling_center_obj.pin_location = point
