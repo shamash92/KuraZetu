@@ -5,8 +5,12 @@ import {
     Text,
     TouchableOpacity,
     View,
+    useWindowDimensions,
 } from "react-native";
 import {Camera as CameraIcon} from "lucide-react-native";
+import {useState} from "react";
+
+import {ZoomableImage} from "@/app/(tabs)/communityNotes/[id]/_components/ZoomableImage";
 
 import {AgreementChecklist} from "./AgreementChecklist";
 import type {AgreementCheck} from "./prefill";
@@ -22,6 +26,8 @@ type AgreementPaneProps =
     | {
           checking?: false;
           checks: AgreementCheck[] | null;
+          /** With differences: the photo with an arrow at each one, and without. */
+          photo: {marked: string; plain: string; token: string} | null;
           /** The server's sentence about the photo. */
           message: string;
           /** The photo matches the earlier upload: it can be submitted. */
@@ -39,10 +45,37 @@ type AgreementPaneProps =
  * otherwise Retake photo or Disagree.
  */
 export function AgreementPane(props: AgreementPaneProps) {
+    const [showComments, setShowComments] = useState(true);
+    const {height} = useWindowDimensions();
+    const photo = props.checking ? null : props.photo;
+
     return (
         <View style={styles.body}>
             <ScrollView contentContainerStyle={styles.list}>
                 <StepBar step={props.checking ? 2 : 3} />
+                {photo ? (
+                    <View style={[styles.photo, {height: 0.42 * height}]}>
+                        <ZoomableImage
+                            // A new key resets the zoom when the photo changes.
+                            key={showComments ? "marked" : "plain"}
+                            uri={showComments ? photo.marked : photo.plain}
+                            headers={
+                                showComments
+                                    ? {Authorization: `Bearer ${photo.token}`}
+                                    : undefined
+                            }
+                        />
+                        <TouchableOpacity
+                            style={styles.toggle}
+                            onPress={() => setShowComments((shown) => !shown)}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.toggleText}>
+                                {showComments ? "Hide comments" : "Show comments"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : null}
                 <Text style={styles.title} accessibilityRole="header">
                     {props.checking ? "Checking your photo" : "Your photo was checked"}
                 </Text>
@@ -99,6 +132,25 @@ const styles = StyleSheet.create({
         paddingTop: 4,
         paddingBottom: 20,
         gap: 16,
+    },
+    photo: {
+        borderRadius: 14,
+        overflow: "hidden",
+        backgroundColor: perk.ink,
+    },
+    toggle: {
+        position: "absolute",
+        right: 10,
+        bottom: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 999,
+        backgroundColor: perk.ink,
+    },
+    toggleText: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: perk.paper,
     },
     title: {
         fontSize: 28,
