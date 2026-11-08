@@ -14,6 +14,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from django.conf import settings
+
 import anthropic
 from PIL import Image, ImageOps
 
@@ -181,10 +183,16 @@ def model_copy(photo):
     size = (int(width * scale), int(height * scale))
     while math.ceil(size[0] / PATCH_PX) * math.ceil(size[1] / PATCH_PX) > MAX_PATCHES:
         size = (size[0] - PATCH_PX, size[1] - round(PATCH_PX * size[1] / size[0]))
+    quality = 90
+    if settings.DEBUG:
+        # About a quarter of the bytes, so a slow home connection can send
+        # two photos to the model within the time limit. Never in production.
+        size = (size[0] // 2, size[1] // 2)
+        quality = 80
     if size != upright.size:
         upright = upright.resize(size, Image.LANCZOS)
     buffer = io.BytesIO()
-    upright.save(buffer, "JPEG", quality=90)
+    upright.save(buffer, "JPEG", quality=quality)
     return buffer.getvalue(), size[0], size[1]
 
 
@@ -395,7 +403,9 @@ def outcome(reply, station_code, series, ballot_numbers, qr_matched=False):
         form_series = re.search(r"3[4-9]", form["as_printed"])
         if form["legibility"] == "clear" and form_series and form_series[0] != series:
             return OTHER_FORM
-    if (
+    # Skipped while DEBUG is on, so a form shown on a laptop screen can be
+    # photographed to test uploads locally. DEBUG is never on in production.
+    if not settings.DEBUG and (
         capture["photo_of_screen"] == "present"
         or capture["sheet_kind"] == "not_printed_form"
     ):
