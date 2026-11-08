@@ -26,7 +26,6 @@ pytestmark = pytest.mark.django_db
 
 User = get_user_model()
 
-# The path comes from the environment, so look it up by name.
 URL = reverse("result-photo-reading")
 
 
@@ -387,6 +386,14 @@ def result_url(check_id):
 
 
 @pytest.fixture(autouse=True)
+def agent(account):
+    """Readings are open to party agents and staff; the tests read as an agent."""
+    account.role = "party_agent"
+    account.save()
+    return account
+
+
+@pytest.fixture(autouse=True)
 def read_at_once(monkeypatch):
     """Read in the request instead of the worker, so tests see the result."""
     monkeypatch.setattr(machine_checks, "_queue", machine_checks.read_stored)
@@ -411,6 +418,32 @@ def test_reading_needs_a_signed_in_person(station):
     from rest_framework.test import APIClient
 
     assert send(APIClient(), station).status_code == 401
+
+
+def test_a_voter_is_refused_before_anything_is_read(
+    client, account, station, mca_candidates, provider
+):
+    fake = provider(message())
+    account.role = "voter"
+    account.save()
+
+    response = start(client, station)
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "reading_not_allowed"
+    assert not MachineCheck.objects.exists()
+    assert fake.models == []
+
+
+def test_staff_may_have_a_photo_read(
+    client, account, station, mca_candidates, provider
+):
+    provider(message())
+    account.role = "voter"
+    account.staff = True
+    account.save()
+
+    assert start(client, station).status_code == 202
 
 
 def test_the_phone_gets_the_figures_read_one_way_and_never_the_reply(

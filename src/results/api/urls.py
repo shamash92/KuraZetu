@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.urls import path
 
 from results.api.county_views import CountyTotalResultsAPIView
@@ -75,14 +74,13 @@ urlpatterns = [
         name="polling-station-candidates-list",
     ),
     path("uploads/", ResultUploadView.as_view(), name="result-uploads"),
-    # Not secret: the path ships in the app. It only keeps scans away.
     path(
-        f"{settings.READING_URL_SUFFIX}/",
+        "read/",
         ReadPhotoView.as_view(),
         name="result-photo-reading",
     ),
     path(
-        f"{settings.READING_URL_SUFFIX}/<uuid:check_id>/",
+        "read/<uuid:check_id>/",
         ReadResultView.as_view(),
         name="result-photo-reading-result",
     ),

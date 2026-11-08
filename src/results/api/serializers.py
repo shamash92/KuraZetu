@@ -45,6 +45,7 @@ class AspirantSerializer(ModelSerializer):
 
     party_color = serializers.CharField(source="party.party_colour_hex", read_only=True)
     party = serializers.CharField(source="party.name", read_only=True)
+    full_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = Aspirant
@@ -53,6 +54,7 @@ class AspirantSerializer(ModelSerializer):
             "first_name",
             "last_name",
             "surname",
+            "full_name",
             "party",
             "party_color",
             "level",

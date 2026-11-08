@@ -14,6 +14,14 @@ from results.races import race_from
 from results.uploads import UploadRefused, _check_account, _check_photo
 from stations.models import PollingStation
 
+# Who may have a photo read, until the reading limits are built. Everyone
+# else types the results, and the upload goes to a reviewer.
+READING_ROLES = {"party_agent"}
+
+
+def may_read(account):
+    return account.is_staff or account.role in READING_ROLES
+
 
 class ReadRequestSerializer(serializers.Serializer):
     station = serializers.CharField()
@@ -34,6 +42,15 @@ class ReadPhotoView(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request):
+        # First, before the photo is read or the model is called.
+        if not may_read(request.user):
+            return Response(
+                {
+                    "code": "reading_not_allowed",
+                    "error": "Photo reading is open to staff and party agents only.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         given = ReadRequestSerializer(data=request.data)
         if not given.is_valid():
             return Response(

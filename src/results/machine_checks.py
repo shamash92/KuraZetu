@@ -180,11 +180,7 @@ def _ballot(station, race):
         {
             "ballot_number": number,
             "aspirant_id": aspirant.id,
-            "name": " ".join(
-                part
-                for part in (aspirant.first_name, aspirant.last_name, aspirant.surname)
-                if part
-            ),
+            "name": aspirant.full_name,
             "party": aspirant.party.name if aspirant.party else "Independent",
         }
         for number, aspirant in enumerate(aspirants, start=1)

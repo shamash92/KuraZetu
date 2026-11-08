@@ -275,10 +275,6 @@ ADMIN_URL_SUFFIX=backend
 # the server starts without it
 ANTHROPIC_API_KEY=
 
-# Path the mobile app calls to read a results form photo; the server
-# starts without it
-READING_URL_SUFFIX=read
-
 # Redis queue for background work. Use a database number (the last part)
 # that no other app on this Redis uses, or their workers take each other's
 # jobs and discard them
