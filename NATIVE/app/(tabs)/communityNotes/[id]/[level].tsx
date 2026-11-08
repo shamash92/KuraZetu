@@ -68,6 +68,8 @@ export default function LevelResultsScreen() {
     // Null until the station answers, so a slow request is not read as "none".
     const [results, setResults] = useState<IPollingStationResult[] | null>(null);
     const [extraData, setExtraData] = useState<IPollingStationExtraData | null>(null);
+    // Someone's upload can count here but is not confirmed yet.
+    const [waiting, setWaiting] = useState(false);
     // This person's own upload for the race; null when they have not uploaded.
     const [ownUpload, setOwnUpload] = useState<OwnUpload | null>(null);
     // A request that did not come back is not the same as a station with no tally.
@@ -122,6 +124,7 @@ export default function LevelResultsScreen() {
                 setOwnUpload(ownResponse.ok ? await ownResponse.json() : null);
                 setResults(data["data"] ?? []);
                 setExtraData(data["extra_data"]);
+                setWaiting(data["waiting"] === true);
             } catch (error) {
                 console.error("Error fetching polling station results:", error);
                 setFailed(true);
@@ -229,6 +232,7 @@ export default function LevelResultsScreen() {
                     <EmptyResults
                         levelLabel={levelLabel}
                         formName={RESULTS_FORMS[level].name}
+                        waiting={waiting}
                         bottomOffset={insets.bottom + 16}
                         onAdd={() => {
                             setAddMounted(true);
