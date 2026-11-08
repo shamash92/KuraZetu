@@ -12,7 +12,7 @@ from PIL import Image
 from rest_framework.test import APIClient
 
 from results import uploads
-from results.models import Aspirant, Party, ResultUpload
+from results.models import Aspirant, MachineCheck, Party, ResultUpload
 from stations.models import Constituency, County, PollingCenter, PollingStation, Ward
 
 User = get_user_model()
@@ -36,8 +36,13 @@ JPEG = jpeg(1000, 1000)
 def private_uploads(monkeypatch, tmp_path):
     # The fields resolve their storage once, when models load.
     storage = FileSystemStorage(location=str(tmp_path))
-    for name in ("photo", "preview"):
-        field = ResultUpload._meta.get_field(name)
+    for model, name in (
+        (ResultUpload, "photo"),
+        (ResultUpload, "preview"),
+        (MachineCheck, "photo"),
+        (MachineCheck, "model_copy"),
+    ):
+        field = model._meta.get_field(name)
         monkeypatch.setattr(field, "storage", storage)
     return tmp_path
 
