@@ -188,6 +188,14 @@ def test_a_phone_photo_is_shrunk_to_the_largest_size_read_in_full():
     assert 4600 < patches <= reading.MAX_PATCHES
 
 
+def test_the_copy_is_half_the_size_while_debug_is_on(settings):
+    settings.DEBUG = True
+
+    _, width, height = reading.model_copy(io.BytesIO(jpeg(1200, 1600)))
+
+    assert (width, height) == (600, 800)
+
+
 def test_a_small_photo_is_not_enlarged():
     _, width, height = reading.model_copy(io.BytesIO(jpeg(1200, 1600)))
 
@@ -336,6 +344,12 @@ def test_a_complete_reading():
 )
 def test_outcome_codes(body, code):
     assert outcome(body) == code
+
+
+def test_a_screen_photo_reads_as_paper_while_debug_is_on(settings):
+    settings.DEBUG = True
+
+    assert outcome(reply(capture__photo_of_screen="present")) == reading.READ_COMPLETE
 
 
 def test_a_station_code_read_two_ways_names_no_station():
