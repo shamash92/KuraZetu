@@ -418,7 +418,7 @@ def outcome(reply, station_code, series, ballot_numbers, qr_matched=False):
         return CONTENT_FLAGGED
     figures = _tally_figures(reply)
     if set(ballot_numbers) - set(figures["votes"]) or not all(
-        _readable(f) for f in _all(figures)
+        readable(f) for f in _all(figures)
     ):
         return READ_INCOMPLETE
     if any(a["field"] in TALLY_FIELDS for a in reply["alterations"]):
@@ -434,7 +434,7 @@ def prefill(reply, ballot_numbers):
     figures = _tally_figures(reply)
 
     def value(figure):
-        return figure["value"] if figure and _readable(figure) else None
+        return figure["value"] if figure and readable(figure) else None
 
     return {
         "votes": {n: value(figures["votes"].get(n)) for n in ballot_numbers},
@@ -455,7 +455,7 @@ def _all(figures):
     return [*figures["votes"].values(), figures["rejected"], figures["disputed"]]
 
 
-def _readable(figure):
+def readable(figure):
     return (
         figure["legibility"] == "clear"
         and not figure["blank"]
