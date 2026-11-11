@@ -444,7 +444,8 @@ def upload_preview_path(instance, filename):
 
 
 class ResultUpload(models.Model):
-    """One photo of a results form and one typed tally, from one account.
+    """One photo of a results form and one tally, from one account: typed,
+    or copied from the earlier upload the person agrees with.
 
     Never changed or replaced once stored. An account has one upload for each
     station and race.
@@ -499,6 +500,15 @@ class ResultUpload(models.Model):
     server_qr_value = models.CharField(max_length=17, blank=True)
     # When the device says the photo was taken.
     captured_at = models.DateTimeField(null=True, blank=True)
+    # The earlier upload this one agrees with. Nothing was typed:
+    # the tally is a copy of that upload's.
+    agrees_with = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="agreements",
+    )
     is_current = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     # Set by accounts.deletion when the linked account is deleted.

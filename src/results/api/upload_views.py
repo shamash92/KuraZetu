@@ -124,27 +124,28 @@ class ResultUploadView(APIView):
                 {"code": "no_upload", "error": "You have no upload here."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        candidates = Aspirant.objects.filter(pk__in=current.votes).select_related(
-            "party"
-        )
-        return Response(
+        return Response(own_upload(request, current))
+
+
+def own_upload(request, upload):
+    """A person's own upload as they see it: their figures and their photo."""
+    candidates = Aspirant.objects.filter(pk__in=upload.votes).select_related("party")
+    return {
+        "id": str(upload.id),
+        "votes": [
             {
-                "id": str(current.id),
-                "votes": [
-                    {
-                        "candidate": AspirantSerializer(candidate).data,
-                        "votes": current.votes[str(candidate.id)],
-                    }
-                    for candidate in candidates.order_by("id")
-                ],
-                "rejected_votes": current.rejected_votes,
-                "disputed_votes": current.disputed_votes,
-                "location_grade": current.location_grade,
-                "countable": current.countable,
-                "created_at": current.created_at,
-                **_photo_links(request, current),
+                "candidate": AspirantSerializer(candidate).data,
+                "votes": upload.votes[str(candidate.id)],
             }
-        )
+            for candidate in candidates.order_by("id")
+        ],
+        "rejected_votes": upload.rejected_votes,
+        "disputed_votes": upload.disputed_votes,
+        "location_grade": upload.location_grade,
+        "countable": upload.countable,
+        "created_at": upload.created_at,
+        **_photo_links(request, upload),
+    }
 
 
 def _photo_links(request, upload):

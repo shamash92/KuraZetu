@@ -10,6 +10,7 @@ from django.db import IntegrityError, transaction
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+from results import machine_checks
 from results.location import grade_location
 from results.models import MachineCheck, ResultUpload, UploadDeviceFix
 from results.qr import NOT_CHECKED, classify, read_qr
@@ -92,6 +93,9 @@ def submit_upload(
     _check_photo(photo)
     _check_tally(votes, candidates_for(station, found))
     _check_total(votes, rejected_votes, disputed_votes, station)
+    _check_not_same_as_earlier(
+        account, station, found.key, votes, rejected_votes, disputed_votes
+    )
     location = grade_location(fix, account, station)
     if check is not None:
         # Read when the photo was checked; the same photo gives the same code.
@@ -115,6 +119,77 @@ def submit_upload(
         server_qr_value=qr_value,
         captured_at=captured_at,
     )
+    return _store(upload, photo, fix, check)
+
+
+def submit_agreement(
+    account, *, check_id, quality_checked, key, fix=None, captured_at=None
+):
+    """Store an agreement with an earlier upload, or raise UploadRefused.
+
+    ``check_id`` names the person's reading of their photo, made with the
+    earlier upload as reference. It is stored only when the reading and the
+    comparison found the photo agrees. Nothing is typed: the tally is copied
+    from the earlier upload. Returns ``(upload, created)``.
+    """
+    earlier = ResultUpload.objects.filter(key=key).first()
+    if earlier is not None:
+        return _replay(earlier, account)
+
+    check = (
+        MachineCheck.objects.select_related(
+            "polling_station__polling_center__ward", "reference"
+        )
+        .filter(
+            pk=check_id,
+            account=account,
+            kind=MachineCheck.READ,
+            reference__isnull=False,
+            upload__isnull=True,
+        )
+        .first()
+    )
+    if check is None or not check.photo:
+        raise UploadRefused(
+            "check_not_usable", "This photo cannot be used. Take the photo again."
+        )
+    station = check.polling_station
+    _check_account(account, station)
+    _check_not_uploaded(account, station, check.race)
+    if machine_checks.for_phone(check)["outcome"] != machine_checks.AGREES:
+        raise UploadRefused(
+            "not_agreed", "Your photo does not match the uploaded form."
+        )
+    reference = check.reference
+    # It may have stopped counting while the photo was checked.
+    if not (reference.is_current and reference.countable):
+        raise UploadRefused(
+            "reference_not_usable", "The upload you agree with can no longer be used."
+        )
+    location = grade_location(fix, account, station)
+    upload = ResultUpload(
+        key=key,
+        added_by=account,
+        polling_station=station,
+        race=check.race,
+        votes=dict(reference.votes),
+        rejected_votes=reference.rejected_votes,
+        disputed_votes=reference.disputed_votes,
+        agrees_with=reference,
+        quality_checked=quality_checked,
+        location_grade=location.grade,
+        fix_accuracy_m=fix.accuracy_m if fix else None,
+        distance_to_centre_m=location.distance_m,
+        server_qr_result=check.server_qr_result,
+        server_qr_value=check.server_qr_value,
+        captured_at=captured_at,
+    )
+    return _store(upload, check.photo.open("rb"), fix, check)
+
+
+def _store(upload, photo, fix, check):
+    """Write the files and the row together, and link the reading."""
+    account, station, race = upload.added_by, upload.polling_station, upload.race
     preview = _preview(photo)
     # The files are written first; if the row is not, the files go too.
     upload.photo.save("photo.jpg", photo, save=False)
@@ -135,15 +210,15 @@ def submit_upload(
             upload.preview.delete(save=False)
         if isinstance(error, IntegrityError):
             # The same request arrived twice at once and the other one won.
-            earlier = ResultUpload.objects.filter(key=key).first()
+            earlier = ResultUpload.objects.filter(key=upload.key).first()
             if earlier is not None:
                 return _replay(earlier, account)
             # Two different uploads for one station and race arrived at once.
-            _check_not_uploaded(account, station, found.key)
+            _check_not_uploaded(account, station, race)
         raise
     if upload.countable:
         # The station's public results now say it is waiting for confirmation.
-        cache.delete(station_results_cache_key(found.key, station.code))
+        cache.delete(station_results_cache_key(race, station.code))
     return upload, True
 
 
@@ -184,6 +259,27 @@ def _check_not_uploaded(account, station, race):
             "already_uploaded",
             "You have already uploaded this form for this station.",
         )
+
+
+def _check_not_same_as_earlier(account, station, race, votes, rejected, disputed):
+    """A person who disagrees must send other counts. The same counts as an
+    earlier upload are refused: the person taps Agree instead."""
+    typed = {str(k): v for k, v in votes.items()}
+    earlier = ResultUpload.objects.filter(
+        polling_station=station, race=race, is_current=True, agrees_with__isnull=True
+    ).exclude(added_by=account)
+    for upload in earlier:
+        if (
+            upload.countable
+            and upload.votes == typed
+            and upload.rejected_votes == rejected
+            and upload.disputed_votes == disputed
+        ):
+            raise UploadRefused(
+                "same_as_earlier",
+                "Your results are the same as an upload already made for this "
+                "form. Tap Agree instead.",
+            )
 
 
 def _replay(earlier, account):

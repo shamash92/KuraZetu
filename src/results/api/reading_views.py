@@ -34,7 +34,7 @@ class ReadRequestSerializer(serializers.Serializer):
     station = serializers.CharField()
     race = serializers.CharField()
     photo = serializers.FileField()
-    # The earlier upload the person agrees with (block D2).
+    # The earlier upload the person agrees with.
     reference = serializers.UUIDField(required=False)
 
 
@@ -53,7 +53,7 @@ class ReadPhotoView(APIView):
     reading that fails leaves the person to type the counts as usual.
 
     With ``reference``, the person agrees with that earlier upload: the
-    photo is also compared with its photo (block D2).
+    photo is also compared with its photo.
     """
 
     authentication_classes = NATIVE_AUTHENTICATION
@@ -138,7 +138,12 @@ def _reference(account, station, race, reference_id, photo):
     _check_not_uploaded(account, station, race.key)
     reference = (
         ResultUpload.objects.filter(
-            pk=reference_id, polling_station=station, race=race.key, is_current=True
+            pk=reference_id,
+            polling_station=station,
+            race=race.key,
+            is_current=True,
+            # An agreement holds no typed tally of its own to agree with.
+            agrees_with__isnull=True,
         )
         .exclude(added_by=account)
         .first()
