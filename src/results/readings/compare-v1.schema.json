@@ -1,0 +1,132 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "both_usable",
+    "unusable_reason",
+    "sheet",
+    "sheet_evidence",
+    "differences",
+    "not_compared"
+  ],
+  "$defs": {
+    "part": {
+      "enum": [
+        "candidate_votes",
+        "valid_votes_under_table",
+        "valid_votes_in_counts",
+        "registered_voters",
+        "rejected",
+        "rejection_objected",
+        "disputed",
+        "declaration_signatures",
+        "stamps",
+        "agents_table",
+        "refusal_reasons",
+        "comments",
+        "identity",
+        "other"
+      ]
+    }
+  },
+  "properties": {
+    "both_usable": {
+      "type": "boolean"
+    },
+    "unusable_reason": {
+      "type": "string"
+    },
+    "sheet": {
+      "enum": [
+        "same_sheet",
+        "different_sheet",
+        "cannot_tell"
+      ]
+    },
+    "sheet_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mark",
+          "agrees",
+          "description"
+        ],
+        "properties": {
+          "mark": {
+            "enum": [
+              "figure_position",
+              "signature_strokes",
+              "stamp_position",
+              "serial_number",
+              "paper_damage",
+              "other"
+            ]
+          },
+          "agrees": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "differences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "part",
+          "candidate_name_as_printed",
+          "kind",
+          "in_a",
+          "in_b",
+          "affects_figure"
+        ],
+        "properties": {
+          "part": {
+            "$ref": "#/$defs/part"
+          },
+          "candidate_name_as_printed": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "figure_reads_differently",
+              "digit_added",
+              "digit_written_over",
+              "crossed_out",
+              "correction_fluid",
+              "erasure",
+              "mark_only_in_a",
+              "mark_only_in_b",
+              "smudge_over_figure",
+              "other"
+            ]
+          },
+          "in_a": {
+            "type": "string"
+          },
+          "in_b": {
+            "type": "string"
+          },
+          "affects_figure": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "not_compared": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/part"
+      }
+    }
+  }
+}

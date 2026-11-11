@@ -49,6 +49,8 @@ REQUEST_REJECTED = "request_rejected"
 AUTH_FAILED = "auth_failed"
 NO_CREDIT = "no_credit"
 SWITCHED_OFF = "switched_off"
+# A comparison whose new photo was deleted as not a results form.
+PHOTO_DELETED = "photo_deleted"
 
 # What each error code means, for the admin.
 ERROR_REASONS = {
@@ -62,6 +64,7 @@ ERROR_REASONS = {
     AUTH_FAILED: "The API key is wrong, revoked, or not allowed.",
     NO_CREDIT: "The Anthropic account is out of credit.",
     SWITCHED_OFF: "No API key is set, so reading is switched off.",
+    PHOTO_DELETED: "The new photo was not a results form and was deleted.",
 }
 
 # What a finished reading found. The reading comes before typing, so a
@@ -206,33 +209,39 @@ def user_text(form_number, race_label, candidates):
 
 def request(model, image_bytes, text):
     """The request for one attempt. The same input gives the same request."""
+    return body(
+        model,
+        SYSTEM,
+        REPLY_FORMAT,
+        [image(image_bytes), {"type": "text", "text": text}],
+    )
+
+
+def body(model, system, reply_format, content):
+    """One request: fixed instructions and reply format, then the content."""
     return {
         "model": model,
         "max_tokens": MAX_TOKENS,
         "output_config": {
             "effort": EFFORT,
-            "format": {"type": "json_schema", "schema": REPLY_FORMAT},
+            "format": {"type": "json_schema", "schema": reply_format},
         },
         # Fixed text, cached by the provider between calls.
         "system": [
-            {"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}
+            {"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}
         ],
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": base64.standard_b64encode(image_bytes).decode(),
-                        },
-                    },
-                    {"type": "text", "text": text},
-                ],
-            }
-        ],
+        "messages": [{"role": "user", "content": content}],
+    }
+
+
+def image(image_bytes):
+    return {
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": base64.standard_b64encode(image_bytes).decode(),
+        },
     }
 
 
@@ -241,6 +250,20 @@ def read(client, image_bytes, text, clock=time.monotonic):
 
     Raises ReadFailed with the last error code when neither finishes.
     """
+    return ask(
+        client,
+        lambda model: request(model, image_bytes, text),
+        REPLY_FORMAT,
+        clock,
+    )
+
+
+def ask(client, request_for, reply_format, clock=time.monotonic):
+    """Make one request: Sonnet first, Opus only when Sonnet's attempt fails.
+
+    ``request_for(model)`` builds the request. Raises ReadFailed with the
+    last error code when neither finishes.
+    """
     started = clock()
     attempts = []
     for model in (MODEL, FALLBACK_MODEL):
@@ -248,10 +271,8 @@ def read(client, image_bytes, text, clock=time.monotonic):
         if attempts and left < MIN_FALLBACK_S:
             break
         try:
-            message, request_id = _call(
-                client, request(model, image_bytes, text), left, clock
-            )
-            reply = _parse(message)
+            message, request_id = _call(client, request_for(model), left, clock)
+            reply = _parse(message, reply_format)
         except _Failed as failed:
             attempts.append(
                 {
@@ -329,7 +350,7 @@ def _message(error):
     return str(body.get("error", {}).get("message") or error.message)[:500]
 
 
-def _parse(message):
+def _parse(message, reply_format=REPLY_FORMAT):
     """The reply of a finished call, or _Failed with its error code."""
     if message.stop_reason == "refusal":
         raise _Failed(MODEL_REFUSED)
@@ -340,7 +361,7 @@ def _parse(message):
         reply = json.loads(text or "")
     except ValueError:
         raise _Failed(REPLY_INVALID)
-    if not isinstance(reply, dict) or set(reply) != set(REPLY_FORMAT["required"]):
+    if not isinstance(reply, dict) or set(reply) != set(reply_format["required"]):
         raise _Failed(REPLY_INVALID)
     return reply
 

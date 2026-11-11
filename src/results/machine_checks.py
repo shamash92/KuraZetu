@@ -1,4 +1,9 @@
-"""Run a machine reading of a photo before entry and keep its record."""
+"""Run machine checks of a photo before entry and keep their records.
+
+A first photo gets a reading. A photo taken to agree with an earlier upload
+gets a reading and, at the same time, a comparison with that upload's
+photo.
+"""
 
 import hashlib
 import logging
@@ -12,7 +17,7 @@ from django.utils import timezone
 
 import anthropic
 
-from results import qr, reading
+from results import comparing, qr, reading
 from results.models import Aspirant, MachineCheck
 from results.qr import FORM_SERIES
 from results.races import candidates_for
@@ -34,15 +39,31 @@ QR_OUTCOMES = {
 LOST_AFTER = timedelta(seconds=reading.DEADLINE_S + 30)
 
 
-def start_check(account, station, race, photo):
-    """Store the check and read the photo in the background.
+# What the phone shows for each outcome of agreeing.
+AGREES = "agrees"
+FIGURES_DIFFER = "figures_differ"
+NOT_CHECKED = "not_checked"
+AGREEMENT_MESSAGES = {
+    AGREES: "Your photo matches the uploaded form.",
+    FIGURES_DIFFER: "Some figures on your photo differ from the uploaded form.",
+    NOT_CHECKED: "Your photo could not be checked.",
+}
 
-    Returns at once; the phone asks for the result with ``for_phone``.
+
+def start_check(account, station, race, photo, reference=None):
+    """Store the check and read the photo in the background. With a
+    ``reference`` upload, also compare the photo with that upload's photo.
+
+    Returns the reading at once; the phone asks for the result with
+    ``for_phone``.
     """
-    check = _store(account, station, race, photo)
+    check = _store(account, station, race, photo, reference)
     if check.status == MachineCheck.RUNNING:
         check_id = check.id
         transaction.on_commit(lambda: _queue(check_id))
+        if reference is not None:
+            comparison_id = _store_comparison(check, reference).id
+            transaction.on_commit(lambda: _queue_comparison(comparison_id))
     return check
 
 
@@ -52,18 +73,30 @@ def _queue(check_id):
     read_check.delay(str(check_id))
 
 
+def _queue_comparison(check_id):
+    from results.tasks import compare_check
+
+    compare_check.delay(str(check_id))
+
+
 def read_stored(check_id):
     check = MachineCheck.objects.select_related("polling_station").get(pk=check_id)
     _read(check)
 
 
-def _store(account, station, race, photo, clock=time.monotonic):
+def compare_stored(check_id):
+    _compare(MachineCheck.objects.select_related("read_check").get(pk=check_id))
+
+
+def _store(account, station, race, photo, reference=None, clock=time.monotonic):
     """Save the photo, its model copy and the input. Ends the check at once
     when the QR code names another station or race, or reading is off."""
     series = FORM_SERIES[race.key]
     candidates = _ballot(station, race)
     copy, width, height = reading.model_copy(photo)
-    check = MachineCheck(account=account, polling_station=station, race=race.key)
+    check = MachineCheck(
+        account=account, polling_station=station, race=race.key, reference=reference
+    )
     check.server_qr_value, check.server_qr_result = _check_qr(photo, station, race)
     check.photo.save("photo.jpg", photo, save=False)
     check.model_copy.save("model.jpg", ContentFile(copy), save=False)
@@ -83,7 +116,7 @@ def _store(account, station, race, photo, clock=time.monotonic):
         "form_number": f"{series}A",
         "race": race.key,
         "candidates": candidates,
-        "reference": None,
+        "reference": str(reference.id) if reference else None,
     }
     check.save(force_insert=True)
 
@@ -137,8 +170,79 @@ def _read(check, client=None, clock=time.monotonic):
     return check
 
 
+def _store_comparison(reading_check, reference):
+    """The comparison of a new photo with the earlier upload's photo. It
+    keeps a model copy of the earlier photo; the new photo's copy is the
+    reading's."""
+    with reference.photo.open("rb") as stored:
+        copy, width, height = reading.model_copy(stored)
+    check = MachineCheck(
+        kind=MachineCheck.COMPARE,
+        account=reading_check.account,
+        polling_station=reading_check.polling_station,
+        race=reading_check.race,
+        reference=reference,
+        read_check=reading_check,
+    )
+    check.model_copy.save("model.jpg", ContentFile(copy), save=False)
+    check.input = {
+        "check": "compare",
+        "version": comparing.VERSION,
+        "model": reading.MODEL,
+        "fallback_model": reading.FALLBACK_MODEL,
+        "effort": reading.EFFORT,
+        "photographs": {
+            "a": {
+                "key": check.model_copy.name,
+                "sha256": hashlib.sha256(copy).hexdigest(),
+                "width": width,
+                "height": height,
+                "bytes": len(copy),
+            },
+            "b": reading_check.input["photograph"],
+        },
+        "reference": str(reference.id),
+    }
+    check.save(force_insert=True)
+    return check
+
+
+def _compare(check, client=None, clock=time.monotonic):
+    """Ask the model to compare the two photos, then record the outcome.
+
+    Never raises: a comparison that cannot be made is recorded as failed.
+    """
+    started = clock()
+    new_copy = check.read_check.model_copy
+    if not new_copy:
+        # The reading found the new photo was not a results form and
+        # deleted it; there is nothing to compare.
+        _finish(check, started, clock, error=reading.PHOTO_DELETED)
+        return check
+    with check.model_copy.open("rb") as stored:
+        earlier = stored.read()
+    with new_copy.open("rb") as stored:
+        later = stored.read()
+    try:
+        result = comparing.compare(client or _client(), earlier, later, clock=clock)
+    except reading.ReadFailed as failed:
+        _finish(check, started, clock, error=failed.code, attempts=failed.attempts)
+        return check
+    check.reply = result.reply
+    check.model = result.model
+    check.provider_request_id = result.request_id
+    check.usage = result.usage
+    check.outcome = comparing.outcome(result.reply)
+    _finish(check, started, clock, attempts=result.attempts)
+    return check
+
+
 def for_phone(check):
-    """What the phone receives: never the reply, only figures read one way."""
+    """What the phone receives: never the reply, only figures read one way.
+
+    For an agreement, the status stays running until both the reading and
+    the comparison end; the outcome is then whether the photo agrees.
+    """
     _end_if_lost(check)
     done = check.status == MachineCheck.DONE
     retake = done and check.outcome in reading.RETAKE
@@ -155,14 +259,68 @@ def for_phone(check):
             "rejected_votes": figures["rejected"],
             "disputed_votes": figures["disputed"],
         }
-    return {
+    answer = {
         "check_id": str(check.id),
         "status": check.status,
         "outcome": check.outcome or None,
         "message": reading.MESSAGES.get(check.outcome),
         "retake": retake,
         "prefill": prefill,
+        "agreement": False,
     }
+    comparison = check.comparisons.first()
+    if comparison is None:
+        return answer
+    _end_if_lost(comparison)
+    answer["agreement"] = True
+    if retake:
+        return answer
+    if MachineCheck.RUNNING in (check.status, comparison.status):
+        answer.update(status=MachineCheck.RUNNING, outcome=None, message=None)
+        return answer
+    code = agreement(check, comparison)
+    answer.update(
+        status=MachineCheck.DONE, outcome=code, message=AGREEMENT_MESSAGES[code]
+    )
+    return answer
+
+
+def agreement(read_check, comparison):
+    """Whether the new photo agrees with the earlier upload: the first check
+    below that fits. A retake is decided before this."""
+    if MachineCheck.FAILED in (read_check.status, comparison.status):
+        return NOT_CHECKED
+    if comparison.outcome == comparing.FORM_CHANGED:
+        return FIGURES_DIFFER
+    if _differs_from(read_check, comparison.reference):
+        return FIGURES_DIFFER
+    if read_check.outcome == reading.ALTERATION_REPORTED:
+        return FIGURES_DIFFER
+    if (
+        read_check.outcome != reading.READ_COMPLETE
+        or comparison.outcome == comparing.COMPARE_INCONCLUSIVE
+    ):
+        return NOT_CHECKED
+    return AGREES
+
+
+def _differs_from(read_check, reference):
+    """Whether a figure read one way differs from the earlier upload's."""
+    by_ballot = {
+        c["ballot_number"]: c["aspirant_id"] for c in read_check.input["candidates"]
+    }
+    figures = reading.prefill(read_check.reply, list(by_ballot))
+    read = {str(by_ballot[n]): value for n, value in figures["votes"].items()}
+    read["rejected"] = figures["rejected"]
+    read["disputed"] = figures["disputed"]
+    typed = {
+        **reference.votes,
+        "rejected": reference.rejected_votes,
+        "disputed": reference.disputed_votes,
+    }
+    return any(
+        value is not None and value != typed.get(key) for key, value in read.items()
+    )
 
 
 def _ballot(station, race):
