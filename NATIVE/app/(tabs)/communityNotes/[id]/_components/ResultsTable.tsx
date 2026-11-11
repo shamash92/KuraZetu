@@ -54,8 +54,13 @@ export function ResultsTable({
                                 ]}
                                 numberOfLines={2}
                             >
-                                {candidate.candidate.first_name}{" "}
-                                {candidate.candidate.last_name}
+                                {[
+                                    candidate.candidate.first_name,
+                                    candidate.candidate.last_name,
+                                    candidate.candidate.surname,
+                                ]
+                                    .filter(Boolean)
+                                    .join(" ")}
                             </Text>
                             <Text style={styles.party} numberOfLines={1}>
                                 {candidate.candidate.party}

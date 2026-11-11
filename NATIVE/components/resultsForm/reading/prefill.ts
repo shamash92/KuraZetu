@@ -16,6 +16,11 @@ export interface Reading {
     /** The photo cannot be used: take another. */
     retake: boolean;
     prefill: Prefill | null;
+    /**
+     * Made to agree with an earlier upload: `outcome` is then "agrees",
+     * "figures_differ" or "not_checked".
+     */
+    agreement?: boolean;
 }
 
 /** The boxes filled from a reading, and the boxes the person must fill. */

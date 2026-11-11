@@ -18,7 +18,7 @@ import {IPollingStationResult, TLevelTabs} from "@/app/types";
 import {RESULTS_FORMS} from "@/components/resultsForm";
 import {ResultsTable} from "./_components/ResultsTable";
 import {VoteSummary} from "./_components/VoteSummary";
-import {OwnUpload, YourUpload} from "./_components/YourUpload";
+import {StationUploadList, StationUploads} from "./_components/StationUploads";
 import {ZoomableImage} from "./_components/ZoomableImage";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {perk} from "@/app/_utils/colors";
@@ -53,6 +53,9 @@ interface IPollingStationExtraData {
     registered_voters: number; // Optional, as it may not always be present
 }
 
+/** A request with no answer by then is treated as failed, with Try again. */
+const LOAD_TIMEOUT_MS = 20_000;
+
 export default function LevelResultsScreen() {
     // Inside a tab screen this includes the tab bar, which floats over the content.
     const insets = useSafeAreaInsets();
@@ -70,8 +73,10 @@ export default function LevelResultsScreen() {
     const [extraData, setExtraData] = useState<IPollingStationExtraData | null>(null);
     // Someone's upload can count here but is not confirmed yet.
     const [waiting, setWaiting] = useState(false);
-    // This person's own upload for the race; null when they have not uploaded.
-    const [ownUpload, setOwnUpload] = useState<OwnUpload | null>(null);
+    // Every upload here the person may see: their own first, then others'.
+    const [uploads, setUploads] = useState<StationUploadList | null>(null);
+    // The upload the person agrees with when the form opens; null to type.
+    const [agreeWith, setAgreeWith] = useState<string | null>(null);
     // A request that did not come back is not the same as a station with no tally.
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -101,33 +106,40 @@ export default function LevelResultsScreen() {
 
         const fetchStationResults = async () => {
             setFailed(false);
+            const abort = new AbortController();
+            const timer = setTimeout(() => abort.abort(), LOAD_TIMEOUT_MS);
             try {
-                const headers = {Authorization: `Bearer ${userToken}`};
-                const [response, ownResponse] = await Promise.all([
+                const request = {
+                    headers: {Authorization: `Bearer ${userToken}`},
+                    signal: abort.signal,
+                };
+                const station = encodeURIComponent(id);
+                const [response, uploadsResponse] = await Promise.all([
                     fetch(
-                        `${apiBaseURL}/api/results/polling-station/${id}/results/${level}/`,
-                        {headers},
+                        `${apiBaseURL}/api/results/polling-station/${station}/results/${level}/`,
+                        request,
                     ),
                     fetch(
-                        `${apiBaseURL}/api/results/uploads/?station=${encodeURIComponent(id)}&race=${level}`,
-                        {headers},
+                        `${apiBaseURL}/api/results/polling-station/${station}/uploads/${level}/`,
+                        request,
                     ),
                 ]);
                 if (await handleUnauthorized(response)) return;
-                // A 404 for the own upload means this person has not uploaded.
-                if (!response.ok || (!ownResponse.ok && ownResponse.status !== 404)) {
+                if (!response.ok || !uploadsResponse.ok) {
                     setFailed(true);
                     return;
                 }
                 const data = await response.json();
 
-                setOwnUpload(ownResponse.ok ? await ownResponse.json() : null);
+                setUploads(await uploadsResponse.json());
                 setResults(data["data"] ?? []);
                 setExtraData(data["extra_data"]);
                 setWaiting(data["waiting"] === true);
             } catch (error) {
                 console.error("Error fetching polling station results:", error);
                 setFailed(true);
+            } finally {
+                clearTimeout(timer);
             }
         };
 
@@ -166,6 +178,7 @@ export default function LevelResultsScreen() {
                     visible={addModalVisible}
                     onClose={() => setAddModalVisible(false)}
                     level={level}
+                    agreeWith={agreeWith}
                 />
             )}
             {counterMounted && (
@@ -212,21 +225,27 @@ export default function LevelResultsScreen() {
                 </>
             ) : null}
 
-            {results && results.length === 0 && ownUpload && userToken ? (
-                <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{paddingBottom: insets.bottom + 16}}
-                >
-                    {stationHeader}
-                    <YourUpload
-                        upload={ownUpload}
-                        levelLabel={levelLabel}
-                        token={userToken}
-                    />
-                </ScrollView>
+            {results && results.length === 0 && uploads?.uploads.length && userToken ? (
+                <StationUploads
+                    list={uploads}
+                    levelLabel={levelLabel}
+                    token={userToken}
+                    header={stationHeader}
+                    bottomOffset={insets.bottom + 16}
+                    onAgree={(uploadId) => {
+                        setAgreeWith(uploadId);
+                        setAddMounted(true);
+                        setAddModalVisible(true);
+                    }}
+                    onDisagree={() => {
+                        setAgreeWith(null);
+                        setAddMounted(true);
+                        setAddModalVisible(true);
+                    }}
+                />
             ) : null}
 
-            {results && results.length === 0 && !ownUpload ? (
+            {results && results.length === 0 && !uploads?.uploads.length ? (
                 <>
                     {stationHeader}
                     <EmptyResults
@@ -235,6 +254,7 @@ export default function LevelResultsScreen() {
                         waiting={waiting}
                         bottomOffset={insets.bottom + 16}
                         onAdd={() => {
+                            setAgreeWith(null);
                             setAddMounted(true);
                             setAddModalVisible(true);
                         }}

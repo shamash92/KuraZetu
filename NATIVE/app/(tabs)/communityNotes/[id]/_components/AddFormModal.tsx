@@ -2,12 +2,15 @@ import {Alert} from "react-native";
 import {useEffect, useRef, useState} from "react";
 
 import {
+    ResultsFormAgreement,
     ResultsFormCandidate,
     ResultsFormCapture,
 } from "@/components/resultsForm";
 import {voteLimit} from "@/components/resultsForm/entry/voteCount";
 import {
+    UploadOutcome,
     newUploadKey,
+    submitAgreement,
     uploadResultsForm,
 } from "@/components/resultsForm/upload/uploadResultsForm";
 import type {DeviceFix} from "@/components/resultsForm/upload/deviceFix";
@@ -41,9 +44,16 @@ interface AddFormModalProps {
     visible: boolean;
     onClose: () => void;
     level: TLevelTabs;
+    /** The earlier upload the person agrees with; null to type the results. */
+    agreeWith?: string | null;
 }
 
-export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
+export function AddFormModal({
+    visible,
+    onClose,
+    level,
+    agreeWith = null,
+}: AddFormModalProps) {
     const [candidates, setCandidates] = useState<IAspirant[]>([]);
 
     const {userToken} = useAuthStore();
@@ -88,6 +98,42 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
     const uploadKey = useRef<{image: string; key: string} | null>(null);
     const [uploading, setUploading] = useState(false);
 
+    const keyFor = (image: string) => {
+        if (uploadKey.current?.image !== image) {
+            uploadKey.current = {image, key: newUploadKey()};
+        }
+        return uploadKey.current.key;
+    };
+
+    const tell = (outcome: UploadOutcome) => {
+        if (outcome.kind === "stored") {
+            Alert.alert(
+                outcome.countable ? "Uploaded" : "Uploaded, but it cannot count",
+                outcome.message ?? "Your results form was uploaded.",
+            );
+            onClose();
+        } else if (outcome.kind === "refused") {
+            Alert.alert("Not uploaded", outcome.message);
+        } else if (outcome.kind === "failed") {
+            Alert.alert("Not uploaded", "Check your connection and tap Submit again.");
+        }
+    };
+
+    const handleAgree = ({
+        image,
+        qualityChecked,
+        fix,
+        capturedAt,
+        checkId,
+    }: ResultsFormAgreement) => {
+        if (!userToken || uploading) return;
+        const key = keyFor(image);
+        setUploading(true);
+        void submitAgreement({token: userToken, checkId, qualityChecked, key, fix, capturedAt})
+            .then(tell)
+            .finally(() => setUploading(false));
+    };
+
     const handleSubmit = ({
         image,
         qualityChecked,
@@ -115,10 +161,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                 votes[String(candidate.id)],
             ]),
         );
-        if (uploadKey.current?.image !== image) {
-            uploadKey.current = {image, key: newUploadKey()};
-        }
-        const key = uploadKey.current.key;
+        const key = keyFor(image);
 
         // Submit takes three taps, so a stray tap does not send an upload.
         const send = async () => {
@@ -139,17 +182,7 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
                 capturedAt,
                 checkId,
             }).finally(() => setUploading(false));
-            if (outcome.kind === "stored") {
-                Alert.alert(
-                    outcome.countable ? "Uploaded" : "Uploaded, but it cannot count",
-                    outcome.message ?? "Your results form was uploaded.",
-                );
-                onClose();
-            } else if (outcome.kind === "refused") {
-                Alert.alert("Not uploaded", outcome.message);
-            } else if (outcome.kind === "failed") {
-                Alert.alert("Not uploaded", "Check your connection and tap Submit again.");
-            }
+            tell(outcome);
         };
         void send();
     };
@@ -158,13 +191,15 @@ export function AddFormModal({visible, onClose, level}: AddFormModalProps) {
         <ResultsFormCapture
             visible={visible}
             onClose={onClose}
-            title="Submit results"
+            title={agreeWith ? "Agree" : "Submit results"}
             candidates={formCandidates}
             level={level}
             stationCode={String(id)}
             onChooseStream={() => router.dismissTo("/communityNotes")}
             maxVotes={voteLimit(station?.registered_voters)}
             readsPhoto
+            agreeWith={agreeWith}
+            onAgree={handleAgree}
             place={
                 station?.location_check
                     ? {

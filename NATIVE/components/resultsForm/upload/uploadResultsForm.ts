@@ -76,6 +76,52 @@ export async function uploadResultsForm(upload: ResultsFormUpload): Promise<Uplo
     }
 }
 
+/** Save an agreement with an earlier upload, once its photo matched it. */
+export async function submitAgreement(agreement: {
+    token: string;
+    checkId: string;
+    qualityChecked: boolean;
+    /** Made once per photo, so sending it again stores one agreement. */
+    key: string;
+    fix: DeviceFix | null;
+    capturedAt: string | null;
+}): Promise<UploadOutcome> {
+    const body: Record<string, unknown> = {
+        check_id: agreement.checkId,
+        quality_checked: agreement.qualityChecked,
+        key: agreement.key,
+    };
+    if (agreement.fix) {
+        body.latitude = agreement.fix.latitude;
+        body.longitude = agreement.fix.longitude;
+        body.accuracy = agreement.fix.accuracy;
+    }
+    if (agreement.capturedAt) body.captured_at = agreement.capturedAt;
+    try {
+        const response = await fetch(`${apiBaseURL}/api/results/agreements/`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${agreement.token}`,
+            },
+            body: JSON.stringify(body),
+        });
+        if (await handleUnauthorized(response)) return {kind: "signed_out"};
+        const data = await response.json().catch(() => null);
+        if (response.ok) {
+            return {
+                kind: "stored",
+                countable: data?.countable === true,
+                message: data?.location_message ?? null,
+            };
+        }
+        return {kind: "refused", message: data?.error ?? "The agreement was refused."};
+    } catch {
+        return {kind: "failed"};
+    }
+}
+
 /** A random identifier for one photo. Not a secret; it only has to be unique. */
 export function newUploadKey(): string {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
