@@ -34,7 +34,8 @@ import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
 import {VoteEntryPane} from "./entry/VoteEntryPane";
 import {STREAM_VOTER_LIMIT, toCount} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
-import {type Reading, fillBoxes} from "./reading/prefill";
+import {type AgreementCheck, type Reading, fillBoxes} from "./reading/prefill";
+import {AgreementChecklist} from "./reading/AgreementChecklist";
 import {AgreementPane} from "./reading/AgreementPane";
 import {PhotoStepPane} from "./reading/PhotoStepPane";
 import {ReadingPane} from "./reading/ReadingPane";
@@ -182,7 +183,12 @@ function placeWarning(
 /** Where the photo's reading is, when the photo is read before entry. */
 type ReadingStep =
     /** checkId is null while the photo is being sent. */
-    | {kind: "reading"; checkId: string | null}
+    | {
+          kind: "reading";
+          checkId: string | null;
+          /** The checks as the server first answered, before polling. */
+          checks: AgreementCheck[] | null;
+      }
     | {kind: "retake"; message: string}
     | {
           kind: "read";
@@ -200,6 +206,7 @@ type ReadingStep =
           message: string;
           /** The full reading, for the boxes if the person disagrees. */
           reading: Reading | null;
+          checks: AgreementCheck[] | null;
       };
 
 /** Shown when there is no reading: the server could not be reached or failed. */
@@ -660,7 +667,11 @@ export function ResultsFormCapture({
                     unreadPhotos >= UNREAD_PHOTOS_BEFORE_OVERRIDE)));
 
     /** Show the reading's outcome: retake, the agreement, or the boxes. */
-    const finishReading = (reading: Reading | null, checkId: string | null) => {
+    const finishReading = (
+        reading: Reading | null,
+        checkId: string | null,
+        checks: AgreementCheck[] | null = reading?.checks ?? null,
+    ) => {
         if (reading?.retake) {
             setReadingStep({kind: "retake", message: reading.message ?? "Retake the photo."});
             return;
@@ -674,6 +685,7 @@ export function ResultsFormCapture({
                 agrees: checked && reading.outcome === "agrees",
                 message: (checked && reading.message) || NOT_CHECKED,
                 reading: reading?.status === "done" ? reading : null,
+                checks,
             });
             return;
         }
@@ -702,7 +714,7 @@ export function ResultsFormCapture({
         setVotes({});
         setRejectedVotes("");
         setDisputedVotes("");
-        setReadingStep({kind: "reading", checkId: null});
+        setReadingStep({kind: "reading", checkId: null, checks: null});
         if (!userToken || !stationCode) {
             finishReading(null, null);
             return;
@@ -736,6 +748,7 @@ export function ResultsFormCapture({
                     agrees: false,
                     message: outcome.message,
                     reading: null,
+                    checks: null,
                 });
                 return;
             }
@@ -744,7 +757,11 @@ export function ResultsFormCapture({
         }
         const {reading} = outcome;
         if (reading.status === "running") {
-            setReadingStep({kind: "reading", checkId: reading.check_id});
+            setReadingStep({
+                kind: "reading",
+                checkId: reading.check_id,
+                checks: reading.checks ?? null,
+            });
         } else {
             finishReading(reading, reading.check_id);
         }
@@ -753,9 +770,15 @@ export function ResultsFormCapture({
     // Ask for the reading every 2 s. Once it has ended, show it (render-phase
     // state adjustment: the step leaves "reading", so this runs once).
     const pollingId = readingStep?.kind === "reading" ? readingStep.checkId : null;
-    const ended = useReading(userToken, pollingId);
+    const {ended, latest} = useReading(userToken, pollingId);
     if (ended && pollingId) {
-        finishReading(ended === "gave_up" ? null : ended, pollingId);
+        // Given up: keep the lines as far as they got.
+        const lastChecks =
+            ended === "gave_up"
+                ? (latest?.checks ??
+                  (readingStep?.kind === "reading" ? readingStep.checks : null))
+                : (ended.checks ?? null);
+        finishReading(ended === "gave_up" ? null : ended, pollingId, lastChecks);
     }
 
     const acceptPendingPhoto = () => {
@@ -934,6 +957,14 @@ export function ResultsFormCapture({
                         <PhotoStepPane formName={formName} onCapture={() => setTipStep(0)} />
                     ) : readsPhoto &&
                       capturedImage &&
+                      agreeing &&
+                      readingStep?.kind === "reading" ? (
+                        <AgreementPane
+                            checks={latest?.checks ?? readingStep.checks}
+                            checking
+                        />
+                    ) : readsPhoto &&
+                      capturedImage &&
                       (readingStep?.kind === "reading" || readingStep?.kind === "retake") ? (
                         <ReadingPane
                             formName={formName}
@@ -948,7 +979,7 @@ export function ResultsFormCapture({
                         />
                     ) : readsPhoto && capturedImage && readingStep?.kind === "agreement" ? (
                         <AgreementPane
-                            imageUri={capturedImage}
+                            checks={readingStep.checks}
                             message={readingStep.message}
                             agrees={readingStep.agrees}
                             submitting={submitting}
