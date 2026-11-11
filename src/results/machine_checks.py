@@ -19,7 +19,7 @@ from django.utils import timezone
 import anthropic
 
 from results import comparing, qr, reading
-from results.models import Aspirant, MachineCheck
+from results.models import Aspirant, MachineCheck, ResultUpload
 from results.qr import FORM_SERIES
 from results.races import candidates_for
 
@@ -93,6 +93,15 @@ def start_check(account, station, race, photo, reference=None):
             comparison_id = _store_comparison(check, reference).id
             transaction.on_commit(lambda: _queue_comparison(comparison_id))
     return check
+
+
+def compare_with(read_check, reference):
+    """Compare a photo already read with an earlier upload, for a person who
+    agrees once the reading shows the same results."""
+    read_check.reference = reference
+    read_check.save(update_fields=["reference"])
+    comparison_id = _store_comparison(read_check, reference).id
+    transaction.on_commit(lambda: _queue_comparison(comparison_id))
 
 
 def _queue(check_id):
@@ -298,6 +307,8 @@ def for_phone(check):
     }
     comparison = check.comparisons.first()
     if comparison is None:
+        if done and not retake:
+            answer["same_as"] = _same_as(check)
         return answer
     _end_if_lost(comparison)
     answer["agreement"] = True
@@ -336,6 +347,30 @@ def agreement(read_check, comparison):
     ):
         return NOT_CHECKED
     return AGREES
+
+
+def _same_as(read_check):
+    """The earlier upload by someone else whose typed results the photo
+    shows exactly, or None. Only when every figure was read one way."""
+    if read_check.outcome != reading.READ_COMPLETE:
+        return None
+    read = _read_figures(read_check)
+    if None in read.values():
+        return None
+    earlier = (
+        ResultUpload.objects.filter(
+            polling_station=read_check.polling_station,
+            race=read_check.race,
+            is_current=True,
+            agrees_with__isnull=True,
+        )
+        .exclude(added_by=read_check.account)
+        .order_by("created_at")
+    )
+    for upload in earlier:
+        if upload.countable and _typed_figures(upload) == read:
+            return str(upload.id)
+    return None
 
 
 def _differs_from(read_check, reference):

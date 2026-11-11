@@ -7,6 +7,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
 
 import pytest
 from PIL import Image
@@ -414,6 +415,83 @@ def test_the_earlier_photo_sent_again_is_refused(client, station, earlier, provi
     assert response.json()["code"] == "same_photo"
     assert not MachineCheck.objects.exists()
     assert fake.models == []
+
+
+# ── Agreeing after a reading that shows the same results ───────────────
+
+
+def read_only(api_client, at):
+    """Read a photo with no earlier upload to agree with, as Disagree does."""
+    started = api_client.post(
+        URL,
+        {
+            "station": at.code,
+            "race": "mca",
+            "photo": SimpleUploadedFile("form.jpg", jpeg(4032, 3024), "image/jpeg"),
+        },
+        format="multipart",
+    )
+    assert started.status_code == 202, started.json()
+    return api_client.get(result_url(started.json()["check_id"])).json()
+
+
+def agree_after(api_client, check_id, reference):
+    return api_client.post(
+        reverse("result-photo-agree", args=[check_id]),
+        {"reference": str(reference)},
+        format="json",
+    )
+
+
+def test_a_reading_with_the_earlier_results_names_that_upload(
+    client, station, earlier, provider
+):
+    provider(message(reply()))
+
+    data = read_only(client, station)
+
+    assert data["same_as"] == str(earlier.id)
+
+
+def test_a_reading_with_other_results_names_no_upload(
+    client, station, earlier, provider
+):
+    provider(message(reply(votes=(10, 41))))
+
+    data = read_only(client, station)
+
+    assert data["same_as"] is None
+
+
+def test_agreeing_after_the_reading_compares_the_photo_already_read(
+    client, station, earlier, provider
+):
+    fake = provider(message(reply()), message(comparison()))
+    read = read_only(client, station)
+
+    answered = agree_after(client, read["check_id"], earlier.id)
+
+    assert answered.status_code == 202, answered.json()
+    data = client.get(result_url(read["check_id"])).json()
+    assert data["agreement"] is True
+    assert data["outcome"] == machine_checks.AGREES
+    # Read once, then compared once: the photo is not read again.
+    assert fake.models == [reading.MODEL, reading.MODEL]
+    check, compared = MachineCheck.objects.order_by("created_at")
+    assert check.reference == compared.reference == earlier
+    assert compared.read_check == check
+
+
+def test_a_photo_already_compared_is_not_compared_again(
+    client, station, earlier, provider
+):
+    provider(message(reply()), message(comparison()))
+    data = agree_and_ask(client, station, earlier.id)
+
+    answered = agree_after(client, data["check_id"], earlier.id)
+
+    assert answered.status_code == 409
+    assert answered.json()["code"] == "not_comparable"
 
 
 # ── The comparison request ──────────────────────────────────────────────
