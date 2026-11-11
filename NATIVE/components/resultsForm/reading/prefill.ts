@@ -32,6 +32,11 @@ export interface Reading {
     agreement?: boolean;
     /** With an agreement, each check and how far it has got. */
     checks?: AgreementCheck[];
+    /**
+     * With differences: the path of the person's photo with an arrow at each.
+     * Opens with their sign-in token.
+     */
+    marked_photo?: string;
 }
 
 /** The boxes filled from a reading, and the boxes the person must fill. */

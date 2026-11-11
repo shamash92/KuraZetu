@@ -52,6 +52,7 @@ import {
 } from "./upload/locationCheck";
 import {SubmitBlocked} from "./upload/SubmitBlocked";
 import {useDeviceFix} from "./upload/useDeviceFix";
+import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {useAuthStore} from "@/app/_utils/auth/authStore";
 import {useNetworkStatus} from "@/app/_utils/device/useNetworkStatus";
 import {perk} from "@/app/_utils/colors";
@@ -207,6 +208,8 @@ type ReadingStep =
           /** The full reading, for the boxes if the person disagrees. */
           reading: Reading | null;
           checks: AgreementCheck[] | null;
+          /** The photo with an arrow at each difference, when there are any. */
+          markedPhoto: string | null;
       };
 
 /** Shown when there is no reading: the server could not be reached or failed. */
@@ -686,6 +689,9 @@ export function ResultsFormCapture({
                 message: (checked && reading.message) || NOT_CHECKED,
                 reading: reading?.status === "done" ? reading : null,
                 checks,
+                markedPhoto: reading?.marked_photo
+                    ? `${apiBaseURL}${reading.marked_photo}`
+                    : null,
             });
             return;
         }
@@ -749,6 +755,7 @@ export function ResultsFormCapture({
                     message: outcome.message,
                     reading: null,
                     checks: null,
+                    markedPhoto: null,
                 });
                 return;
             }
@@ -980,6 +987,15 @@ export function ResultsFormCapture({
                     ) : readsPhoto && capturedImage && readingStep?.kind === "agreement" ? (
                         <AgreementPane
                             checks={readingStep.checks}
+                            photo={
+                                readingStep.markedPhoto && userToken
+                                    ? {
+                                          marked: readingStep.markedPhoto,
+                                          plain: capturedImage,
+                                          token: userToken,
+                                      }
+                                    : null
+                            }
                             message={readingStep.message}
                             agrees={readingStep.agrees}
                             submitting={submitting}
