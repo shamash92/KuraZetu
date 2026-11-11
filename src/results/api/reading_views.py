@@ -1,5 +1,6 @@
 import hashlib
 
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers, status
@@ -9,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authentication import NATIVE_AUTHENTICATION
+from results import comparing
 from results.api.upload_views import REFUSAL_STATUS
 from results.machine_checks import for_phone, start_check
 from results.models import MachineCheck, ResultUpload
@@ -110,6 +112,30 @@ class ReadResultView(APIView):
     def get(self, request, check_id):
         check = get_object_or_404(MachineCheck, pk=check_id, account=request.user)
         return Response(for_phone(check))
+
+
+class MarkedPhotoView(APIView):
+    """The person's own photo with a red arrow at each difference from the
+    earlier upload. Only when the comparison found differences."""
+
+    authentication_classes = NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, check_id):
+        check = get_object_or_404(
+            MachineCheck, pk=check_id, account=request.user, kind=MachineCheck.READ
+        )
+        comparison = check.comparisons.filter(status=MachineCheck.DONE).first()
+        if comparison is None or not check.model_copy:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        # The points are on the copy the model was given.
+        with check.model_copy.open("rb") as photo:
+            marked = comparing.marked(photo, comparison.reply)
+        if marked is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        response = HttpResponse(marked, content_type="image/jpeg")
+        response["Cache-Control"] = "private, no-store"
+        return response
 
 
 def _station_and_race(account, data):

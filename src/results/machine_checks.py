@@ -13,6 +13,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.urls import reverse
 from django.utils import timezone
 
 import anthropic
@@ -310,6 +311,10 @@ def for_phone(check):
     answer.update(
         status=MachineCheck.DONE, outcome=code, message=AGREEMENT_MESSAGES[code]
     )
+    if comparison.status == MachineCheck.DONE and comparing.points(comparison.reply):
+        # The person's photo with an arrow at each difference; opens with
+        # their token.
+        answer["marked_photo"] = reverse("result-photo-marked", args=[check.id])
     return answer
 
 
