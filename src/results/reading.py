@@ -86,6 +86,7 @@ PHOTO_BLOCKED = "photo_blocked"
 CONTENT_FLAGGED = "content_flagged"
 OTHER_STATION = "other_station"
 OTHER_FORM = "other_form"
+OTHER_CANDIDATES = "other_candidates"
 
 # What the phone tells the person for each outcome.
 MESSAGES = {
@@ -119,6 +120,7 @@ MESSAGES = {
     ),
     OTHER_STATION: "This form is for another polling station.",
     OTHER_FORM: "This form is for another race.",
+    OTHER_CANDIDATES: "This form does not list the candidates for this race.",
 }
 # Outcomes that send the person back to the camera, with nothing to prefill.
 RETAKE = {
@@ -128,6 +130,7 @@ RETAKE = {
     PHOTO_BLOCKED,
     OTHER_STATION,
     OTHER_FORM,
+    OTHER_CANDIDATES,
 }
 # Reasons from the screening that block the photo.
 BLOCKED_REASONS = {
@@ -414,6 +417,13 @@ def outcome(reply, station_code, series, ballot_numbers, qr_matched=False):
         return PHOTO_UNREADABLE
     if capture["readability"] == "poor":
         return PHOTO_POOR
+    # The candidates come from our list for the race, never from another
+    # upload: a form that leaves one out, or prints another, is not this
+    # race's form.
+    if reply["extra_rows"] or any(
+        not c["name_as_printed"].strip() for c in reply["candidates"]
+    ):
+        return OTHER_CANDIDATES
     if screening["flagged"]:
         return CONTENT_FLAGGED
     figures = _tally_figures(reply)
