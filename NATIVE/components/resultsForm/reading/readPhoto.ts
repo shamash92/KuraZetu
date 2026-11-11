@@ -67,6 +67,38 @@ export async function startReading(upload: {
     }
 }
 
+/**
+ * Agree with an earlier upload using the photo already read: the server
+ * compares it with that upload's photo. Poll the same reading for the result.
+ */
+export async function agreeAfterReading(request: {
+    token: string;
+    checkId: string;
+    reference: string;
+}): Promise<StartOutcome> {
+    try {
+        const response = await fetch(`${READING_URL}${request.checkId}/agree/`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${request.token}`,
+            },
+            body: JSON.stringify({reference: request.reference}),
+        });
+        if (await handleUnauthorized(response)) return {kind: "signed_out"};
+        if (!response.ok) {
+            const data = await response.json().catch(() => null);
+            console.warn(`[form34a] agreement refused ${response.status} ${data?.code ?? ""}`);
+            return {kind: "failed", message: data?.error ?? null};
+        }
+        return {kind: "started", reading: await response.json()};
+    } catch (error) {
+        console.warn("[form34a] agreement not sent", error);
+        return {kind: "failed", message: null};
+    }
+}
+
 async function fetchReading(token: string, checkId: string): Promise<Reading> {
     const response = await fetch(`${READING_URL}${checkId}/`, {
         headers: {Accept: "application/json", Authorization: `Bearer ${token}`},
