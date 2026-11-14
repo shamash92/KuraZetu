@@ -40,6 +40,7 @@ import {AgreementPane} from "./reading/AgreementPane";
 import {PhotoStepPane} from "./reading/PhotoStepPane";
 import {ReadingPane} from "./reading/ReadingPane";
 import {agreeAfterReading, startReading, useReading} from "./reading/readPhoto";
+import {ChangedFormPane} from "./reading/ChangedFormPane";
 import {SameResultsPane} from "./reading/SameResultsPane";
 import {PhotoReviewPane} from "./review/PhotoReviewPane";
 import {readFormQr} from "./review/formQr";
@@ -201,6 +202,12 @@ type ReadingStep =
           unread: string[];
           /** The earlier upload whose results the photo shows, if any. */
           sameAs: string | null;
+          /**
+           * The photo shows an earlier upload's sheet with figures that look
+           * written over since, until the person continues. `markedPhoto`
+           * has an arrow at each.
+           */
+          formChanged: {markedPhoto: string | null} | null;
       }
     /** Made to agree with an earlier upload. */
     | {
@@ -618,6 +625,12 @@ export function ResultsFormCapture({
         setReadingStep({kind: "reading", checkId, checks: outcome.reading.checks ?? null});
     };
 
+    /** Go on to the results after seeing where the form looks changed. */
+    const continueChanged = () => {
+        if (readingStep?.kind !== "read") return;
+        setReadingStep({...readingStep, formChanged: null});
+    };
+
     /** Type the results even though they match an earlier upload. */
     const typeAnyway = () => {
         if (readingStep?.kind !== "read") return;
@@ -751,6 +764,14 @@ export function ResultsFormCapture({
             // Without a reading every box is empty: no border marks them.
             unread: read ? boxes.unread : [],
             sameAs: read ? (reading.same_as ?? null) : null,
+            formChanged:
+                read && reading.form_changed
+                    ? {
+                          markedPhoto: reading.marked_photo
+                              ? `${apiBaseURL}${reading.marked_photo}`
+                              : null,
+                      }
+                    : null,
         });
     };
 
@@ -782,6 +803,7 @@ export function ResultsFormCapture({
                 prefilled: false,
                 unread: [],
                 sameAs: null,
+                formChanged: null,
             });
             return;
         }
@@ -1043,6 +1065,23 @@ export function ResultsFormCapture({
                             onSubmit={submitAgreement}
                             onRetake={openCamera}
                             onDisagree={disagree}
+                        />
+                    ) : readsPhoto &&
+                      capturedImage &&
+                      readingStep?.kind === "read" &&
+                      readingStep.formChanged ? (
+                        <ChangedFormPane
+                            photo={
+                                readingStep.formChanged.markedPhoto && userToken
+                                    ? {
+                                          marked: readingStep.formChanged.markedPhoto,
+                                          plain: capturedImage,
+                                          token: userToken,
+                                      }
+                                    : null
+                            }
+                            onContinue={continueChanged}
+                            onCancel={closeForm}
                         />
                     ) : readsPhoto &&
                       capturedImage &&
