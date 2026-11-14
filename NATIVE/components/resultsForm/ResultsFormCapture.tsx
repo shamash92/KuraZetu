@@ -1,6 +1,4 @@
 import {
-    Alert,
-    Linking,
     Modal,
     Platform,
     StyleSheet,
@@ -9,254 +7,30 @@ import {
     View,
 } from "react-native";
 import {X} from "lucide-react-native";
-import {
-    CommonResolutions,
-    Size,
-    useCameraDevice,
-    useCameraPermission,
-    usePhotoOutput,
-} from "react-native-vision-camera";
-import React, {useState} from "react";
+import {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
-import {type Image as NitroImageHandle} from "react-native-nitro-image";
-import {
-    type BarcodeScanner,
-    createBarcodeScanner,
-} from "react-native-vision-camera-barcode-scanner";
 
-import {File} from "expo-file-system";
-
-import {LiveCameraPane} from "./camera/LiveCameraPane";
+import {FormPanes} from "./FormPanes";
 import {CameraPermissionModal} from "./camera/PermissionModal";
-import type {LightSetting} from "./camera/captureGate";
-import {getCameraPermissionRecovery} from "./camera/cameraPermission";
-import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
-import {VoteEntryPane} from "./entry/VoteEntryPane";
-import {STREAM_VOTER_LIMIT, toCount} from "./entry/voteCount";
+import {usePermissionRecovery} from "./camera/usePermissionRecovery";
+import {usePhotoCapture} from "./camera/usePhotoCapture";
+import {type VoteEntryState, useVoteEntry} from "./entry/useVoteEntry";
+import {STREAM_VOTER_LIMIT} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
-import {type AgreementCheck, type Reading, fillBoxes} from "./reading/prefill";
-import {AgreementChecklist} from "./reading/AgreementChecklist";
-import {AgreementPane} from "./reading/AgreementPane";
-import {PhotoStepPane} from "./reading/PhotoStepPane";
-import {ReadingPane} from "./reading/ReadingPane";
-import {agreeAfterReading, startReading, useReading} from "./reading/readPhoto";
-import {ChangedFormPane} from "./reading/ChangedFormPane";
-import {SameResultsPane} from "./reading/SameResultsPane";
-import {PhotoReviewPane} from "./review/PhotoReviewPane";
-import {readFormQr} from "./review/formQr";
-import {type StreamCheck, checkStream} from "./review/streamCheck";
-import {CaptureTips} from "./tips/CaptureTips";
-import {type DeviceFix, isPrecise} from "./upload/deviceFix";
-import {
-    type LocationCheckData,
-    type PlaceCheck,
-    checkPlace,
-} from "./upload/locationCheck";
-import {SubmitBlocked} from "./upload/SubmitBlocked";
+import {useReadingFlow} from "./reading/useReadingFlow";
 import {useDeviceFix} from "./upload/useDeviceFix";
-import {apiBaseURL} from "@/app/_utils/apiBaseURL";
+import {usePlaceCheck} from "./upload/usePlaceCheck";
 import {useAuthStore} from "@/app/_utils/auth/authStore";
 import {useNetworkStatus} from "@/app/_utils/device/useNetworkStatus";
 import {perk} from "@/app/_utils/colors";
 import type {TLevelTabs} from "@/app/types";
 
-/**
- * Aspect the camera starts on.
- *
- * 4:3, even though 16:9 fills a tall phone screen more neatly. 16:9 is a crop
- * of the sensor's 4:3 readout (2160x3840 against 3024x4032), and a portrait A4
- * page fits a 4:3 frame far more closely than a 16:9 one — together roughly
- * 74% more pixels landing on the form itself. That is resolution spent on
- * handwritten vote figures, which are the hardest thing to read back.
- *
- * 16:9 remains selectable for anyone who prefers the framing.
- */
-const DEFAULT_ASPECT: CaptureAspect = "4:3";
-
-/**
- * A 12 MP photo at each aspect. VisionCamera settles on the closest size the
- * device supports, so a phone with a smaller sensor still shoots at its full
- * resolution, while a 50–200 MP sensor stops at a size that stays readable
- * and uploads over a weak connection.
- */
-const PHOTO_RESOLUTION: Record<CaptureAspect, Size> = {
-    "16:9": CommonResolutions.UHD_16_9,
-    "4:3": CommonResolutions.UHD_4_3,
-};
-
-/** A bounded in-memory image for the full-screen review step. */
-const REVIEW_PREVIEW_RESOLUTION: Record<CaptureAspect, Size> = {
-    "16:9": CommonResolutions.HD_16_9,
-    "4:3": CommonResolutions.HD_4_3,
-};
-
-function deleteTemporaryPhoto(uri: string | null) {
-    if (!uri) return;
-
-    try {
-        const file = new File(uri);
-        if (file.exists) file.delete();
-    } catch (error) {
-        // Cleanup failure must not prevent closing or retaking. The OS can
-        // still reclaim VisionCamera's temporary directory later.
-        console.warn("[form34a] temporary photo cleanup failed", error);
-    }
-}
-
-/**
- * How long the QR may take before the photo is treated as unread, so a stalled
- * scan can never keep the citizen waiting at the form.
- */
-const QR_CHECK_TIMEOUT_MS = 8000;
-
-/**
- * Unread photos before "Use this photo" is offered anyway. The QR is a check,
- * not a gate: a torn, stamped or glared code must never lock anyone out.
- */
-const UNREAD_PHOTOS_BEFORE_OVERRIDE = 2;
-
-/** Read the QR from the captured photo and compare it with the selected stream. */
-async function checkCapturedStream(
-    scanner: BarcodeScanner,
-    filePath: string,
-    stationCode: string,
-    level: TLevelTabs,
-): Promise<StreamCheck> {
-    try {
-        const timeout = new Promise<null>((resolve) =>
-            setTimeout(() => resolve(null), QR_CHECK_TIMEOUT_MS),
-        );
-        const reading = await Promise.race([
-            readFormQr(scanner, filePath),
-            timeout,
-        ]);
-        console.log(
-            `[form34a] captured QR=${reading?.value ?? "none"} ` +
-                `via=${reading?.source ?? "timeout"} station=${stationCode}`,
-        );
-        return checkStream(reading?.value ?? null, stationCode, level);
-    } catch (error) {
-        console.warn("[form34a] QR scan failed", error);
-        return {kind: "unread"};
-    }
-}
-
-/** The station's centre and ward, for checking where the phone is. */
-export interface ResultsFormPlace {
-    check: LocationCheckData;
-    centreName: string;
-    wardName: string | null;
-}
-
-function metres(distance: number): string {
-    return distance >= 1000
-        ? `${(distance / 1000).toFixed(1)} km`
-        : `${Math.round(distance)} m`;
-}
-
-/** What to tell the person about where they are, or null when all is well. */
-function placeWarning(
-    check: PlaceCheck,
-    place: ResultsFormPlace,
-): {title: string; body: string} | null {
-    const ward = place.wardName ? `${place.wardName} ward` : "this station's ward";
-    const fix =
-        "restart the app, turn on the internet and wait for a GPS lock before you submit.";
-    if (check.kind === "outside") {
-        // An outside-ward centre is checked only near its pin.
-        return place.check.ward_boundary
-            ? {
-                  title: `You are outside ${ward}`,
-                  body: `This upload will not count. If you are in ${ward}, ${fix}`,
-              }
-            : {
-                  title: `You are not at ${place.centreName}`,
-                  body: `This upload will not count. This centre counts only uploads made at the centre. If you are at the centre, ${fix}`,
-              };
-    }
-    if (check.kind === "ward" && check.distanceM !== null) {
-        return {
-            title: `You are not at ${place.centreName}`,
-            body: `You are about ${metres(check.distanceM)} from the centre. Your upload still counts because you are in ${ward}.`,
-        };
-    }
-    return null;
-}
-
-/** Where the photo's reading is, when the photo is read before entry. */
-type ReadingStep =
-    /** checkId is null while the photo is being sent. */
-    | {
-          kind: "reading";
-          checkId: string | null;
-          /** The checks as the server first answered, before polling. */
-          checks: AgreementCheck[] | null;
-      }
-    | {kind: "retake"; message: string}
-    | {
-          kind: "read";
-          checkId: string | null;
-          instruction: string | null;
-          /** The boxes hold the reading's figures. */
-          prefilled: boolean;
-          unread: string[];
-          /** The earlier upload whose results the photo shows, if any. */
-          sameAs: string | null;
-          /**
-           * The photo shows an earlier upload's sheet with figures that look
-           * written over since, until the person continues. `markedPhoto`
-           * has an arrow at each.
-           */
-          formChanged: {markedPhoto: string | null} | null;
-      }
-    /** Made to agree with an earlier upload. */
-    | {
-          kind: "agreement";
-          checkId: string | null;
-          agrees: boolean;
-          message: string;
-          /** The full reading, for the boxes if the person disagrees. */
-          reading: Reading | null;
-          checks: AgreementCheck[] | null;
-          /** The photo with an arrow at each difference, when there are any. */
-          markedPhoto: string | null;
-      };
-
-/** Shown when there is no reading: the server could not be reached or failed. */
-const NOT_READ = "The form could not be read. Type the results from the form.";
-/** Shown when an agreeing photo has no outcome from the server. */
-const NOT_CHECKED = "Your photo could not be checked.";
-
-export interface ResultsFormCandidate {
-    key: string;
-    name: string;
-    party?: string | null;
-}
-
-interface ResultsFormSubmission {
-    image: string;
-    /** False when the photograph was taken with Capture anyway. */
-    qualityChecked: boolean;
-    votes: Record<string, number>;
-    rejectedVotes: number;
-    disputedVotes: number;
-    total: number;
-    /** The most accurate fix seen while the screen was open, if any. */
-    fix: DeviceFix | null;
-    /** When the photo was taken, by the device clock. */
-    capturedAt: string | null;
-    /** The photo's reading on the server; the upload uses its photo. */
-    checkId: string | null;
-}
-
-/** An agreement, once the server found the photo matches. */
-export interface ResultsFormAgreement {
-    image: string;
-    qualityChecked: boolean;
-    fix: DeviceFix | null;
-    capturedAt: string | null;
-    checkId: string;
-}
+import type {
+    ResultsFormAgreement,
+    ResultsFormCandidate,
+    ResultsFormPlace,
+    ResultsFormSubmission,
+} from "./types";
 
 interface ResultsFormCaptureProps {
     visible: boolean;
@@ -301,12 +75,7 @@ interface ResultsFormCaptureProps {
      * typed in every box).
      * Return false to keep the submit button disabled.
      */
-    canSubmit?: (state: {
-        votes: Record<string, number>;
-        rejectedVotes: number;
-        disputedVotes: number;
-        hasImage: boolean;
-    }) => boolean;
+    canSubmit?: (state: VoteEntryState) => boolean;
 }
 
 /**
@@ -334,76 +103,32 @@ export function ResultsFormCapture({
     canSubmit,
 }: ResultsFormCaptureProps) {
     const formName = RESULTS_FORMS[level].name;
-    const {hasPermission, canRequestPermission, requestPermission} =
-        useCameraPermission();
-    const [showCamera, setShowCamera] = useState(false);
-    /** The capture tip on screen; null when the tips are not showing. */
-    const [tipStep, setTipStep] = useState<number | null>(null);
-    const [capturedImage, setCapturedImage] = useState<string | null>(null);
-    /** Captured but not yet accepted — shown full-screen for review. */
-    const [pendingImage, setPendingImage] = useState<string | null>(null);
-    const [pendingPreview, setPendingPreview] =
-        useState<NitroImageHandle | null>(null);
-    // Digits typed per box, at most three; converted to numbers on submit.
-    const [votes, setVotes] = useState<Record<string, string>>({});
-    const [rejectedVotes, setRejectedVotes] = useState("");
-    const [disputedVotes, setDisputedVotes] = useState("");
-    const [wasVisible, setWasVisible] = useState(false);
-    const device = useCameraDevice("back");
-    const [aspect, setAspect] = useState<CaptureAspect>(DEFAULT_ASPECT);
-    /** Starts at Off for each form; kept across retakes until the form closes. */
-    const [light, setLight] = useState<LightSetting>("off");
-    const hasTorch = !!device?.hasTorch;
-    const [permissionError, setPermissionError] = useState<string | null>(null);
-    const [cameraError, setCameraError] = useState<string | null>(null);
-    const [captureError, setCaptureError] = useState<string | null>(null);
-    /** The pending photo's QR against the selected stream; null when unchecked. */
-    const [streamCheck, setStreamCheck] = useState<
-        StreamCheck | "checking" | null
-    >(null);
-    const [unreadPhotos, setUnreadPhotos] = useState(0);
-    /** The last place warning shown, so the same one is not shown twice. */
-    const [placeWarned, setPlaceWarned] = useState<PlaceCheck["kind"] | null>(null);
-    const [readingStep, setReadingStep] = useState<ReadingStep | null>(null);
-    /** Tapped Disagree: later photos are read for typing, not compared. */
-    const [disagreed, setDisagreed] = useState(false);
-    /** Chose to agree once the reading showed an earlier upload's results. */
-    const [agreedAfter, setAgreedAfter] = useState<string | null>(null);
-    const [startingAgreement, setStartingAgreement] = useState(false);
-    const agreeTarget = agreeWith ?? agreedAfter;
-    const agreeing = !!agreeTarget && !disagreed;
     const {userToken} = useAuthStore();
-    const photoOutput = usePhotoOutput({
-        targetResolution: PHOTO_RESOLUTION[aspect],
-        // JPEG on both platforms. The default is each platform's own format,
-        // which is HEIC on iPhone: most browsers cannot show it, and neither
-        // Pillow nor OpenCV can open it without an extra library.
-        containerFormat: "jpeg",
-        // 0.9 keeps every pixel at about half the file size of 1.0 (about
-        // 5 MB instead of 10 MB), so the upload takes half as long.
-        quality: 0.9,
-        qualityPrioritization: "quality",
-        previewImageTargetSize: REVIEW_PREVIEW_RESOLUTION[aspect],
+    const permission = usePermissionRecovery();
+    const capture = usePhotoCapture({visible, stationCode, level});
+    const capturedImage = capture.capturedImage;
+    const entry = useVoteEntry({
+        candidates,
+        maxVotes,
+        hasImage: !!capturedImage,
+        canSubmit,
     });
-
-    const qrScanner = React.useMemo(
-        () => createBarcodeScanner({barcodeFormats: ["qr-code"]}),
-        [],
-    );
-
-    const capturingRef = React.useRef(false);
-    const captureGenerationRef = React.useRef(0);
-    const pendingImageRef = React.useRef<string | null>(null);
-    const capturedImageRef = React.useRef<string | null>(null);
-    const pendingQualityCheckedRef = React.useRef(true);
-    const capturedQualityCheckedRef = React.useRef(true);
-    const pendingCapturedAtRef = React.useRef<string | null>(null);
-    const capturedAtRef = React.useRef<string | null>(null);
+    const reading = useReadingFlow({
+        userToken,
+        stationCode,
+        level,
+        agreeWith,
+        fillBoxes: entry.fill,
+        clearBoxes: entry.clear,
+        isCaptured: capture.isCaptured,
+    });
+    const [wasVisible, setWasVisible] = useState(false);
 
     // Uploads need internet and the phone's location; locating starts as the
     // screen opens so an indoor phone has time to get a precise fix.
     const network = useNetworkStatus();
     const location = useDeviceFix(visible);
+    const placeCheck = usePlaceCheck(place, location.fix);
     const blockReason =
         network === "offline"
             ? "offline"
@@ -411,478 +136,63 @@ export function ResultsFormCapture({
               ? "location"
               : null;
 
-    // A Nitro Image owns native memory. Release the previous preview only
-    // after React commits the replacement, so the native view never receives
-    // an already-disposed image.
-    React.useEffect(() => {
-        return () => {
-            // Development builds deep-freeze every prop handed to a native
-            // view, and disposing a frozen image throws. Leave that one to
-            // garbage collection; release builds never freeze, so they always
-            // dispose, and any other failure still surfaces.
-            if (pendingPreview && !Object.isFrozen(pendingPreview)) {
-                pendingPreview.dispose();
-            }
-        };
-    }, [pendingPreview]);
-
-    const releaseOwnedPhotos = React.useCallback(() => {
-        const pending = pendingImageRef.current;
-        const captured = capturedImageRef.current;
-        pendingImageRef.current = null;
-        capturedImageRef.current = null;
-
-        deleteTemporaryPhoto(pending);
-        if (captured !== pending) deleteTemporaryPhoto(captured);
-    }, []);
-
-    const takePicture = React.useCallback(async (qualityChecked: boolean) => {
-        // A second capture while one is in flight throws, and the shutter is
-        // tappable again the moment the first press is registered.
-        if (capturingRef.current) return;
-        capturingRef.current = true;
-        setCaptureError(null);
-        const captureGeneration = captureGenerationRef.current;
-        const preview = {current: null as NitroImageHandle | null};
-        try {
-            // VisionCamera returns a bare filesystem path; the rest of the app
-            // (and expo-file-system's `File`) expects a `file://` URI.
-            const {filePath} = await photoOutput.capturePhotoToFile(
-                {flashMode: "off"},
-                {
-                    onPreviewImageAvailable(image) {
-                        preview.current?.dispose();
-                        preview.current = image;
-                    },
-                },
-            );
-            const uri = `file://${filePath}`;
-
-            // The form may have closed or changed camera configuration while
-            // native capture was still finishing. Delete that late result
-            // rather than restoring it into an expired session.
-            if (captureGeneration !== captureGenerationRef.current) {
-                deleteTemporaryPhoto(uri);
-                return;
-            }
-
-            // Not awaited: review opens at once while the QR is read. The
-            // result only applies if this is still the photo under review.
-            if (stationCode) {
-                setStreamCheck("checking");
-                checkCapturedStream(qrScanner, filePath, stationCode, level).then(
-                    (check) => {
-                        if (pendingImageRef.current !== uri) return;
-                        if (check.kind === "unread") {
-                            setUnreadPhotos((count) => count + 1);
-                        }
-                        setStreamCheck(check);
-                    },
-                );
-            } else {
-                setStreamCheck(null);
-            }
-
-            // Held for review rather than accepted outright: the citizen is
-            // still standing in front of the form and able to retake, which is
-            // the cheapest moment to catch a bad shot.
-            deleteTemporaryPhoto(pendingImageRef.current);
-            pendingImageRef.current = uri;
-            pendingQualityCheckedRef.current = qualityChecked;
-            pendingCapturedAtRef.current = new Date().toISOString();
-            setPendingImage(uri);
-            setPendingPreview(preview.current);
-            preview.current = null;
-            setShowCamera(false);
-        } catch (error) {
-            console.warn("[form34a] photo capture failed", error);
-            setCaptureError("The photo could not be saved. Please try again.");
-        } finally {
-            preview.current?.dispose();
-            capturingRef.current = false;
-        }
-    }, [level, photoOutput, qrScanner, stationCode]);
-
-    // Portrait: a 4:3 sensor frame shown upright is 3 wide by 4 tall.
-    const previewAspect = aspect === "4:3" ? 3 / 4 : 9 / 16;
-    const {frameOutput, resetAnalysis, view} = useFrameAnalysis({
-        active: visible && showCamera,
-        aspect,
-        light: hasTorch ? light : null,
-    });
-
     // Reset the form each time the sheet opens (render-phase state adjustment).
     if (visible && !wasVisible) {
         setWasVisible(true);
-        setVotes({});
-        setRejectedVotes("");
-        setDisputedVotes("");
-        setCapturedImage(null);
-        setPendingImage(null);
-        setPendingPreview(null);
-        setShowCamera(false);
-        setTipStep(null);
-        setPermissionError(null);
-        setCameraError(null);
-        setCaptureError(null);
-        setStreamCheck(null);
-        setUnreadPhotos(0);
-        setPlaceWarned(null);
-        setReadingStep(null);
-        setLight("off");
+        entry.clear();
+        capture.reset();
+        permission.reset();
+        placeCheck.reset();
+        reading.clearStep();
     } else if (!visible && wasVisible) {
         setWasVisible(false);
-        setReadingStep(null);
+        reading.clearStep();
     }
-
-    const setVote = (key: string, digits: string) =>
-        setVotes((prev) => ({...prev, [key]: digits}));
-
-    // Every candidate, so an untouched box is sent as 0.
-    const counts = Object.fromEntries(
-        candidates.map(({key}) => [key, toCount(votes[key] ?? "")]),
-    );
-
-    const total =
-        Object.values(counts).reduce((sum, count) => sum + count, 0) +
-        toCount(rejectedVotes) +
-        toCount(disputedVotes);
-
-    const extraGate = canSubmit
-        ? canSubmit({
-              votes: counts,
-              rejectedVotes: toCount(rejectedVotes),
-              disputedVotes: toCount(disputedVotes),
-              hasImage: !!capturedImage,
-          })
-        : true;
-    // A form where every box is 0 has not been entered.
-    const submitEnabled = !!capturedImage && total > 0 && total <= maxVotes && extraGate;
 
     const submitForm = () => {
         if (!capturedImage) return;
+        const step = reading.step;
 
-        sendWhereAllowed(() =>
+        placeCheck.sendWhereAllowed(() =>
             onSubmit({
                 image: capturedImage,
-                qualityChecked: capturedQualityCheckedRef.current,
-                votes: counts,
-                rejectedVotes: toCount(rejectedVotes),
-                disputedVotes: toCount(disputedVotes),
-                total,
+                ...capture.capturedDetails(),
+                votes: entry.counts,
+                rejectedVotes: entry.rejected,
+                disputedVotes: entry.disputed,
+                total: entry.total,
                 fix: location.fix,
-                capturedAt: capturedAtRef.current,
-                checkId: readingStep?.kind === "read" ? readingStep.checkId : null,
+                checkId: step?.kind === "read" ? step.checkId : null,
             }),
         );
     };
 
     const submitAgreement = () => {
-        if (!capturedImage || readingStep?.kind !== "agreement") return;
-        const {checkId} = readingStep;
+        const step = reading.step;
+        if (!capturedImage || step?.kind !== "agreement") return;
+        const {checkId} = step;
         if (!checkId || !onAgree) return;
 
-        sendWhereAllowed(() =>
+        placeCheck.sendWhereAllowed(() =>
             onAgree({
                 image: capturedImage,
-                qualityChecked: capturedQualityCheckedRef.current,
+                ...capture.capturedDetails(),
                 fix: location.fix,
-                capturedAt: capturedAtRef.current,
                 checkId,
             }),
         );
     };
 
-    /** Keep the photo and type the results from it. */
-    const disagree = () => {
-        if (readingStep?.kind !== "agreement") return;
-        setDisagreed(true);
-        fillFromReading(readingStep.reading, readingStep.checkId);
-    };
-
-    /** Agree with the earlier upload the reading matched, using this photo. */
-    const agreeInstead = async () => {
-        if (readingStep?.kind !== "read" || !readingStep.sameAs || !readingStep.checkId) return;
-        if (!userToken) return;
-        const {checkId, sameAs} = readingStep;
-        setStartingAgreement(true);
-        const outcome = await agreeAfterReading({token: userToken, checkId, reference: sameAs});
-        setStartingAgreement(false);
-        if (outcome.kind === "signed_out") return;
-        setAgreedAfter(sameAs);
-        if (outcome.kind !== "started") {
-            setReadingStep({
-                kind: "agreement",
-                checkId: null,
-                agrees: false,
-                message: (outcome.kind === "failed" && outcome.message) || NOT_CHECKED,
-                reading: null,
-                checks: null,
-                markedPhoto: null,
-            });
-            return;
-        }
-        setReadingStep({kind: "reading", checkId, checks: outcome.reading.checks ?? null});
-    };
-
-    /** Go on to the results after seeing where the form looks changed. */
-    const continueChanged = () => {
-        if (readingStep?.kind !== "read") return;
-        setReadingStep({...readingStep, formChanged: null});
-    };
-
-    /** Type the results even though they match an earlier upload. */
-    const typeAnyway = () => {
-        if (readingStep?.kind !== "read") return;
-        setReadingStep({...readingStep, sameAs: null});
-    };
-
-    /** Send, after warning about a phone away from the centre or imprecise. */
-    const sendWhereAllowed = (send: () => void) => {
-        const check = place ? checkPlace(location.fix, place.check) : null;
-        const warning = place && check ? placeWarning(check, place) : null;
-        if (check?.kind === "outside" && warning && placeWarned !== "outside") {
-            setPlaceWarned("outside");
-            Alert.alert(warning.title, warning.body, [
-                {text: "Cancel", style: "cancel"},
-                {text: "Upload anyway", style: "destructive", onPress: send},
-            ]);
-            return;
-        }
-        if (isPrecise(location.fix)) {
-            send();
-            return;
-        }
-        // The server would grade it unknown: say so, and let them wait.
-        const accuracy = location.fix
-            ? ` (±${Math.round(location.fix.accuracy)} m)`
-            : "";
-        Alert.alert(
-            "Location not precise yet",
-            `Your location is not precise enough yet${accuracy}. Step outside or wait. An upload without a precise location cannot support a result.`,
-            [
-                {text: "Wait", style: "cancel"},
-                {text: "Upload anyway", style: "destructive", onPress: send},
-            ],
-        );
-    };
-
-    React.useEffect(() => {
-        if (!visible) {
-            captureGenerationRef.current += 1;
-            releaseOwnedPhotos();
-        }
-    }, [releaseOwnedPhotos, visible]);
-
-    React.useEffect(() => {
-        return () => {
-            captureGenerationRef.current += 1;
-            releaseOwnedPhotos();
-        };
-    }, [releaseOwnedPhotos]);
-
-    // Clear the previous run's readings so a stale good period can't offer the
-    // shutter the instant the camera reopens for a retake.
-    const openCamera = () => {
-        resetAnalysis();
-        setCameraError(null);
-        setCaptureError(null);
-        setShowCamera(true);
-    };
-
-    const finishTips = () => {
-        setTipStep(null);
-        openCamera();
-    };
-
-    // Back to vote entry; the generation bump drops a capture still finishing.
-    const closeCamera = () => {
-        captureGenerationRef.current += 1;
-        setCaptureError(null);
-        setShowCamera(false);
-    };
-
-    const discardPendingPhoto = () => {
-        const uri = pendingImageRef.current;
-        pendingImageRef.current = null;
-        setPendingImage(null);
-        setPendingPreview(null);
-        setStreamCheck(null);
-        deleteTemporaryPhoto(uri);
-        openCamera();
-    };
-
-    // Unchecked, matching, or unread often enough that it must not block.
-    const canUsePhoto =
-        streamCheck === null ||
-        (streamCheck !== "checking" &&
-            (streamCheck.kind === "match" ||
-                (streamCheck.kind === "unread" &&
-                    unreadPhotos >= UNREAD_PHOTOS_BEFORE_OVERRIDE)));
-
-    /** Show the reading's outcome: retake, the agreement, or the boxes. */
-    const finishReading = (
-        reading: Reading | null,
-        checkId: string | null,
-        checks: AgreementCheck[] | null = reading?.checks ?? null,
-    ) => {
-        if (reading?.retake) {
-            setReadingStep({kind: "retake", message: reading.message ?? "Retake the photo."});
-            return;
-        }
-        if (agreeing) {
-            // An agreement is never saved unchecked.
-            const checked = reading?.agreement === true && reading.status === "done";
-            setReadingStep({
-                kind: "agreement",
-                checkId,
-                agrees: checked && reading.outcome === "agrees",
-                message: (checked && reading.message) || NOT_CHECKED,
-                reading: reading?.status === "done" ? reading : null,
-                checks,
-                markedPhoto: reading?.marked_photo
-                    ? `${apiBaseURL}${reading.marked_photo}`
-                    : null,
-            });
-            return;
-        }
-        fillFromReading(reading, checkId);
-    };
-
-    /** The boxes, prefilled from the reading or empty. */
-    const fillFromReading = (reading: Reading | null, checkId: string | null) => {
-        const read = reading?.status === "done";
-        const boxes = fillBoxes(read ? reading.prefill : null, candidates.map(({key}) => key));
-        setVotes(boxes.votes);
-        setRejectedVotes(boxes.rejectedVotes);
-        setDisputedVotes(boxes.disputedVotes);
-        setReadingStep({
-            kind: "read",
-            checkId,
-            instruction: (read && reading.message) || NOT_READ,
-            prefilled: read,
-            // Without a reading every box is empty: no border marks them.
-            unread: read ? boxes.unread : [],
-            sameAs: read ? (reading.same_as ?? null) : null,
-            formChanged:
-                read && reading.form_changed
-                    ? {
-                          markedPhoto: reading.marked_photo
-                              ? `${apiBaseURL}${reading.marked_photo}`
-                              : null,
-                      }
-                    : null,
-        });
-    };
-
-    /** Send the accepted photo to be read; the boxes wait for the reading. */
-    const readPhoto = async (uri: string) => {
-        setVotes({});
-        setRejectedVotes("");
-        setDisputedVotes("");
-        setReadingStep({kind: "reading", checkId: null, checks: null});
-        if (!userToken || !stationCode) {
-            finishReading(null, null);
-            return;
-        }
-        const outcome = await startReading({
-            token: userToken,
-            stationCode,
-            race: level,
-            image: uri,
-            reference: agreeing ? agreeTarget : null,
-        });
-        // Retaken or closed while the photo was being sent.
-        if (capturedImageRef.current !== uri) return;
-        if (outcome.kind === "signed_out") return;
-        if (outcome.kind === "not_allowed") {
-            setReadingStep({
-                kind: "read",
-                checkId: null,
-                instruction: null,
-                prefilled: false,
-                unread: [],
-                sameAs: null,
-                formChanged: null,
-            });
-            return;
-        }
-        if (outcome.kind === "failed") {
-            if (agreeing && outcome.message) {
-                // Refused before any check, e.g. the same photo again.
-                setReadingStep({
-                    kind: "agreement",
-                    checkId: null,
-                    agrees: false,
-                    message: outcome.message,
-                    reading: null,
-                    checks: null,
-                    markedPhoto: null,
-                });
-                return;
-            }
-            finishReading(null, null);
-            return;
-        }
-        const {reading} = outcome;
-        if (reading.status === "running") {
-            setReadingStep({
-                kind: "reading",
-                checkId: reading.check_id,
-                checks: reading.checks ?? null,
-            });
-        } else {
-            finishReading(reading, reading.check_id);
-        }
-    };
-
-    // Ask for the reading every 2 s. Once it has ended, show it (render-phase
-    // state adjustment: the step leaves "reading", so this runs once).
-    const pollingId = readingStep?.kind === "reading" ? readingStep.checkId : null;
-    const {ended, latest} = useReading(userToken, pollingId);
-    if (ended && pollingId) {
-        // Given up: keep the lines as far as they got.
-        const lastChecks =
-            ended === "gave_up"
-                ? (latest?.checks ??
-                  (readingStep?.kind === "reading" ? readingStep.checks : null))
-                : (ended.checks ?? null);
-        finishReading(ended === "gave_up" ? null : ended, pollingId, lastChecks);
-    }
-
-    const acceptPendingPhoto = () => {
-        const uri = pendingImageRef.current;
-        if (!uri || !canUsePhoto) return;
-
-        deleteTemporaryPhoto(capturedImageRef.current);
-        capturedImageRef.current = uri;
-        capturedQualityCheckedRef.current = pendingQualityCheckedRef.current;
-        capturedAtRef.current = pendingCapturedAtRef.current;
-        pendingImageRef.current = null;
-        setCapturedImage(uri);
-        setPendingImage(null);
-        setPendingPreview(null);
-        setStreamCheck(null);
-        if (readsPhoto) void readPhoto(uri);
-
-        // The phone has been locating since the form opened; say now if it
-        // is away from the centre, before the counts are typed.
-        if (!place) return;
-        const check = checkPlace(location.fix, place.check);
-        const warning = placeWarning(check, place);
-        if (warning && placeWarned !== check.kind) {
-            setPlaceWarned(check.kind);
-            Alert.alert(warning.title, warning.body);
-        }
+    const acceptPhoto = () => {
+        const uri = capture.acceptPendingPhoto();
+        if (!uri) return;
+        if (readsPhoto) void reading.readPhoto(uri);
+        placeCheck.warnAfterCapture();
     };
 
     const closeForm = () => {
-        captureGenerationRef.current += 1;
-        setReadingStep(null);
-        setDisagreed(false);
-        setAgreedAfter(null);
-        setPendingPreview(null);
-        releaseOwnedPhotos();
+        reading.close();
+        capture.release();
         onClose();
     };
 
@@ -895,57 +205,15 @@ export function ResultsFormCapture({
           }
         : undefined;
 
-    const toggleAspect = () => {
-        captureGenerationRef.current += 1;
-        resetAnalysis();
-        setCaptureError(null);
-        setAspect((current) => (current === "4:3" ? "16:9" : "4:3"));
-    };
-
-    const handleCameraError = React.useCallback(
-        (error: Error) => {
-            console.warn("[form34a] camera session failed", error);
-            captureGenerationRef.current += 1;
-            resetAnalysis();
-            setCameraError("The camera stopped unexpectedly.");
-            setCaptureError(null);
-        },
-        [resetAnalysis],
-    );
-
-    const permissionRecovery = getCameraPermissionRecovery(canRequestPermission);
-    const handlePermissionRecovery = React.useCallback(async () => {
-        setPermissionError(null);
-        try {
-            if (permissionRecovery.action === "request") {
-                const granted = await requestPermission();
-                if (!granted) {
-                    setPermissionError(
-                        "Camera permission was not granted. Open Settings to enable it.",
-                    );
-                }
-            } else {
-                await Linking.openSettings();
-            }
-        } catch (error) {
-            console.warn("[form34a] permission recovery failed", error);
-            setPermissionError(
-                permissionRecovery.action === "request"
-                    ? "The permission request could not be opened. Please try again."
-                    : "Settings could not be opened. Open this app in device Settings.",
-            );
-        }
-    }, [permissionRecovery.action, requestPermission]);
-
-    if (!hasPermission) {
+    if (!permission.hasPermission) {
         return (
             <CameraPermissionModal
                 visible={visible}
-                actionLabel={permissionRecovery.buttonLabel}
-                error={permissionError}
-                message={permissionRecovery.message}
+                actionLabel={permission.recovery.buttonLabel}
+                error={permission.error}
+                message={permission.recovery.message}
                 onClose={closeForm}
-                onRecover={handlePermissionRecovery}
+                onRecover={permission.recover}
             />
         );
     }
@@ -956,15 +224,7 @@ export function ResultsFormCapture({
             animationType="slide"
             presentationStyle="fullScreen"
             statusBarTranslucent={Platform.OS === "android"}
-            onRequestClose={
-                pendingImage
-                    ? discardPendingPhoto
-                    : showCamera
-                      ? closeCamera
-                      : tipStep !== null
-                        ? () => setTipStep(tipStep > 0 ? tipStep - 1 : null)
-                        : closeForm
-            }
+            onRequestClose={capture.goBack ?? closeForm}
         >
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -983,142 +243,26 @@ export function ResultsFormCapture({
                         </TouchableOpacity>
                     </View>
 
-                    {blockReason ? (
-                        <SubmitBlocked reason={blockReason} onRetry={location.retry} />
-                    ) : pendingImage ? (
-                        <PhotoReviewPane
-                            formName={formName}
-                            imageUri={pendingImage}
-                            preview={pendingPreview}
-                            previewAspect={previewAspect}
-                            streamCheck={streamCheck}
-                            canUsePhoto={canUsePhoto}
-                            onAccept={acceptPendingPhoto}
-                            onRetake={discardPendingPhoto}
-                            onChooseStream={chooseStream}
-                            onGoBack={closeForm}
-                        />
-                    ) : showCamera ? (
-                        <LiveCameraPane
-                            active={visible && showCamera}
-                            aspect={aspect}
-                            cameraError={cameraError}
-                            light={hasTorch ? light : null}
-                            onLightChange={setLight}
-                            captureError={captureError}
-                            device={device}
-                            frameOutput={frameOutput}
-                            photoOutput={photoOutput}
-                            previewAspect={previewAspect}
-                            view={view}
-                            onCameraError={handleCameraError}
-                            onCapture={takePicture}
-                            onClose={closeCamera}
-                            onRetry={openCamera}
-                            onToggleAspect={toggleAspect}
-                        />
-                    ) : tipStep !== null ? (
-                        <CaptureTips
-                            step={tipStep}
-                            onStepChange={setTipStep}
-                            onFinish={finishTips}
-                        />
-                    ) : readsPhoto && !capturedImage ? (
-                        <PhotoStepPane formName={formName} onCapture={() => setTipStep(0)} />
-                    ) : readsPhoto &&
-                      capturedImage &&
-                      agreeing &&
-                      readingStep?.kind === "reading" ? (
-                        <AgreementPane
-                            checks={latest?.checks ?? readingStep.checks}
-                            checking
-                        />
-                    ) : readsPhoto &&
-                      capturedImage &&
-                      (readingStep?.kind === "reading" || readingStep?.kind === "retake") ? (
-                        <ReadingPane
-                            formName={formName}
-                            imageUri={capturedImage}
-                            sending={
-                                readingStep.kind === "reading" && readingStep.checkId === null
-                            }
-                            retakeMessage={
-                                readingStep.kind === "retake" ? readingStep.message : null
-                            }
-                            onRetake={openCamera}
-                        />
-                    ) : readsPhoto && capturedImage && readingStep?.kind === "agreement" ? (
-                        <AgreementPane
-                            checks={readingStep.checks}
-                            photo={
-                                readingStep.markedPhoto && userToken
-                                    ? {
-                                          marked: readingStep.markedPhoto,
-                                          plain: capturedImage,
-                                          token: userToken,
-                                      }
-                                    : null
-                            }
-                            message={readingStep.message}
-                            agrees={readingStep.agrees}
-                            submitting={submitting}
-                            onSubmit={submitAgreement}
-                            onRetake={openCamera}
-                            onDisagree={disagree}
-                        />
-                    ) : readsPhoto &&
-                      capturedImage &&
-                      readingStep?.kind === "read" &&
-                      readingStep.formChanged ? (
-                        <ChangedFormPane
-                            photo={
-                                readingStep.formChanged.markedPhoto && userToken
-                                    ? {
-                                          marked: readingStep.formChanged.markedPhoto,
-                                          plain: capturedImage,
-                                          token: userToken,
-                                      }
-                                    : null
-                            }
-                            onContinue={continueChanged}
-                            onCancel={closeForm}
-                        />
-                    ) : readsPhoto &&
-                      capturedImage &&
-                      readingStep?.kind === "read" &&
-                      readingStep.sameAs ? (
-                        <SameResultsPane
-                            sending={startingAgreement}
-                            onAgree={agreeInstead}
-                            onType={typeAnyway}
-                        />
-                    ) : (
-                        <VoteEntryPane
-                            // A new reading starts the counts afresh.
-                            key={readingStep?.kind === "read" ? readingStep.checkId : null}
-                            candidates={candidates}
-                            captured={!!capturedImage}
-                            formName={formName}
-                            instruction={readingStep?.kind === "read" ? readingStep.instruction : null}
-                            unread={readingStep?.kind === "read" ? readingStep.unread : []}
-                            steps={readsPhoto}
-                            prefilled={readingStep?.kind === "read" && readingStep.prefilled}
-                            tapsToSubmit={readsPhoto ? 3 : 1}
-                            maxVotes={maxVotes}
-                            disputedVotes={disputedVotes}
-                            rejectedVotes={rejectedVotes}
-                            submitEnabled={submitEnabled}
-                            submitLabel={submitLabel}
-                            submitting={submitting}
-                            total={total}
-                            votes={votes}
-                            onCapture={() => setTipStep(0)}
-                            onDisputedVotesChange={setDisputedVotes}
-                            onRejectedVotesChange={setRejectedVotes}
-                            onSubmit={submitForm}
-                            onVoteChange={setVote}
-                        />
-                    )}
+                    <FormPanes
+                        visible={visible}
+                        formName={formName}
+                        readsPhoto={readsPhoto}
+                        userToken={userToken}
+                        candidates={candidates}
+                        maxVotes={maxVotes}
+                        submitLabel={submitLabel}
+                        submitting={submitting}
+                        blockReason={blockReason}
+                        capture={capture}
+                        reading={reading}
+                        entry={entry}
+                        onRetryLocation={location.retry}
+                        onAcceptPhoto={acceptPhoto}
+                        onChooseStream={chooseStream}
+                        onClose={closeForm}
+                        onSubmit={submitForm}
+                        onSubmitAgreement={submitAgreement}
+                    />
                 </SafeAreaView>
             </SafeAreaProvider>
         </Modal>
