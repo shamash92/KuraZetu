@@ -1,14 +1,15 @@
 # How to Configure Log Rotation in Production
 
-This guide explains how to install rotation for the application, auth, and
-account deletion log files written when `LOG_FILE`, `AUTH_LOG_FILE`, and
-`DELETE_ACCOUNT_LOG_FILE` are set. See
+This guide explains how to install rotation for the application, auth,
+machine check, and account deletion log files written when `LOG_FILE`,
+`AUTH_LOG_FILE`, `AI_CHECKS_LOG_FILE`, and `DELETE_ACCOUNT_LOG_FILE` are set. See
 [About logging and redaction](../explanations/logging-approach.md) for why
 rotation happens outside the Django process rather than inside it.
 
 ```{important}
 This guide assumes a production server running Gunicorn under systemd, with
-`LOG_FILE`, `AUTH_LOG_FILE`, and `DELETE_ACCOUNT_LOG_FILE` set to real paths
+`LOG_FILE`, `AUTH_LOG_FILE`, `AI_CHECKS_LOG_FILE`, and `DELETE_ACCOUNT_LOG_FILE`
+set to real paths
 (see `src/.env`).
 ```
 
@@ -17,8 +18,8 @@ This guide assumes a production server running Gunicorn under systemd, with
 1. **Review the tracked template**
 
     The repository ships a template at `src/.deploy/logrotate/kurazetu.conf`.
-    It rotates the application and auth files once each reaches 10MB and keeps
-    8 compressed generations. The account deletion file holds one line per
+    It rotates the application, auth, and machine check files once each
+    reaches 10MB and keeps 8 compressed generations. The account deletion file holds one line per
     deleted account and is kept forever: it rotates monthly and no generation
     is ever removed (`rotate -1`). Include it in server backups. No file uses
     `copytruncate` — `WatchedFileHandler` already reopens the file when
@@ -28,11 +29,11 @@ This guide assumes a production server running Gunicorn under systemd, with
 2. **Match the paths and ownership to this server**
 
     Edit the copied file so the paths match this server's actual `LOG_FILE`,
-    `AUTH_LOG_FILE`, and `DELETE_ACCOUNT_LOG_FILE` values, and `create` uses
+    `AUTH_LOG_FILE`, `AI_CHECKS_LOG_FILE`, and `DELETE_ACCOUNT_LOG_FILE` values, and `create` uses
     the user/group Gunicorn runs as:
 
     ```bash
-    grep -E "^(LOG_FILE|AUTH_LOG_FILE|DELETE_ACCOUNT_LOG_FILE)=" src/.env
+    grep -E "^(LOG_FILE|AUTH_LOG_FILE|AI_CHECKS_LOG_FILE|DELETE_ACCOUNT_LOG_FILE)=" src/.env
     ```
 
     When the files live outside `/var/log`, such as the repo-local

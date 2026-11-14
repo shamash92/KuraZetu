@@ -24,6 +24,9 @@ from results.qr import FORM_SERIES
 from results.races import candidates_for
 
 logger = logging.getLogger(__name__)
+# One line per finished check, to logs/ai_checks.log. Never the photo, the
+# reply, or the account.
+checks_log = logging.getLogger("results.ai_checks")
 
 RACE_LABELS = dict(Aspirant.LEVEL_CHOICES)
 # A QR code read as another station's or race's ends the check before the
@@ -290,6 +293,31 @@ def for_phone(check):
     For an agreement, the status stays running until both the reading and
     the comparison end; the outcome is then whether the photo agrees.
     """
+    answer = _answer(check)
+    if answer["status"] != MachineCheck.RUNNING:
+        checks_log.info("phone told %s", answer["outcome"], extra=_told(check, answer))
+    return answer
+
+
+def _told(check, answer):
+    """What the person was told, for the checks log."""
+    return {
+        "check_id": answer["check_id"],
+        "station": check.polling_station.code,
+        "race": check.race,
+        "status": answer["status"],
+        "outcome": answer["outcome"],
+        "told": answer["message"],
+        "retake": answer["retake"],
+        "agreement": answer["agreement"],
+        "form_changed": answer.get("form_changed"),
+        "same_as": answer.get("same_as"),
+        "marked_photo": "marked_photo" in answer,
+        "checks": [[c["code"], c["state"]] for c in answer.get("checks", [])],
+    }
+
+
+def _answer(check):
     _end_if_lost(check)
     done = check.status == MachineCheck.DONE
     retake = done and check.outcome in reading.RETAKE
@@ -578,6 +606,46 @@ def _finish(check, started, clock, error="", attempts=None):
     check.duration_ms = round((clock() - started) * 1000)
     check.finished_at = timezone.now()
     check.save()
+    checks_log.info("%s check %s", check.kind, check.status, extra=_summary(check))
+
+
+def _summary(check):
+    """What each check found, for the checks log."""
+    reply = check.reply or {}
+    summary = {
+        "check_id": str(check.id),
+        "kind": check.kind,
+        "station": check.polling_station.code,
+        "race": check.race,
+        "version": check.input.get("version"),
+        "model": check.model,
+        "status": check.status,
+        "outcome": check.outcome,
+        "error": check.error,
+        "attempts": check.attempts,
+        "duration_ms": check.duration_ms,
+        # Not named "tokens": the log redaction hides any key that says token.
+        "usage_in": (check.usage or {}).get("input_tokens"),
+        "usage_out": (check.usage or {}).get("output_tokens"),
+        "qr": check.server_qr_result,
+        "reference": str(check.reference_id) if check.reference_id else None,
+    }
+    if check.kind == MachineCheck.READ and "capture" in reply:
+        capture = reply["capture"]
+        summary["readability"] = capture["readability"]
+        summary["quality_problems"] = capture["quality_problems"]
+        summary["photo_of_screen"] = capture["photo_of_screen"]
+        summary["alterations"] = [
+            [a["field"], a.get("ballot_number")] for a in reply["alterations"]
+        ]
+    if check.kind == MachineCheck.COMPARE and "sheet" in reply:
+        summary["read_check"] = str(check.read_check_id)
+        summary["sheet"] = reply["sheet"]
+        summary["differences"] = [
+            [d["part"], d["kind"], d["affects_figure"]] for d in reply["differences"]
+        ]
+        summary["not_compared"] = reply["not_compared"]
+    return summary
 
 
 def _client():
