@@ -12,7 +12,12 @@ from rest_framework.views import APIView
 from accounts.authentication import NATIVE_AUTHENTICATION
 from results import comparing
 from results.api.upload_views import REFUSAL_STATUS
-from results.machine_checks import compare_with, for_phone, start_check
+from results.machine_checks import (
+    compare_with,
+    comparison_of,
+    for_phone,
+    start_check,
+)
 from results.models import MachineCheck, ResultUpload
 from results.races import race_from
 from results.reading import RETAKE
@@ -145,7 +150,8 @@ class AgreeAfterReadingView(APIView):
         if (
             check.status != MachineCheck.DONE
             or check.outcome in RETAKE
-            or check.comparisons.exists()
+            # Already agreeing with an upload.
+            or check.reference_id is not None
         ):
             return Response(
                 {
@@ -184,8 +190,12 @@ class MarkedPhotoView(APIView):
         check = get_object_or_404(
             MachineCheck, pk=check_id, account=request.user, kind=MachineCheck.READ
         )
-        comparison = check.comparisons.filter(status=MachineCheck.DONE).first()
-        if comparison is None or not check.model_copy:
+        comparison = comparison_of(check)
+        if (
+            comparison is None
+            or comparison.status != MachineCheck.DONE
+            or not check.model_copy
+        ):
             return Response(status=status.HTTP_404_NOT_FOUND)
         # The points are on the copy the model was given.
         with check.model_copy.open("rb") as photo:

@@ -509,6 +509,9 @@ class ResultUpload(models.Model):
         blank=True,
         related_name="agreements",
     )
+    # The photo shows an earlier upload's sheet with a figure changed since
+    # that photo was taken. Such an upload never counts.
+    form_changed = models.BooleanField(default=False)
     is_current = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     # Set by accounts.deletion when the linked account is deleted.
@@ -521,7 +524,11 @@ class ResultUpload(models.Model):
     @property
     def countable(self):
         """Whether this upload can support a result for the station it names."""
-        return self.location_grade in COUNTABLE and self.server_qr_result in QR_COUNTS
+        return (
+            self.location_grade in COUNTABLE
+            and self.server_qr_result in QR_COUNTS
+            and not self.form_changed
+        )
 
 
 class UploadDeviceFix(gis_models.Model):
@@ -567,8 +574,10 @@ class MachineCheck(models.Model):
     account = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="machine_checks"
     )
-    # The earlier upload the person agrees with. Set on both checks of an
-    # agreement: the reading of the new photo and the comparison.
+    # The earlier upload the person agrees with, set on both checks of an
+    # agreement: the reading of the new photo and the comparison. A
+    # comparison made for a person who does not agree also names the upload
+    # it was compared with; its reading names none.
     reference = models.ForeignKey(
         ResultUpload,
         on_delete=models.SET_NULL,

@@ -10,7 +10,7 @@ from django.db import IntegrityError, transaction
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from results import machine_checks
+from results import comparing, machine_checks
 from results.location import grade_location
 from results.models import MachineCheck, ResultUpload, UploadDeviceFix
 from results.qr import NOT_CHECKED, classify, read_qr
@@ -87,8 +87,10 @@ def submit_upload(
         raise UploadRefused("unknown_race", "Unknown race.")
     _check_not_uploaded(account, station, found.key)
     check = None
+    form_changed = False
     if check_id is not None:
         check = _usable_check(check_id, account, station, found.key)
+        form_changed = _form_changed(check)
         photo = check.photo.open("rb")
     _check_photo(photo)
     _check_tally(votes, candidates_for(station, found))
@@ -118,8 +120,24 @@ def submit_upload(
         server_qr_result=qr_result,
         server_qr_value=qr_value,
         captured_at=captured_at,
+        form_changed=form_changed,
     )
     return _store(upload, photo, fix, check)
+
+
+def _form_changed(check):
+    """Whether the photo shows an earlier upload's sheet with a figure
+    changed. Refused while the comparison is still running, so that the
+    answer is known before the upload is stored."""
+    comparison = machine_checks.comparison_of(check)
+    if comparison is None:
+        return False
+    if comparison.status == MachineCheck.RUNNING:
+        raise UploadRefused(
+            "check_running",
+            "Your photo is still being checked. Wait a moment, then submit.",
+        )
+    return comparison.outcome == comparing.FORM_CHANGED
 
 
 def submit_agreement(

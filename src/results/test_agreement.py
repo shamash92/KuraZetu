@@ -315,13 +315,13 @@ def test_the_phone_waits_for_both_checks(
 def test_a_first_reading_is_not_an_agreement(client, station, earlier, provider):
     from results.test_reading import send
 
-    provider(message(reply()))
+    provider(message(reply()), message(comparison()))
 
     data = send(client, station).json()
 
     assert data["agreement"] is False
     assert data["outcome"] == reading.READ_COMPLETE
-    assert not MachineCheck.objects.filter(kind=MachineCheck.COMPARE).exists()
+    assert MachineCheck.objects.get(kind=MachineCheck.READ).reference is None
 
 
 # ── Who may agree, and with what ────────────────────────────────────────
@@ -421,7 +421,8 @@ def test_the_earlier_photo_sent_again_is_refused(client, station, earlier, provi
 
 
 def read_only(api_client, at):
-    """Read a photo with no earlier upload to agree with, as Disagree does."""
+    """Read a photo with no earlier upload to agree with, as Disagree does.
+    It is compared with the earliest upload at the same time."""
     started = api_client.post(
         URL,
         {
@@ -446,7 +447,7 @@ def agree_after(api_client, check_id, reference):
 def test_a_reading_with_the_earlier_results_names_that_upload(
     client, station, earlier, provider
 ):
-    provider(message(reply()))
+    provider(message(reply()), message(comparison()))
 
     data = read_only(client, station)
 
@@ -456,7 +457,7 @@ def test_a_reading_with_the_earlier_results_names_that_upload(
 def test_a_reading_with_other_results_names_no_upload(
     client, station, earlier, provider
 ):
-    provider(message(reply(votes=(10, 41))))
+    provider(message(reply(votes=(10, 41))), message(comparison()))
 
     data = read_only(client, station)
 

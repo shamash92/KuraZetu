@@ -49,6 +49,7 @@ AGREEMENT_MESSAGES = {
     FIGURES_DIFFER: "Some figures on your photo differ from the uploaded form.",
     NOT_CHECKED: "Your photo could not be checked.",
 }
+CHECKED_BY_A_PERSON = "A person will also check the photo."
 
 # The lines the phone shows while an agreeing photo is checked, in order.
 # Each is running, passed or failed; the QR code can also be not read,
@@ -80,7 +81,10 @@ SAME_FORM = {
 
 def start_check(account, station, race, photo, reference=None):
     """Store the check and read the photo in the background. With a
-    ``reference`` upload, also compare the photo with that upload's photo.
+    ``reference`` upload, the person agrees with it and the photo is also
+    compared with its photo. Without one, a photo for a station that already
+    has another person's upload is compared with the earliest of them, to
+    find a form changed since that photo was taken.
 
     Returns the reading at once; the phone asks for the result with
     ``for_phone``.
@@ -89,8 +93,11 @@ def start_check(account, station, race, photo, reference=None):
     if check.status == MachineCheck.RUNNING:
         check_id = check.id
         transaction.on_commit(lambda: _queue(check_id))
-        if reference is not None:
-            comparison_id = _store_comparison(check, reference).id
+        earlier = reference
+        if earlier is None:
+            earlier = next(iter(_earlier_typed(station, race.key, account)), None)
+        if earlier is not None:
+            comparison_id = _store_comparison(check, earlier).id
             transaction.on_commit(lambda: _queue_comparison(comparison_id))
     return check
 
@@ -100,6 +107,9 @@ def compare_with(read_check, reference):
     agrees once the reading shows the same results."""
     read_check.reference = reference
     read_check.save(update_fields=["reference"])
+    if read_check.comparisons.filter(reference=reference).exists():
+        # Compared with this upload when the photo was read.
+        return
     comparison_id = _store_comparison(read_check, reference).id
     transaction.on_commit(lambda: _queue_comparison(comparison_id))
 
@@ -305,12 +315,34 @@ def for_phone(check):
         "prefill": prefill,
         "agreement": False,
     }
-    comparison = check.comparisons.first()
-    if comparison is None:
+    comparison = comparison_of(check)
+    if check.reference_id is None:
         if done and not retake:
+            if comparison is not None and comparison.status == MachineCheck.RUNNING:
+                # The upload must know whether the form was changed.
+                answer.update(
+                    status=MachineCheck.RUNNING,
+                    outcome=None,
+                    message=None,
+                    prefill=None,
+                )
+                return answer
+            changed = (
+                comparison is not None and comparison.outcome == comparing.FORM_CHANGED
+            )
+            # The person is shown where the figures look written over since
+            # the earlier photo, and may continue or cancel.
+            answer["form_changed"] = changed
+            if changed:
+                message = answer["message"] or ""
+                if CHECKED_BY_A_PERSON not in message:
+                    answer["message"] = f"{message} {CHECKED_BY_A_PERSON}".strip()
+                if comparing.points(comparison.reply):
+                    answer["marked_photo"] = reverse(
+                        "result-photo-marked", args=[check.id]
+                    )
             answer["same_as"] = _same_as(check)
         return answer
-    _end_if_lost(comparison)
     answer["agreement"] = True
     answer["checks"] = agreement_checks(check, comparison)
     if retake:
@@ -349,6 +381,35 @@ def agreement(read_check, comparison):
     return AGREES
 
 
+def comparison_of(check):
+    """The comparison of a reading's photo: with the upload the person
+    agrees with, or else the one made when the photo was read. None when
+    there was no earlier upload."""
+    comparisons = check.comparisons.order_by("created_at")
+    if check.reference_id is not None:
+        comparisons = comparisons.filter(reference_id=check.reference_id)
+    comparison = comparisons.first()
+    if comparison is not None:
+        _end_if_lost(comparison)
+    return comparison
+
+
+def _earlier_typed(station, race, account):
+    """Other people's countable current uploads with a typed tally, oldest
+    first."""
+    earlier = (
+        ResultUpload.objects.filter(
+            polling_station=station,
+            race=race,
+            is_current=True,
+            agrees_with__isnull=True,
+        )
+        .exclude(added_by=account)
+        .order_by("created_at")
+    )
+    return [upload for upload in earlier if upload.countable]
+
+
 def _same_as(read_check):
     """The earlier upload by someone else whose typed results the photo
     shows exactly, or None. Only when every figure was read one way."""
@@ -357,18 +418,10 @@ def _same_as(read_check):
     read = _read_figures(read_check)
     if None in read.values():
         return None
-    earlier = (
-        ResultUpload.objects.filter(
-            polling_station=read_check.polling_station,
-            race=read_check.race,
-            is_current=True,
-            agrees_with__isnull=True,
-        )
-        .exclude(added_by=read_check.account)
-        .order_by("created_at")
-    )
-    for upload in earlier:
-        if upload.countable and _typed_figures(upload) == read:
+    for upload in _earlier_typed(
+        read_check.polling_station, read_check.race, read_check.account
+    ):
+        if _typed_figures(upload) == read:
             return str(upload.id)
     return None
 
