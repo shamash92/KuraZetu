@@ -1,38 +1,15 @@
 import {FlatList, StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import MapView, {Geojson, GeojsonProps, Marker} from "react-native-maps";
-import {statusBarHeight, windowHeight, windowWidth} from "../_utils/device/screenDimensions";
-import {useEffect, useState} from "react";
+import {statusBarHeight} from "@/app/_utils/device/screenDimensions";
 
-import {ICountyFeature} from "../types";
 import {Ionicons} from "@expo/vector-icons";
-import LottieView from "lottie-react-native";
-import React from "react";
-import {apiBaseURL} from "../_utils/apiBaseURL";
-import {perk} from "../_utils/colors";
+import React, {useState} from "react";
+import {perk} from "@/app/_utils/colors";
 import {Redirect, router, useLocalSearchParams} from "expo-router";
-import Animated, {useReducedMotion} from "react-native-reanimated";
-import {ProgressSweep} from "@/components/auth/authLoading";
+import {SignupLocationLoading} from "@/components/auth/signupLocationLoading";
+import {SignupLocationMap} from "@/components/auth/signupLocationMap";
+import {useSignupLocationData} from "@/app/_utils/auth/useSignupLocationData";
 
 type Step = "county" | "constituency" | "ward" | "centre";
-
-// boundariesLoading.json runs 124 frames at 30fps. Hold for one full pass of
-// the atlas inking itself plus a beat on the finished map, so a fast response
-// does not flash the scene and cut it.
-const BOUNDARIES_INTRO_MS = (124 / 30) * 1000 + 300;
-// The finished atlas never sits dead still while the request is outstanding.
-const ATLAS_DRIFT = {
-    animationName: {
-        from: {transform: [{scale: 1}]},
-        to: {transform: [{scale: 1.06}]},
-    },
-    animationDuration: 9000,
-    animationTimingFunction: "ease-in-out",
-    animationIterationCount: "infinite",
-    animationDirection: "alternate",
-} as const;
-// Every signup step mounts this screen and refetches; only the first one in a
-// session waits for the drawing.
-let hasPlayedBoundariesIntro = false;
 
 export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     const params = useLocalSearchParams<{
@@ -43,34 +20,19 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
         ward?: string;
         wardName?: string;
     }>();
-    const [counties, setCounties] = useState<ICountyFeature[] | null>(null);
-    const [countyLoadError, setCountyLoadError] = useState<string | null>(null);
-    const [countyLoadAttempt, setCountyLoadAttempt] = useState(0);
-    const reduceMotion = useReducedMotion();
-    const [isIntroPlaying, setIsIntroPlaying] = useState(
-        () => !hasPlayedBoundariesIntro && !reduceMotion,
-    );
     const [selectedCounty, setSelectedCounty] = useState<number | null>(null);
     const [selectedCountyName, setSelectedCountyName] = useState<string | null>(null);
-    const [constituencies, setConstituencies] = useState<
-        GeojsonProps["geojson"] | null
-    >(null);
     const [selectedConstituency, setSelectedConstituency] = useState<number | null>(
         null,
     );
     const [selectedConstituencyName, setSelectedConstituencyName] = useState<
         string | null
     >(null);
-    const [wards, setWards] = useState<GeojsonProps["geojson"] | null>(null);
     const [selectedWard, setSelectedWard] = useState<number | null>(null);
     const [selectedWardName, setSelectedWardName] = useState<string | null>(null);
-    const [pollingCenters, setPollingCenters] = useState<
-        GeojsonProps["geojson"] | null
-    >(null);
     const [selectedPollingCenter, setSelectedPollingCenter] = useState<string | null>(
         null,
     );
-    const [mapReady, setMapReady] = useState(false);
     const [mapRegion, setMapRegion] = useState({
         latitude: 0,
         longitude: 37.7,
@@ -79,6 +41,15 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     });
 
     const step = routeStep;
+    const {
+        counties,
+        constituencies,
+        wards,
+        pollingCenters,
+        countyLoadError,
+        isIntroPlaying,
+        retry,
+    } = useSignupLocationData(step, params);
     const stepNumber = {county: 1, constituency: 2, ward: 3, centre: 4}[step];
     const heading = {
         county: "county",
@@ -99,7 +70,7 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
         const coordinates = feature?.geometry?.coordinates?.[0];
         if (!Array.isArray(coordinates) || !coordinates.length) return;
         const center = coordinates.reduce(
-            (acc: any, coord: number[]) => ({
+            (acc: any, coord: Array<number>) => ({
                 latitude: acc.latitude + coord[1],
                 longitude: acc.longitude + coord[0],
             }),
@@ -159,80 +130,6 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
             });
     };
 
-    useEffect(() => {
-        if (!isIntroPlaying) return;
-
-        const timer = setTimeout(() => {
-            hasPlayedBoundariesIntro = true;
-            setIsIntroPlaying(false);
-        }, BOUNDARIES_INTRO_MS);
-
-        return () => clearTimeout(timer);
-    }, [isIntroPlaying]);
-
-    useEffect(() => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15_000);
-
-        fetch(`${apiBaseURL}/api/stations/counties/boundaries/`, {
-            signal: controller.signal,
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Request failed with status ${response.status}`);
-                }
-                return response.json();
-            })
-            .then((data) =>
-                setCounties(
-                    (data?.features ?? []).filter(
-                        (item: any) =>
-                            item.geometry &&
-                            Array.isArray(item.geometry.coordinates) &&
-                            item.geometry.coordinates.length,
-                    ),
-                ),
-            )
-            .catch(() => {
-                if (!controller.signal.aborted) {
-                    setCountyLoadError("Could not load map data. Check your connection and try again.");
-                } else {
-                    setCountyLoadError("Loading map data took too long. Please try again.");
-                }
-            })
-            .finally(() => clearTimeout(timeout));
-
-        return () => {
-            clearTimeout(timeout);
-            controller.abort();
-        };
-    }, [countyLoadAttempt]);
-
-    useEffect(() => {
-        if (step === "constituency" && params.county) {
-            fetchConstituencies(Number(params.county));
-        }
-        if (step === "ward" && params.constituency) {
-            fetchWards(Number(params.constituency));
-        }
-        if (step === "centre" && params.ward) {
-            fetchPollingCenters(Number(params.ward));
-        }
-    }, [step, params.county, params.constituency, params.ward]);
-
-    const fetchConstituencies = (id: number) =>
-        fetch(`${apiBaseURL}/api/stations/county/${id}/constituencies/boundaries/`)
-            .then((response) => response.json())
-            .then(setConstituencies);
-    const fetchWards = (id: number) =>
-        fetch(`${apiBaseURL}/api/stations/constituencies/${id}/wards/boundaries/`)
-            .then((response) => response.json())
-            .then(setWards);
-    const fetchPollingCenters = (id: number) =>
-        fetch(`${apiBaseURL}/api/stations/wards/${id}/polling-centers/pins/`)
-            .then((response) => response.json())
-            .then(setPollingCenters);
-
     const finish = () =>
         router.replace(
             `/auth/phoneVerification?ward=${params.ward}&pollingCenter=${selectedPollingCenter}`,
@@ -240,14 +137,15 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     const proceed = () => {
         if (step === "county" && selectedCounty) {
             router.push({
-                pathname: "/auth/signup/constituency",
-                params: {county: String(selectedCounty), countyName: selectedCountyName ?? ""},
+                pathname: "/auth/signup/[step]",
+                params: {step: "constituency", county: String(selectedCounty), countyName: selectedCountyName ?? ""},
             });
         }
         if (step === "constituency" && selectedConstituency) {
             router.push({
-                pathname: "/auth/signup/ward",
+                pathname: "/auth/signup/[step]",
                 params: {
+                    step: "ward",
                     county: params.county ?? "",
                     countyName: params.countyName ?? "",
                     constituency: String(selectedConstituency),
@@ -257,8 +155,9 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
         }
         if (step === "ward" && selectedWard) {
             router.push({
-                pathname: "/auth/signup/centre",
+                pathname: "/auth/signup/[step]",
                 params: {
+                    step: "centre",
                     ward: String(selectedWard),
                     wardName: selectedWardName ?? "",
                 },
@@ -271,7 +170,7 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
         router.back();
     };
 
-    const data: any[] =
+    const data: Array<any> =
         step === "county"
             ? (counties ?? [])
             : step === "constituency"
@@ -305,7 +204,7 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
               : step === "ward"
                 ? `Proceed to ${selectedName ?? "selected"} centres`
                 : `Confirm ${selectedName ?? "selection"}`;
-    const mapFeatures: any[] =
+    const mapFeatures: Array<any> =
         step === "county"
             ? (counties ?? [])
             : step === "constituency"
@@ -316,74 +215,20 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
 
     if (counties === null || (isIntroPlaying && countyLoadError === null))
         return (
-            <Loading
-                error={countyLoadError}
-                onRetry={() => {
-                    setCountyLoadError(null);
-                    setCountyLoadAttempt((attempt) => attempt + 1);
-                }}
-            />
+            <SignupLocationLoading error={countyLoadError} onRetry={retry} />
         );
 
     return (
         <View style={styles.screen}>
-            <View style={styles.mapWrap}>
-                <MapView
-                    style={styles.map}
-                    region={mapRegion}
-                    onMapReady={() => setMapReady(true)}
-                    mapType={step === "centre" ? "hybrid" : "standard"}
-                >
-                    {mapReady &&
-                        mapFeatures.map((feature, index) => (
-                            <Geojson
-                                key={feature.id ?? index}
-                                geojson={{
-                                    type: "FeatureCollection",
-                                    features: [feature],
-                                }}
-                                strokeColor={perk.ink}
-                                fillColor={
-                                    feature.properties?.number === selectedId
-                                        ? perk.lime
-                                        : "rgba(196,255,94,0.18)"
-                                }
-                                strokeWidth={
-                                    feature.properties?.number === selectedId ? 2 : 1
-                                }
-                            />
-                        ))}
-                    {mapReady &&
-                        step === "centre" &&
-                        data.map((feature) =>
-                            feature.geometry ? (
-                                <Marker
-                                    key={feature.id ?? feature.properties?.code}
-                                    coordinate={{
-                                        latitude: feature.geometry.coordinates[1],
-                                        longitude: feature.geometry.coordinates[0],
-                                    }}
-                                    pinColor={
-                                        feature.properties?.code ===
-                                        selectedPollingCenter
-                                            ? perk.limeDeep
-                                            : feature.properties?.pin_location_error
-                                              ? perk.copper
-                                              : perk.coralDeep
-                                    }
-                                    onPress={() =>
-                                        handlePollingCenterPress(
-                                            feature.properties?.code,
-                                        )
-                                    }
-                                />
-                            ) : null,
-                        )}
-                </MapView>
-                <View style={styles.mapCredit}>
-                    <Text style={styles.mapCreditText}>© OPENSTREETMAP · KURAZETU</Text>
-                </View>
-            </View>
+            <SignupLocationMap
+                step={step}
+                mapRegion={mapRegion}
+                mapFeatures={mapFeatures}
+                data={data}
+                selectedId={selectedId}
+                selectedPollingCenter={selectedPollingCenter}
+                onPollingCenterPress={handlePollingCenterPress}
+            />
 
             <View style={styles.header}>
                 {step !== "county" && (
@@ -489,60 +334,8 @@ export function MapUpdates({routeStep = "county"}: {routeStep?: Step}) {
     );
 }
 
-function Loading({error, onRetry}: {error: string | null; onRetry: () => void}) {
-    const reduceMotion = useReducedMotion();
-
-    return (
-        <View
-            style={styles.loading}
-            accessible={error === null}
-            accessibilityRole="progressbar"
-            accessibilityLabel="Loading map data"
-        >
-            <Animated.View
-                style={[
-                    StyleSheet.absoluteFill,
-                    !reduceMotion && ATLAS_DRIFT,
-                    error !== null && styles.loadingArtDimmed,
-                ]}
-            >
-                <LottieView
-                    source={require("../../assets/lottie/boundariesLoading.json")}
-                    style={StyleSheet.absoluteFill}
-                    resizeMode="cover"
-                    autoPlay={!reduceMotion}
-                    loop={false}
-                    // Reduced motion rests on the finished atlas instead of drawing it.
-                    progress={reduceMotion ? 1 : undefined}
-                />
-            </Animated.View>
-
-            {error ? (
-                <View style={styles.loadingFoot}>
-                    <Text style={styles.loadingTitle}>Map data did not load</Text>
-                    <Text style={styles.loadingText}>{error}</Text>
-                    <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
-                        <Text style={styles.retryText}>Try again</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <View style={styles.loadingFoot}>
-                    <Text style={styles.loadingLabel}>Loading map data</Text>
-                    <ProgressSweep />
-                </View>
-            )}
-        </View>
-    );
-}
-
 const styles = StyleSheet.create({
     screen: {flex: 1, backgroundColor: perk.card, paddingTop: statusBarHeight},
-    mapWrap: {
-        height: Math.min(windowHeight * 0.29, 245),
-        overflow: "hidden",
-        backgroundColor: "#0e2024",
-    },
-    map: {width: windowWidth, height: "100%"},
     backButton: {
         width: 44,
         height: 36,
@@ -550,22 +343,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: perk.surface,
-    },
-    mapCredit: {
-        position: "absolute",
-        bottom: 8,
-        left: 11,
-        backgroundColor: "rgba(13,13,13,0.45)",
-        paddingHorizontal: 6,
-        paddingVertical: 3,
-        borderRadius: 3,
-    },
-    mapCreditText: {
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 8,
-        letterSpacing: 1.1,
-        color: "rgba(255,255,255,0.72)",
-        fontWeight: "700",
     },
     header: {
         paddingHorizontal: 18,
@@ -634,44 +411,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    loading: {
-        flex: 1,
-        backgroundColor: perk.paper,
-        overflow: "hidden",
-    },
-    loadingArtDimmed: {opacity: 0.25},
-    // The south-west corner of the atlas is open ground: Kenya's border runs
-    // diagonally from Lake Victoria to the coast, so the readout sits there.
-    loadingFoot: {
-        position: "absolute",
-        left: 24,
-        right: 24,
-        bottom: 56,
-    },
-    loadingLabel: {
-        marginBottom: 14,
-        fontFamily: "SpaceMono-Regular",
-        fontSize: 11,
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        color: perk.mute,
-    },
-    loadingTitle: {fontSize: 24, fontWeight: "800", color: perk.ink},
-    loadingText: {
-        marginTop: 8,
-        fontSize: 15,
-        lineHeight: 21,
-        color: perk.mute,
-    },
-    retryButton: {
-        alignSelf: "flex-start",
-        marginTop: 20,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 10,
-        backgroundColor: perk.lime,
-    },
-    retryText: {fontSize: 15, fontWeight: "800", color: perk.limeInk},
 });
 
 export default function SignupEntry() {
