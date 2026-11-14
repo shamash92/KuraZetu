@@ -550,6 +550,38 @@ LOGGING["loggers"]["accounts.deletion"] = {
     "propagate": False,
 }
 
+# One line per finished machine check of a results form photo: what was
+# checked, the outcome, and why. Never the photo, the reply, or the account.
+AI_CHECKS_LOG_FILE = config("AI_CHECKS_LOG_FILE", default="logs/ai_checks.log")
+if AI_CHECKS_LOG_FILE:
+    if not os.path.isabs(AI_CHECKS_LOG_FILE):
+        AI_CHECKS_LOG_FILE = os.path.join(BASE_DIR, AI_CHECKS_LOG_FILE)
+    try:
+        os.makedirs(os.path.dirname(AI_CHECKS_LOG_FILE), exist_ok=True)
+        fd = os.open(AI_CHECKS_LOG_FILE, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o600)
+        os.close(fd)
+    except OSError as exc:
+        sys.stderr.write(
+            f"AI_CHECKS_LOG_FILE is not writable ({exc.strerror}); "
+            "machine checks logging to stdout only.\n"
+        )
+        AI_CHECKS_LOG_FILE = ""
+
+LOGGING["loggers"]["results.ai_checks"] = {
+    "level": "INFO",
+    "handlers": ["auth_console"],
+    "propagate": False,
+}
+if AI_CHECKS_LOG_FILE:
+    LOGGING["handlers"]["ai_checks_file"] = {
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": AI_CHECKS_LOG_FILE,
+        "encoding": "utf-8",
+        "formatter": "json",
+        "filters": ["redaction", "request_context"],
+    }
+    LOGGING["loggers"]["results.ai_checks"]["handlers"].append("ai_checks_file")
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},

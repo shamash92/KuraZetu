@@ -234,6 +234,22 @@ def _store(upload, photo, fix, check):
             # Two different uploads for one station and race arrived at once.
             _check_not_uploaded(account, station, race)
         raise
+    machine_checks.checks_log.info(
+        "upload saved",
+        extra={
+            "upload_id": str(upload.id),
+            "check_id": str(check.id) if check is not None else None,
+            "station": station.code,
+            "race": race,
+            "agrees_with": (
+                str(upload.agrees_with_id) if upload.agrees_with_id else None
+            ),
+            "form_changed": upload.form_changed,
+            "location_grade": upload.location_grade,
+            "qr": upload.server_qr_result,
+            "countable": upload.countable,
+        },
+    )
     if upload.countable:
         # The station's public results now say it is waiting for confirmation.
         cache.delete(station_results_cache_key(race, station.code))
