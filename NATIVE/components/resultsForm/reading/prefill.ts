@@ -42,6 +42,11 @@ export interface Reading {
      * the photo shows exactly, if any.
      */
     same_as?: string | null;
+    /**
+     * Not made to agree: the photo shows an earlier upload's sheet with
+     * figures that look written over since. `marked_photo` points at them.
+     */
+    form_changed?: boolean;
 }
 
 /** The boxes filled from a reading, and the boxes the person must fill. */
