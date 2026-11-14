@@ -84,7 +84,8 @@
           "kind",
           "in_a",
           "in_b",
-          "affects_figure"
+          "affects_figure",
+          "point_in_b"
         ],
         "properties": {
           "part": {
@@ -118,6 +119,29 @@
           },
           "affects_figure": {
             "type": "boolean"
+          },
+          "point_in_b": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  }
+                }
+              }
+            ]
           }
         }
       }
