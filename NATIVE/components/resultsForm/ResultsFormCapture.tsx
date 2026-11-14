@@ -19,10 +19,7 @@ import {
 import React, {useState} from "react";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {type Image as NitroImageHandle} from "react-native-nitro-image";
-import {
-    type BarcodeScanner,
-    createBarcodeScanner,
-} from "react-native-vision-camera-barcode-scanner";
+import {createBarcodeScanner} from "react-native-vision-camera-barcode-scanner";
 
 import {File} from "expo-file-system";
 
@@ -35,7 +32,6 @@ import {VoteEntryPane} from "./entry/VoteEntryPane";
 import {STREAM_VOTER_LIMIT, toCount} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
 import {type AgreementCheck, type Reading, fillBoxes} from "./reading/prefill";
-import {AgreementChecklist} from "./reading/AgreementChecklist";
 import {AgreementPane} from "./reading/AgreementPane";
 import {PhotoStepPane} from "./reading/PhotoStepPane";
 import {ReadingPane} from "./reading/ReadingPane";
@@ -43,15 +39,12 @@ import {agreeAfterReading, startReading, useReading} from "./reading/readPhoto";
 import {ChangedFormPane} from "./reading/ChangedFormPane";
 import {SameResultsPane} from "./reading/SameResultsPane";
 import {PhotoReviewPane} from "./review/PhotoReviewPane";
-import {readFormQr} from "./review/formQr";
-import {type StreamCheck, checkStream} from "./review/streamCheck";
+import {checkCapturedStream} from "./review/formQr";
+import type {StreamCheck} from "./review/streamCheck";
 import {CaptureTips} from "./tips/CaptureTips";
-import {type DeviceFix, isPrecise} from "./upload/deviceFix";
-import {
-    type LocationCheckData,
-    type PlaceCheck,
-    checkPlace,
-} from "./upload/locationCheck";
+import {isPrecise} from "./upload/deviceFix";
+import {type PlaceCheck, checkPlace} from "./upload/locationCheck";
+import {placeWarning} from "./upload/placeWarning";
 import {SubmitBlocked} from "./upload/SubmitBlocked";
 import {useDeviceFix} from "./upload/useDeviceFix";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
@@ -59,6 +52,14 @@ import {useAuthStore} from "@/app/_utils/auth/authStore";
 import {useNetworkStatus} from "@/app/_utils/device/useNetworkStatus";
 import {perk} from "@/app/_utils/colors";
 import type {TLevelTabs} from "@/app/types";
+
+import type {
+    ReadingStep,
+    ResultsFormAgreement,
+    ResultsFormCandidate,
+    ResultsFormPlace,
+    ResultsFormSubmission,
+} from "./types";
 
 /**
  * Aspect the camera starts on.
@@ -104,159 +105,15 @@ function deleteTemporaryPhoto(uri: string | null) {
 }
 
 /**
- * How long the QR may take before the photo is treated as unread, so a stalled
- * scan can never keep the citizen waiting at the form.
- */
-const QR_CHECK_TIMEOUT_MS = 8000;
-
-/**
  * Unread photos before "Use this photo" is offered anyway. The QR is a check,
  * not a gate: a torn, stamped or glared code must never lock anyone out.
  */
 const UNREAD_PHOTOS_BEFORE_OVERRIDE = 2;
 
-/** Read the QR from the captured photo and compare it with the selected stream. */
-async function checkCapturedStream(
-    scanner: BarcodeScanner,
-    filePath: string,
-    stationCode: string,
-    level: TLevelTabs,
-): Promise<StreamCheck> {
-    try {
-        const timeout = new Promise<null>((resolve) =>
-            setTimeout(() => resolve(null), QR_CHECK_TIMEOUT_MS),
-        );
-        const reading = await Promise.race([
-            readFormQr(scanner, filePath),
-            timeout,
-        ]);
-        console.log(
-            `[form34a] captured QR=${reading?.value ?? "none"} ` +
-                `via=${reading?.source ?? "timeout"} station=${stationCode}`,
-        );
-        return checkStream(reading?.value ?? null, stationCode, level);
-    } catch (error) {
-        console.warn("[form34a] QR scan failed", error);
-        return {kind: "unread"};
-    }
-}
-
-/** The station's centre and ward, for checking where the phone is. */
-export interface ResultsFormPlace {
-    check: LocationCheckData;
-    centreName: string;
-    wardName: string | null;
-}
-
-function metres(distance: number): string {
-    return distance >= 1000
-        ? `${(distance / 1000).toFixed(1)} km`
-        : `${Math.round(distance)} m`;
-}
-
-/** What to tell the person about where they are, or null when all is well. */
-function placeWarning(
-    check: PlaceCheck,
-    place: ResultsFormPlace,
-): {title: string; body: string} | null {
-    const ward = place.wardName ? `${place.wardName} ward` : "this station's ward";
-    const fix =
-        "restart the app, turn on the internet and wait for a GPS lock before you submit.";
-    if (check.kind === "outside") {
-        // An outside-ward centre is checked only near its pin.
-        return place.check.ward_boundary
-            ? {
-                  title: `You are outside ${ward}`,
-                  body: `This upload will not count. If you are in ${ward}, ${fix}`,
-              }
-            : {
-                  title: `You are not at ${place.centreName}`,
-                  body: `This upload will not count. This centre counts only uploads made at the centre. If you are at the centre, ${fix}`,
-              };
-    }
-    if (check.kind === "ward" && check.distanceM !== null) {
-        return {
-            title: `You are not at ${place.centreName}`,
-            body: `You are about ${metres(check.distanceM)} from the centre. Your upload still counts because you are in ${ward}.`,
-        };
-    }
-    return null;
-}
-
-/** Where the photo's reading is, when the photo is read before entry. */
-type ReadingStep =
-    /** checkId is null while the photo is being sent. */
-    | {
-          kind: "reading";
-          checkId: string | null;
-          /** The checks as the server first answered, before polling. */
-          checks: AgreementCheck[] | null;
-      }
-    | {kind: "retake"; message: string}
-    | {
-          kind: "read";
-          checkId: string | null;
-          instruction: string | null;
-          /** The boxes hold the reading's figures. */
-          prefilled: boolean;
-          unread: string[];
-          /** The earlier upload whose results the photo shows, if any. */
-          sameAs: string | null;
-          /**
-           * The photo shows an earlier upload's sheet with figures that look
-           * written over since, until the person continues. `markedPhoto`
-           * has an arrow at each.
-           */
-          formChanged: {markedPhoto: string | null} | null;
-      }
-    /** Made to agree with an earlier upload. */
-    | {
-          kind: "agreement";
-          checkId: string | null;
-          agrees: boolean;
-          message: string;
-          /** The full reading, for the boxes if the person disagrees. */
-          reading: Reading | null;
-          checks: AgreementCheck[] | null;
-          /** The photo with an arrow at each difference, when there are any. */
-          markedPhoto: string | null;
-      };
-
 /** Shown when there is no reading: the server could not be reached or failed. */
 const NOT_READ = "The form could not be read. Type the results from the form.";
 /** Shown when an agreeing photo has no outcome from the server. */
 const NOT_CHECKED = "Your photo could not be checked.";
-
-export interface ResultsFormCandidate {
-    key: string;
-    name: string;
-    party?: string | null;
-}
-
-interface ResultsFormSubmission {
-    image: string;
-    /** False when the photograph was taken with Capture anyway. */
-    qualityChecked: boolean;
-    votes: Record<string, number>;
-    rejectedVotes: number;
-    disputedVotes: number;
-    total: number;
-    /** The most accurate fix seen while the screen was open, if any. */
-    fix: DeviceFix | null;
-    /** When the photo was taken, by the device clock. */
-    capturedAt: string | null;
-    /** The photo's reading on the server; the upload uses its photo. */
-    checkId: string | null;
-}
-
-/** An agreement, once the server found the photo matches. */
-export interface ResultsFormAgreement {
-    image: string;
-    qualityChecked: boolean;
-    fix: DeviceFix | null;
-    capturedAt: string | null;
-    checkId: string;
-}
 
 interface ResultsFormCaptureProps {
     visible: boolean;

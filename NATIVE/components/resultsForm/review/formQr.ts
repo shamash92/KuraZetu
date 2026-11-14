@@ -15,6 +15,9 @@ import type {BarcodeScanner} from "react-native-vision-camera-barcode-scanner";
 
 import {detectDocument} from "@/components/resultsForm/camera/documentDetection";
 import type {LumaThumbnail} from "@/components/resultsForm/camera/frameQuality";
+import type {TLevelTabs} from "@/app/types";
+
+import {type StreamCheck, checkStream} from "./streamCheck";
 
 /**
  * Long side of the copy the QR is read from, whatever resolution the camera
@@ -328,5 +331,37 @@ export async function readFormQr(
         return {value: null, source: page ? "page and windows" : "windows only"};
     } finally {
         image.dispose();
+    }
+}
+
+/**
+ * How long the QR may take before the photo is treated as unread, so a stalled
+ * scan can never keep the citizen waiting at the form.
+ */
+const QR_CHECK_TIMEOUT_MS = 8000;
+
+/** Read the QR from the captured photo and compare it with the selected stream. */
+export async function checkCapturedStream(
+    scanner: BarcodeScanner,
+    filePath: string,
+    stationCode: string,
+    level: TLevelTabs,
+): Promise<StreamCheck> {
+    try {
+        const timeout = new Promise<null>((resolve) =>
+            setTimeout(() => resolve(null), QR_CHECK_TIMEOUT_MS),
+        );
+        const reading = await Promise.race([
+            readFormQr(scanner, filePath),
+            timeout,
+        ]);
+        console.log(
+            `[form34a] captured QR=${reading?.value ?? "none"} ` +
+                `via=${reading?.source ?? "timeout"} station=${stationCode}`,
+        );
+        return checkStream(reading?.value ?? null, stationCode, level);
+    } catch (error) {
+        console.warn("[form34a] QR scan failed", error);
+        return {kind: "unread"};
     }
 }
