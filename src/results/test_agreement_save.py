@@ -13,7 +13,7 @@ import pytest
 from PIL import Image
 from rest_framework.test import APIClient
 
-from results import machine_checks
+from results import comparing, machine_checks, reading
 from results.location import CENTRE_MATCH, LOCATION_MISMATCH
 from results.models import MachineCheck, ResultUpload
 from results.qr import UNREAD
@@ -23,6 +23,7 @@ from results.test_agreement import (  # noqa: F401 (pytest fixtures)
     comparison,
     difference,
     earlier,
+    read_only,
 )
 from results.test_reading import (  # noqa: F401 (pytest fixtures)
     agent,
@@ -31,6 +32,7 @@ from results.test_reading import (  # noqa: F401 (pytest fixtures)
     read_at_once,
     reply,
 )
+from results.test_upload_check import send
 from results.test_uploads import (  # noqa: F401 (pytest fixtures)
     account,
     client,
@@ -173,7 +175,7 @@ def test_a_first_reading_cannot_be_saved_as_an_agreement(
 ):
     from results.test_reading import start
 
-    provider(message(reply()))
+    provider(message(reply()), message(comparison()))
     started = start(client, station)
 
     response = save(client, started.json()["check_id"])
@@ -226,6 +228,82 @@ def test_an_earlier_upload_that_does_not_count_refuses_nothing(
     ResultUpload.objects.filter(pk=earlier.pk).update(location_grade=LOCATION_MISMATCH)
 
     assert upload(client, station, mca_candidates).status_code == 201
+
+
+# ── Disagreeing with a changed form ─────────────────────────────────────
+
+
+def disagree(api_client, at, provider, compared):
+    """Read a photo showing Ben 41, against the earlier upload's 11; it is
+    compared with the earlier photo at the same time."""
+    provider(message(reply(votes=(10, 41))), message(compared))
+    return read_only(api_client, at)
+
+
+def submit(api_client, at, candidates, check_id):
+    ann, ben = candidates
+    votes = json.dumps({str(ann.id): 10, str(ben.id): 41})
+    return send(api_client, at, candidates, check_id=check_id, votes=votes)
+
+
+def test_a_form_changed_since_the_earlier_photo_does_not_count(
+    client, station, mca_candidates, earlier, provider
+):
+    data = disagree(client, station, provider, comparison(differences=[difference()]))
+
+    assert data["agreement"] is False
+    assert data["outcome"] == reading.READ_COMPLETE
+    # Shown where the figures look written over, and told a person will look.
+    assert data["form_changed"] is True
+    assert data["message"].endswith("A person will also check the photo.")
+    marked = client.get(data["marked_photo"])
+    assert marked.status_code == 200
+    assert marked["Content-Type"] == "image/jpeg"
+    compared = MachineCheck.objects.get(kind=MachineCheck.COMPARE)
+    assert (compared.reference, compared.outcome) == (earlier, comparing.FORM_CHANGED)
+
+    response = submit(client, station, mca_candidates, data["check_id"])
+
+    assert response.status_code == 201, response.json()
+    stored = ResultUpload.objects.exclude(pk=earlier.pk).get()
+    assert stored.form_changed
+    stored.location_grade = CENTRE_MATCH
+    assert not stored.countable
+
+
+@pytest.mark.parametrize(
+    "compared",
+    [
+        comparison(),
+        comparison(sheet="different_sheet"),
+        comparison(sheet="cannot_tell"),
+    ],
+)
+def test_a_form_not_found_changed_is_stored_as_usual(
+    client, station, mca_candidates, earlier, provider, compared
+):
+    data = disagree(client, station, provider, compared)
+
+    assert data["form_changed"] is False
+    assert "marked_photo" not in data
+    assert "A person will also check" not in data["message"]
+    response = submit(client, station, mca_candidates, data["check_id"])
+    assert response.status_code == 201, response.json()
+    assert not ResultUpload.objects.exclude(pk=earlier.pk).get().form_changed
+
+
+def test_an_upload_waits_for_the_comparison(
+    client, station, mca_candidates, earlier, provider, monkeypatch
+):
+    monkeypatch.setattr(machine_checks, "_queue_comparison", lambda check_id: None)
+    provider(message(reply(votes=(10, 41))))
+    data = read_only(client, station)
+
+    assert data["status"] == "running"
+    response = submit(client, station, mca_candidates, data["check_id"])
+    assert response.status_code == 409
+    assert response.json()["code"] == "check_running"
+    assert ResultUpload.objects.count() == 1
 
 
 # ── The station's uploads, one card each ──────────────────────────────
