@@ -1,5 +1,4 @@
 import {
-    Alert,
     Linking,
     Modal,
     Platform,
@@ -29,9 +28,10 @@ import type {LightSetting} from "./camera/captureGate";
 import {getCameraPermissionRecovery} from "./camera/cameraPermission";
 import {CaptureAspect, useFrameAnalysis} from "./camera/useFrameAnalysis";
 import {VoteEntryPane} from "./entry/VoteEntryPane";
-import {STREAM_VOTER_LIMIT, toCount} from "./entry/voteCount";
+import {type VoteEntryState, useVoteEntry} from "./entry/useVoteEntry";
+import {STREAM_VOTER_LIMIT} from "./entry/voteCount";
 import {RESULTS_FORMS} from "./resultsForms";
-import {type AgreementCheck, type Reading, fillBoxes} from "./reading/prefill";
+import type {AgreementCheck, Reading} from "./reading/prefill";
 import {AgreementPane} from "./reading/AgreementPane";
 import {PhotoStepPane} from "./reading/PhotoStepPane";
 import {ReadingPane} from "./reading/ReadingPane";
@@ -42,11 +42,9 @@ import {PhotoReviewPane} from "./review/PhotoReviewPane";
 import {checkCapturedStream} from "./review/formQr";
 import type {StreamCheck} from "./review/streamCheck";
 import {CaptureTips} from "./tips/CaptureTips";
-import {isPrecise} from "./upload/deviceFix";
-import {type PlaceCheck, checkPlace} from "./upload/locationCheck";
-import {placeWarning} from "./upload/placeWarning";
 import {SubmitBlocked} from "./upload/SubmitBlocked";
 import {useDeviceFix} from "./upload/useDeviceFix";
+import {usePlaceCheck} from "./upload/usePlaceCheck";
 import {apiBaseURL} from "@/app/_utils/apiBaseURL";
 import {useAuthStore} from "@/app/_utils/auth/authStore";
 import {useNetworkStatus} from "@/app/_utils/device/useNetworkStatus";
@@ -158,12 +156,7 @@ interface ResultsFormCaptureProps {
      * typed in every box).
      * Return false to keep the submit button disabled.
      */
-    canSubmit?: (state: {
-        votes: Record<string, number>;
-        rejectedVotes: number;
-        disputedVotes: number;
-        hasImage: boolean;
-    }) => boolean;
+    canSubmit?: (state: VoteEntryState) => boolean;
 }
 
 /**
@@ -201,10 +194,12 @@ export function ResultsFormCapture({
     const [pendingImage, setPendingImage] = useState<string | null>(null);
     const [pendingPreview, setPendingPreview] =
         useState<NitroImageHandle | null>(null);
-    // Digits typed per box, at most three; converted to numbers on submit.
-    const [votes, setVotes] = useState<Record<string, string>>({});
-    const [rejectedVotes, setRejectedVotes] = useState("");
-    const [disputedVotes, setDisputedVotes] = useState("");
+    const entry = useVoteEntry({
+        candidates,
+        maxVotes,
+        hasImage: !!capturedImage,
+        canSubmit,
+    });
     const [wasVisible, setWasVisible] = useState(false);
     const device = useCameraDevice("back");
     const [aspect, setAspect] = useState<CaptureAspect>(DEFAULT_ASPECT);
@@ -219,8 +214,6 @@ export function ResultsFormCapture({
         StreamCheck | "checking" | null
     >(null);
     const [unreadPhotos, setUnreadPhotos] = useState(0);
-    /** The last place warning shown, so the same one is not shown twice. */
-    const [placeWarned, setPlaceWarned] = useState<PlaceCheck["kind"] | null>(null);
     const [readingStep, setReadingStep] = useState<ReadingStep | null>(null);
     /** Tapped Disagree: later photos are read for typing, not compared. */
     const [disagreed, setDisagreed] = useState(false);
@@ -261,6 +254,7 @@ export function ResultsFormCapture({
     // screen opens so an indoor phone has time to get a precise fix.
     const network = useNetworkStatus();
     const location = useDeviceFix(visible);
+    const placeCheck = usePlaceCheck(place, location.fix);
     const blockReason =
         network === "offline"
             ? "offline"
@@ -371,9 +365,7 @@ export function ResultsFormCapture({
     // Reset the form each time the sheet opens (render-phase state adjustment).
     if (visible && !wasVisible) {
         setWasVisible(true);
-        setVotes({});
-        setRejectedVotes("");
-        setDisputedVotes("");
+        entry.clear();
         setCapturedImage(null);
         setPendingImage(null);
         setPendingPreview(null);
@@ -384,7 +376,7 @@ export function ResultsFormCapture({
         setCaptureError(null);
         setStreamCheck(null);
         setUnreadPhotos(0);
-        setPlaceWarned(null);
+        placeCheck.reset();
         setReadingStep(null);
         setLight("off");
     } else if (!visible && wasVisible) {
@@ -392,41 +384,17 @@ export function ResultsFormCapture({
         setReadingStep(null);
     }
 
-    const setVote = (key: string, digits: string) =>
-        setVotes((prev) => ({...prev, [key]: digits}));
-
-    // Every candidate, so an untouched box is sent as 0.
-    const counts = Object.fromEntries(
-        candidates.map(({key}) => [key, toCount(votes[key] ?? "")]),
-    );
-
-    const total =
-        Object.values(counts).reduce((sum, count) => sum + count, 0) +
-        toCount(rejectedVotes) +
-        toCount(disputedVotes);
-
-    const extraGate = canSubmit
-        ? canSubmit({
-              votes: counts,
-              rejectedVotes: toCount(rejectedVotes),
-              disputedVotes: toCount(disputedVotes),
-              hasImage: !!capturedImage,
-          })
-        : true;
-    // A form where every box is 0 has not been entered.
-    const submitEnabled = !!capturedImage && total > 0 && total <= maxVotes && extraGate;
-
     const submitForm = () => {
         if (!capturedImage) return;
 
-        sendWhereAllowed(() =>
+        placeCheck.sendWhereAllowed(() =>
             onSubmit({
                 image: capturedImage,
                 qualityChecked: capturedQualityCheckedRef.current,
-                votes: counts,
-                rejectedVotes: toCount(rejectedVotes),
-                disputedVotes: toCount(disputedVotes),
-                total,
+                votes: entry.counts,
+                rejectedVotes: entry.rejected,
+                disputedVotes: entry.disputed,
+                total: entry.total,
                 fix: location.fix,
                 capturedAt: capturedAtRef.current,
                 checkId: readingStep?.kind === "read" ? readingStep.checkId : null,
@@ -439,7 +407,7 @@ export function ResultsFormCapture({
         const {checkId} = readingStep;
         if (!checkId || !onAgree) return;
 
-        sendWhereAllowed(() =>
+        placeCheck.sendWhereAllowed(() =>
             onAgree({
                 image: capturedImage,
                 qualityChecked: capturedQualityCheckedRef.current,
@@ -492,36 +460,6 @@ export function ResultsFormCapture({
     const typeAnyway = () => {
         if (readingStep?.kind !== "read") return;
         setReadingStep({...readingStep, sameAs: null});
-    };
-
-    /** Send, after warning about a phone away from the centre or imprecise. */
-    const sendWhereAllowed = (send: () => void) => {
-        const check = place ? checkPlace(location.fix, place.check) : null;
-        const warning = place && check ? placeWarning(check, place) : null;
-        if (check?.kind === "outside" && warning && placeWarned !== "outside") {
-            setPlaceWarned("outside");
-            Alert.alert(warning.title, warning.body, [
-                {text: "Cancel", style: "cancel"},
-                {text: "Upload anyway", style: "destructive", onPress: send},
-            ]);
-            return;
-        }
-        if (isPrecise(location.fix)) {
-            send();
-            return;
-        }
-        // The server would grade it unknown: say so, and let them wait.
-        const accuracy = location.fix
-            ? ` (±${Math.round(location.fix.accuracy)} m)`
-            : "";
-        Alert.alert(
-            "Location not precise yet",
-            `Your location is not precise enough yet${accuracy}. Step outside or wait. An upload without a precise location cannot support a result.`,
-            [
-                {text: "Wait", style: "cancel"},
-                {text: "Upload anyway", style: "destructive", onPress: send},
-            ],
-        );
     };
 
     React.useEffect(() => {
@@ -609,17 +547,14 @@ export function ResultsFormCapture({
     /** The boxes, prefilled from the reading or empty. */
     const fillFromReading = (reading: Reading | null, checkId: string | null) => {
         const read = reading?.status === "done";
-        const boxes = fillBoxes(read ? reading.prefill : null, candidates.map(({key}) => key));
-        setVotes(boxes.votes);
-        setRejectedVotes(boxes.rejectedVotes);
-        setDisputedVotes(boxes.disputedVotes);
+        const unread = entry.fill(read ? reading.prefill : null);
         setReadingStep({
             kind: "read",
             checkId,
             instruction: (read && reading.message) || NOT_READ,
             prefilled: read,
             // Without a reading every box is empty: no border marks them.
-            unread: read ? boxes.unread : [],
+            unread: read ? unread : [],
             sameAs: read ? (reading.same_as ?? null) : null,
             formChanged:
                 read && reading.form_changed
@@ -634,9 +569,7 @@ export function ResultsFormCapture({
 
     /** Send the accepted photo to be read; the boxes wait for the reading. */
     const readPhoto = async (uri: string) => {
-        setVotes({});
-        setRejectedVotes("");
-        setDisputedVotes("");
+        entry.clear();
         setReadingStep({kind: "reading", checkId: null, checks: null});
         if (!userToken || !stationCode) {
             finishReading(null, null);
@@ -721,16 +654,7 @@ export function ResultsFormCapture({
         setPendingPreview(null);
         setStreamCheck(null);
         if (readsPhoto) void readPhoto(uri);
-
-        // The phone has been locating since the form opened; say now if it
-        // is away from the centre, before the counts are typed.
-        if (!place) return;
-        const check = checkPlace(location.fix, place.check);
-        const warning = placeWarning(check, place);
-        if (warning && placeWarned !== check.kind) {
-            setPlaceWarned(check.kind);
-            Alert.alert(warning.title, warning.body);
-        }
+        placeCheck.warnAfterCapture();
     };
 
     const closeForm = () => {
@@ -962,18 +886,18 @@ export function ResultsFormCapture({
                             prefilled={readingStep?.kind === "read" && readingStep.prefilled}
                             tapsToSubmit={readsPhoto ? 3 : 1}
                             maxVotes={maxVotes}
-                            disputedVotes={disputedVotes}
-                            rejectedVotes={rejectedVotes}
-                            submitEnabled={submitEnabled}
+                            disputedVotes={entry.disputedVotes}
+                            rejectedVotes={entry.rejectedVotes}
+                            submitEnabled={entry.submitEnabled}
                             submitLabel={submitLabel}
                             submitting={submitting}
-                            total={total}
-                            votes={votes}
+                            total={entry.total}
+                            votes={entry.votes}
                             onCapture={() => setTipStep(0)}
-                            onDisputedVotesChange={setDisputedVotes}
-                            onRejectedVotesChange={setRejectedVotes}
+                            onDisputedVotesChange={entry.setDisputedVotes}
+                            onRejectedVotesChange={entry.setRejectedVotes}
                             onSubmit={submitForm}
-                            onVoteChange={setVote}
+                            onVoteChange={entry.setVote}
                         />
                     )}
                 </SafeAreaView>
