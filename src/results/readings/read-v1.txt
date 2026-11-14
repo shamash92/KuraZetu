@@ -91,12 +91,20 @@ What to look for
     printout, or results written on something other than the printed
     form.
 16. How readable the photograph is. Judge this before you read any figure,
-    from the smallest handwritten digits in the candidate table.
+    from the smallest handwritten digits in the candidate table that nobody
+    has written over.
     "good": every stroke of those digits is separate and sharp.
     "poor": the digits can be made out but strokes run together, or part
     of the table is blurred, dark, washed out, under glare, or too small.
     "unreadable": the digits cannot be made out.
     List what is wrong under quality_problems.
+    Judge only the photograph: focus, light, glare, and size. Ink on the
+    paper is not a photograph problem. A digit written over, crossed out,
+    squeezed in, corrected, or smudged never makes a photograph "poor";
+    report it under alterations (rule 11), and mark the figure "ambiguous"
+    when it can be read more than one way. If the only digits you cannot
+    read cleanly are ones that were written over or corrected, the
+    photograph is "good".
 17. When the photograph is "poor", you are more likely to be wrong. Do not
     mark a figure "clear" unless you could defend every digit of it. If
     you find yourself choosing the likelier of two readings, the figure is

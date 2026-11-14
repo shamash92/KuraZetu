@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw
 
 from results import reading
 
-VERSION = "compare-v2"
+VERSION = "compare-v1"
 
 _FILES = Path(__file__).parent / "readings"
 SYSTEM = (_FILES / f"{VERSION}.txt").read_text()

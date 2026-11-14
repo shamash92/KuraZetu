@@ -19,7 +19,7 @@ from django.conf import settings
 import anthropic
 from PIL import Image, ImageOps
 
-VERSION = "read-v2"
+VERSION = "read-v1"
 MODEL = "claude-sonnet-5-5"
 FALLBACK_MODEL = "claude-opus-5-5"
 EFFORT = "medium"
