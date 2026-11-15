@@ -9,6 +9,7 @@ import PhoneVerification from "../auth/signup/PhoneVerification";
 import {SignupVerificationSessionProvider} from "../auth/signup/SignupVerificationSession";
 import PasswordReset from "../auth/passwordReset/PasswordReset";
 import UserDashBoard from "../dashboards/results";
+import {DashboardOnboarding, DashboardAccess} from "../dashboards/access";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";
 import BrandLayout, {BrandIndex, BrandSection} from "../brand";
@@ -98,6 +99,12 @@ function RoutesApp() {
             <Route path="/ui/specs/author/:slug/" element={<Editor />} />
             <Route path="/ui/specs/sets/:slug/" element={<DocumentSetPage />} />
             <Route path="/ui/specs/:slug/" element={<SpecificationPage />} />
+
+            <Route
+                path="/ui/dashboards/onboarding/"
+                element={<DashboardOnboarding />}
+            />
+            <Route path="/ui/dashboards/:id/access/" element={<DashboardAccess />} />
 
             {/* Public Routes */}
 
