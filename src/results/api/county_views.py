@@ -2,9 +2,12 @@ from django.core.cache import cache
 from django.db.models import Count, Sum
 
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
 from results.models import Aspirant
 from results.races import race_from
 from stations.models import PollingStation
@@ -15,6 +18,9 @@ class CountyTotalResultsAPIView(APIView):
     Totals for one race, counted across the signed-in user's county,
     constituency or ward depending on the level.
     """
+
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, level):
         level = self.kwargs.get("level")
@@ -29,6 +35,8 @@ class CountyTotalResultsAPIView(APIView):
         # A national race is counted across the user's county here.
         scope = "county" if race.scope == "national" else race.scope
 
+        if request.user.polling_center is None:
+            raise PermissionDenied("Register a polling centre to see area results.")
         user_ward = request.user.polling_center.ward
         user_constituency = user_ward.constituency
         user_county = user_constituency.county
