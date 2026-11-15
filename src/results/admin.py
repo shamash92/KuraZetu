@@ -7,6 +7,8 @@ from django.utils.html import format_html, format_html_join
 
 from accounts.admin import KeptContributionAdmin
 from results import reading
+from results.dashboard_access import may_onboard
+from results.dashboard_models import DashboardMember, MediaHouse, ResultsDashboard
 from results.models import (
     Aspirant,
     MachineCheck,
@@ -418,3 +420,56 @@ class MachineCheckAdmin(admin.ModelAdmin):
         response = FileResponse(stored.open("rb"), content_type="image/jpeg")
         response["Cache-Control"] = "private, no-store"
         return response
+
+
+@admin.register(MediaHouse)
+class MediaHouseAdmin(admin.ModelAdmin):
+    search_fields = ["name"]
+    list_display = ["name"]
+
+
+class DashboardMemberInline(admin.TabularInline):
+    model = DashboardMember
+    fields = ["phone_number", "is_owner", "user", "created_at"]
+    readonly_fields = fields
+    extra = 0
+    can_delete = False
+
+    def has_view_permission(self, request, obj=None):
+        return may_onboard(request.user)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ResultsDashboard)
+class ResultsDashboardAdmin(admin.ModelAdmin):
+    """Find a dashboard; owners, viewers and activation change on its access page."""
+
+    list_display = ["name", "kind", "active", "access_page"]
+    list_filter = ["kind", "active"]
+    search_fields = ["name", "members__phone_number"]
+    fields = ["name", "kind", "active", "created_at", "access_page"]
+    readonly_fields = fields
+    inlines = [DashboardMemberInline]
+
+    @admin.display(description="Access page")
+    def access_page(self, dashboard):
+        return format_html(
+            '<a href="/ui/dashboards/{}/access/">Manage access</a>', dashboard.pk
+        )
+
+    def has_view_permission(self, request, obj=None):
+        return may_onboard(request.user)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -69,7 +69,15 @@ class UserAdmin(BaseUserAdmin):
         ),
         (
             "Permissions",
-            {"fields": ("staff", "active", "is_verified", "is_phone_verified")},
+            {
+                "fields": (
+                    "staff",
+                    "active",
+                    "is_verified",
+                    "is_phone_verified",
+                    "groups",
+                )
+            },
         ),
     )
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin

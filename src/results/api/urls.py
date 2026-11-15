@@ -6,6 +6,13 @@ from results.api.agreement_views import (
     StationUploadsView,
 )
 from results.api.county_views import CountyTotalResultsAPIView
+from results.api.dashboard_access_views import (
+    DashboardCreateView,
+    DashboardDetailView,
+    DashboardMembersView,
+    DashboardOptionsView,
+    DashboardPermissionView,
+)
 from results.api.national_views import TotalPresResultsAPIView
 from results.api.reading_views import (
     AgreeAfterReadingView,
@@ -27,6 +34,36 @@ from results.api.views import (
 )
 
 urlpatterns = [
+    path(
+        "dashboard-access/permission/",
+        DashboardPermissionView.as_view(),
+        name="dashboard-access-permission",
+    ),
+    path(
+        "dashboard-access/",
+        DashboardCreateView.as_view(),
+        name="dashboard-access-create",
+    ),
+    path(
+        "dashboard-access/options/",
+        DashboardOptionsView.as_view(),
+        name="dashboard-access-options",
+    ),
+    path(
+        "dashboard-access/<int:pk>/",
+        DashboardDetailView.as_view(),
+        name="dashboard-access-detail",
+    ),
+    path(
+        "dashboard-access/<int:pk>/members/",
+        DashboardMembersView.as_view(),
+        name="dashboard-access-members",
+    ),
+    path(
+        "dashboard-access/<int:pk>/members/<int:member_id>/",
+        DashboardMembersView.as_view(),
+        name="dashboard-access-member",
+    ),
     path(
         "polling-center/<int:ward_number>/<str:polling_center_code>/presidential/",
         PollingCenterPresidentialResultsAPIView.as_view(),
