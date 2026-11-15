@@ -28,6 +28,11 @@ def membership(user):
     )
 
 
+def active_dashboard(user):
+    member = membership(user)
+    return member.dashboard if member and member.dashboard.active else None
+
+
 def may_manage(user, dashboard):
     if may_onboard(user):
         return True
