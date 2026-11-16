@@ -1,14 +1,20 @@
 """A custom dashboard's results, limited to its race and area."""
 
-from django.http import Http404
+from django.http import Http404, HttpResponse
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
+from results.api.agreement_views import _without_metadata
 from results.dashboard_access import active_dashboard, may_manage, may_onboard
-from results.dashboard_results import dashboard_payload, station_rows
+from results.dashboard_results import (
+    dashboard_payload,
+    evidence_upload,
+    station_rows,
+    station_uploads,
+)
 
 
 class DashboardView(APIView):
@@ -67,3 +73,28 @@ class DashboardStationsView(DashboardResultsView):
     """The polling stations inside one area of the dashboard."""
 
     build = staticmethod(station_rows)
+
+
+class DashboardUploadsView(DashboardView):
+    """The uploads at one station of the dashboard, read only."""
+
+    def get(self, request):
+        dashboard = active_dashboard(request.user)
+        if dashboard is None:
+            raise Http404
+        try:
+            pk = int(request.query_params["id"])
+        except (KeyError, ValueError):
+            raise Http404
+        return Response(station_uploads(dashboard, pk))
+
+
+class DashboardUploadPhotoView(DashboardView):
+    """An upload's form photo, copied without its metadata."""
+
+    def get(self, request, upload_id):
+        dashboard = active_dashboard(request.user)
+        if dashboard is None:
+            raise Http404
+        upload = evidence_upload(dashboard, upload_id)
+        return HttpResponse(_without_metadata(upload), content_type="image/jpeg")

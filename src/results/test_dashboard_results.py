@@ -1,10 +1,14 @@
 """A custom dashboard shows the public tally within its own race and area."""
 
+import io
 import uuid
 
+from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.urls import reverse
 
 import pytest
+from PIL import Image
 from rest_framework.test import APIClient
 
 from results.dashboard_access import add_member
@@ -19,6 +23,7 @@ from results.models import (
     ResultUpload,
 )
 from results.qr import MATCH
+from results.test_agreement_save import photo_with_exif
 from results.test_uploads import account, station, ward  # noqa: F401
 from stations.models import PollingCenter, PollingStation, Ward
 
@@ -243,3 +248,78 @@ def test_station_list_gives_the_candidates_place_at_each_station(
     )
     assert client.get(url, {"area": "ward", "id": outside.pk}).status_code == 404
     assert client.get(url, {"area": "national"}).status_code == 404
+
+
+def test_station_uploads_show_figures_and_a_photo_without_metadata(
+    account, station, ward, party
+):
+    ann, ben = (
+        Aspirant.objects.create(
+            first_name="Candidate", last_name=name, party=party, level="mca", ward=ward
+        )
+        for name in ("A", "B")
+    )
+    dashboard = ResultsDashboard.objects.create(
+        kind="aspirant", aspirant=ann, name="Ward dashboard", active=True
+    )
+    add_member(dashboard, account.phone_number, owner=True)
+    client = signed_in(account)
+
+    people = iter(
+        get_user_model().objects.create_user(phone_number=f"+25470000002{n}")
+        for n in range(3)
+    )
+
+    def uploaded(votes, agrees_with=None):
+        upload = ResultUpload(
+            key=uuid.uuid4(),
+            added_by=next(people),
+            polling_station=station,
+            race="mca",
+            votes={str(ann.pk): votes, str(ben.pk): 10},
+            rejected_votes=1,
+            disputed_votes=0,
+            quality_checked=True,
+            location_grade=CENTRE_MATCH,
+            server_qr_result=MATCH,
+            agrees_with=agrees_with,
+        )
+        upload.photo.save("photo.jpg", ContentFile(photo_with_exif(1200, 1600)))
+        return upload
+
+    first = uploaded(20)
+    uploaded(0, agrees_with=first)
+    uploaded(25)
+
+    body = client.get(reverse("dashboard-uploads"), {"id": station.pk}).json()
+    assert [(u["votes"][str(ann.pk)], u["agreed"]) for u in body["uploads"]] == [
+        (20, 1),
+        (25, 0),
+    ]
+    assert set(body["uploads"][0]) == {"id", "votes", "rejected", "disputed", "agreed"}
+
+    photo = client.get(reverse("dashboard-upload-photo", args=[first.pk]))
+    assert photo["Content-Type"] == "image/jpeg"
+    assert photo["Cache-Control"] == "private, no-store"
+    assert dict(Image.open(io.BytesIO(photo.content)).getexif()) == {}
+
+    outside = PollingStation.objects.create(
+        polling_center=PollingCenter.objects.create(
+            name="Elsewhere",
+            code="009",
+            ward=Ward.objects.create(
+                name="Far ward", number=3, constituency=ward.constituency
+            ),
+        ),
+        code="000000901",
+        registered_voters=400,
+    )
+    assert (
+        client.get(reverse("dashboard-uploads"), {"id": outside.pk}).status_code == 404
+    )
+    first.polling_station = outside
+    first.save()
+    assert (
+        client.get(reverse("dashboard-upload-photo", args=[first.pk])).status_code
+        == 404
+    )
