@@ -4,6 +4,7 @@ from django.shortcuts import render
 
 from rest_framework import status
 from rest_framework.decorators import permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -36,8 +37,27 @@ from results.races import candidates_for, race_from, station_results_cache_key
 from stations.models import PollingCenter, PollingStation, Ward
 
 
+class OwnPollingCenterView(APIView):
+    """Results for one polling centre, open only to people registered there."""
+
+    authentication_classes = WEB_AND_NATIVE_AUTHENTICATION
+    permission_classes = [IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        home = request.user.polling_center
+        if (
+            home is None
+            or home.code != kwargs["polling_center_code"]
+            or home.ward.number != kwargs["ward_number"]
+        ):
+            raise PermissionDenied(
+                "You can view results only for your own polling centre."
+            )
+
+
 # TODO: We can refactor this code to use a single view for all results and pass the admin level e.g. presidential, governor, senator as url parameter
-class PollingCenterPresidentialResultsAPIView(APIView):
+class PollingCenterPresidentialResultsAPIView(OwnPollingCenterView):
     """
     API view to retrieve presidential results for a polling center.
     """
@@ -81,7 +101,7 @@ class PollingCenterPresidentialResultsAPIView(APIView):
         )
 
 
-class PollingCenterGovernorResultsAPIView(APIView):
+class PollingCenterGovernorResultsAPIView(OwnPollingCenterView):
     """
     API view to retrieve governor results for a specific polling station.
     """
@@ -136,7 +156,7 @@ class PollingCenterGovernorResultsAPIView(APIView):
         )
 
 
-class PollingCenterSenatorResultsAPIView(APIView):
+class PollingCenterSenatorResultsAPIView(OwnPollingCenterView):
     """
     API view to retrieve senator results for a specific polling station.
     """
@@ -191,7 +211,7 @@ class PollingCenterSenatorResultsAPIView(APIView):
         )
 
 
-class PollingCenterWomenRepResultsAPIView(APIView):
+class PollingCenterWomenRepResultsAPIView(OwnPollingCenterView):
     """
     API view to retrieve Women Rep results for a specific polling station.
     """
@@ -246,7 +266,7 @@ class PollingCenterWomenRepResultsAPIView(APIView):
         )
 
 
-class PollingCenterMpResultsAPIView(APIView):
+class PollingCenterMpResultsAPIView(OwnPollingCenterView):
     """
     API view to retrieve MP results for a specific polling station.
     """
@@ -301,7 +321,7 @@ class PollingCenterMpResultsAPIView(APIView):
         )
 
 
-class PollingCenterMCAResultsAPIView(APIView):
+class PollingCenterMCAResultsAPIView(OwnPollingCenterView):
     """
     API view to retrieve MCA results for a specific polling station.
     """

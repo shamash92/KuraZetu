@@ -706,3 +706,43 @@ class TestPollingStationCandidatesAPI:
     def test_unknown_race_is_rejected(self, client, polling_station):
         response = client.get(self.url(polling_station.code, "mayor"))
         assert response.status_code == 400
+
+
+class TestWebResultsNeedTheirOwnArea:
+    """The web results page shows a person's own areas; nobody else's centre,
+    and nothing at all when signed out."""
+
+    def centre_url(self, centre):
+        return reverse(
+            "governor-results",
+            kwargs={
+                "ward_number": centre.ward.number,
+                "polling_center_code": centre.code,
+            },
+        )
+
+    def test_signed_out_requests_are_refused(self, polling_center):
+        client = APIClient()
+        county = reverse("county-presidential-results", kwargs={"level": "governor"})
+        assert client.get(county).status_code == 401
+        assert client.get(self.centre_url(polling_center)).status_code == 401
+
+    def test_a_person_sees_only_their_own_centre(self, user, ward, polling_center):
+        neighbour = PollingCenter.objects.create(
+            name="Neighbour Centre", code="098", ward=ward
+        )
+        user.polling_center = polling_center
+        user.save()
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        assert client.get(self.centre_url(polling_center)).status_code == 200
+        assert client.get(self.centre_url(neighbour)).status_code == 403
+
+    def test_area_totals_need_a_registered_centre(self, user):
+        client = APIClient()
+        client.force_authenticate(user=user)
+        response = client.get(
+            reverse("county-presidential-results", kwargs={"level": "governor"})
+        )
+        assert response.status_code == 403
