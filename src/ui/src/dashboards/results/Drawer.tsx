@@ -126,7 +126,7 @@ function DrawerBody({
     return (
         <div className="rd-drawer-body">
             <div>
-                <h3>Votes by polling station in {area.name}</h3>
+                <h3>Votes by polling station</h3>
                 {reported.length ? (
                     <StationVotes
                         rows={all ? reported : reported.slice(0, 5)}
@@ -134,10 +134,7 @@ function DrawerBody({
                         onOpen={onOpen}
                     />
                 ) : (
-                    <p className="rd-empty">
-                        No polling station in {area.name} has reported yet. Votes appear
-                        here as each Form 34A is uploaded.
-                    </p>
+                    <p className="rd-empty">No results yet.</p>
                 )}
                 <div className="rd-drawer-actions">
                     {reported.length > 5 && (
@@ -157,7 +154,7 @@ function DrawerBody({
                             className="rd-more"
                             onClick={() => onOpen(area)}
                         >
-                            Open {AREA_NAMES[next].toLowerCase()} in {area.name}
+                            Open {AREA_NAMES[next].toLowerCase()}
                         </button>
                     )}
                 </div>

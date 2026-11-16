@@ -131,14 +131,10 @@ test("a dashboard viewer sees their race and drills into an area", async () => {
     );
 
     await userEvent.click(screen.getByRole("button", {name: "Kaloleni Primary"}));
-    expect(
-        await screen.findByText(/No polling station in Kaloleni Primary has reported/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("No results yet.")).toBeInTheDocument();
     expect(requests).toContain("/api/results/dashboard/stations/?area=center&id=7");
 
-    await userEvent.click(
-        screen.getByRole("button", {name: "Open polling stations in Kaloleni Primary"}),
-    );
+    await userEvent.click(screen.getByRole("button", {name: "Open polling stations"}));
     expect(
         await screen.findByRole("heading", {name: "MCA race · Kaloleni Primary only"}),
     ).toBeInTheDocument();

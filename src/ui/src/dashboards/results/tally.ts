@@ -8,6 +8,14 @@ export const RACE_NAMES: Record<string, string> = {
     mp: "MP race",
     mca: "MCA race",
 };
+export const OFFICES: Record<string, string> = {
+    president: "President",
+    governor: "Governor",
+    senator: "Senator",
+    women_rep: "Women Rep",
+    mp: "MP",
+    mca: "MCA",
+};
 export const AREA_NAMES: Record<string, string> = {
     county: "Counties",
     constituency: "Constituencies",

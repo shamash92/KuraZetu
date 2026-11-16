@@ -12,8 +12,27 @@ import {
     type Results,
 } from "./dashboardApi";
 import {Summary} from "./Summary";
+import {OFFICES} from "./tally";
 import "../access/access.css";
 import "./dashboard.css";
+
+/** Whose dashboard this is, the race, and the area it covers. */
+function Who({data, fallback}: {data: Results | undefined; fallback: string}) {
+    if (!data) return <span>{fallback}</span>;
+    const root = data.breadcrumbs[0];
+    const parts = [
+        data.focus ?? fallback,
+        OFFICES[data.race] ?? data.race,
+        root.level === "national" ? "Kenya" : root.name,
+    ];
+    return (
+        <span className="rd-who">
+            {parts.map((part) => (
+                <span key={part}>{part}</span>
+            ))}
+        </span>
+    );
+}
 
 const DASHBOARD_QUERIES = new Set(["dashboard-results", "dashboard-stations"]);
 
@@ -90,7 +109,7 @@ export function CustomResults({
                 )}
             </nav>
             <div className="rd-sub">
-                <span>{context.dashboard?.name}</span>
+                <Who data={results.data} fallback={context.dashboard?.name ?? ""} />
                 <button
                     type="button"
                     className="rd-secondary"
