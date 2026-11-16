@@ -1,4 +1,5 @@
 @import "../styles/tokens.css";
+@import "../@/components/ui/button.css";
 
 .kz-landing,
 .kz-landing *,
@@ -147,7 +148,7 @@ footer.kz-footer {
   justify-content: space-between;
   width: 100%;
   padding: 7px 32px;
-  color: var(--copper-deep);
+  color: var(--text-accent);
   border-bottom: 1px solid var(--rule-08);
   background: rgba(247, 246, 243, 0.62);
   font-family: var(--mono);
@@ -299,60 +300,6 @@ footer.kz-footer {
   align-items: center;
   gap: 8px;
   margin-left: auto;
-}
-
-.kz-button {
-  display: inline-flex;
-  min-height: 42px;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 11px 20px;
-  color: var(--ink);
-  border: 1px solid var(--rule-16);
-  border-radius: 999px;
-  background: transparent;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1;
-  text-decoration: none;
-  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
-}
-
-.kz-button:hover {
-  border-color: var(--ink);
-  background: var(--surface);
-  transform: translateY(-1px);
-}
-
-.kz-button-lime {
-  color: var(--lime-ink);
-  border-color: var(--lime);
-  background: var(--lime);
-  font-weight: 750;
-}
-
-.kz-button-lime:hover {
-  border-color: var(--lime-deep);
-  background: var(--lime-deep);
-}
-
-.kz-button-ink {
-  color: var(--paper);
-  border-color: var(--ink);
-  background: var(--ink);
-}
-
-.kz-button-ink:hover {
-  color: white;
-  border-color: #000;
-  background: #000;
-}
-
-.kz-button-large {
-  min-height: 52px;
-  padding: 15px 25px;
-  font-size: 15px;
 }
 
 .kz-menu-button,
@@ -917,7 +864,7 @@ a.kz-pill:hover {
 }
 
 .kz-why-list > div:last-child { border-bottom: 0; }
-.kz-why-list strong { color: var(--copper-deep); font-family: var(--mono); font-size: 11px; letter-spacing: 0.17em; text-transform: uppercase; }
+.kz-why-list strong { color: var(--text-accent); font-family: var(--mono); font-size: 11px; letter-spacing: 0.17em; text-transform: uppercase; }
 .kz-why-list p { margin: 0; font-size: 14px; line-height: 1.55; }
 
 .kz-cta-wrap {
@@ -1004,7 +951,7 @@ footer.kz-footer {
 
 .kz-foot-grid > div > strong {
   margin-bottom: 13px;
-  color: var(--copper-deep);
+  color: var(--text-accent);
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.2em;
