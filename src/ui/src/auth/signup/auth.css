@@ -32,7 +32,7 @@
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--copper-deep);
+  color: var(--text-accent);
 }
 
 /* ── STEP 1 · Welcome / choice ─────────────────────────────────────── */

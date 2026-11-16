@@ -255,7 +255,7 @@
 
 .pv-map-result svg {
   flex: 0 0 auto;
-  color: var(--pv-copper);
+  color: var(--text-accent);
 }
 
 .pv-map-result strong {
@@ -322,7 +322,7 @@
 }
 
 .pv-map-recenter svg {
-  color: var(--pv-copper);
+  color: var(--text-accent);
 }
 
 .pv-map-ward-label {
@@ -620,7 +620,7 @@
 
 .pv-station-tag {
   margin-top: 9px;
-  color: var(--pv-copper);
+  color: var(--text-accent);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 9px;
   font-weight: 700;
@@ -923,7 +923,7 @@
 }
 
 .pv-inline-editor-status.is-awaiting {
-  color: var(--pv-copper);
+  color: var(--text-accent);
 }
 
 .pv-inline-editor-actions {
