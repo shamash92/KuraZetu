@@ -45,6 +45,8 @@ footer.kz-footer {
   z-index: 2;
 }
 
+.kz-landing > .kz-ui-navbar { position: sticky; top: -31px; z-index: 30; }
+
 .kz-paper-bg {
   position: absolute;
   inset: 0;

@@ -1,31 +1,40 @@
 @layer components {
   .kz-ui-navbar { container: kz-navbar / inline-size; width: 100%; color: var(--ink); font-family: var(--sans); }
-  .kz-ui-navbar-notice { padding: 8px 24px; border-bottom: 1px solid var(--rule-08); background: var(--paper); color: var(--text-accent); font: 600 11px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
-  .kz-ui-navbar-header { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding: 18px 24px; border-bottom: 1px solid var(--rule-08); background: var(--glass); backdrop-filter: blur(20px); }
-  .kz-ui-navbar-brand { flex: 0 0 auto; border-radius: 4px; }
-  .kz-ui-navbar-links { display: flex; align-items: center; gap: 4px; }
+  .kz-ui-navbar-notice { display: flex; min-height: 31px; align-items: center; justify-content: space-between; gap: 16px; padding: 7px 32px; border-bottom: 1px solid var(--rule-08); background: rgba(247, 246, 243, .62); color: var(--text-accent); font: 600 10px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+  .kz-ui-navbar-notice-source { color: var(--mute); }
+  .kz-ui-navbar-header { position: relative; display: flex; min-height: 81px; align-items: center; gap: 32px; padding: 18px 32px; border-bottom: 1px solid var(--rule-08); background: var(--glass); backdrop-filter: blur(20px); }
+  .kz-ui-navbar-brand { display: inline-flex; flex: 0 0 auto; flex-direction: column; align-items: flex-start; line-height: 1; text-decoration: none; }
+  .kz-ui-navbar-brand-tag { margin-top: 4px; margin-left: calc(125px * 118 / 428); color: var(--mute); font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+  .kz-ui-navbar-links { display: flex; align-items: center; gap: 6px; margin-left: 14px; }
+  .kz-ui-navbar-actions .kz-button, .kz-ui-navbar-mobile-actions .kz-button { min-height: 42px; gap: 9px; padding: 11px 20px; font-weight: 650; line-height: 1; }
+  .kz-ui-navbar-actions .kz-button-lime, .kz-ui-navbar-mobile-actions .kz-button-lime { font-weight: 750; }
   .kz-ui-navbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .kz-ui-navbar a:not(.kz-button), .kz-ui-navbar summary { color: var(--ink); }
-  .kz-ui-navbar-links a, .kz-ui-navbar summary, .kz-ui-navbar-mobile > a { display: flex; min-height: 44px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 999px; font-size: 14px; text-decoration: none; cursor: pointer; }
-  .kz-ui-navbar a:focus-visible, .kz-ui-navbar summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .kz-ui-navbar a:not(.kz-button):active, .kz-ui-navbar summary:active { background: var(--surface); }
-  .kz-ui-navbar a[aria-current="page"], .kz-ui-navbar summary[data-current] { font-weight: 700; text-decoration: underline; text-decoration-color: var(--lime-deep); text-decoration-thickness: 3px; text-underline-offset: 6px; }
+  .kz-ui-navbar-links a, .kz-ui-navbar summary, .kz-ui-navbar-mobile > a { display: flex; align-items: center; gap: 6px; padding: 8px 12px; color: var(--ink); font-size: 14px; font-weight: 500; text-decoration: none; cursor: pointer; }
+  .kz-ui-navbar a:not(.kz-button):focus-visible, .kz-ui-navbar summary:focus-visible { outline: none; text-decoration: underline; text-decoration-color: var(--text-accent); text-decoration-thickness: 3px; text-underline-offset: 7px; }
+  .kz-ui-navbar-brand:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+  .kz-ui-navbar a:not(.kz-button):active, .kz-ui-navbar summary:active { color: var(--text-accent); }
+  .kz-ui-navbar a[aria-current="page"], .kz-ui-navbar summary[data-current] { font-weight: 700; text-decoration: underline; text-decoration-color: var(--lime-deep); text-decoration-thickness: 3px; text-underline-offset: 7px; }
   .kz-ui-navbar-group { position: relative; }
   .kz-ui-navbar summary { list-style: none; }
   .kz-ui-navbar summary::-webkit-details-marker { display: none; }
-  .kz-ui-navbar-dropdown { position: absolute; top: 100%; left: 0; z-index: 40; min-width: 180px; padding: 8px; border: 1px solid var(--rule-16); border-radius: 14px; background: var(--card); }
-  .kz-ui-navbar-dropdown a { display: flex; min-height: 44px; align-items: center; padding: 10px 12px; border-radius: 8px; }
+  .kz-ui-navbar-group[open] summary svg { transform: rotate(180deg); }
+  .kz-ui-navbar-dropdown { position: absolute; top: calc(100% + 10px); left: 0; z-index: 40; display: grid; gap: 2px; min-width: 190px; padding: 6px; border: 1px solid var(--rule-16); border-radius: 14px; background: var(--card); }
+  .kz-ui-navbar-dropdown a { border-radius: 9px; }
   .kz-ui-navbar-toggle, .kz-ui-navbar-mobile { display: none; }
   .kz-ui-navbar-mobile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   @media (hover: hover) and (pointer: fine) {
-    .kz-ui-navbar a:not(.kz-button):hover, .kz-ui-navbar summary:hover { background: var(--surface); }
+    .kz-ui-navbar-links a:hover, .kz-ui-navbar summary:hover, .kz-ui-navbar-mobile > a:hover { text-decoration: underline; text-decoration-color: var(--lime-deep); text-decoration-thickness: 3px; text-underline-offset: 7px; }
   }
-  @container kz-navbar (max-width: 1000px) {
-    .kz-ui-navbar-header { gap: 12px; padding: 16px; }
-    .kz-ui-navbar-notice { padding: 8px 16px; }
-    .kz-ui-navbar-links, .kz-ui-navbar-actions { display: none; }
+  @container kz-navbar (max-width: 1050px) {
+    .kz-ui-navbar-links { display: none; }
     .kz-ui-navbar-toggle { display: inline-flex; margin-left: auto; }
-    .kz-ui-navbar-mobile { display: flex; flex: 1 0 100%; flex-direction: column; gap: 4px; }
+    .kz-ui-navbar-mobile { position: absolute; top: calc(100% + 1px); right: 0; left: 0; z-index: 40; display: grid; gap: 2px; padding: 14px 18px 18px; border-bottom: 1px solid var(--rule-08); background: var(--card); }
+    .kz-ui-navbar-mobile > a { padding: 11px 12px; }
     .kz-ui-navbar-mobile .kz-ui-navbar-dropdown { position: static; margin-top: 4px; }
+  }
+  @container kz-navbar (max-width: 800px) {
+    .kz-ui-navbar-header { min-height: 70px; padding: 14px 18px; }
+    .kz-ui-navbar-notice { justify-content: center; padding: 7px 18px; text-align: center; }
+    .kz-ui-navbar-notice-source, .kz-ui-navbar-actions { display: none; }
   }
 }

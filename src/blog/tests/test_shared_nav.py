@@ -52,8 +52,10 @@ def test_page_navigation_matches_landing_page(client, page, current):
     landing = (
         Path(__file__).resolve().parents[2] / "ui/src/landing-pages/index.tsx"
     ).read_text()
-    site_links = landing.split("function SiteNavLinks", 1)[1].split("\n}\n", 1)[0]
-    expected_links = re.findall(r'href="([^"]+)"', site_links)
+    ui = Path(__file__).resolve().parents[2] / "ui/src"
+    site_links = (ui / "landing-pages/site-navigation.ts").read_text()
+    navbar = (ui / "@/components/ui/navbar.tsx").read_text()
+    expected_links = re.findall(r'href: "([^"]+)"', site_links)
 
     assert nav.links == expected_links
     for text in (
@@ -70,7 +72,7 @@ def test_page_navigation_matches_landing_page(client, page, current):
         "Sign in",
         "Get started",
     ):
-        assert text in landing
+        assert text in landing + site_links + navbar
         assert text in html
     for href in ("/accounts/login/", "/ui/signup/"):
         assert f'href="{href}"' in landing

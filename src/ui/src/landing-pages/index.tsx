@@ -3,14 +3,12 @@ import {
     ArrowRight,
     Camera,
     Check,
-    ChevronDown,
     Clock3,
     Eye,
     Github,
     Home,
     List,
     MapPin,
-    Menu,
     Navigation,
     Send,
     ShieldCheck,
@@ -35,6 +33,9 @@ import {useAuth} from "../App";
 import {Lockup} from "../brand/Mark";
 import "./kenya-counties";
 import "./landing.css";
+import {Navbar, NavbarLinks} from "@/src/@/components/ui/navbar";
+import {Button} from "@/src/@/components/ui/button";
+import {siteNavigationItems, type NavSection} from "./site-navigation";
 
 type County = {
     id: string;
@@ -270,66 +271,12 @@ function AtlasBackground() {
     );
 }
 
-type NavSection = "pinverify" | "specs" | "brand";
-
-/**
- * The site's links, the same wherever a navigation bar appears. The Django
- * pages render the same set from `templates/shared/site_nav.html`; a test
- * keeps the two in step.
- */
+/** Shared links also used by the game header and the Django navigation parity check. */
 export function SiteNavLinks({current}: {current?: NavSection}) {
-    return (
-        <>
-            <a
-                href="/ui/game/"
-                aria-current={current === "pinverify" ? "page" : undefined}
-            >
-                pinVerify254
-            </a>
-            <a href="https://kurazetu.readthedocs.io/" target="_blank" rel="noreferrer">
-                Docs
-            </a>
-            <a href="/blog/">Blog</a>
-            <a href="/ui/brand/" aria-current={current === "brand" ? "page" : undefined}>
-                Brand
-            </a>
-            <details
-                className="kz-nav-group"
-                // Closes when focus leaves it, so it does not stay open over
-                // the page after a click elsewhere.
-                onBlur={(event) => {
-                    if (!event.currentTarget.contains(event.relatedTarget)) {
-                        event.currentTarget.open = false;
-                    }
-                }}
-            >
-                <summary data-current={current === "specs" || undefined}>
-                    Developers
-                    <ChevronDown size={14} aria-hidden="true" />
-                </summary>
-                <div className="kz-nav-menu">
-                    <a
-                        href="/ui/specs/"
-                        aria-current={current === "specs" ? "page" : undefined}
-                    >
-                        Specs
-                    </a>
-                    <a href="/api/schema/rapidoc/">API</a>
-                    <a
-                        href="https://github.com/shamash92/KuraZetu.git"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        Contribute
-                    </a>
-                </div>
-            </details>
-        </>
-    );
+    return <NavbarLinks items={siteNavigationItems(current)} />;
 }
 
 export function LandingNav({current}: {current?: NavSection} = {}) {
-    const [open, setOpen] = useState(false);
     const isAuthenticated = useAuth();
     const list = useQuery({
         queryKey: ["dashboard-list"],
@@ -339,84 +286,13 @@ export function LandingNav({current}: {current?: NavSection} = {}) {
     });
     const dashboard = list.data?.dashboards[0];
 
-    return (
-        <>
-            <div className="kz-disclaimer">
-                <span>Citizen tally · Not an IEBC system</span>
-                <span>Open source · MIT · github.com/shamash92/kurazetu</span>
-            </div>
-            <header className="kz-topbar">
-                <Brand />
-                <nav className="kz-nav-links" aria-label="Main navigation">
-                    <SiteNavLinks current={current} />
-                </nav>
-                <div className="kz-nav-actions">
-                    {isAuthenticated ? (
-                        <>
-                            {dashboard && (
-                                <a
-                                    className="kz-button kz-button-lime"
-                                    href={dashboard.url}
-                                >
-                                    Your dashboard
-                                </a>
-                            )}
-                            <a className="kz-button" href="/accounts/logout/">
-                                Log out
-                            </a>
-                        </>
-                    ) : (
-                        <>
-                            <a className="kz-button" href="/accounts/login/">
-                                Sign in
-                            </a>
-                            <a className="kz-button kz-button-lime" href="/ui/signup/">
-                                Get started <ArrowRight size={15} />
-                            </a>
-                        </>
-                    )}
-                </div>
-                <button
-                    className="kz-menu-button"
-                    type="button"
-                    aria-label={open ? "Close navigation" : "Open navigation"}
-                    aria-expanded={open}
-                    onClick={() => setOpen((value) => !value)}
-                >
-                    {open ? <X size={22} /> : <Menu size={22} />}
-                </button>
-                {open && (
-                    <nav className="kz-mobile-nav" aria-label="Mobile navigation">
-                        <a href="/ui/game/">pinVerify254</a>
-                        <a href="https://kurazetu.readthedocs.io/">Docs</a>
-                        <a href="/blog/">Blog</a>
-                        <a href="/ui/brand/">Brand</a>
-                        <span className="kz-mobile-nav-label">Developers</span>
-                        <a href="/ui/specs/">Specs</a>
-                        <a href="/api/schema/rapidoc/">API</a>
-                        <a href="https://github.com/shamash92/KuraZetu.git">
-                            Contribute
-                        </a>
-                        {isAuthenticated ? (
-                            <>
-                                {dashboard && (
-                                    <a href={dashboard.url}>Your dashboard</a>
-                                )}
-                                <a href="/accounts/logout/">Log out</a>
-                            </>
-                        ) : (
-                            <>
-                                <a href="/accounts/login/">Sign in</a>
-                                <a className="kz-button-lime" href="/ui/signup/">
-                                    Get started
-                                </a>
-                            </>
-                        )}
-                    </nav>
-                )}
-            </header>
-        </>
-    );
+    return <Navbar items={siteNavigationItems(current)} actions={isAuthenticated ? (
+        <>{dashboard && <Button asChild><a href={dashboard.url}>Your dashboard</a></Button>}
+        <Button asChild variant="outline"><a href="/accounts/logout/">Log out</a></Button></>
+    ) : (
+        <><Button asChild variant="outline"><a href="/accounts/login/">Sign in</a></Button>
+        <Button asChild><a href="/ui/signup/">Get started <ArrowRight aria-hidden="true" size={15} /></a></Button></>
+    )} />;
 }
 
 function PhoneStage() {
