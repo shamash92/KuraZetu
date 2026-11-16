@@ -110,7 +110,7 @@ describe("polling center results tabs", () => {
     it("shows the presidential race first, aggregated across streams", async () => {
         renderPollingCenterResults();
 
-        expect(await screen.findByText("Asha Wanjiru")).toBeInTheDocument();
+        expect((await screen.findAllByText("Asha Wanjiru"))[0]).toBeVisible();
         expect(screen.getByText("1,200 votes")).toBeInTheDocument();
         expect(screen.queryByText("Baraka Otieno")).not.toBeInTheDocument();
     });
@@ -126,7 +126,7 @@ describe("polling center results tabs", () => {
     it("requests the signed-in user's ward and centre", async () => {
         renderPollingCenterResults();
 
-        await screen.findByText("Asha Wanjiru");
+        await screen.findAllByText("Asha Wanjiru");
         expect(global.fetch).toHaveBeenCalledWith(
             `/api/results/polling-center/${WARD_NUMBER}/${CENTER_CODE}/presidential/`,
             expect.objectContaining({method: "GET"}),
@@ -137,12 +137,12 @@ describe("polling center results tabs", () => {
         const user = userEvent.setup();
         renderPollingCenterResults();
 
-        await screen.findByText("Asha Wanjiru");
+        await screen.findAllByText("Asha Wanjiru");
         expect(global.fetch).toHaveBeenCalledTimes(1);
 
         await user.click(screen.getByRole("button", {name: /governor/i}));
 
-        expect(await screen.findByText("Baraka Otieno")).toBeInTheDocument();
+        expect((await screen.findAllByText("Baraka Otieno"))[0]).toBeVisible();
         expect(screen.queryByText("Asha Wanjiru")).not.toBeInTheDocument();
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
@@ -151,14 +151,14 @@ describe("polling center results tabs", () => {
         const user = userEvent.setup();
         renderPollingCenterResults();
 
-        await screen.findByText("Asha Wanjiru");
+        await screen.findAllByText("Asha Wanjiru");
         await user.click(screen.getByRole("button", {name: /governor/i}));
-        await screen.findByText("Baraka Otieno");
+        await screen.findAllByText("Baraka Otieno");
         expect(global.fetch).toHaveBeenCalledTimes(2);
 
         await user.click(screen.getByRole("button", {name: /president/i}));
 
-        expect(await screen.findByText("Asha Wanjiru")).toBeInTheDocument();
+        expect((await screen.findAllByText("Asha Wanjiru"))[0]).toBeVisible();
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
@@ -166,7 +166,7 @@ describe("polling center results tabs", () => {
         const user = userEvent.setup();
         renderPollingCenterResults();
 
-        await screen.findByText("Asha Wanjiru");
+        await screen.findAllByText("Asha Wanjiru");
         await user.click(screen.getByRole("button", {name: /senator/i}));
 
         expect(
@@ -194,7 +194,7 @@ describe("polling center results tabs", () => {
 
         await user.click(screen.getByRole("button", {name: /try again/i}));
 
-        expect(await screen.findByText("Asha Wanjiru")).toBeInTheDocument();
+        expect((await screen.findAllByText("Asha Wanjiru"))[0]).toBeVisible();
     });
 
     it("treats a 200 carrying an error body as a failure", async () => {

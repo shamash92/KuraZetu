@@ -1,0 +1,15 @@
+import type {Meta, StoryObj} from "@storybook/react-vite";
+import {ResultsChart} from "@/src/@/components/ui/results-chart";
+const data = [{name: "Candidate A", value: 1240, color: "#2532a8"}, {name: "Candidate B", value: 980, color: "#8a4a25"}, {name: "Candidate C", value: 430, color: "#6b6d72"}];
+const meta = {title: "Components/ResultsChart", component: ResultsChart, args: {label: "Example candidate votes", data, className: "max-w-2xl"}, parameters: {docs: {description: {component: "The custom result bars and candidate donut used by the application. Colors identify the data series, labels carry the same meaning without color, and source order is preserved. Figures are illustrative."}}}} satisfies Meta<typeof ResultsChart>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const Bars: Story = {};
+export const Donut: Story = {args: {kind: "donut"}};
+export const Empty: Story = {args: {data: []}};
+export const ZeroVotes: Story = {args: {data: data.map((entry) => ({...entry, value: 0}))}};
+export const Loading: Story = {args: {status: "loading"}};
+export const Error: Story = {args: {status: "error"}};
+export const SingleSeries: Story = {args: {data: data.slice(0, 1), kind: "donut"}};
+export const LongNames: Story = {args: {kind: "donut", data: data.map((entry) => ({...entry, name: `${entry.name} with a longer descriptive name`}))}};
+export const UnspecifiedColors: Story = {args: {data: data.map(({name, value}) => ({name, value}))}};

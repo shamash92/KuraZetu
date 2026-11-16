@@ -1,0 +1,16 @@
+@layer components {
+ .kz-results-chart { color: var(--ink); font: 14px/1.5 var(--sans); }
+ .kz-results-chart > figcaption { margin-bottom: 20px; font-size: 20px; font-weight: 800; letter-spacing: -.025em; }
+ .kz-results-chart-state { padding: 32px 0; color: var(--mute-deep); }
+ .kz-result-bars, .kz-result-legend { margin: 0; padding: 0; list-style: none; }
+ .kz-result-bars li { display: grid; grid-template-columns: minmax(100px, 150px) minmax(32px, 1fr) 90px; align-items: center; gap: 12px; padding: 8px 0; }
+ .kz-result-name { min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 700; }
+ .kz-result-track { height: 16px; border-radius: 5px; background: var(--paper-deep); overflow: clip; }
+ .kz-result-track i { display: block; height: 100%; border-radius: inherit; }
+ .kz-result-value { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+ .kz-result-value small { display: block; color: var(--mute-deep); font-size: 11.5px; font-weight: 500; }
+ .kz-result-legend li { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 8px 0; border-bottom: 1px solid var(--rule-08); }
+ .kz-result-legend .kz-result-name { display: flex; align-items: center; gap: 8px; }
+ .kz-result-legend i { display: block; width: 12px; height: 12px; flex-shrink: 0; border-radius: 3px; }
+ @media (max-width: 480px) { .kz-result-bars li { grid-template-columns: minmax(80px, 110px) minmax(24px, 1fr) 65px; gap: 8px; } .kz-result-track { height: 12px; } }
+}
