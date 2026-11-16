@@ -16,6 +16,7 @@ from results.api.dashboard_access_views import (
 from results.api.dashboard_views import (
     DashboardContextView,
     DashboardResultsView,
+    DashboardShapesView,
     DashboardStationsView,
     DashboardUploadPhotoView,
     DashboardUploadsView,
@@ -50,6 +51,7 @@ urlpatterns = [
         DashboardStationsView.as_view(),
         name="dashboard-stations",
     ),
+    path("dashboard/shapes/", DashboardShapesView.as_view(), name="dashboard-shapes"),
     path(
         "dashboard/uploads/", DashboardUploadsView.as_view(), name="dashboard-uploads"
     ),

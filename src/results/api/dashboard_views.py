@@ -10,6 +10,7 @@ from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
 from results.api.agreement_views import _without_metadata
 from results.dashboard_access import active_dashboard, may_manage, may_onboard
 from results.dashboard_results import (
+    area_shapes,
     dashboard_payload,
     evidence_upload,
     station_rows,
@@ -73,6 +74,12 @@ class DashboardStationsView(DashboardResultsView):
     """The polling stations inside one area of the dashboard."""
 
     build = staticmethod(station_rows)
+
+
+class DashboardShapesView(DashboardResultsView):
+    """The map outlines of the areas inside one area of the dashboard."""
+
+    build = staticmethod(area_shapes)
 
 
 class DashboardUploadsView(DashboardView):
