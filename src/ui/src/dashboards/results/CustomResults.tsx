@@ -3,6 +3,7 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 
 import {Activity} from "./Activity";
 import {Areas, UpButton} from "./Areas";
+import {DashboardSwitch} from "./DashboardSwitch";
 import {
     DashboardError,
     fetchDashboard,
@@ -163,11 +164,14 @@ export function CustomResults({
                 <a href="/">
                     Kura Zetu<span>.</span>
                 </a>
-                {context.manage_url && (
-                    <a className="da-results-button" href={context.manage_url}>
-                        Manage viewers
-                    </a>
-                )}
+                <div className="rd-nav-actions">
+                    <DashboardSwitch current={context.dashboard?.id} />
+                    {context.manage_url && (
+                        <a className="da-results-button" href={context.manage_url}>
+                            Manage viewers
+                        </a>
+                    )}
+                </div>
             </nav>
             <div className="rd-sub">
                 <Who data={results.data} fallback={context.dashboard?.name ?? ""} />

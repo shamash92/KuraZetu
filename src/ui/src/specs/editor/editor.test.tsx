@@ -47,6 +47,8 @@ function fakeAuthorApi(initial: Array<Record<string, any>> = []) {
     }
 
     function answer(url: string, method: string, body: Record<string, any>) {
+        // The site navigation asks which dashboards this author can open.
+        if (url === "/api/results/dashboard/list/") return {dashboards: []};
         if (url === "/api/specs/author/sets/") {
             if (method === "POST") sets.push({...body, slug: "set-900"});
             return method === "POST" ? sets[sets.length - 1] : [...sets];
