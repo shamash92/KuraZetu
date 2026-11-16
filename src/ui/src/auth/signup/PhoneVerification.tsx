@@ -1,3 +1,4 @@
+import {OTPInput} from "@/src/@/components/ui/otp-input";
 import "../../landing-pages/landing.css";
 import "./auth.css";
 
@@ -187,46 +188,7 @@ export default function PhoneVerification() {
                                 <label className="label" htmlFor="signup-otp-code">
                                     Six-digit code
                                 </label>
-                                <div className="otp-control">
-                                    <input
-                                        id="signup-otp-code"
-                                        className="otp-code-input"
-                                        ref={codeInput}
-                                        autoComplete="one-time-code"
-                                        inputMode="numeric"
-                                        maxLength={6}
-                                        value={code}
-                                        onChange={(event) =>
-                                            setCode(
-                                                event.target.value
-                                                    .replace(/\D/g, "")
-                                                    .slice(0, 6),
-                                            )
-                                        }
-                                        aria-describedby={
-                                            error
-                                                ? "signup-otp-help signup-otp-error"
-                                                : "signup-otp-help"
-                                        }
-                                        aria-invalid={error ? true : undefined}
-                                    />
-                                    <div className="otp-cells" aria-hidden="true">
-                                        {Array.from({length: 6}, (_, index) => (
-                                            <span
-                                                className={`otp-cell ${
-                                                    code[index] ? "filled" : ""
-                                                } ${
-                                                    index === code.length && code.length < 6
-                                                        ? "cursor"
-                                                        : ""
-                                                }`}
-                                                key={index}
-                                            >
-                                                {code[index] ?? ""}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
+                                <OTPInput id="signup-otp-code" label={false} ref={codeInput} value={code} onChange={setCode} aria-describedby={error ? "signup-otp-help signup-otp-error" : "signup-otp-help"} aria-invalid={error ? true : undefined} />
                                 <p className="otp-help" id="signup-otp-help">
                                     {hasExpired
                                         ? "This code has expired. Request another one below."

@@ -1,0 +1,12 @@
+@layer components {
+  .kz-otp { display: grid; gap: 8px; max-width: 390px; }
+  .kz-otp-control { position: relative; }
+  .kz-otp-input { position: absolute; inset: 0; z-index: 1; width: 100%; border: 0; font-size: 16px; opacity: 0; cursor: text; }
+  .kz-otp-cells { display: grid; gap: 8px; }
+  .kz-otp-cell { display: grid; min-height: 56px; place-items: center; border: 1.5px solid var(--rule-16); border-radius: 12px; background: var(--card); color: var(--ink); font: 800 22px/1 var(--mono); font-variant-numeric: tabular-nums; }
+  .kz-otp-input:focus-visible + .kz-otp-cells { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 15px; }
+  .kz-otp-cell.is-filled { border-color: var(--ink); background: var(--surface); }
+  .kz-otp-cell.is-cursor { border-color: var(--green-deep); }
+  .kz-otp-cell.is-invalid { border-color: var(--red); }
+  .kz-otp-control[data-disabled] { opacity: .5; }
+}
