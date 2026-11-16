@@ -16,6 +16,7 @@ from results.api.dashboard_access_views import (
 from results.api.dashboard_views import (
     DashboardActivityView,
     DashboardContextView,
+    DashboardListView,
     DashboardResultsView,
     DashboardShapesView,
     DashboardStationsView,
@@ -44,6 +45,7 @@ from results.api.views import (
 
 urlpatterns = [
     path("dashboard/", DashboardContextView.as_view(), name="dashboard-context"),
+    path("dashboard/list/", DashboardListView.as_view(), name="dashboard-list"),
     path(
         "dashboard/results/", DashboardResultsView.as_view(), name="dashboard-results"
     ),

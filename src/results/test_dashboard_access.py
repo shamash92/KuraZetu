@@ -163,3 +163,34 @@ def test_sales_staff_find_an_aspirant_by_full_name(client, mca_candidates):
     ).json()["options"]
 
     assert [option["id"] for option in found] == [wanted.pk]
+
+
+def test_signing_in_opens_the_dashboard_listed_for_that_person(client):
+    viewer = person("+254700000041", is_phone_verified=True)
+    sign_in = {"phone_number": "+254700000041", "password": "test-password"}
+    assert client.post(reverse("login"), sign_in)["Location"] == "/"
+    assert client.get(reverse("dashboard-list")).json() == {"dashboards": []}
+    client.logout()
+
+    dashboard = ResultsDashboard.objects.create(
+        kind="media",
+        name="Newsroom",
+        media_house=MediaHouse.objects.create(name="Newsroom"),
+        active=True,
+    )
+    add_member(dashboard, viewer.phone_number)
+    assert client.post(reverse("login"), sign_in)["Location"] == "/ui/dashboards/user/"
+    assert client.get(reverse("dashboard-list")).json() == {
+        "dashboards": [
+            {
+                "id": dashboard.pk,
+                "name": "Newsroom",
+                "kind": "media",
+                "url": "/ui/dashboards/user/",
+            }
+        ]
+    }
+
+    dashboard.active = False
+    dashboard.save()
+    assert client.get(reverse("dashboard-list")).json() == {"dashboards": []}

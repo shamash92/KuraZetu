@@ -53,6 +53,29 @@ class DashboardContextView(DashboardView):
         )
 
 
+class DashboardListView(DashboardView):
+    """The dashboards this person can open."""
+
+    def get(self, request):
+        dashboard = active_dashboard(request.user)
+        return Response(
+            {
+                "dashboards": (
+                    [
+                        {
+                            "id": dashboard.pk,
+                            "name": dashboard.name,
+                            "kind": dashboard.kind,
+                            "url": "/ui/dashboards/user/",
+                        }
+                    ]
+                    if dashboard
+                    else []
+                )
+            }
+        )
+
+
 class DashboardResultsView(DashboardView):
     build = staticmethod(dashboard_payload)
 

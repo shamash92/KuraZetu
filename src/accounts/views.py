@@ -6,6 +6,7 @@ from django.views import generic
 from accounts.deletion import DeletionRefused, delete_account
 from accounts.forms import LoginForm
 from accounts.phone_verification import PASSWORD_RESET_PHONE_NUMBER_SESSION_KEY
+from results.dashboard_access import active_dashboard
 
 
 def home_view(request):
@@ -14,7 +15,6 @@ def home_view(request):
 
 class LoginView(generic.FormView):
     form_class = LoginForm
-    success_url = "/"
     template_name = "accounts/login.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -33,6 +33,10 @@ class LoginView(generic.FormView):
             return redirect("/ui/password-reset/?reason=phone_unverified")
         login(self.request, form.user)
         return super().form_valid(form)
+
+    def get_success_url(self):
+        # People on an active dashboard land on it instead of the public page.
+        return "/ui/dashboards/user/" if active_dashboard(self.request.user) else "/"
 
 
 def logout_view(request):
