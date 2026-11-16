@@ -74,6 +74,13 @@ function GapLine({tally}: {tally: Tally}) {
     );
 }
 
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/** The party's own colour, when one has been set. */
+function partyColour(colour: string | null) {
+    return colour && HEX.test(colour) ? colour : undefined;
+}
+
 function CandidateBars({tally, kind}: {tally: Tally; kind: string}) {
     if (!tally.candidates.length) {
         return <p className="rd-empty">No candidates are listed for this race yet.</p>;
@@ -102,6 +109,7 @@ function CandidateBars({tally, kind}: {tally: Tally; kind: string}) {
                         <i
                             style={{
                                 width: `${top ? (candidate.votes * 100) / top : 0}%`,
+                                background: partyColour(candidate.colour),
                             }}
                         />
                     </div>
@@ -131,7 +139,7 @@ export function Summary({
         <section className="rd-band rd-wm">
             <div className="rd-band-head">
                 <h1>{title(data, up)}</h1>
-                <span className={`rd-chip ${tone}`}>{label}</span>
+                <span className={`rd-chip rd-status ${tone}`}>{label}</span>
             </div>
             <div className="rd-band-grid">
                 <div className="rd-nums">

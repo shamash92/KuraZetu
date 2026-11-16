@@ -10,6 +10,7 @@ from accounts.authentication import WEB_AND_NATIVE_AUTHENTICATION
 from results.api.agreement_views import _without_metadata
 from results.dashboard_access import active_dashboard, may_manage, may_onboard
 from results.dashboard_results import (
+    activity,
     area_shapes,
     dashboard_payload,
     evidence_upload,
@@ -80,6 +81,20 @@ class DashboardShapesView(DashboardResultsView):
     """The map outlines of the areas inside one area of the dashboard."""
 
     build = staticmethod(area_shapes)
+
+
+class DashboardActivityView(DashboardView):
+    """Contested stations and the latest uploads across the dashboard area."""
+
+    def get(self, request):
+        dashboard = active_dashboard(request.user)
+        if dashboard is None:
+            raise Http404
+        try:
+            limit = min(max(int(request.query_params.get("limit", 5)), 1), 50)
+        except ValueError:
+            raise Http404
+        return Response(activity(dashboard, limit))
 
 
 class DashboardUploadsView(DashboardView):

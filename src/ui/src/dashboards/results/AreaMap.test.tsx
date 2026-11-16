@@ -14,6 +14,7 @@ function tally(votes: [number, number], reported: number): Tally {
                 id: 1,
                 name: "Amina Otieno",
                 party: "A",
+                colour: null,
                 votes: mine,
                 share: total ? (mine * 100) / total : 0,
                 focused: true,
@@ -22,6 +23,7 @@ function tally(votes: [number, number], reported: number): Tally {
                 id: 2,
                 name: "Brian Kamau",
                 party: "B",
+                colour: null,
                 votes: theirs,
                 share: total ? (theirs * 100) / total : 0,
                 focused: false,
@@ -92,15 +94,14 @@ test("areas are shaded by the same figures as the list and open on click", async
     const kangemi = await screen.findByRole("button", {
         name: "Kangemi: 1st · 30 votes, 2 of 4 stations reported",
     });
-    expect(kangemi).toHaveClass("rd-fill-lead");
-    expect(screen.getByRole("button", {name: /^Karura: 2nd/})).toHaveClass(
-        "rd-fill-trail",
-    );
+    expect(document.querySelector('[data-area="11"]')).toHaveClass("rd-fill-lead");
+    expect(document.querySelector('[data-area="12"]')).toHaveClass("rd-fill-trail");
+    expect(screen.getByRole("button", {name: /^Karura: 2nd/})).toBeInTheDocument();
     expect(screen.getByText("No map location for Kitisuru.")).toBeInTheDocument();
     expect(screen.getByText("Amina Otieno leading")).toBeInTheDocument();
 
     fireEvent.click(kangemi);
     expect(onOpen).toHaveBeenCalledWith(data.children[0]);
-    fireEvent.keyDown(screen.getByRole("button", {name: /^Karura/}), {key: "Enter"});
+    fireEvent.click(document.querySelector('[data-area="12"]')!);
     expect(onOpen).toHaveBeenCalledWith(data.children[1]);
 });

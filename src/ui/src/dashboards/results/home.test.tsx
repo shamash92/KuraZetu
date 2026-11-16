@@ -91,10 +91,32 @@ function respond(context: unknown) {
                         }
                   : url.startsWith("/api/results/dashboard/stations/")
                     ? {
-                          area: {level: "center", id: 7, name: "Kaloleni Primary"},
-                          stations: [],
+                          area: {level: "ward", id: 3, name: "Kaloleni"},
+                          stations: [
+                              {
+                                  level: "station",
+                                  id: 9,
+                                  name: "Kaloleni Primary · Station 1",
+                                  center: {id: 7, name: "Kaloleni Primary"},
+                                  stream: 1,
+                                  reported: false,
+                                  disagrees: false,
+                                  votes: null,
+                                  position: null,
+                                  tied: false,
+                                  leaders: [],
+                              },
+                          ],
                       }
-                    : {results: [], data: [], streams: 0};
+                    : url.startsWith("/api/results/dashboard/activity/")
+                      ? {contested_total: 0, contested: [], recent: []}
+                      : url.startsWith("/api/results/dashboard/uploads/")
+                        ? {
+                              station: {level: "station", id: 9, name: "S"},
+                              candidates: [],
+                              uploads: [],
+                          }
+                        : {results: [], data: [], streams: 0};
         return Promise.resolve({
             ok: true,
             status: 200,
@@ -112,7 +134,7 @@ function show() {
     );
 }
 
-test("a dashboard viewer sees their race and drills into an area", async () => {
+test("a ward dashboard lists centres with streams and opens one alongside", async () => {
     const requests = respond({
         dashboard: {id: 1, name: "Amina Otieno MCA dashboard", kind: "aspirant"},
         manage_url: "/ui/dashboards/1/access/",
@@ -124,21 +146,25 @@ test("a dashboard viewer sees their race and drills into an area", async () => {
         await screen.findByRole("heading", {name: "MCA race · all of Kaloleni"}),
     ).toBeInTheDocument();
     expect(screen.getByText("Tied with Brian Kamau")).toBeInTheDocument();
-    expect(screen.getByText("No results")).toBeInTheDocument();
     expect(screen.getByRole("link", {name: "Manage viewers"})).toHaveAttribute(
         "href",
         "/ui/dashboards/1/access/",
     );
 
-    await userEvent.click(screen.getByRole("button", {name: "Kaloleni Primary"}));
-    expect(await screen.findByText("No results yet.")).toBeInTheDocument();
-    expect(requests).toContain("/api/results/dashboard/stations/?area=center&id=7");
-
-    await userEvent.click(screen.getByRole("button", {name: "Open polling stations"}));
     expect(
-        await screen.findByRole("heading", {name: "MCA race · Kaloleni Primary only"}),
+        await screen.findByText("Kaloleni Primary", {selector: "th"}),
     ).toBeInTheDocument();
-    expect(requests).toContain("/api/results/dashboard/results/?area=center&id=7");
+    expect(requests).toContain("/api/results/dashboard/stations/?area=ward&id=3");
+    expect(
+        await screen.findByText("No station has uploads that disagree."),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", {name: "Stream 1"}));
+    expect(
+        await screen.findByRole("heading", {name: "Kaloleni Primary · Station 1"}),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("No counted uploads yet.")).toBeInTheDocument();
+    expect(requests).toContain("/api/results/dashboard/uploads/?id=9");
 });
 
 test("a person without an active dashboard gets the civilian results", async () => {
