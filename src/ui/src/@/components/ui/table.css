@@ -1,0 +1,11 @@
+@layer components {
+ .kz-table-scroll { width: 100%; overflow-x: auto; border-radius: 14px; }
+ .kz-table-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+ .kz-table { width: 100%; border-collapse: collapse; color: var(--ink); font: 14px/1.5 var(--sans); font-variant-numeric: tabular-nums; }
+ .kz-table th { padding: 12px 14px; border-bottom: 1px solid var(--rule-16); color: var(--mute-deep); font: 600 10.5px/1.5 var(--mono); letter-spacing: .1em; text-align: left; text-transform: uppercase; }
+ .kz-table td { padding: 14px; border-bottom: 1px solid var(--rule-08); vertical-align: top; }
+ .kz-table tfoot { background: var(--surface); font-weight: 700; }
+ .kz-table caption { padding: 14px; color: var(--mute-deep); font-size: 12px; text-align: left; caption-side: bottom; }
+ .kz-table-row[data-selected] { background: var(--surface); }
+ @media (hover: hover) and (pointer: fine) { .kz-table tbody .kz-table-row:hover { background: var(--surface); } }
+}
