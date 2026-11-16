@@ -1,0 +1,14 @@
+import type {Meta, StoryObj} from "@storybook/react-vite";
+import {Progress} from "@/src/@/components/ui/progress";
+const meta = {title: "Components/Progress", component: Progress, args: {label: "Stations reported", value: 37, className: "max-w-lg"}} satisfies Meta<typeof Progress>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const Partial: Story = {};
+export const Empty: Story = {args: {value: 0}};
+export const Complete: Story = {args: {value: 100}};
+export const Indeterminate: Story = {args: {value: null, label: "Loading records"}};
+export const Thin: Story = {args: {size: "thin"}};
+export const Large: Story = {args: {size: "large"}};
+export const Neutral: Story = {args: {tone: "neutral"}};
+export const Action: Story = {args: {tone: "action", label: "Preparing upload"}};
+export const CustomMaximum: Story = {args: {value: 12, max: 47}};
