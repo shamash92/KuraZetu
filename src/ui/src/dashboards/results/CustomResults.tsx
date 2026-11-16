@@ -41,13 +41,34 @@ const DASHBOARD_QUERIES = new Set([
     "dashboard-uploads",
 ]);
 
+type View = "list" | "map";
+
+function ViewSwitch({view, onChange}: {view: View; onChange: (view: View) => void}) {
+    return (
+        <div className="rd-seg" role="group" aria-label="View">
+            {(["list", "map"] as const).map((option) => (
+                <button
+                    key={option}
+                    type="button"
+                    aria-pressed={view === option}
+                    onClick={() => onChange(option)}
+                >
+                    {option === "list" ? "List" : "Map"}
+                </button>
+            ))}
+        </div>
+    );
+}
+
 function Body({
     data,
     kind,
+    view,
     onOpen,
 }: {
     data: Results;
     kind: string;
+    view: View;
     onOpen: (area: Area) => void;
 }) {
     const crumbs = data.breadcrumbs;
@@ -64,6 +85,7 @@ function Body({
                     key={`${data.area.level}-${data.area.id}`}
                     data={data}
                     up={up}
+                    view={view}
                     onOpen={onOpen}
                 />
             )}
@@ -80,6 +102,7 @@ export function CustomResults({
     onAccessLost: () => void;
 }) {
     const [area, setArea] = useState<Area | null>(null);
+    const [view, setView] = useState<View>("list");
     const queryClient = useQueryClient();
     const results = useQuery({
         queryKey: ["dashboard-results", context.dashboard?.id, area],
@@ -117,14 +140,19 @@ export function CustomResults({
             </nav>
             <div className="rd-sub">
                 <Who data={results.data} fallback={context.dashboard?.name ?? ""} />
-                <button
-                    type="button"
-                    className="rd-secondary"
-                    onClick={refresh}
-                    disabled={results.isFetching}
-                >
-                    {results.isFetching ? "Refreshing…" : "Refresh"}
-                </button>
+                <div className="rd-sub-actions">
+                    {results.data && results.data.area.level !== "station" && (
+                        <ViewSwitch view={view} onChange={setView} />
+                    )}
+                    <button
+                        type="button"
+                        className="rd-secondary"
+                        onClick={refresh}
+                        disabled={results.isFetching}
+                    >
+                        {results.isFetching ? "Refreshing…" : "Refresh"}
+                    </button>
+                </div>
             </div>
             <main className="rd-body">
                 {results.isPending ? (
@@ -144,6 +172,7 @@ export function CustomResults({
                     <Body
                         data={results.data}
                         kind={context.dashboard?.kind ?? ""}
+                        view={view}
                         onOpen={setArea}
                     />
                 )}
