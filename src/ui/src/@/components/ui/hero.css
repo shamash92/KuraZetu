@@ -1,0 +1,12 @@
+@layer components {
+ .kz-ui-hero { max-width: 1280px; margin: 0 auto; padding: 72px 32px; color: var(--ink); }
+ .kz-ui-hero-copy { min-width: 0; }
+ .kz-ui-hero h1 { max-width: 1000px; text-wrap: balance; }
+ .kz-ui-hero-description { max-width: 640px; margin-top: 24px; color: var(--mute-deep); }
+ .kz-ui-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+ .kz-ui-hero-split { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 40px; }
+ .kz-ui-hero-center { text-align: center; }
+ .kz-ui-hero-center .kz-ui-hero-copy, .kz-ui-hero-center .kz-ui-hero-description { margin-right: auto; margin-left: auto; }
+ .kz-ui-hero-center .kz-ui-hero-actions { justify-content: center; }
+ @media (max-width: 800px) { .kz-ui-hero { padding: 48px 20px; } .kz-ui-hero-split { grid-template-columns: 1fr; gap: 32px; } }
+}
