@@ -1,0 +1,6 @@
+@layer components {
+  .kz-link { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; border-radius: 0; }
+  .kz-link:focus-visible { outline: none; text-decoration-color: var(--text-accent); text-decoration-thickness: 3px; }
+  .kz-link:active { color: var(--text-accent); }
+  @media (hover: hover) and (pointer: fine) { .kz-link:hover { text-decoration-thickness: 2px; } }
+}
