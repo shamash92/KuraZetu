@@ -3,7 +3,7 @@ import React, {createContext, useContext} from "react";
 import RoutesApp from "./routes";
 import {HelmetProvider} from "react-helmet-async";
 import {QueryClientProvider} from "@tanstack/react-query";
-import {Toaster} from "sonner";
+import {Toaster} from "@/src/@/components/ui/sonner";
 
 import {queryClient} from "./api/queryClient";
 
