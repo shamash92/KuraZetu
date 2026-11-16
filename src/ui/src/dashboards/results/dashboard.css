@@ -144,3 +144,15 @@
   .rd-narrow { display:block; font-size:12px; font-weight:600; color:var(--mute); }
   .rd .rd-atbl td,.rd .rd-atbl th,.rd .rd-st td,.rd .rd-st th { padding:8px 6px; font-size:12px; }
 }
+.rd-nav-actions { display:flex; align-items:center; gap:10px; }
+.rd-switch { position:relative; }
+.rd .rd-switch-button { display:inline-flex; align-items:center; gap:6px; padding:10px 16px; border:1px solid var(--rule); background:var(--card); }
+.rd .rd-switch-button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.rd .rd-switch-button:active { background:var(--surface); }
+.rd-switch-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:20; min-width:240px; margin:0; padding:6px; border:1px solid var(--rule); border-radius:14px; background:var(--card); box-shadow:0 12px 32px rgba(13,13,13,.12); list-style:none; }
+.rd-switch-menu a { display:block; padding:10px 12px; border-radius:8px; color:var(--ink); font-weight:700; text-decoration:none; }
+.rd-switch-menu a[aria-current="page"] { background:var(--lime); }
+.rd-switch-menu a:focus-visible { outline:2px solid var(--ink); outline-offset:-2px; }
+.rd-switch-menu a:active { background:var(--surface); }
+.rd-switch-menu .rd-empty { padding:10px 12px; }
+@media (hover:hover) and (pointer:fine) { .rd .rd-switch-button:hover { background:var(--surface); } .rd-switch-menu a:not([aria-current]):hover { background:var(--surface); } }

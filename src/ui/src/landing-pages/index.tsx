@@ -22,8 +22,15 @@ import {
     X,
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
+import {useQuery} from "@tanstack/react-query";
 
 import ResultsDashboard from "../dashboards/results";
+import {
+    dashboardListUrl,
+    fetchDashboard,
+    shortCache,
+    type DashboardList,
+} from "../dashboards/results/dashboardApi";
 import {useAuth} from "../App";
 import {Lockup} from "../brand/Mark";
 import "./kenya-counties";
@@ -324,6 +331,13 @@ export function SiteNavLinks({current}: {current?: NavSection}) {
 export function LandingNav({current}: {current?: NavSection} = {}) {
     const [open, setOpen] = useState(false);
     const isAuthenticated = useAuth();
+    const list = useQuery({
+        queryKey: ["dashboard-list"],
+        queryFn: ({signal}) => fetchDashboard<DashboardList>(dashboardListUrl, signal),
+        enabled: Boolean(isAuthenticated),
+        ...shortCache,
+    });
+    const dashboard = list.data?.dashboards[0];
 
     return (
         <>
@@ -338,9 +352,19 @@ export function LandingNav({current}: {current?: NavSection} = {}) {
                 </nav>
                 <div className="kz-nav-actions">
                     {isAuthenticated ? (
-                        <a className="kz-button" href="/accounts/logout/">
-                            Log out
-                        </a>
+                        <>
+                            {dashboard && (
+                                <a
+                                    className="kz-button kz-button-lime"
+                                    href={dashboard.url}
+                                >
+                                    Your dashboard
+                                </a>
+                            )}
+                            <a className="kz-button" href="/accounts/logout/">
+                                Log out
+                            </a>
+                        </>
                     ) : (
                         <>
                             <a className="kz-button" href="/accounts/login/">
@@ -374,7 +398,12 @@ export function LandingNav({current}: {current?: NavSection} = {}) {
                             Contribute
                         </a>
                         {isAuthenticated ? (
-                            <a href="/accounts/logout/">Log out</a>
+                            <>
+                                {dashboard && (
+                                    <a href={dashboard.url}>Your dashboard</a>
+                                )}
+                                <a href="/accounts/logout/">Log out</a>
+                            </>
                         ) : (
                             <>
                                 <a href="/accounts/login/">Sign in</a>

@@ -1,4 +1,5 @@
 export const dashboardContextUrl = "/api/results/dashboard/";
+export const dashboardListUrl = "/api/results/dashboard/list/";
 
 export type DashboardContext = {
     dashboard: {id: number; name: string; kind: string} | null;
@@ -151,3 +152,8 @@ export type Activity = {
 export function activityUrl(limit: number) {
     return `/api/results/dashboard/activity/?limit=${limit}`;
 }
+
+/** A dashboard this person can open. */
+export type DashboardLink = {id: number; name: string; kind: string; url: string};
+
+export type DashboardList = {dashboards: Array<DashboardLink>};
