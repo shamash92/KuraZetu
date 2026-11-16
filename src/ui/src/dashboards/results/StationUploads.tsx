@@ -42,12 +42,7 @@ function agreedBy(count: number) {
 
 function UploadsBody({data}: {data: Uploads}) {
     if (!data.uploads.length) {
-        return (
-            <p className="rd-empty">
-                No upload has been counted at this station yet. Figures and the form
-                photo appear here once one is.
-            </p>
-        );
+        return <p className="rd-empty">No counted uploads yet.</p>;
     }
     const rows = figureRows(data);
     const names = data.uploads.map((_, index) => `Upload ${index + 1}`);

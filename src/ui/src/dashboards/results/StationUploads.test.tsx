@@ -46,7 +46,5 @@ test("uploads that disagree are compared side by side with their photos", async 
 test("a station with no counted upload says so", async () => {
     show({station: {level: "station", id: 9, name: "S"}, candidates: [], uploads: []});
 
-    expect(
-        await screen.findByText(/No upload has been counted at this station yet/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("No counted uploads yet.")).toBeInTheDocument();
 });
