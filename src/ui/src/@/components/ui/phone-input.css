@@ -1,0 +1,6 @@
+@layer components {
+  .kz-phone-field { display: flex; align-items: stretch; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--card); }
+  .kz-phone-field.is-invalid { border-color: var(--red); }
+  .kz-phone-field:has(input:focus-visible) { outline: 2px solid var(--text-accent); outline-offset: -1px; }
+  .kz-phone-field .kz-phone-input:focus-visible { outline: none; box-shadow: none; }
+}
