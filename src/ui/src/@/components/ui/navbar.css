@@ -1,0 +1,31 @@
+@layer components {
+  .kz-ui-navbar { container: kz-navbar / inline-size; width: 100%; color: var(--ink); font-family: var(--sans); }
+  .kz-ui-navbar-notice { padding: 8px 24px; border-bottom: 1px solid var(--rule-08); background: var(--paper); color: var(--text-accent); font: 600 11px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+  .kz-ui-navbar-header { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding: 18px 24px; border-bottom: 1px solid var(--rule-08); background: var(--glass); backdrop-filter: blur(20px); }
+  .kz-ui-navbar-brand { flex: 0 0 auto; border-radius: 4px; }
+  .kz-ui-navbar-links { display: flex; align-items: center; gap: 4px; }
+  .kz-ui-navbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .kz-ui-navbar a:not(.kz-button), .kz-ui-navbar summary { color: var(--ink); }
+  .kz-ui-navbar-links a, .kz-ui-navbar summary, .kz-ui-navbar-mobile > a { display: flex; min-height: 44px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 999px; font-size: 14px; text-decoration: none; cursor: pointer; }
+  .kz-ui-navbar a:focus-visible, .kz-ui-navbar summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .kz-ui-navbar a:not(.kz-button):active, .kz-ui-navbar summary:active { background: var(--surface); }
+  .kz-ui-navbar a[aria-current="page"], .kz-ui-navbar summary[data-current] { font-weight: 700; text-decoration: underline; text-decoration-color: var(--lime-deep); text-decoration-thickness: 3px; text-underline-offset: 6px; }
+  .kz-ui-navbar-group { position: relative; }
+  .kz-ui-navbar summary { list-style: none; }
+  .kz-ui-navbar summary::-webkit-details-marker { display: none; }
+  .kz-ui-navbar-dropdown { position: absolute; top: 100%; left: 0; z-index: 40; min-width: 180px; padding: 8px; border: 1px solid var(--rule-16); border-radius: 14px; background: var(--card); }
+  .kz-ui-navbar-dropdown a { display: flex; min-height: 44px; align-items: center; padding: 10px 12px; border-radius: 8px; }
+  .kz-ui-navbar-toggle, .kz-ui-navbar-mobile { display: none; }
+  .kz-ui-navbar-mobile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  @media (hover: hover) and (pointer: fine) {
+    .kz-ui-navbar a:not(.kz-button):hover, .kz-ui-navbar summary:hover { background: var(--surface); }
+  }
+  @container kz-navbar (max-width: 1000px) {
+    .kz-ui-navbar-header { gap: 12px; padding: 16px; }
+    .kz-ui-navbar-notice { padding: 8px 16px; }
+    .kz-ui-navbar-links, .kz-ui-navbar-actions { display: none; }
+    .kz-ui-navbar-toggle { display: inline-flex; margin-left: auto; }
+    .kz-ui-navbar-mobile { display: flex; flex: 1 0 100%; flex-direction: column; gap: 4px; }
+    .kz-ui-navbar-mobile .kz-ui-navbar-dropdown { position: static; margin-top: 4px; }
+  }
+}
