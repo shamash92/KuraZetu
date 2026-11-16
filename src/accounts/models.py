@@ -92,6 +92,9 @@ class User(AbstractBaseUser):
         choices=GENDER_CHOICES, max_length=6, blank=True, null=True
     )
     role = models.CharField(choices=ROLE, max_length=40, default="voter")
+    groups = models.ManyToManyField(
+        "auth.Group", blank=True, related_name="user_set", related_query_name="user"
+    )
     expo_push_token = models.CharField(
         max_length=255, blank=True, null=True
     )  # For push notifications
@@ -148,14 +151,26 @@ class User(AbstractBaseUser):
         return str(self.phone_number)
 
     def has_perm(self, perm, obj=None):
-        "Does the user have a specific permission?"
-        # This model defines no fine-grained permissions of its own; only
-        # superuser-flagged accounts are granted anything here.
-        return self.is_admin
+        if not self.is_active or obj is not None:
+            return False
+        if self.is_admin:
+            return True
+        app_label, separator, codename = perm.partition(".")
+        return (
+            bool(separator)
+            and self.groups.filter(
+                permissions__content_type__app_label=app_label,
+                permissions__codename=codename,
+            ).exists()
+        )
 
     def has_module_perms(self, app_label):
-        "Does the user have permissions to view the app `app_label`?"
-        return self.is_admin
+        return self.is_active and (
+            self.is_admin
+            or self.groups.filter(
+                permissions__content_type__app_label=app_label
+            ).exists()
+        )
 
     @property
     def is_staff(self):

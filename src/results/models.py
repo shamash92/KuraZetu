@@ -639,3 +639,11 @@ class MachineCheck(models.Model):
 
     def __str__(self) -> str:
         return f"{self.polling_station} - {self.race} - {self.status}"
+
+
+# Kept in a separate module so result ingestion does not carry access-policy code.
+from results.dashboard_models import (  # noqa: E402, F401
+    DashboardMember,
+    MediaHouse,
+    ResultsDashboard,
+)
