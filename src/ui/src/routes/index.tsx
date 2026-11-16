@@ -8,7 +8,7 @@ import SignupForm from "../auth/signup/signupForm";
 import PhoneVerification from "../auth/signup/PhoneVerification";
 import {SignupVerificationSessionProvider} from "../auth/signup/SignupVerificationSession";
 import PasswordReset from "../auth/passwordReset/PasswordReset";
-import UserDashBoard from "../dashboards/results";
+import UserDashBoard from "../dashboards/results/home";
 import {DashboardOnboarding, DashboardAccess} from "../dashboards/access";
 import {useAuth} from "../App";
 import APKDownloadPage from "../pages/APKDownload";

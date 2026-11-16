@@ -13,6 +13,11 @@ from results.api.dashboard_access_views import (
     DashboardOptionsView,
     DashboardPermissionView,
 )
+from results.api.dashboard_views import (
+    DashboardContextView,
+    DashboardResultsView,
+    DashboardStationsView,
+)
 from results.api.national_views import TotalPresResultsAPIView
 from results.api.reading_views import (
     AgreeAfterReadingView,
@@ -34,6 +39,15 @@ from results.api.views import (
 )
 
 urlpatterns = [
+    path("dashboard/", DashboardContextView.as_view(), name="dashboard-context"),
+    path(
+        "dashboard/results/", DashboardResultsView.as_view(), name="dashboard-results"
+    ),
+    path(
+        "dashboard/stations/",
+        DashboardStationsView.as_view(),
+        name="dashboard-stations",
+    ),
     path(
         "dashboard-access/permission/",
         DashboardPermissionView.as_view(),
