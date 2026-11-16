@@ -3,7 +3,7 @@ import {useQuery} from "@tanstack/react-query";
 import {
     fetchDashboard,
     photoUrl,
-    uncached,
+    shortCache,
     uploadsUrl,
     type Area,
     type Upload,
@@ -97,20 +97,26 @@ function UploadsBody({data}: {data: Uploads}) {
 }
 
 /** What each upload at one station says, with its form photo. Read only. */
-export function StationUploads({station}: {station: Area}) {
+export function StationUploads({
+    station,
+    inline = false,
+}: {
+    station: Area;
+    inline?: boolean;
+}) {
     const uploads = useQuery({
         queryKey: ["dashboard-uploads", station.id],
         queryFn: ({signal}) =>
             fetchDashboard<Uploads>(uploadsUrl(Number(station.id)), signal),
-        ...uncached,
+        ...shortCache,
     });
     const count = uploads.data?.uploads.length ?? 0;
     const disagree =
         uploads.data !== undefined && figureRows(uploads.data).some(differs);
     return (
-        <section className="rd-panel rd-wm">
+        <section className={inline ? "rd-inline" : "rd-panel rd-wm"}>
             <div className="rd-band-head">
-                <h2>Uploads at this station</h2>
+                <h2>{inline ? station.name : "Uploads at this station"}</h2>
                 {count > 1 && (
                     <span className={`rd-chip ${disagree ? "trail" : "lead"}`}>
                         {disagree ? "Uploads disagree" : "Uploads agree"}

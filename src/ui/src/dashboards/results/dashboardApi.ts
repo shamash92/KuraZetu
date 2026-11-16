@@ -11,6 +11,7 @@ export type Candidate = {
     id: number;
     name: string;
     party: string;
+    colour: string | null;
     votes: number;
     share: number;
     focused: boolean;
@@ -69,6 +70,8 @@ export function resultsUrl(area: Area | null) {
 }
 
 export type StationRow = Area & {
+    center: {id: number; name: string};
+    stream: number;
     reported: boolean;
     disagrees: boolean;
     votes: number | null;
@@ -84,13 +87,22 @@ export function stationsUrl(area: Area) {
     return `/api/results/dashboard/stations/?${params}`;
 }
 
-/** Results change as uploads arrive, so never serve them from a cache. */
-export const uncached = {
-    staleTime: 0,
-    gcTime: 0,
+/**
+ * Results change as uploads arrive. Each person's browser keeps them for 30
+ * seconds, so the next level loaded in the background opens at once; Refresh
+ * always fetches fresh figures.
+ */
+export const shortCache = {
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
     retry: false,
     refetchOnWindowFocus: false,
 } as const;
+
+/** One cache entry per area, whichever row or link opened it. */
+export function resultsKey(dashboardId: number | undefined, area: Area | null) {
+    return ["dashboard-results", dashboardId, area?.level ?? null, area?.id ?? null];
+}
 
 export type Upload = {
     id: string;
@@ -128,4 +140,14 @@ export function shapesUrl(area: Area) {
     const params = new URLSearchParams({area: area.level});
     if (area.id !== null) params.set("id", String(area.id));
     return `/api/results/dashboard/shapes/?${params}`;
+}
+
+export type Activity = {
+    contested_total: number;
+    contested: Array<Area & {at: string}>;
+    recent: Array<Area & {at: string}>;
+};
+
+export function activityUrl(limit: number) {
+    return `/api/results/dashboard/activity/?limit=${limit}`;
 }

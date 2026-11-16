@@ -1,9 +1,9 @@
-import {Fragment, useState} from "react";
+import {useEffect} from "react";
 import {ChevronLeft} from "lucide-react";
 
 import {AreaMap} from "./AreaMap";
 import type {Area, Results, Tally} from "./dashboardApi";
-import {Drawer} from "./Drawer";
+import {WardStations} from "./WardStations";
 import {ReportedBar} from "./Summary";
 import {
     AREA_NAME,
@@ -30,25 +30,18 @@ export function UpButton({to, onOpen}: {to: Area; onOpen: (area: Area) => void})
 function AreaRow({
     child,
     showsFocus,
-    open,
     onPick,
 }: {
     child: Area & Tally;
     showsFocus: boolean;
-    open: boolean | undefined;
     onPick: () => void;
 }) {
     const {label, tone} = standing(child);
     const top = leaders(child);
     return (
-        <tr className={open ? "rd-sel" : undefined}>
+        <tr>
             <td>
-                <button
-                    type="button"
-                    className="rd-tlink"
-                    aria-expanded={open}
-                    onClick={onPick}
-                >
+                <button type="button" className="rd-tlink" onClick={onPick}>
                     {child.name}
                 </button>
                 <span className="rd-narrow">
@@ -57,13 +50,15 @@ function AreaRow({
             </td>
             {showsFocus ? (
                 <>
-                    <td className="rd-r">{number.format(myVotes(child) ?? 0)}</td>
+                    <td className="rd-r rd-votes">
+                        {number.format(myVotes(child) ?? 0)}
+                    </td>
                     <td className="rd-r">{position(child)}</td>
                 </>
             ) : (
                 <td>{top.length ? names(top) : "—"}</td>
             )}
-            <td className="rd-wide">
+            <td className="rd-wide rd-rep">
                 <span className="rd-rt">
                     {number.format(child.reported)}/{number.format(child.stations)}
                 </span>
@@ -76,25 +71,36 @@ function AreaRow({
     );
 }
 
+// Loading more than this many areas ahead would load the server for little gain.
+const PREFETCH_LIMIT = 20;
+
 /**
- * The areas one level down. Picking a row opens its polling stations under it;
- * rows that are themselves polling stations open that station instead.
+ * The areas one level down; picking one opens it. Inside a ward the list is
+ * its polling centres with every stream, and a stream opens beside the list.
  */
 export function Areas({
     data,
     up,
     view,
     onOpen,
+    onPrefetch,
 }: {
     data: Results;
     up: Area | null;
     view: "list" | "map";
     onOpen: (area: Area) => void;
+    onPrefetch: (area: Area) => void;
 }) {
-    const [picked, setPicked] = useState<string | null>(null);
     const showsFocus = follows(data.summary);
     const level = NEXT_LEVEL[data.area.level];
     const opensStation = level === "station";
+    const inWard = level === "center";
+    const {children} = data;
+    useEffect(() => {
+        // Open the next level at once: load it while the person reads this one.
+        if (inWard || opensStation || children.length > PREFETCH_LIMIT) return;
+        children.forEach(onPrefetch);
+    }, [children, inWard, opensStation, onPrefetch]);
     return (
         <section className="rd-panel rd-wm">
             <div className="rd-panel-head">
@@ -113,6 +119,8 @@ export function Areas({
             )}
             {view === "map" && !opensStation && data.children.length ? (
                 <AreaMap data={data} onOpen={onOpen} />
+            ) : inWard ? (
+                <WardStations ward={data.area} follows={showsFocus} />
             ) : data.children.length ? (
                 <div className="rd-scroll">
                     <table className="rd-atbl">
@@ -127,37 +135,19 @@ export function Areas({
                                 ) : (
                                     <th>Leading</th>
                                 )}
-                                <th className="rd-wide">Reported</th>
+                                <th className="rd-wide rd-rep">Reported</th>
                                 <th className="rd-wide">Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {data.children.map((child) => {
-                                const key = `${child.level}-${child.id}`;
-                                const open = picked === key;
-                                return (
-                                    <Fragment key={key}>
-                                        <AreaRow
-                                            child={child}
-                                            showsFocus={showsFocus}
-                                            open={opensStation ? undefined : open}
-                                            onPick={() =>
-                                                opensStation
-                                                    ? onOpen(child)
-                                                    : setPicked(open ? null : key)
-                                            }
-                                        />
-                                        {open && (
-                                            <Drawer
-                                                area={child}
-                                                follows={showsFocus}
-                                                columns={showsFocus ? 5 : 4}
-                                                onOpen={onOpen}
-                                            />
-                                        )}
-                                    </Fragment>
-                                );
-                            })}
+                            {data.children.map((child) => (
+                                <AreaRow
+                                    key={`${child.level}-${child.id}`}
+                                    child={child}
+                                    showsFocus={showsFocus}
+                                    onPick={() => onOpen(child)}
+                                />
+                            ))}
                         </tbody>
                     </table>
                 </div>

@@ -4,7 +4,7 @@ import {useQuery} from "@tanstack/react-query";
 import {
     fetchDashboard,
     shapesUrl,
-    uncached,
+    shortCache,
     type Area,
     type Geometry,
     type Results,
@@ -146,7 +146,12 @@ function Drawing({
     const showsFocus = follows(data.summary);
     const placed = data.children.filter((child) => shapes.has(Number(child.id)));
     const drawn = placed.map((child) => shapes.get(Number(child.id))!);
-    const map = projection(outline ? [outline, ...drawn] : drawn);
+    // Centre pins need the ward around them; outlines already fill the area,
+    // and a coarser parent outline would show around their edges.
+    const backdrop = drawn.every((geometry) => geometry.type === "Point")
+        ? outline
+        : null;
+    const map = projection(backdrop ? [backdrop, ...drawn] : drawn);
     const labelled = placed.length <= MAX_LABELS;
     return (
         <>
@@ -167,10 +172,10 @@ function Drawing({
                         <rect width="2" height="8" fill="#e1e0da" />
                     </pattern>
                 </defs>
-                {outline && (
+                {backdrop && (
                     <path
                         className="rd-outline"
-                        d={rings(outline)
+                        d={rings(backdrop)
                             .map((ring) => path(ring.map(map.at)))
                             .join("")}
                     />
@@ -248,7 +253,7 @@ export function AreaMap({data, onOpen}: {data: Results; onOpen: (area: Area) => 
     const query = useQuery({
         queryKey: ["dashboard-shapes", data.area],
         queryFn: ({signal}) => fetchDashboard<Shapes>(shapesUrl(data.area), signal),
-        ...uncached,
+        ...shortCache,
     });
     if (query.isPending) {
         return (

@@ -1,15 +1,19 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 
+import {Activity} from "./Activity";
 import {Areas, UpButton} from "./Areas";
 import {
     DashboardError,
     fetchDashboard,
+    resultsKey,
     resultsUrl,
-    uncached,
+    shortCache,
+    stationsUrl,
     type Area,
     type DashboardContext,
     type Results,
+    type Stations,
 } from "./dashboardApi";
 import {StationUploads} from "./StationUploads";
 import {Summary} from "./Summary";
@@ -39,6 +43,7 @@ const DASHBOARD_QUERIES = new Set([
     "dashboard-results",
     "dashboard-stations",
     "dashboard-uploads",
+    "dashboard-activity",
 ]);
 
 type View = "list" | "map";
@@ -65,11 +70,13 @@ function Body({
     kind,
     view,
     onOpen,
+    onPrefetch,
 }: {
     data: Results;
     kind: string;
     view: View;
     onOpen: (area: Area) => void;
+    onPrefetch: (area: Area) => void;
 }) {
     const crumbs = data.breadcrumbs;
     const up = crumbs.length > 1 ? crumbs[crumbs.length - 2] : null;
@@ -77,7 +84,10 @@ function Body({
     return (
         <>
             {up && atStation && <UpButton to={up} onOpen={onOpen} />}
-            <Summary data={data} kind={kind} up={up} />
+            <div className="rd-top">
+                <Summary data={data} kind={kind} up={up} />
+                <Activity onOpen={onOpen} />
+            </div>
             {atStation ? (
                 <StationUploads station={data.area} />
             ) : (
@@ -87,6 +97,7 @@ function Body({
                     up={up}
                     view={view}
                     onOpen={onOpen}
+                    onPrefetch={onPrefetch}
                 />
             )}
         </>
@@ -105,10 +116,30 @@ export function CustomResults({
     const [view, setView] = useState<View>("list");
     const queryClient = useQueryClient();
     const results = useQuery({
-        queryKey: ["dashboard-results", context.dashboard?.id, area],
+        queryKey: resultsKey(context.dashboard?.id, area),
         queryFn: ({signal}) => fetchDashboard<Results>(resultsUrl(area), signal),
-        ...uncached,
+        ...shortCache,
     });
+    const dashboardId = context.dashboard?.id;
+    const prefetch = useCallback(
+        (next: Area) => {
+            void queryClient.prefetchQuery({
+                queryKey: resultsKey(dashboardId, next),
+                queryFn: ({signal}) =>
+                    fetchDashboard<Results>(resultsUrl(next), signal),
+                ...shortCache,
+            });
+            if (next.level !== "ward") return;
+            // A ward opens on its centres and streams, so load those too.
+            const url = stationsUrl(next);
+            void queryClient.prefetchQuery({
+                queryKey: ["dashboard-stations", url],
+                queryFn: ({signal}) => fetchDashboard<Stations>(url, signal),
+                ...shortCache,
+            });
+        },
+        [queryClient, dashboardId],
+    );
     const lost =
         results.error instanceof DashboardError && results.error.status === 404;
     useEffect(() => {
@@ -174,6 +205,7 @@ export function CustomResults({
                         kind={context.dashboard?.kind ?? ""}
                         view={view}
                         onOpen={setArea}
+                        onPrefetch={prefetch}
                     />
                 )}
             </main>
