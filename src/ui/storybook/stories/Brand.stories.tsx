@@ -1,0 +1,14 @@
+import React from "react";
+import type {Meta, StoryObj} from "@storybook/react-vite";
+import {Lockup, Mark, MarkShapes, PlacedMark} from "@/src/@/components/ui/brand";
+const meta = {title: "Brand/Logo", component: Mark, subcomponents: {Lockup, MarkShapes, PlacedMark}, args: {width: 120, label: "Kura Zetu mark"}, argTypes: {tone: {control: "select", options: ["ink", "paper"]}, strike: {control: "select", options: ["lime", "deep", "knockout"]}, compact: {control: "boolean"}}, parameters: {docs: {description: {component: "The same SVG geometry used on the brand pages, now owned by the shared library. Existing brand imports re-export these components."}}}} satisfies Meta<typeof Mark>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const Standard: Story = {};
+export const Compact: Story = {args: {compact: true}};
+export const Inverse: Story = {args: {tone: "paper"}, render: (args) => <div className="w-fit rounded-[18px] bg-foreground p-8"><Mark {...args} /></div>};
+export const DeepStrike: Story = {args: {strike: "deep"}};
+export const OneColorInk: Story = {args: {strike: "knockout", ground: "#f7f6f3"}};
+export const OneColorPaper: Story = {args: {tone: "paper", strike: "knockout", ground: "#0d0d0d"}, render: (args) => <div className="w-fit rounded-[18px] bg-foreground p-8"><Mark {...args} /></div>};
+export const Wordmark: Story = {render: () => <Lockup width={250} />};
+export const InverseWordmark: Story = {render: () => <div className="w-fit rounded-[18px] bg-foreground p-8"><Lockup width={250} tone="paper" /></div>};
