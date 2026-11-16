@@ -94,15 +94,14 @@ test("areas are shaded by the same figures as the list and open on click", async
     const kangemi = await screen.findByRole("button", {
         name: "Kangemi: 1st · 30 votes, 2 of 4 stations reported",
     });
-    expect(kangemi).toHaveClass("rd-fill-lead");
-    expect(screen.getByRole("button", {name: /^Karura: 2nd/})).toHaveClass(
-        "rd-fill-trail",
-    );
+    expect(document.querySelector('[data-area="11"]')).toHaveClass("rd-fill-lead");
+    expect(document.querySelector('[data-area="12"]')).toHaveClass("rd-fill-trail");
+    expect(screen.getByRole("button", {name: /^Karura: 2nd/})).toBeInTheDocument();
     expect(screen.getByText("No map location for Kitisuru.")).toBeInTheDocument();
     expect(screen.getByText("Amina Otieno leading")).toBeInTheDocument();
 
     fireEvent.click(kangemi);
     expect(onOpen).toHaveBeenCalledWith(data.children[0]);
-    fireEvent.keyDown(screen.getByRole("button", {name: /^Karura/}), {key: "Enter"});
+    fireEvent.click(document.querySelector('[data-area="12"]')!);
     expect(onOpen).toHaveBeenCalledWith(data.children[1]);
 });

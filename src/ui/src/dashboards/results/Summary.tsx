@@ -139,7 +139,7 @@ export function Summary({
         <section className="rd-band rd-wm">
             <div className="rd-band-head">
                 <h1>{title(data, up)}</h1>
-                <span className={`rd-chip ${tone}`}>{label}</span>
+                <span className={`rd-chip rd-status ${tone}`}>{label}</span>
             </div>
             <div className="rd-band-grid">
                 <div className="rd-nums">

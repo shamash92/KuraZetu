@@ -21,7 +21,6 @@ const WIDTH = 700;
 const MAX_HEIGHT = 520;
 const PAD = 12;
 // Above this many outlines the names overlap, so they move to the caption.
-const MAX_LABELS = 12;
 
 function rings(geometry: Geometry): Array<Array<Point>> {
     if (geometry.type === "Point") return [];
@@ -66,27 +65,6 @@ function path(points: Array<Point>) {
 }
 
 /** The middle of the largest ring, where the area's name goes. */
-function middle(outline: Array<Array<Point>>): Point {
-    let best: Point = outline[0][0];
-    let most = 0;
-    for (const ring of outline) {
-        let area = 0;
-        let [x, y] = [0, 0];
-        ring.forEach(([x1, y1], index) => {
-            const [x2, y2] = ring[(index + 1) % ring.length];
-            const cross = x1 * y2 - x2 * y1;
-            area += cross;
-            x += (x1 + x2) * cross;
-            y += (y1 + y2) * cross;
-        });
-        if (Math.abs(area) > most) {
-            most = Math.abs(area);
-            best = [x / (3 * area), y / (3 * area)];
-        }
-    }
-    return best;
-}
-
 function fillOf(child: Child, showsFocus: boolean): Fill {
     const {label} = standing(child);
     if (label === "Tied") return "tied";
@@ -142,9 +120,13 @@ function Drawing({
     shapes: Map<number, Geometry>;
     onOpen: (area: Area) => void;
 }) {
-    const [hover, setHover] = useState<Child | null>(null);
+    const [hot, setHot] = useState<number | null>(null);
     const showsFocus = follows(data.summary);
     const placed = data.children.filter((child) => shapes.has(Number(child.id)));
+    // The highlighted shape is drawn last so its outline sits on top.
+    const ordered = [...placed].sort(
+        (a, b) => Number(Number(a.id) === hot) - Number(Number(b.id) === hot),
+    );
     const drawn = placed.map((child) => shapes.get(Number(child.id))!);
     // Centre pins need the ward around them; outlines already fill the area,
     // and a coarser parent outline would show around their edges.
@@ -152,99 +134,95 @@ function Drawing({
         ? outline
         : null;
     const map = projection(backdrop ? [backdrop, ...drawn] : drawn);
-    const labelled = placed.length <= MAX_LABELS;
     return (
-        <>
-            <svg
-                viewBox={`0 0 ${map.width.toFixed(0)} ${map.height.toFixed(0)}`}
-                role="group"
-                aria-label={`Map of ${data.area.name}`}
-            >
-                <defs>
-                    <pattern
-                        id="rd-hatch"
-                        width="8"
-                        height="8"
-                        patternUnits="userSpaceOnUse"
-                        patternTransform="rotate(45)"
-                    >
-                        <rect width="8" height="8" fill="#efeeea" />
-                        <rect width="2" height="8" fill="#e1e0da" />
-                    </pattern>
-                </defs>
-                {backdrop && (
-                    <path
-                        className="rd-outline"
-                        d={rings(backdrop)
-                            .map((ring) => path(ring.map(map.at)))
-                            .join("")}
-                    />
-                )}
-                {placed.map((child) => {
-                    const geometry = shapes.get(Number(child.id))!;
-                    const fill = fillOf(child, showsFocus);
-                    const outline = rings(geometry).map((ring) => ring.map(map.at));
-                    const open = () => onOpen(child);
-                    return (
-                        <g
-                            key={child.id}
-                            className={`rd-shape rd-fill-${fill}`}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={describe(child, showsFocus)}
-                            onClick={open}
-                            onKeyDown={(event) => {
-                                if (event.key !== "Enter" && event.key !== " ") return;
-                                event.preventDefault();
-                                open();
-                            }}
-                            onMouseEnter={() => setHover(child)}
-                            onMouseLeave={() => setHover(null)}
-                            onFocus={() => setHover(child)}
-                            onBlur={() => setHover(null)}
+        <div className="rd-map-body">
+            <div>
+                <svg
+                    viewBox={`0 0 ${map.width.toFixed(0)} ${map.height.toFixed(0)}`}
+                    aria-hidden="true"
+                >
+                    <defs>
+                        <pattern
+                            id="rd-hatch"
+                            width="8"
+                            height="8"
+                            patternUnits="userSpaceOnUse"
+                            patternTransform="rotate(45)"
                         >
-                            {geometry.type === "Point" ? (
-                                <circle
-                                    cx={map.at(geometry.coordinates)[0]}
-                                    cy={map.at(geometry.coordinates)[1]}
-                                    r="8"
-                                />
-                            ) : (
-                                <path d={outline.map(path).join("")} />
-                            )}
-                        </g>
-                    );
-                })}
-                {labelled &&
-                    placed.map((child) => {
-                        const geometry = shapes.get(Number(child.id))!;
-                        const point = geometry.type === "Point";
-                        const [x, y] = point
-                            ? map.at(geometry.coordinates).map((n, i) => n + i * 26)
-                            : middle(rings(geometry).map((ring) => ring.map(map.at)));
-                        const dark =
-                            !point &&
-                            ["lead", "reported"].includes(fillOf(child, showsFocus));
+                            <rect width="8" height="8" fill="#efeeea" />
+                            <rect width="2" height="8" fill="#e1e0da" />
+                        </pattern>
+                    </defs>
+                    {backdrop && (
+                        <path
+                            className="rd-outline"
+                            d={rings(backdrop)
+                                .map((ring) => path(ring.map(map.at)))
+                                .join("")}
+                        />
+                    )}
+                    {ordered.map((child) => {
+                        const id = Number(child.id);
+                        const geometry = shapes.get(id)!;
+                        const fill = fillOf(child, showsFocus);
+                        const outline = rings(geometry).map((ring) => ring.map(map.at));
                         return (
-                            <text
+                            <g
                                 key={child.id}
-                                x={x}
-                                y={y}
-                                textAnchor="middle"
-                                className={dark ? "rd-on-dark" : undefined}
-                                aria-hidden="true"
+                                data-area={child.id}
+                                className={`rd-shape rd-fill-${fill}${hot === id ? " rd-hot" : ""}`}
+                                onClick={() => onOpen(child)}
+                                onMouseEnter={() => setHot(id)}
+                                onMouseLeave={() => setHot(null)}
                             >
-                                {child.name}
-                                <tspan x={x} dy="17">
-                                    {figure(child, showsFocus)}
-                                </tspan>
-                            </text>
+                                {geometry.type === "Point" ? (
+                                    <circle
+                                        cx={map.at(geometry.coordinates)[0]}
+                                        cy={map.at(geometry.coordinates)[1]}
+                                        r="8"
+                                    />
+                                ) : (
+                                    <path d={outline.map(path).join("")} />
+                                )}
+                            </g>
                         );
                     })}
-            </svg>
-            <p className="rd-map-note">{hover ? describe(hover, showsFocus) : " "}</p>
-            <Legend data={data} showsFocus={showsFocus} />
-        </>
+                </svg>
+                <Legend data={data} showsFocus={showsFocus} />
+            </div>
+            <ul className="rd-map-list" aria-label={`Areas in ${data.area.name}`}>
+                {placed.map((child) => {
+                    const id = Number(child.id);
+                    return (
+                        <li key={child.id}>
+                            <button
+                                type="button"
+                                className={`rd-mrow${hot === id ? " rd-hot" : ""}`}
+                                aria-label={describe(child, showsFocus)}
+                                onClick={() => onOpen(child)}
+                                onMouseEnter={() => setHot(id)}
+                                onMouseLeave={() => setHot(null)}
+                                onFocus={() => setHot(id)}
+                                onBlur={() => setHot(null)}
+                            >
+                                <i
+                                    className={`rd-key-${fillOf(child, showsFocus)}`}
+                                    aria-hidden="true"
+                                />
+                                <span>
+                                    <b>{child.name}</b>
+                                    <small>{figure(child, showsFocus)}</small>
+                                </span>
+                                <em>
+                                    {number.format(child.reported)}/
+                                    {number.format(child.stations)}
+                                </em>
+                            </button>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
     );
 }
 
