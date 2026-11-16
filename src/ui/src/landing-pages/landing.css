@@ -1,40 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
-
-:root {
-  --lime: #c4ff5e;
-  --lime-deep: #a8e63a;
-  --lime-ink: #0a0a0a;
-  --green: #16a35a;
-  --green-deep: #0f7a40;
-  --mint: #d8f5dc;
-  --mint-2: #b9eac1;
-  --coral: #ffd0c0;
-  --coral-deep: #a8442a;
-  --coral-ink: #7d2f1b;
-  --red: #c44539;
-  --periwinkle: #c8d4ff;
-  --periwinkle-deep: #2532a8;
-  --copper: #c97b3e;
-  --copper-deep: #8a4a25;
-  --paper: #f7f6f3;
-  --paper-deep: #efeeea;
-  --card: #ffffff;
-  --surface: #f1f0eb;
-  --ink: #0d0d0d;
-  --mute: #6b6d72;
-  --mute-deep: #5d5f64;
-  --rule-08: rgba(13, 13, 13, 0.07);
-  --rule-16: rgba(13, 13, 13, 0.14);
-  --glass: rgba(255, 255, 255, 0.88);
-  --mesh-ink: rgba(40, 50, 60, 0.14);
-  --mesh-dot: rgba(40, 50, 60, 0.28);
-  --mesh-grid: rgba(40, 50, 60, 0.04);
-  --paper-grad-1: #faf9f6;
-  --paper-grad-2: #f0efea;
-  --paper-grad-3: #e7e6e0;
-  --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-}
+@import "../styles/tokens.css";
 
 .kz-landing,
 .kz-landing *,

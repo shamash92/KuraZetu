@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "noImplicitAny": false,
     "skipLibCheck": true,
@@ -16,12 +20,22 @@
     "isolatedModules": true,
     "noEmit": false,
     "jsx": "react-jsx",
-    "types": ["node", "jest"],
-    "typeRoots": ["./node_modules/@types", "./typings"]
+    "types": [
+      "node",
+      "jest"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./typings"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
   },
-  "baseUrl": ".",
-  "paths": {
-    "@/*": ["./*"]
-  },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

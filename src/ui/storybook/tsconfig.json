@@ -1,0 +1,28 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "noEmit": true,
+        "baseUrl": "..",
+        "paths": {
+            "@/*": [
+                "./*"
+            ]
+        },
+        "types": [
+            "node",
+            "vite/client"
+        ],
+        "typeRoots": [
+            "../node_modules/@types",
+            "../node_modules"
+        ]
+    },
+    "include": [
+        "./**/*.ts",
+        "./**/*.tsx",
+        "../vitest.config.ts"
+    ]
+}
