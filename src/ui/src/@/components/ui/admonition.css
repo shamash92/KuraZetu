@@ -1,0 +1,9 @@
+@layer components {
+ .kz-admonition { display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 12px; padding: 16px 18px; border: 1px solid var(--rule-16); border-radius: 14px; background: var(--surface); color: var(--ink); font: 14px/1.6 var(--sans); }
+ .kz-admonition-title { display: block; margin-bottom: 4px; font-weight: 800; text-transform: capitalize; }
+ .kz-admonition-content { overflow-wrap: anywhere; }
+ .kz-admonition-info { background: var(--periwinkle); color: var(--periwinkle-deep); }
+ .kz-admonition-tip, .kz-admonition-success { background: var(--mint); color: var(--green-deep); }
+ .kz-admonition-warning { background: var(--amber); color: var(--ink); }
+ .kz-admonition-error { background: var(--coral); color: var(--ink); }
+}
