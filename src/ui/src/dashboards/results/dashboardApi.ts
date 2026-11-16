@@ -91,3 +91,24 @@ export const uncached = {
     retry: false,
     refetchOnWindowFocus: false,
 } as const;
+
+export type Upload = {
+    id: string;
+    votes: Record<string, number | null>;
+    rejected: number;
+    disputed: number;
+    agreed: number;
+};
+export type Uploads = {
+    station: Area;
+    candidates: Array<{id: number; name: string}>;
+    uploads: Array<Upload>;
+};
+
+export function uploadsUrl(stationId: number) {
+    return `/api/results/dashboard/uploads/?id=${stationId}`;
+}
+
+export function photoUrl(uploadId: string) {
+    return `/api/results/dashboard/uploads/${uploadId}/photo/`;
+}

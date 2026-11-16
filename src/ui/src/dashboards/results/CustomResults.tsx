@@ -11,6 +11,7 @@ import {
     type DashboardContext,
     type Results,
 } from "./dashboardApi";
+import {StationUploads} from "./StationUploads";
 import {Summary} from "./Summary";
 import {OFFICES} from "./tally";
 import "../access/access.css";
@@ -34,7 +35,11 @@ function Who({data, fallback}: {data: Results | undefined; fallback: string}) {
     );
 }
 
-const DASHBOARD_QUERIES = new Set(["dashboard-results", "dashboard-stations"]);
+const DASHBOARD_QUERIES = new Set([
+    "dashboard-results",
+    "dashboard-stations",
+    "dashboard-uploads",
+]);
 
 function Body({
     data,
@@ -52,7 +57,9 @@ function Body({
         <>
             {up && atStation && <UpButton to={up} onOpen={onOpen} />}
             <Summary data={data} kind={kind} up={up} />
-            {!atStation && (
+            {atStation ? (
+                <StationUploads station={data.area} />
+            ) : (
                 <Areas
                     key={`${data.area.level}-${data.area.id}`}
                     data={data}
