@@ -94,9 +94,7 @@ def descriptor(level, area):
     }
 
 
-def typed_uploads(stations, race):
-    """Countable current uploads that carry their own figures. An agreement
-    holds no tally of its own, so it never makes a station disagree."""
+def countable_uploads(stations, race):
     return ResultUpload.objects.filter(
         polling_station__in=stations,
         race=race.key,
@@ -104,8 +102,13 @@ def typed_uploads(stations, race):
         location_grade__in=COUNTABLE,
         server_qr_result__in=QR_COUNTS,
         form_changed=False,
-        agrees_with__isnull=True,
     )
+
+
+def typed_uploads(stations, race):
+    """Countable current uploads that carry their own figures. An agreement
+    holds no tally of its own, so it never makes a station disagree."""
+    return countable_uploads(stations, race).filter(agrees_with__isnull=True)
 
 
 def disagreements(stations, race, group_path=None):
@@ -323,3 +326,48 @@ def station_rows(dashboard, level, pk):
                     row["tied"] = sum(v == mine for v in counts.values()) > 1
         rows.append(row)
     return {"area": descriptor(level, area), "stations": rows}
+
+
+def station_uploads(dashboard, pk):
+    """The figures typed with each upload at one station, for reading only.
+    Nothing here names who uploaded, their device, or where they stood."""
+    _, station, race = authorized_area(dashboard, "station", pk)
+    candidates, _ = race_candidates(dashboard, race)
+    uploads = list(typed_uploads([station], race).order_by("created_at", "pk"))
+    agreed = Counter(
+        countable_uploads([station], race)
+        .filter(agrees_with__in=uploads)
+        .values_list("agrees_with_id", flat=True)
+    )
+    rows = [
+        {
+            "id": str(upload.pk),
+            "votes": {str(c.pk): upload.votes.get(str(c.pk)) for c in candidates},
+            "rejected": upload.rejected_votes,
+            "disputed": upload.disputed_votes,
+            "agreed": agreed[upload.pk],
+        }
+        for upload in uploads
+    ]
+    return {
+        "station": descriptor("station", station),
+        "candidates": [
+            {"id": c.pk, "name": f"{c.first_name} {c.last_name}"} for c in candidates
+        ],
+        "uploads": rows,
+    }
+
+
+def evidence_upload(dashboard, upload_id):
+    """An upload whose photo this dashboard may see, or 404."""
+    upload = (
+        ResultUpload.objects.filter(pk=upload_id, agrees_with__isnull=True)
+        .select_related("polling_station")
+        .first()
+    )
+    if upload is None:
+        raise Http404
+    _, station, race = authorized_area(dashboard, "station", upload.polling_station_id)
+    if not typed_uploads([station], race).filter(pk=upload.pk).exists():
+        raise Http404
+    return upload

@@ -17,6 +17,8 @@ from results.api.dashboard_views import (
     DashboardContextView,
     DashboardResultsView,
     DashboardStationsView,
+    DashboardUploadPhotoView,
+    DashboardUploadsView,
 )
 from results.api.national_views import TotalPresResultsAPIView
 from results.api.reading_views import (
@@ -47,6 +49,14 @@ urlpatterns = [
         "dashboard/stations/",
         DashboardStationsView.as_view(),
         name="dashboard-stations",
+    ),
+    path(
+        "dashboard/uploads/", DashboardUploadsView.as_view(), name="dashboard-uploads"
+    ),
+    path(
+        "dashboard/uploads/<uuid:upload_id>/photo/",
+        DashboardUploadPhotoView.as_view(),
+        name="dashboard-upload-photo",
     ),
     path(
         "dashboard-access/permission/",
