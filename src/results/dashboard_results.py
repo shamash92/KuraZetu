@@ -4,7 +4,7 @@ import json
 from collections import Counter
 
 from django.contrib.gis.db.models.functions import AsGeoJSON
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
@@ -151,6 +151,12 @@ def tally(candidates, totals, reported, station_count, disagreeing, focus):
             "id": c.pk,
             "name": f"{c.first_name} {c.last_name}",
             "party": c.party.name,
+            # The default black means no colour was ever set for the party.
+            "colour": (
+                c.party.party_colour_hex
+                if c.party.party_colour_hex.lower() != "#000000"
+                else None
+            ),
             "votes": votes.get(c.pk, 0),
             "share": round(votes.get(c.pk, 0) * 100 / total, 2) if total else 0,
             "focused": c.pk in focus,
@@ -360,6 +366,11 @@ def station_rows(dashboard, level, pk):
         counts = votes.get(station.pk)
         row = {
             **descriptor("station", station),
+            "center": {
+                "id": station.polling_center_id,
+                "name": station.polling_center.name,
+            },
+            "stream": station.stream_number,
             "reported": counts is not None,
             "disagrees": station.pk in disputed,
             "votes": None,
@@ -380,6 +391,40 @@ def station_rows(dashboard, level, pk):
                     row["tied"] = sum(v == mine for v in counts.values()) > 1
         rows.append(row)
     return {"area": descriptor(level, area), "stations": rows}
+
+
+def activity(dashboard, limit=5):
+    """The stations whose uploads disagree and the latest counted uploads
+    across the whole dashboard area, newest first. Nothing here names who
+    uploaded."""
+    level, area, race = authorized_area(dashboard)
+    stations = stations_at(level, area)
+    contested_ids = list(
+        disagreements(stations, race).values_list("polling_station_id", flat=True)
+    )
+    latest = {
+        row["polling_station_id"]: row["latest"]
+        for row in typed_uploads(contested_ids, race)
+        .values("polling_station_id")
+        .annotate(latest=Max("created_at"))
+    }
+    contested = sorted(contested_ids, key=lambda pk: latest[pk], reverse=True)[:limit]
+    named = PollingStation.objects.select_related("polling_center").in_bulk(contested)
+    recent = (
+        typed_uploads(stations, race)
+        .select_related("polling_station__polling_center")
+        .order_by("-created_at", "pk")[:limit]
+    )
+    return {
+        "contested_total": len(contested_ids),
+        "contested": [
+            {**descriptor("station", named[pk]), "at": latest[pk]} for pk in contested
+        ],
+        "recent": [
+            {**descriptor("station", upload.polling_station), "at": upload.created_at}
+            for upload in recent
+        ],
+    }
 
 
 def station_uploads(dashboard, pk):

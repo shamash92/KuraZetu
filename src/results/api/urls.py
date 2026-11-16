@@ -14,6 +14,7 @@ from results.api.dashboard_access_views import (
     DashboardPermissionView,
 )
 from results.api.dashboard_views import (
+    DashboardActivityView,
     DashboardContextView,
     DashboardResultsView,
     DashboardShapesView,
@@ -50,6 +51,11 @@ urlpatterns = [
         "dashboard/stations/",
         DashboardStationsView.as_view(),
         name="dashboard-stations",
+    ),
+    path(
+        "dashboard/activity/",
+        DashboardActivityView.as_view(),
+        name="dashboard-activity",
     ),
     path("dashboard/shapes/", DashboardShapesView.as_view(), name="dashboard-shapes"),
     path(

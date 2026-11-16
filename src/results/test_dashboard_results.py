@@ -377,3 +377,52 @@ def test_map_shapes_stay_inside_the_dashboard_and_mark_missing_ones(
     assert client.get(url, {"area": "national"}).status_code == 404
     assert client.get(url, {"area": "constituency", "id": other.pk}).status_code == 404
     assert client.get(url, {"area": "center", "id": centre.pk}).status_code == 404
+
+
+def test_activity_lists_contested_stations_and_latest_uploads_in_area(
+    account, station, ward, party
+):
+    ann, ben = (
+        Aspirant.objects.create(
+            first_name="Candidate", last_name=name, party=party, level="mca", ward=ward
+        )
+        for name in ("A", "B")
+    )
+    dashboard = ResultsDashboard.objects.create(
+        kind="aspirant", aspirant=ann, name="Ward dashboard", active=True
+    )
+    add_member(dashboard, account.phone_number, owner=True)
+    calm = PollingStation.objects.create(
+        polling_center=station.polling_center, code="000000102", registered_voters=9
+    )
+    people = iter(
+        get_user_model().objects.create_user(phone_number=f"+25470000003{n}")
+        for n in range(4)
+    )
+
+    def uploaded(at, votes):
+        upload = ResultUpload(
+            key=uuid.uuid4(),
+            added_by=next(people),
+            polling_station=at,
+            race="mca",
+            votes={str(ann.pk): votes, str(ben.pk): 10},
+            rejected_votes=0,
+            disputed_votes=0,
+            quality_checked=True,
+            location_grade=CENTRE_MATCH,
+            server_qr_result=MATCH,
+        )
+        upload.photo.save("photo.jpg", ContentFile(photo_with_exif(10, 10)))
+
+    uploaded(station, 20)
+    uploaded(station, 25)
+    uploaded(calm, 30)
+
+    body = signed_in(account).get(reverse("dashboard-activity")).json()
+    assert body["contested_total"] == 1
+    assert [row["id"] for row in body["contested"]] == [station.pk]
+    assert [row["id"] for row in body["recent"]] == [calm.pk, station.pk, station.pk]
+    assert set(body["recent"][0]) == {"level", "id", "name", "at"}
+    response = signed_in(account).get(reverse("dashboard-activity"), {"limit": 1})
+    assert len(response.json()["recent"]) == 1
