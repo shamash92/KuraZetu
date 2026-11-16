@@ -4,6 +4,7 @@ import io
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.contrib.gis.geos import Point, Polygon
 from django.core.files.base import ContentFile
 from django.urls import reverse
 
@@ -25,7 +26,7 @@ from results.models import (
 from results.qr import MATCH
 from results.test_agreement_save import photo_with_exif
 from results.test_uploads import account, station, ward  # noqa: F401
-from stations.models import PollingCenter, PollingStation, Ward
+from stations.models import Constituency, PollingCenter, PollingStation, Ward
 
 pytestmark = pytest.mark.django_db
 
@@ -323,3 +324,56 @@ def test_station_uploads_show_figures_and_a_photo_without_metadata(
         client.get(reverse("dashboard-upload-photo", args=[first.pk])).status_code
         == 404
     )
+
+
+def test_map_shapes_stay_inside_the_dashboard_and_mark_missing_ones(
+    account, station, ward, party
+):
+    square = Polygon(((36, -1), (36.1, -1), (36.1, -0.9), (36, -0.9), (36, -1)))
+    ward.boundary = square
+    ward.save()
+    bare = Ward.objects.create(
+        name="No outline", number=2, constituency=ward.constituency
+    )
+    candidate = Aspirant.objects.create(
+        first_name="Candidate",
+        last_name="A",
+        party=party,
+        level="mp",
+        constituency=ward.constituency,
+    )
+    dashboard = ResultsDashboard.objects.create(
+        kind="aspirant", aspirant=candidate, name="Constituency", active=True
+    )
+    add_member(dashboard, account.phone_number, owner=True)
+    client = signed_in(account)
+    url = reverse("dashboard-shapes")
+
+    response = client.get(url)
+    assert response["Cache-Control"] == "private, no-store"
+    assert response.json()["outline"] is None
+    shapes = {shape["id"]: shape["geometry"] for shape in response.json()["shapes"]}
+    assert shapes[ward.pk]["type"] == "Polygon"
+    assert shapes[ward.pk]["coordinates"][0][1] == [36.1, -1]
+    assert shapes[bare.pk] is None
+
+    centre = station.polling_center
+    centre.pin_location = Point(0, 0)
+    centre.save()
+    pinned = PollingCenter.objects.create(
+        name="Pinned", code="002", ward=ward, pin_location=Point(36.05, -0.95)
+    )
+    body = client.get(url, {"area": "ward", "id": ward.pk}).json()
+    assert body["outline"]["type"] == "Polygon"
+    shapes = {shape["id"]: shape["geometry"] for shape in body["shapes"]}
+    assert shapes == {
+        centre.pk: None,
+        pinned.pk: {"type": "Point", "coordinates": [36.05, -0.95]},
+    }
+
+    other = Constituency.objects.create(
+        name="Other", county=ward.constituency.county, number=2
+    )
+    assert client.get(url, {"area": "national"}).status_code == 404
+    assert client.get(url, {"area": "constituency", "id": other.pk}).status_code == 404
+    assert client.get(url, {"area": "center", "id": centre.pk}).status_code == 404

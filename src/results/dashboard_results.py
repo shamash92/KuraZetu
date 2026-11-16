@@ -1,7 +1,9 @@
 """The public tally, grouped within an explicitly assigned dashboard scope."""
 
+import json
 from collections import Counter
 
+from django.contrib.gis.db.models.functions import AsGeoJSON
 from django.db.models import Count, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -21,6 +23,13 @@ PARENT_FIELDS = {
     "ward": "constituency",
     "center": "ward",
     "station": "polling_center",
+}
+# Where each kind of area keeps its outline; a centre has only its pin.
+SHAPE_FIELDS = {
+    "county": ("boundary", "multi_boundary"),
+    "constituency": ("boundary",),
+    "ward": ("boundary",),
+    "center": ("pin_location",),
 }
 STATION_PATHS = {
     "county": "polling_center__ward__constituency__county",
@@ -278,6 +287,51 @@ def dashboard_payload(dashboard, level=None, pk=None):
         "breadcrumbs": breadcrumbs,
         "summary": summary,
         "children": children,
+    }
+
+
+def geometries(level, areas):
+    """Each area's id and GeoJSON outline (or a centre's pin), or None when it
+    has none recorded or the pin is still at 0,0."""
+    fields = SHAPE_FIELDS[level]
+    rows = (
+        areas.annotate(**{f"{f}_json": AsGeoJSON(f, precision=5) for f in fields})
+        .order_by("pk")
+        .values("pk", *(f"{f}_json" for f in fields))
+    )
+    for row in rows:
+        found = next((row[f"{f}_json"] for f in fields if row[f"{f}_json"]), None)
+        geometry = json.loads(found) if found else None
+        if (
+            geometry
+            and geometry["type"] == "Point"
+            and not any(geometry["coordinates"])
+        ):
+            geometry = None
+        yield row["pk"], geometry
+
+
+def area_shapes(dashboard, level=None, pk=None):
+    """The outline of the dashboard area being viewed and of each area inside
+    it, or each centre's pin. Stations share their centre's pin, so a centre
+    has no map of its own."""
+    level, area, _ = authorized_area(dashboard, level, pk)
+    if level in ("center", "station"):
+        raise Http404
+    child_level = LEVELS[LEVELS.index(level) + 1]
+    areas = MODELS[child_level].objects.all()
+    outline = None
+    if area is not None:
+        areas = areas.filter(**{PARENT_FIELDS[child_level]: area})
+        own = MODELS[level].objects.filter(pk=area.pk)
+        outline = next(geometries(level, own))[1]
+    return {
+        "area": descriptor(level, area),
+        "outline": outline,
+        "shapes": [
+            {"id": pk, "geometry": geometry}
+            for pk, geometry in geometries(child_level, areas)
+        ],
     }
 
 

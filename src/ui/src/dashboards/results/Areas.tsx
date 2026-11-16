@@ -1,6 +1,7 @@
 import {Fragment, useState} from "react";
 import {ChevronLeft} from "lucide-react";
 
+import {AreaMap} from "./AreaMap";
 import type {Area, Results, Tally} from "./dashboardApi";
 import {Drawer} from "./Drawer";
 import {ReportedBar} from "./Summary";
@@ -82,10 +83,12 @@ function AreaRow({
 export function Areas({
     data,
     up,
+    view,
     onOpen,
 }: {
     data: Results;
     up: Area | null;
+    view: "list" | "map";
     onOpen: (area: Area) => void;
 }) {
     const [picked, setPicked] = useState<string | null>(null);
@@ -102,7 +105,15 @@ export function Areas({
                         : `${AREA_NAMES[level]} in ${data.area.name}`}
                 </h2>
             </div>
-            {data.children.length ? (
+            {view === "map" && opensStation && data.children.length > 0 && (
+                <p className="rd-empty">
+                    Polling stations share their centre&apos;s location, so they are
+                    listed here instead of mapped.
+                </p>
+            )}
+            {view === "map" && !opensStation && data.children.length ? (
+                <AreaMap data={data} onOpen={onOpen} />
+            ) : data.children.length ? (
                 <div className="rd-scroll">
                     <table className="rd-atbl">
                         <thead>

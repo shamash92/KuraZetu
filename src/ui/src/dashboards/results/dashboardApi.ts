@@ -112,3 +112,20 @@ export function uploadsUrl(stationId: number) {
 export function photoUrl(uploadId: string) {
     return `/api/results/dashboard/uploads/${uploadId}/photo/`;
 }
+
+type Lonlat = [number, number];
+export type Geometry =
+    | {type: "Point"; coordinates: Lonlat}
+    | {type: "Polygon"; coordinates: Array<Array<Lonlat>>}
+    | {type: "MultiPolygon"; coordinates: Array<Array<Array<Lonlat>>>};
+export type Shapes = {
+    area: Area;
+    outline: Geometry | null;
+    shapes: Array<{id: number; geometry: Geometry | null}>;
+};
+
+export function shapesUrl(area: Area) {
+    const params = new URLSearchParams({area: area.level});
+    if (area.id !== null) params.set("id", String(area.id));
+    return `/api/results/dashboard/shapes/?${params}`;
+}

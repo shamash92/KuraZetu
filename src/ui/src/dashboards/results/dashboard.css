@@ -1,4 +1,4 @@
-.rd-dashboard { --paper-deep:#efeeea; --mute-2:#9a9da3; --rule-soft:rgba(13,13,13,.07); --green:#16a35a; --green-deep:#0f7a40; --mint:#d8f5dc; --coral:#ffd0c0; --coral-deep:#a8442a; align-self:stretch; }
+.rd-dashboard { --paper-deep:#efeeea; --mute-2:#9a9da3; --rule-soft:rgba(13,13,13,.07); --green:#16a35a; --green-deep:#0f7a40; --mint:#d8f5dc; --coral:#ffd0c0; --coral-deep:#a8442a; --periwinkle:#c8d4ff; align-self:stretch; }
 .rd-strip { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 16px; padding:8px 24px; background:var(--card); border-bottom:1px solid var(--rule-soft); color:var(--coral-deep); font:600 11px/1.5 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; }
 .rd-strip span:last-child { color:var(--mute); }
 .rd-sub { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 24px; background:var(--card); border-bottom:1px solid var(--rule-soft); font-size:13px; font-weight:700; }
@@ -68,7 +68,38 @@
 .rd-photos span { color:var(--mute); }
 .rd .rd-compare tr.rd-differs td { background:var(--coral); }
 .rd-empty { margin:0; padding:18px 0; color:var(--mute); font-size:14px; line-height:1.5; }
+.rd-sub-actions { display:flex; align-items:center; gap:12px; }
+.rd-seg { display:flex; gap:3px; padding:3px; background:var(--surface); border-radius:999px; }
+.rd .rd-seg button { min-height:44px; padding:6px 16px; border:0; border-radius:999px; background:transparent; color:var(--mute); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.rd .rd-seg button[aria-pressed="true"] { background:var(--ink); color:var(--paper); font-weight:700; }
+.rd .rd-seg button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.rd .rd-seg button:active { transform:scale(.97); }
+.rd-map { background:var(--paper); border-radius:14px; padding:14px; }
+.rd-map svg { display:block; width:100%; height:auto; max-height:70vh; }
+.rd-outline { fill:var(--card); stroke:var(--rule); stroke-width:1.5; vector-effect:non-scaling-stroke; fill-rule:evenodd; }
+.rd-shape { cursor:pointer; }
+.rd-shape:focus { outline:none; }
+.rd-shape path,.rd-shape circle { stroke:#fff; stroke-width:1.5; vector-effect:non-scaling-stroke; fill-rule:evenodd; }
+.rd-map .rd-shape circle { stroke:var(--ink); }
+.rd-shape:focus-visible path,.rd-shape:focus-visible circle { stroke:var(--ink); stroke-width:3; }
+.rd-fill-lead path,.rd-fill-lead circle { fill:var(--green-deep); }
+.rd-fill-trail path,.rd-fill-trail circle { fill:var(--coral); }
+.rd-fill-tied path,.rd-fill-tied circle { fill:var(--periwinkle); }
+.rd-fill-reported path,.rd-fill-reported circle { fill:var(--mute); }
+.rd-fill-none path,.rd-fill-none circle { fill:url(#rd-hatch); }
+.rd-map text { pointer-events:none; fill:var(--ink); font-size:15px; font-weight:800; }
+.rd-map text tspan { font-size:12.5px; font-weight:600; }
+.rd-map text.rd-on-dark { fill:#fff; }
+.rd-map-note { min-height:20px; margin:8px 0 0; font-size:13px; font-weight:700; }
+.rd-legend { display:flex; flex-wrap:wrap; gap:14px; margin:10px 0 0; padding:0; list-style:none; font-size:12px; font-weight:600; }
+.rd-legend i { display:inline-block; width:12px; height:12px; margin-right:6px; border-radius:3px; vertical-align:-1px; }
+.rd-key-lead { background:var(--green-deep); }
+.rd-key-trail { background:var(--coral); }
+.rd-key-tied { background:var(--periwinkle); }
+.rd-key-reported { background:var(--mute); }
+.rd-key-none { background:repeating-linear-gradient(45deg,#efeeea 0 3px,#e1e0da 3px 5px); border:1px solid var(--rule-soft); }
 @media (hover:hover) and (pointer:fine) {
+  .rd-shape:hover path,.rd-shape:hover circle { stroke:var(--ink); stroke-width:3; }
   .rd .rd-tlink:hover,.rd .rd-more:hover { background:none; text-decoration-color:#a8e63a; }
   .rd .rd-alink:hover { background:var(--surface); }
   .rd .rd-back:hover { background:var(--surface); }
@@ -79,6 +110,9 @@
 }
 @media (max-width:640px) {
   .rd-strip,.rd-sub { padding-left:16px; padding-right:16px; }
+  .rd-sub { flex-wrap:wrap; }
+  .rd-map { padding:8px; }
+  .rd-map text { display:none; }
   .rd-body { padding:16px 16px 48px; gap:12px; }
   .rd-band,.rd-panel { padding:16px; border-radius:16px; }
   .rd-nums { grid-template-columns:1fr 1fr; gap:16px; }
