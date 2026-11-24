@@ -3,10 +3,10 @@
  .kz-accordion-item { border-bottom: 1px solid var(--rule-16); color: var(--ink); font-family: var(--sans); }
  .kz-accordion-item summary { display: flex; min-height: 56px; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 12px; border-radius: 4px; font-size: 16px; font-weight: 700; list-style: none; cursor: pointer; }
  .kz-accordion-item summary::-webkit-details-marker { display: none; }
- .kz-accordion-item summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+ .kz-accordion-item summary:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
  .kz-accordion-item summary:active { background: var(--surface); }
  .kz-accordion-item[open] > summary .kz-accordion-icon { transform: rotate(180deg); }
- .kz-accordion-content { padding: 0 12px 20px; color: var(--mute-deep); font-size: 14px; line-height: 1.65; }
+ .kz-accordion-content { padding: 8px 12px 20px; color: var(--mute-deep); font-size: 14px; line-height: 1.65; }
  .kz-accordion-item.is-disabled > summary { opacity: .5; cursor: not-allowed; }
  @media (hover: hover) and (pointer: fine) { .kz-accordion-item:not(.is-disabled) > summary:hover { background: var(--surface); } }
  @media (prefers-reduced-motion: no-preference) { .kz-accordion-icon { transition: transform 140ms ease; } }
