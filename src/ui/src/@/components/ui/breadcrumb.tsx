@@ -3,6 +3,7 @@ import {Slot} from "@radix-ui/react-slot";
 import {ChevronRight, MoreHorizontal} from "lucide-react";
 
 import {cn} from "@/src/@/components/lib/utils";
+import "./link.css";
 
 function Breadcrumb({className, ...props}: React.ComponentProps<"nav">) {
     return <nav aria-label="Breadcrumb" className={cn("text-sm", className)} {...props} />;
@@ -15,7 +16,7 @@ function BreadcrumbItem({className, ...props}: React.ComponentProps<"li">) {
 }
 function BreadcrumbLink({asChild = false, className, ...props}: React.ComponentProps<"a"> & {asChild?: boolean}) {
     const Comp = asChild ? Slot : "a";
-    return <Comp className={cn("rounded-sm underline underline-offset-4 hover:text-foreground active:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring", className)} {...props} />;
+    return <Comp className={cn("kz-link kz-breadcrumb-link", className)} {...props} />;
 }
 function BreadcrumbPage({className, ...props}: React.ComponentProps<"span">) {
     return <span aria-current="page" className={cn("font-medium text-foreground", className)} {...props} />;

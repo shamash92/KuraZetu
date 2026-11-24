@@ -9,6 +9,8 @@
   .kz-button-danger { background: var(--red); color: var(--card); border-color: var(--red); }
   .kz-button-ghost { border-color: transparent; }
   .kz-button-link { padding: 0; border-color: transparent; text-decoration: underline; text-decoration-color: var(--lime-deep); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  .kz-button-link:focus-visible { outline: none; text-decoration-color: var(--text-accent); text-decoration-thickness: 3px; }
+  .kz-button-link:active { filter: none; color: var(--text-accent); }
   .kz-button-small { min-height: 44px; padding: 10px 16px; font-size: 13px; }
   .kz-button-large { min-height: 56px; padding: 16px 26px; font-size: 15px; }
   .kz-button-icon { width: 44px; min-height: 44px; padding: 12px; }
