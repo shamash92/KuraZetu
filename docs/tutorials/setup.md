@@ -157,7 +157,8 @@ Open a new terminal to run the following commands parallel to the backend comman
    ```
 
    `pnpm build:storybook` writes a static copy of the catalog to
-   `src/ui/storybook-static/`.
+   `src/ui/storybook-static/`. Django serves it at `/components/`, and
+   `collectstatic` uploads it with the other static files.
 
 ## 2. Setup Instructions (Django Backend)
 

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Components · Kura Zetu</title>
+{% endblock %}
+
+{% block extra_head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="{% static 'shared/site-nav.css' %}" />
+    <style>
+        .components-page { display: flex; flex-direction: column; height: 100dvh; }
+        .components-page iframe { flex: 1; width: 100%; border: 0; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="components-page">
+        {% include "shared/site_nav.html" with current_nav="components" %}
+        {# Served from static storage, a separate origin in production, so the catalog's scripts cannot reach this site's cookies. #}
+        <iframe
+            src="{% static 'storybook/index.html' %}"
+            title="Component catalog"
+        ></iframe>
+    </div>
+{% endblock %}

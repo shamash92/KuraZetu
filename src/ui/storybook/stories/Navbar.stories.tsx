@@ -28,7 +28,7 @@ export const SignedOut: Story = {
     },
 };
 export const SignedIn: Story = {args: {actions: <Button asChild variant="outline"><a href="#logout">Log out</a></Button>}};
-export const CurrentPage: Story = {args: {items: items.map((item) => item.label === "Brand" ? {...item, current: true} : item)}};
+export const CurrentPage: Story = {args: {items: items.map((item) => item.label === "Design" ? {...item, current: true} : item)}};
 export const WithoutActions: Story = {args: {actions: null}};
 export const MobileClosed: Story = {render: (args) => <div className="min-h-[600px] w-full max-w-[375px]"><Navbar {...args} /></div>};
 export const MobileOpen: Story = {args: {defaultMenuOpen: true}, render: (args) => <div className="min-h-[600px] w-full max-w-[375px]"><Navbar {...args} /></div>};

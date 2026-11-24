@@ -7,7 +7,10 @@ export function siteNavigationItems(current?: NavSection): ReadonlyArray<NavbarI
         {label: "pinVerify254", href: "/ui/game/", current: current === "pinverify"},
         {label: "Docs", href: "https://kurazetu.readthedocs.io/", external: true},
         {label: "Blog", href: "/blog/"},
-        {label: "Brand", href: "/ui/brand/", current: current === "brand"},
+        {label: "Design", current: current === "brand", items: [
+            {label: "Brand", href: "/ui/brand/", current: current === "brand"},
+            {label: "Components", href: "/components/"},
+        ]},
         {label: "Developers", current: current === "specs", items: [
             {label: "Specs", href: "/ui/specs/", current: current === "specs"},
             {label: "API", href: "/api/schema/rapidoc/"},

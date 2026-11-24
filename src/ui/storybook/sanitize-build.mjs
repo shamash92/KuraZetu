@@ -1,4 +1,4 @@
-import {readdir, readFile, writeFile} from "node:fs/promises";
+import {readdir, readFile, rm, writeFile} from "node:fs/promises";
 import {homedir} from "node:os";
 import {dirname, extname, resolve} from "node:path";
 import {stdout} from "node:process";
@@ -28,5 +28,8 @@ async function sanitize(directory) {
     }
 }
 
-await sanitize(resolve(packageRoot, "storybook-static"));
+const output = resolve(packageRoot, "storybook-static");
+await sanitize(output);
+// Records when this machine first ran Storybook; nothing in the catalog reads it.
+await rm(resolve(output, "project.json"), {force: true});
 stdout.write(`Removed checkout paths from ${changed} generated files.\n`);
