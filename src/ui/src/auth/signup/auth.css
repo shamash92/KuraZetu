@@ -526,58 +526,6 @@
 .kz-auth .sel {
   padding-right: 38px;
 }
-.kz-auth .phone-input {
-  display: flex;
-  align-items: stretch;
-  overflow: hidden;
-  border: 1.5px solid var(--ink);
-  border-radius: 12px;
-}
-.kz-auth .phone-input:focus-within {
-  outline: 2px solid var(--ink);
-  outline-offset: 3px;
-}
-.kz-auth .phone-input .prefix {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px;
-  border-right: 1px solid var(--rule-08);
-  background: var(--surface);
-  font-family: var(--mono);
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-  color: var(--ink);
-}
-.kz-auth .phone-input .flag {
-  flex: 0 0 auto;
-  width: 20px;
-  height: 13px;
-  border-radius: 2px;
-  /* Kenya flag: black / white / red / white / green */
-  background: linear-gradient(
-    180deg,
-    #000 0 32%,
-    #fff 32% 36%,
-    #be0027 36% 64%,
-    #fff 64% 68%,
-    #007a3d 68% 100%
-  );
-}
-.kz-auth .phone-input input {
-  appearance: none;
-  flex: 1;
-  min-width: 0;
-  padding: 14px;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--sans);
-  font-size: 16px;
-  font-weight: 600;
-  outline: none;
-}
 .kz-auth .note-box {
   margin: 14px 0 0;
   padding: 14px 16px;

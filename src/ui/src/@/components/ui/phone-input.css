@@ -1,6 +1,14 @@
 @layer components {
-  .kz-phone-field { display: flex; align-items: stretch; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--card); }
+  /* One bordered field, a flag and mono +254 prefix, one focus ring around the whole field. */
+  .kz-phone-field { display: flex; align-items: stretch; overflow: clip; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--card); }
   .kz-phone-field.is-invalid { border-color: var(--red); }
-  .kz-phone-field:has(input:focus-visible) { outline: 2px solid var(--text-accent); outline-offset: -1px; }
-  .kz-phone-field .kz-phone-input:focus-visible { outline: none; box-shadow: none; }
+  .kz-phone-field.is-disabled { opacity: .5; }
+  .kz-phone-field:has(.kz-phone-input:focus-visible) { outline: 3px solid var(--ink); outline-offset: -1.5px; }
+  .kz-phone-prefix { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 14px; border-right: 1px solid var(--rule-08); background: var(--surface); color: var(--ink); font: 700 14px/1 var(--mono); white-space: nowrap; }
+  /* Kenya flag: black, white, red, white, green. */
+  .kz-phone-flag { width: 20px; height: 13px; flex: 0 0 auto; border-radius: 2px; background: linear-gradient(180deg, #000 0 32%, #fff 32% 36%, #be0027 36% 64%, #fff 64% 68%, #007a3d 68% 100%); }
+  .kz-phone-input { flex: 1; min-width: 0; padding: 14px; border: 0; background: transparent; color: var(--ink); font: 600 16px/1.4 var(--sans); appearance: none; }
+  .kz-phone-input::placeholder { color: var(--mute-2); }
+  .kz-phone-input:focus-visible { outline: none; }
+  .kz-phone-input:disabled { cursor: not-allowed; }
 }
