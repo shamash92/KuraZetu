@@ -150,6 +150,8 @@
   background: #f1f0eb;
 }
 .site-nav__auth .site-nav__register {
+  gap: 9px;
+  font-weight: 700;
   border-color: #c4ff5e;
   background: #c4ff5e;
   color: #0a0a0a;

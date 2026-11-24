@@ -3,8 +3,6 @@
 
 .kz-landing,
 .kz-landing *,
-.kz-topbar,
-.kz-topbar *,
 footer.kz-footer,
 footer.kz-footer * {
   box-sizing: border-box;
@@ -34,13 +32,13 @@ footer.kz-footer {
   position: relative;
   isolation: isolate;
   width: 100%;
-  overflow: hidden;
+  overflow: clip;
   color: var(--ink);
   background: var(--paper);
   font-family: var(--sans);
 }
 
-.kz-landing > *:not(.kz-paper-bg):not(.kz-atlas-layer) {
+.kz-landing > *:not(.kz-paper-bg, .kz-atlas-layer, .kz-ui-navbar) {
   position: relative;
   z-index: 2;
 }
@@ -143,43 +141,6 @@ footer.kz-footer {
   text-transform: uppercase;
 }
 
-.kz-disclaimer {
-  display: flex;
-  min-height: 31px;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 7px 32px;
-  color: var(--text-accent);
-  border-bottom: 1px solid var(--rule-08);
-  background: rgba(247, 246, 243, 0.62);
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.kz-disclaimer span:last-child {
-  color: var(--mute);
-}
-
-.kz-topbar {
-  position: sticky !important;
-  top: 0;
-  z-index: 30 !important;
-  display: flex;
-  min-height: 81px;
-  align-items: center;
-  gap: 32px;
-  width: 100%;
-  padding: 18px 32px;
-  border-bottom: 1px solid var(--rule-08);
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
 .kz-brand {
   display: inline-flex;
   flex-direction: column;
@@ -215,8 +176,7 @@ footer.kz-footer {
   margin-left: 14px;
 }
 
-.kz-nav-links a,
-.kz-mobile-nav a {
+.kz-nav-links a {
   color: var(--ink);
   font-size: 14px;
   font-weight: 500;
@@ -285,28 +245,6 @@ footer.kz-footer {
 
 .kz-nav-menu a {
   border-radius: 9px;
-}
-
-.kz-mobile-nav-label {
-  margin-top: 10px;
-  color: var(--mute);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.kz-nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.kz-menu-button,
-.kz-mobile-nav {
-  display: none;
 }
 
 .kz-hero {
@@ -994,35 +932,6 @@ footer.kz-footer {
 }
 
 @media (max-width: 800px) {
-  .kz-disclaimer { justify-content: center; padding-inline: 18px; text-align: center; }
-  .kz-disclaimer span:last-child { display: none; }
-  .kz-topbar { min-height: 70px; padding: 14px 18px; }
-  .kz-nav-actions { display: none; }
-  .kz-menu-button {
-    display: grid;
-    width: 42px;
-    height: 42px;
-    place-items: center;
-    margin-left: auto;
-    color: var(--ink);
-    border: 1px solid var(--rule-16);
-    border-radius: 50%;
-    background: var(--card);
-  }
-  .kz-mobile-nav {
-    position: absolute;
-    top: calc(100% + 1px);
-    right: 0;
-    left: 0;
-    display: grid;
-    gap: 2px;
-    padding: 14px 18px 18px;
-    border-bottom: 1px solid var(--rule-08);
-    background: rgba(255, 255, 255, 0.97);
-    box-shadow: 0 18px 32px rgba(13, 13, 13, 0.08);
-  }
-  .kz-mobile-nav a { padding: 11px 12px; border-radius: 6px; }
-  .kz-mobile-nav a.kz-button-lime { margin-top: 4px; text-align: center; }
   .kz-atlas-layer { top: 80px; height: 980px; opacity: 0.8; }
   .kz-atlas-caption { top: 74px; right: 18px; }
   .kz-atlas-caption strong { font-size: 20px; }

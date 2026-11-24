@@ -6,6 +6,7 @@
   --red: #c44539;
   --copper: #c97b3e;
   --copper-deep: #8a4a25;
+  --text-accent: #a32e32;
   --paper: #f7f6f3;
   --paper-deep: #efeeea;
   --paper-vivid: #e9e8e2;
@@ -71,7 +72,7 @@ a {
   align-items: center;
   gap: 16px;
   padding: 8px 32px;
-  color: var(--copper-deep);
+  color: var(--text-accent);
   background: rgba(247, 246, 243, 0.72);
   border-bottom: 1px solid var(--rule-08);
   font-family: var(--mono);
