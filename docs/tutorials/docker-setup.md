@@ -1,7 +1,8 @@
 # Run the development project with Docker
 
 Use Docker Compose to run the Django backend, web assets, and PostgreSQL from
-one terminal command. You can also include the documentation server.
+one terminal command. You can also include the documentation server and the
+component catalog.
 
 ```{important}
 This Compose application is for local development only. It is not a production
@@ -84,13 +85,24 @@ This runs the repository's `make run` target in the docs container. Open the
 documentation at `http://localhost:8001/`. Changes under `docs/` trigger a
 rebuild.
 
-## 6. Stop the services
+## 6. Include the component catalog
+
+Optionally, start Storybook with the `storybook` profile:
+
+```bash
+docker compose --profile storybook up --build
+```
+
+Open the catalog at `http://localhost:3000/`. It does not need the database or
+Django. Changes under `src/ui/` reload the open story.
+
+## 7. Stop the services
 
 Press {kbd}`Ctrl+C` in the Compose terminal. If you started the services in
 detached mode, run:
 
 ```bash
-docker compose --profile docs down
+docker compose --profile docs --profile storybook down
 ```
 
 This preserves the PostgreSQL and dependency volumes for the next run.

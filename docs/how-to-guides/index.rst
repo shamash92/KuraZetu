@@ -12,4 +12,3 @@ How-to guides
    Connect VSCode to Multipass <vscode-multipass>
    Configure log rotation <configure-log-rotation>
    Run the Celery worker in production <run-celery-in-production>
-   Develop and publish the component catalog <storybook>
