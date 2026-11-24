@@ -1,0 +1,8 @@
+@layer components {
+  /* The hand-drawn stroke under the operative words of a headline (DESIGN.md, Marker Underline). */
+  .kz-marker { position: relative; display: inline-block; white-space: nowrap; }
+  .kz-marker::after { content: ""; position: absolute; right: -0.04em; bottom: -0.04em; left: -0.04em; height: 0.2em; background-repeat: no-repeat; background-size: 100% 100%; pointer-events: none; }
+  .kz-marker-green::after { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'><path d='M2 7 C 40 1, 80 11, 120 5 S 196 9, 198 5' fill='none' stroke='%2316a35a' stroke-width='5' stroke-linecap='round'/></svg>"); }
+  .kz-marker-lime::after { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'><path d='M2 7 C 40 1, 80 11, 120 5 S 196 9, 198 5' fill='none' stroke='%23c4ff5e' stroke-width='8' stroke-linecap='round'/></svg>"); }
+  .kz-marker-red::after { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'><path d='M2 7 C 40 1, 80 11, 120 5 S 196 9, 198 5' fill='none' stroke='%23c44539' stroke-width='5' stroke-linecap='round'/></svg>"); }
+}
