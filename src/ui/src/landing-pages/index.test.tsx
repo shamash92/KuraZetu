@@ -6,7 +6,7 @@ import {LandingNav} from "./index";
 
 jest.mock("../App", () => ({useAuth: () => false}));
 
-test("the blog and brand pages are linked from desktop and mobile navigation", async () => {
+test("the blog and design pages are linked from desktop and mobile navigation", async () => {
     const user = userEvent.setup();
     render(
         <QueryClientProvider client={new QueryClient()}>
@@ -20,12 +20,16 @@ test("the blog and brand pages are linked from desktop and mobile navigation", a
             {name: "Blog"},
         ),
     ).toHaveAttribute("href", "/blog/");
+    // The brand guide and the component catalog sit together under Design.
+    const design = screen.getByText("Design").closest("details")!;
     expect(
-        within(screen.getByRole("navigation", {name: "Main navigation"})).getByRole(
-            "link",
-            {name: "Brand"},
-        ),
-    ).toHaveAttribute("href", "/ui/brand/");
+        within(design)
+            .getAllByRole("link", {hidden: true})
+            .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
+        ["Brand", "/ui/brand/"],
+        ["Components", "/components/"],
+    ]);
 
     // What a developer needs sits together under one entry.
     const developers = screen.getByText("Developers").closest("details")!;
@@ -42,9 +46,12 @@ test("the blog and brand pages are linked from desktop and mobile navigation", a
             screen.getByRole("navigation", {name: "Mobile navigation"}),
         ).getByRole("link", {name: "Blog"}),
     ).toHaveAttribute("href", "/blog/");
-    expect(
-        within(
-            screen.getByRole("navigation", {name: "Mobile navigation"}),
-        ).getByRole("link", {name: "Brand"}),
-    ).toHaveAttribute("href", "/ui/brand/");
+    const mobile = within(
+        screen.getByRole("navigation", {name: "Mobile navigation"}),
+    );
+    await user.click(mobile.getByText("Design"));
+    expect(mobile.getByRole("link", {name: "Brand"})).toHaveAttribute(
+        "href",
+        "/ui/brand/",
+    );
 });

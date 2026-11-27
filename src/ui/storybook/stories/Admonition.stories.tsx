@@ -1,0 +1,15 @@
+import React from "react";
+import type {Meta, StoryObj} from "@storybook/react-vite";
+import {Admonition} from "@/src/@/components/ui/admonition";
+import {Link} from "@/src/@/components/ui/link";
+const meta = {title: "Components/Admonition", component: Admonition, args: {children: "Check the station name and figures before continuing.", className: "max-w-xl"}, argTypes: {kind: {control: "select", options: ["note", "info", "tip", "warning", "error", "success"]}}} satisfies Meta<typeof Admonition>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const Note: Story = {};
+export const Info: Story = {args: {kind: "info", title: "About this record"}};
+export const Tip: Story = {args: {kind: "tip", title: "Keep the full form in view"}};
+export const Warning: Story = {args: {kind: "warning", title: "Review the figures"}};
+export const Error: Story = {args: {kind: "error", title: "The record could not be saved"}};
+export const Success: Story = {args: {kind: "success", title: "Record saved"}};
+export const WithLink: Story = {args: {children: <>Check the name against the <Link href="#record">station record</Link>.</>}};
+export const LongContent: Story = {args: {title: "A longer message heading that wraps on smaller screens", children: "The message includes enough context to explain what happened, which station record is affected, and how to continue. Keep instructions concise and make the next action clear."}};

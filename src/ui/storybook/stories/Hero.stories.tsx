@@ -1,0 +1,14 @@
+import React from "react";
+import type {Meta, StoryObj} from "@storybook/react-vite";
+import {Hero} from "@/src/@/components/ui/hero";
+import {Button} from "@/src/@/components/ui/button";
+import {Image} from "@/src/@/components/ui/image";
+const actions = <><Button asChild><a href="#signup">Get started</a></Button><Button asChild variant="outline"><a href="#results">View results</a></Button></>;
+const meta = {title: "Components/Hero", component: Hero, args: {title: "Protect the vote, station by station.", description: "Photograph the posted form, check the figures, and keep the evidence tied to its station."}, parameters: {layout: "fullscreen"}} satisfies Meta<typeof Hero>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const TextOnly: Story = {};
+export const WithActions: Story = {args: {actions}};
+export const Centered: Story = {args: {align: "center", actions}};
+export const WithImage: Story = {args: {actions, media: <Image src="/images/social/social-site.svg" alt="Kura Zetu civic tally artwork" aspectRatio="1200 / 630" fit="contain" />}};
+export const LongTitle: Story = {args: {title: "Every figure can be traced back to the form posted at a polling station.", actions}};

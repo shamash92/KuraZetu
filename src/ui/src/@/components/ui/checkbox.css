@@ -1,0 +1,9 @@
+@layer components {
+  /* The native box with an ink accent, as on the sign-up terms and dashboard settings. */
+  .kz-checkbox { display: flex; align-items: flex-start; gap: 10px; color: var(--ink-soft); font: 500 14px/1.5 var(--sans); cursor: pointer; }
+  .kz-checkbox input { width: 18px; height: 18px; flex-shrink: 0; margin: 2px 0 0; accent-color: var(--ink); cursor: inherit; }
+  .kz-checkbox input:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .kz-checkbox input[aria-invalid="true"] { outline: 2px solid var(--red); outline-offset: 2px; }
+  .kz-checkbox.is-disabled { opacity: .5; cursor: not-allowed; }
+  .kz-checkbox-hint { display: block; margin-top: 2px; color: var(--mute-deep); font-size: 13px; }
+}

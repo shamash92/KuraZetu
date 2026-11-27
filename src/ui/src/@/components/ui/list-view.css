@@ -1,0 +1,14 @@
+@layer components {
+ .kz-list-view-scroll { overflow-y: auto; border: 1px solid var(--rule-16); border-radius: 14px; background: var(--card); }
+ .kz-list-view-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+ .kz-list-view { margin: 0; padding: 4px; list-style: none; color: var(--ink); font: 14px/1.5 var(--sans); }
+ .kz-list-view-item { border-bottom: 1px solid var(--rule-08); }
+ .kz-list-view-item:last-child { border-bottom: 0; }
+ .kz-list-view-item > div, .kz-list-view-item > button { display: flex; width: 100%; min-height: 52px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border: 0; border-radius: 8px; background: transparent; color: inherit; text-align: left; }
+ .kz-list-view-item > button { cursor: pointer; }
+ .kz-list-view-item > button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+ .kz-list-view-item > button:active, .kz-list-view-item[data-selected] > button { background: var(--surface); }
+ .kz-list-view-item > button:disabled { opacity: .5; cursor: not-allowed; }
+ .kz-list-view-state { padding: 24px 14px; color: var(--mute-deep); }
+ @media (hover: hover) and (pointer: fine) { .kz-list-view-item > button:not(:disabled):hover { background: var(--surface); } }
+}

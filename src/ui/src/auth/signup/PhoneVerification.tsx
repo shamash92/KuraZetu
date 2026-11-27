@@ -1,3 +1,5 @@
+import {OTPInput} from "@/src/@/components/ui/otp-input";
+import {PhoneInput} from "@/src/@/components/ui/phone-input";
 import "../../landing-pages/landing.css";
 import "./auth.css";
 
@@ -34,18 +36,6 @@ function useSecondsUntil(deadline: number | null) {
 
 function clock(seconds: number) {
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
-/**
- * Kenyan numbers get written as 0712 345 678, and browser autofill hands back
- * the full +254712345678. Both carry the same nine significant digits, so keep
- * only those rather than sending the server a number it cannot parse.
- */
-function nationalDigits(value: string) {
-    const digits = value.replace(/\D/g, "");
-    return (digits.startsWith("254") ? digits.slice(3) : digits)
-        .replace(/^0+/, "")
-        .slice(0, 9);
 }
 
 function maskedPhone(phoneDigits: string) {
@@ -187,46 +177,7 @@ export default function PhoneVerification() {
                                 <label className="label" htmlFor="signup-otp-code">
                                     Six-digit code
                                 </label>
-                                <div className="otp-control">
-                                    <input
-                                        id="signup-otp-code"
-                                        className="otp-code-input"
-                                        ref={codeInput}
-                                        autoComplete="one-time-code"
-                                        inputMode="numeric"
-                                        maxLength={6}
-                                        value={code}
-                                        onChange={(event) =>
-                                            setCode(
-                                                event.target.value
-                                                    .replace(/\D/g, "")
-                                                    .slice(0, 6),
-                                            )
-                                        }
-                                        aria-describedby={
-                                            error
-                                                ? "signup-otp-help signup-otp-error"
-                                                : "signup-otp-help"
-                                        }
-                                        aria-invalid={error ? true : undefined}
-                                    />
-                                    <div className="otp-cells" aria-hidden="true">
-                                        {Array.from({length: 6}, (_, index) => (
-                                            <span
-                                                className={`otp-cell ${
-                                                    code[index] ? "filled" : ""
-                                                } ${
-                                                    index === code.length && code.length < 6
-                                                        ? "cursor"
-                                                        : ""
-                                                }`}
-                                                key={index}
-                                            >
-                                                {code[index] ?? ""}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
+                                <OTPInput id="signup-otp-code" label={false} ref={codeInput} value={code} onChange={setCode} aria-describedby={error ? "signup-otp-help signup-otp-error" : "signup-otp-help"} aria-invalid={error ? true : undefined} />
                                 <p className="otp-help" id="signup-otp-help">
                                     {hasExpired
                                         ? "This code has expired. Request another one below."
@@ -286,27 +237,17 @@ export default function PhoneVerification() {
                                 <label className="label" htmlFor="signup-phone-number">
                                     Phone number
                                 </label>
-                                <div className="phone-input">
-                                    <div className="prefix">
-                                        <span className="flag" aria-hidden="true" />
-                                        +254
-                                    </div>
-                                    <input
-                                        id="signup-phone-number"
-                                        placeholder="712 345 678"
-                                        autoComplete="tel"
-                                        inputMode="tel"
-                                        ref={phoneInput}
-                                        value={phoneDigits}
-                                        onChange={(event) =>
-                                            setPhoneDigits(nationalDigits(event.target.value))
-                                        }
-                                        aria-describedby={
-                                            error ? "signup-phone-error" : undefined
-                                        }
-                                        aria-invalid={error ? true : undefined}
-                                    />
-                                </div>
+                                <PhoneInput
+                                    id="signup-phone-number"
+                                    label={false}
+                                    required={false}
+                                    pattern={undefined}
+                                    ref={phoneInput}
+                                    value={phoneDigits}
+                                    onChange={setPhoneDigits}
+                                    aria-describedby={error ? "signup-phone-error" : undefined}
+                                    aria-invalid={error ? true : undefined}
+                                />
                             </div>
 
                             {error && (

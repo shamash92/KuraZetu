@@ -1,0 +1,38 @@
+import {Meta} from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Using the library" />
+
+# Using the library
+
+Import components from their source modules. There is no published `kurazetu-ui` component package.
+
+```tsx
+import {Button} from "@/src/@/components/ui/button";
+
+<Button variant="default" className="w-full sm:w-auto">Continue</Button>
+```
+
+The existing application styles and design references define the visual language. Use shared components for recurring controls, variants for recurring differences, and `className` for local layout adjustments.
+
+## Colors
+
+| Token | Role |
+| --- | --- |
+| `--paper` | Warm page background |
+| `--card` | White content surfaces |
+| `--ink` | Primary text |
+| `--lime` | Primary action |
+| `--surface` | Recessed or neutral surfaces |
+| `--green-deep` | Verified or success text |
+| `--coral-deep` | Error text |
+| `--mute-deep` | Secondary text |
+
+Shared CSS variables live in `src/styles/tokens.css`. Editing them updates the application and catalog together. Party colors come from data and identify parties without ranking them.
+
+## Typography
+
+Public Sans carries headings and prose. IBM Plex Mono carries short labels, metadata, and comparable figures. Heading level and visual size are independent. Readable text and keyboard focus remain required in every variant.
+
+## Composition
+
+Buttons perform actions. Links navigate. Use `Button` with `asChild` for a button-shaped link. Give every field a visible label and every dialog a title. Keep page data, authentication, and API requests in the consuming screen.

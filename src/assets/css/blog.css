@@ -57,10 +57,26 @@
     font-size: 10.5px;
     font-weight: 500;
     letter-spacing: 0.06em;
-    color: var(--color-copper-deep);
+    color: var(--color-text-accent);
     text-transform: uppercase;
     border-bottom: 1px solid var(--color-rule-08);
     background: rgba(247, 246, 243, 0.62);
+}
+
+.blog-disclaimer span + span {
+    color: var(--color-mute);
+}
+
+@media (max-width: 800px) {
+    .blog-disclaimer {
+        justify-content: center;
+        padding: 8px 18px;
+        text-align: center;
+    }
+
+    .blog-disclaimer span + span {
+        display: none;
+    }
 }
 
 .blog-crumb {

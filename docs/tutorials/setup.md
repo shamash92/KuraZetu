@@ -135,6 +135,31 @@ Open a new terminal to run the following commands parallel to the backend comman
    pnpm run dev
    ```
 
+7. Optional: run the component catalog
+
+   Storybook shows the shared web components and their states without Django
+   or a database. In another terminal, from `src/ui`, run:
+
+   ```bash
+   pnpm storybook
+   ```
+
+   Open `http://localhost:3000`. Stories live in `src/ui/storybook/stories/`
+   and import the components from `src/ui/src/@/components/ui/`, so a change
+   to a component shows in the catalog and the application.
+
+   To run the catalog's interaction and accessibility checks, install Chromium
+   once and then run the tests:
+
+   ```bash
+   pnpm exec playwright install chromium
+   pnpm test:storybook
+   ```
+
+   `pnpm build:storybook` writes a static copy of the catalog to
+   `src/ui/storybook-static/`. Django serves it at `/components/`, and
+   `collectstatic` uploads it with the other static files.
+
 ## 2. Setup Instructions (Django Backend)
 
 ```{important}

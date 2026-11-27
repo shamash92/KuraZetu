@@ -219,6 +219,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "staticfiles"),
     os.path.join(BASE_DIR, "ui/static"),
     os.path.join(BASE_DIR, "assets"),
+    # The component catalog from `pnpm build:storybook`, served at /components/.
+    ("storybook", os.path.join(BASE_DIR, "ui/storybook-static")),
 ]
 
 TAILWIND_CLI_VERSION = config("TAILWIND_CLI_VERSION", default="4.3.3")

@@ -1,0 +1,63 @@
+@import url("https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --lime: #c4ff5e;
+  --lime-deep: #a8e63a;
+  --lime-ink: #0a0a0a;
+  --green: #16a35a;
+  --green-deep: #0f7a40;
+  --mint: #d8f5dc;
+  --mint-2: #b9eac1;
+  --amber: #ffe6a1;
+  --coral: #ffd0c0;
+  --coral-deep: #a8442a;
+  --coral-ink: #7d2f1b;
+  --red: #c44539;
+  --text-accent: #a32e32;
+  --periwinkle: #c8d4ff;
+  --periwinkle-deep: #2532a8;
+  --copper: #c97b3e;
+  --copper-deep: #8a4a25;
+  --paper: #f7f6f3;
+  --paper-deep: #efeeea;
+  --card: #ffffff;
+  --surface: #f1f0eb;
+  --ink: #0d0d0d;
+  --ink-soft: #1a1a1a;
+  --mute: #6b6d72;
+  --mute-2: #9a9da3;
+  --mute-deep: #5d5f64;
+  --rule-08: rgba(13, 13, 13, 0.07);
+  --rule-16: rgba(13, 13, 13, 0.14);
+  --glass: rgba(255, 255, 255, 0.88);
+  --mesh-ink: rgba(40, 50, 60, 0.14);
+  --mesh-dot: rgba(40, 50, 60, 0.28);
+  --mesh-grid: rgba(40, 50, 60, 0.04);
+  --paper-grad-1: #faf9f6;
+  --paper-grad-2: #f0efea;
+  --paper-grad-3: #e7e6e0;
+  --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: var(--sans);
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Shared component roles use the same palette as the application. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --primary: var(--lime);
+  --primary-foreground: var(--lime-ink);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --destructive: var(--red);
+  --destructive-foreground: var(--card);
+  --muted: var(--surface);
+  --muted-foreground: var(--mute-deep);
+  --accent: var(--surface);
+  --accent-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --border: var(--rule-16);
+  --input: var(--ink);
+  --ring: var(--ink);
+  --radius: 18px;
+}

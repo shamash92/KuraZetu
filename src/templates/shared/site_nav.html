@@ -24,7 +24,13 @@
         <a href="/ui/game/">pinVerify254</a>
         <a href="https://kurazetu.readthedocs.io/" target="_blank" rel="noreferrer">Docs</a>
         <a href="{% url 'blog:list' %}"{% if current_nav == "blog" %} class="is-current" aria-current="page"{% endif %}>Blog</a>
-        <a href="/ui/brand/">Brand</a>
+        <details class="site-nav__group">
+          <summary{% if current_nav == "components" %} class="is-current"{% endif %}>Design</summary>
+          <div class="site-nav__sub">
+            <a href="/ui/brand/">Brand</a>
+            <a href="{% url 'components' %}"{% if current_nav == "components" %} class="is-current" aria-current="page"{% endif %}>Components</a>
+          </div>
+        </details>
         <details class="site-nav__group">
           <summary{% if current_nav == "api" %} class="is-current"{% endif %}>Developers</summary>
           <div class="site-nav__sub">
@@ -39,7 +45,7 @@
           <a class="site-nav__logout" href="/accounts/logout/">Log out</a>
         {% else %}
           <a class="site-nav__login" href="/accounts/login/">Sign in</a>
-          <a class="site-nav__register" href="/ui/signup/">Get started</a>
+          <a class="site-nav__register" href="/ui/signup/">Get started <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg></a>
         {% endif %}
       </div>
     </div>

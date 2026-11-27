@@ -13,6 +13,7 @@ module.exports = {
     filename: '[name].[contenthash].js'
   },
   resolve: {
+    alias: { '@': path.resolve(__dirname) },
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx']
   },
   module: {

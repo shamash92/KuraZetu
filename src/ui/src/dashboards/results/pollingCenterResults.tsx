@@ -196,7 +196,7 @@ function PollingCenterResults() {
                         <h3 className="mb-3 font-semibold text-center">
                             Vote Distribution
                         </h3>
-                        <div className="h-64">
+                        <div className="min-h-64">
                             {hasResults ? (
                                 <PollingStationCandidatePieChart
                                     data={aggregate.candidates}

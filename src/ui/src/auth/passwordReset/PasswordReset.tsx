@@ -2,6 +2,7 @@ import "../../landing-pages/landing.css";
 import "../signup/auth.css";
 
 import {ArrowLeft, ArrowRight} from "lucide-react";
+import {PhoneInput, nationalDigits} from "@/src/@/components/ui/phone-input";
 import {useEffect, useRef, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 
@@ -34,13 +35,6 @@ function useSecondsUntil(deadline: number | null) {
 
 function clock(seconds: number) {
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
-function nationalDigits(value: string) {
-    const digits = value.replace(/\D/g, "");
-    return (digits.startsWith("254") ? digits.slice(3) : digits)
-        .replace(/^0+/, "")
-        .slice(0, 9);
 }
 
 function maskedPhone(phoneDigits: string) {
@@ -327,23 +321,15 @@ export default function PasswordReset() {
                                 <label className="label" htmlFor="reset-phone-number">
                                     Phone number
                                 </label>
-                                <div className="phone-input">
-                                    <div className="prefix">
-                                        <span className="flag" aria-hidden="true" />
-                                        +254
-                                    </div>
-                                    <input
-                                        id="reset-phone-number"
-                                        autoComplete="tel"
-                                        inputMode="tel"
-                                        onChange={(event) =>
-                                            setPhoneDigits(nationalDigits(event.target.value))
-                                        }
-                                        placeholder="712 345 678"
-                                        ref={phoneInput}
-                                        value={phoneDigits}
-                                    />
-                                </div>
+                                <PhoneInput
+                                    id="reset-phone-number"
+                                    label={false}
+                                    required={false}
+                                    pattern={undefined}
+                                    ref={phoneInput}
+                                    value={phoneDigits}
+                                    onChange={setPhoneDigits}
+                                />
                             </div>
                             {error && <p className="otp-error" role="alert">{error}</p>}
                             <button className="submit" disabled={isSending} type="submit">

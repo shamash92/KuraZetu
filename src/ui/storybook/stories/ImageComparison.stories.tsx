@@ -1,0 +1,11 @@
+import type {Meta, StoryObj} from "@storybook/react-vite";
+import {ImageComparison} from "@/src/@/components/ui/image-comparison";
+const meta = {title: "Components/ImageComparison", component: ImageComparison, args: {className: "max-w-3xl", left: {label: "Standard mark", src: "/images/logo/mark.svg", alt: "Standard Kura Zetu tally mark", fit: "contain"}, right: {label: "Compact mark", src: "/images/logo/mark-compact.svg", alt: "Compact Kura Zetu tally mark", fit: "contain"}}} satisfies Meta<typeof ImageComparison>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const SideBySide: Story = {};
+export const StackOnSmallScreens: Story = {args: {stackOnSmallScreens: true}};
+export const LeftLoading: Story = {args: {left: {...meta.args.left, status: "loading"}}};
+export const RightUnavailable: Story = {args: {right: {...meta.args.right, status: "error"}}};
+export const BothLoading: Story = {args: {left: {...meta.args.left, status: "loading"}, right: {...meta.args.right, status: "loading"}}};
+export const WithCaptions: Story = {args: {left: {...meta.args.left, caption: "Standard geometry from the brand library."}, right: {...meta.args.right, caption: "Compact geometry for small placements."}}};

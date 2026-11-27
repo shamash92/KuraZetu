@@ -1,0 +1,15 @@
+@layer components {
+ .kz-sidebar { display: flex; width: 240px; max-width: 100%; flex-direction: column; gap: 20px; color: var(--ink); font-family: var(--sans); }
+ .kz-sidebar-group { display: flex; flex-direction: column; gap: 2px; }
+ .kz-sidebar-group-label { margin: 0 14px 6px; color: var(--mute-deep); font: 600 10.5px/1.5 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+ .kz-sidebar-link { display: flex; min-height: 44px; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px; color: var(--ink); font-size: 15px; font-weight: 500; text-decoration: none; }
+ .kz-sidebar-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+ .kz-sidebar-link[aria-current="page"] { background: var(--ink); color: var(--paper); }
+ .kz-sidebar-link:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+ .kz-sidebar-link:active { background: var(--paper-deep); color: var(--ink); }
+ .kz-sidebar.is-collapsed { width: 64px; }
+ .kz-sidebar.is-collapsed .kz-sidebar-link { justify-content: center; padding: 12px; }
+ .kz-sidebar.is-collapsed .kz-sidebar-link-label, .kz-sidebar.is-collapsed .kz-sidebar-group-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: clip; clip-path: inset(50%); white-space: nowrap; }
+ .kz-sidebar-toggle { align-self: flex-end; }
+ @media (hover: hover) and (pointer: fine) { .kz-sidebar-link:hover { background: var(--surface); } .kz-sidebar-link[aria-current="page"]:hover { background: var(--ink); color: var(--paper); } }
+}

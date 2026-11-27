@@ -1,0 +1,51 @@
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+.catalogue {
+  max-width: 960px;
+  padding: 16px;
+}
+
+.catalogue h1 {
+  margin: 0 0 24px;
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+.catalogue p {
+  max-width: 65ch;
+  line-height: 1.65;
+}
+
+.catalogue-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalogue-swatch {
+  height: 80px;
+  margin-bottom: 12px;
+  border: 1px solid var(--rule-16);
+  border-radius: 8px;
+}
+
+.catalogue-token {
+  display: block;
+  margin-top: 4px;
+  color: var(--mute-deep);
+  font: 12px/1.5 var(--mono);
+}
+
+.catalogue-type {
+  font-family: var(--mono);
+  font-size: 13px;
+}

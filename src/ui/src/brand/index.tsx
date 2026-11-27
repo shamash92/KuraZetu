@@ -5,6 +5,7 @@ import React, {useEffect} from "react";
 import {Link, Navigate, NavLink, Outlet, useLocation, useParams} from "react-router-dom";
 
 import {LandingFooter, LandingNav} from "../landing-pages";
+import {Sidebar, SidebarGroup, SidebarLink} from "@/src/@/components/ui/sidebar";
 import {PAGE_GROUPS, PAGES} from "./registry";
 
 const BASE = "/ui/brand";
@@ -54,17 +55,15 @@ export default function BrandLayout() {
             <LandingNav current="brand" />
 
             <div className="kz-brand-layout">
-                <nav className="kz-brand-toc" aria-label="Brand guidelines">
+                <Sidebar className="kz-brand-toc w-auto" label="Brand guidelines">
                     {PAGE_GROUPS.map((group) => (
-                        <div key={group[0].slug} className="kz-brand-toc-group">
+                        <SidebarGroup key={group[0].slug} className="kz-brand-toc-group">
                             {group.map(({slug, label}) => (
-                                <NavLink key={slug} to={`${BASE}/${slug}/`}>
-                                    {label}
-                                </NavLink>
+                                <SidebarLink key={slug} label={label} active={pathname.startsWith(`${BASE}/${slug}/`)} asChild><NavLink to={`${BASE}/${slug}/`}>{label}</NavLink></SidebarLink>
                             ))}
-                        </div>
+                        </SidebarGroup>
                     ))}
-                </nav>
+                </Sidebar>
 
                 <div className="kz-brand-sections">
                     <Outlet />

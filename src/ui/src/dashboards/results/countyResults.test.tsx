@@ -49,7 +49,7 @@ describe("county results tabs", () => {
     it("shows the presidential race first", async () => {
         renderCountyResults();
 
-        expect(await screen.findByText("Asha Wanjiru")).toBeInTheDocument();
+        expect((await screen.findAllByText("Asha Wanjiru"))[0]).toBeVisible();
         expect(screen.queryByText("Baraka Otieno")).not.toBeInTheDocument();
     });
 
@@ -57,12 +57,12 @@ describe("county results tabs", () => {
         const user = userEvent.setup();
         renderCountyResults();
 
-        await screen.findByText("Asha Wanjiru");
+        await screen.findAllByText("Asha Wanjiru");
         expect(global.fetch).toHaveBeenCalledTimes(1);
 
         await user.click(screen.getByRole("button", {name: /governor/i}));
 
-        expect(await screen.findByText("Baraka Otieno")).toBeInTheDocument();
+        expect((await screen.findAllByText("Baraka Otieno"))[0]).toBeVisible();
         expect(screen.queryByText("Asha Wanjiru")).not.toBeInTheDocument();
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
@@ -71,14 +71,14 @@ describe("county results tabs", () => {
         const user = userEvent.setup();
         renderCountyResults();
 
-        await screen.findByText("Asha Wanjiru");
+        await screen.findAllByText("Asha Wanjiru");
         await user.click(screen.getByRole("button", {name: /governor/i}));
-        await screen.findByText("Baraka Otieno");
+        await screen.findAllByText("Baraka Otieno");
         expect(global.fetch).toHaveBeenCalledTimes(2);
 
         await user.click(screen.getByRole("button", {name: /president/i}));
 
-        expect(await screen.findByText("Asha Wanjiru")).toBeInTheDocument();
+        expect((await screen.findAllByText("Asha Wanjiru"))[0]).toBeVisible();
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
@@ -86,7 +86,7 @@ describe("county results tabs", () => {
         const user = userEvent.setup();
         renderCountyResults();
 
-        await screen.findByText("Asha Wanjiru");
+        await screen.findAllByText("Asha Wanjiru");
         await user.click(screen.getByRole("button", {name: /senator/i}));
 
         expect(

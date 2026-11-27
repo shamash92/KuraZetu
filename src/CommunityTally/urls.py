@@ -86,6 +86,11 @@ urlpatterns = [
         TemplateView.as_view(template_name="legal/privacy.html"),
         name="privacy",
     ),
+    path(
+        "components/",
+        TemplateView.as_view(template_name="components.html"),
+        name="components",
+    ),
     path("", home_view, name="home"),
     re_path(r"ui/.*", react_view, name="react"),
 ]

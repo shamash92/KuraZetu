@@ -1,0 +1,12 @@
+import React from "react";
+import type {Meta, StoryObj} from "@storybook/react-vite";
+import {DescriptionDetails, DescriptionList, DescriptionTerm, List, ListItem} from "@/src/@/components/ui/list";
+const meta = {title: "Components/List", component: List, subcomponents: {ListItem, DescriptionList, DescriptionTerm, DescriptionDetails}, render: (args) => <List {...args}><ListItem>Select the station.</ListItem><ListItem>Check the posted form.</ListItem><ListItem>Review the figures.</ListItem></List>} satisfies Meta<typeof List>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const Unordered: Story = {};
+export const Ordered: Story = {args: {ordered: true}};
+export const StartAtFour: Story = {args: {ordered: true, start: 4}};
+export const Nested: Story = {render: () => <List><ListItem>Check the station.<List className="mt-2 list-[circle]"><ListItem>Confirm its name.</ListItem><ListItem>Confirm its location.</ListItem></List></ListItem><ListItem>Review the record.</ListItem></List>};
+export const LongItems: Story = {render: () => <List className="max-w-sm"><ListItem>Use the full polling station name shown on the record so another person can trace the information back to the correct station.</ListItem><ListItem>Check every figure before continuing.</ListItem></List>};
+export const Descriptions: Story = {render: () => <DescriptionList><DescriptionTerm>Station</DescriptionTerm><DescriptionDetails>Example polling station</DescriptionDetails><DescriptionTerm>Record</DescriptionTerm><DescriptionDetails>Form 34A</DescriptionDetails></DescriptionList>};

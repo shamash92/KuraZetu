@@ -152,6 +152,41 @@ services:
     cpus: 1.0
     mem_limit: 1g
 
+  # Component catalog. Shares the webpack image; the parent assets folder
+  # supplies the logo images the stories load.
+  storybook:
+    profiles:
+      - storybook
+    image: kurazetu-webpack:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.webpack
+    command: >-
+      sh -c "pnpm install --frozen-lockfile
+      && exec pnpm storybook --host 0.0.0.0"
+    volumes:
+      - ./ui:/app
+      - ./assets:/assets:ro
+      - storybook_node_modules:/app/node_modules
+      - pnpm_store:/app/.pnpm-store
+    working_dir: /app
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch("http://127.0.0.1:3000/").then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 1m
+    restart: unless-stopped
+    init: true
+    cpus: 2.0
+    mem_limit: 2g
+
   docs:
     profiles:
       - docs
@@ -182,5 +217,6 @@ volumes:
   postgres_data:
   react_static_volume:
   redis_data:
+  storybook_node_modules:
   tailwind_static_volume:
   webpack_node_modules:

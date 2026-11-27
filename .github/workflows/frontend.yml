@@ -10,7 +10,7 @@ on:
     - '.github/workflows/frontend.yml'
   pull_request:
     branches:
-    - '*'
+    - '**'
     paths:
     - 'src/ui/**'
     - '.github/workflows/frontend.yml'
@@ -72,3 +72,31 @@ jobs:
     - name: Lint
       working-directory: "src/ui"
       run: pnpm lint
+
+  storybook:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v5
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: pnpm
+        cache-dependency-path: src/ui/pnpm-lock.yaml
+    - name: Install dependencies
+      working-directory: "src/ui"
+      run: pnpm install --frozen-lockfile
+    - name: Install browser
+      working-directory: "src/ui"
+      run: pnpm exec playwright install --with-deps chromium
+    - name: Typecheck Storybook
+      working-directory: "src/ui"
+      run: pnpm typecheck:storybook
+    - name: Test component states
+      working-directory: "src/ui"
+      run: pnpm test:storybook
+    - name: Build static catalog
+      working-directory: "src/ui"
+      run: pnpm build:storybook
